@@ -1,4 +1,4 @@
-import { Slide, toast } from 'react-toastify'; // Importar Toastify
+import { toast } from 'react-toastify'; // Importar Toastify
 import { handleApiError } from './utils/errorHandler';
 import axiosInstance from './utils/axiosInstance';
 

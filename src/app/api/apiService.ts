@@ -1,6 +1,7 @@
 import { toast } from 'react-toastify'; // Importar Toastify
 import { handleApiError } from './utils/errorHandler';
 import axiosInstance from './utils/axiosInstance';
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Generic function to fetch all resources from an API endpoint.
@@ -8,7 +9,7 @@ import axiosInstance from './utils/axiosInstance';
  * @param filters Optional filters for query parameters.
  * @returns Array of resources of type T.
  */
-export const getAll = async <T>(
+export const get = async <T>(
   endpoint: string,
   filters?: Record<string, any>
 ): Promise<T[]> => {

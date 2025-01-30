@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Slide, ToastContainer } from "react-toastify";
+import { QueryClientProvider } from "@tanstack/react-query";
+import ReactQueryProvider from "@/utils/providers/reactQueryProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -43,7 +45,8 @@ export default function RootLayout({
           transition={Slide}
         
         />
-        {children}
+        <ReactQueryProvider>{children}</ReactQueryProvider>
+        
       </body>
     </html>
   );

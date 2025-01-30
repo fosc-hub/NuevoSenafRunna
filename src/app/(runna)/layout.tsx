@@ -1,4 +1,4 @@
-
+import Navbar from "@/components/layoutComponents/Navbar";
 
 export default function Layout({ children }: Readonly<{
     children: React.ReactNode;
@@ -6,7 +6,7 @@ export default function Layout({ children }: Readonly<{
  
   return (
     <div>
-      <h1>layout</h1>
+      <Navbar></Navbar>
       {children}
     </div>
   )

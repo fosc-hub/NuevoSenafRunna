@@ -16,8 +16,8 @@ export const get = async <T>(
   const queryString = filters
     ? `?${new URLSearchParams(filters as Record<string, string>).toString()}`
     : '';
-  const response = await axiosInstance.get<T[]>(`${endpoint}/${queryString}`);
-  return response.data;
+    const response = await axiosInstance.get<T[]>(`${endpoint}${queryString}`);
+    return response.data;
 };
 
 export const getWithCustomParams = async <T>(

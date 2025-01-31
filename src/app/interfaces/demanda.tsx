@@ -48,7 +48,20 @@ interface TDemandaBase {
 }
 
 export interface TDemanda extends TDemandaBase {
+  nnya_principal: any;
+  precalificacion: any;
+  estado_demanda: string;
+  origen_demanda: any;
+  demanda_score: any;
 }
+/** A generic paginated response shape */
+export interface PaginatedResponse<T> {
+    count: number
+    next: string | null
+    previous: string | null
+    results: T[]
+  }
+  export type TDemandaPaginated = PaginatedResponse<TDemanda>
 
 interface TPrecalificacionDemandaBase {
     id: number;

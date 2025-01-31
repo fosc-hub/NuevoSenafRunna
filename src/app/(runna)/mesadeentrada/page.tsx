@@ -1,11 +1,11 @@
-import React from 'react';
+import DemandaTable from "./ui/dataGrid";
+import Header from "./ui/Header";
 
-const HelloWorld: React.FC = () => {
-    return (
-        <div>
-            <h1>Hello, World!</h1>
-        </div>
-    );
-};
-
-export default HelloWorld;
+export default function Page() {
+  return (
+    <>
+      <Header />
+      <DemandaTable />
+    </>
+  );
+}

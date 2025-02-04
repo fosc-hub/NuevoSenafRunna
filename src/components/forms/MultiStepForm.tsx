@@ -7,7 +7,7 @@ import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
 import { useQuery } from "@tanstack/react-query"
 import { fetchDropdownData } from "./utils/api"
-import type { DropdownData } from "./types/formTypes"
+import type { DropdownData, FormData } from "./types/formTypes"
 
 const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
 
@@ -60,7 +60,9 @@ const MultiStepForm: React.FC = () => {
           <Box sx={{ mt: 4, mb: 4 }}>
             {activeStep === 0 && dropdownData && <Step1Form dropdownData={dropdownData} />}
             {activeStep === 1 && dropdownData && <Step2Form dropdownData={dropdownData} />}
-            {activeStep === 2 && dropdownData && <Step3Form dropdownData={dropdownData} />}
+            {activeStep === 2 && dropdownData && (
+              <Step3Form dropdownData={dropdownData} adultosConvivientes={methods.watch("adultosConvivientes") || []} />
+            )}
           </Box>
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
             <Button disabled={activeStep === 0} onClick={handleBack} type="button">

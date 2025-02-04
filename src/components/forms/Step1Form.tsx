@@ -18,6 +18,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { useQuery } from "@tanstack/react-query"
 import { get } from "@/app/api/apiService"
+import LocalizacionFields from "./LocalizacionFields"
 
 interface DropdownOption {
   key: string
@@ -335,7 +336,12 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             Datos de Localización
           </Typography>
         </Grid>
-        {/* Add LocalizacionFields here */}
+        <LocalizacionFields
+  control={control}
+  prefix="localizacion"
+  dropdownData={dropdownData}
+  readOnly={readOnly}
+/>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Informante

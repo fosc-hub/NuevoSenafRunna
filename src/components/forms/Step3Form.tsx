@@ -25,7 +25,7 @@ import type { DropdownData, FormData } from "../types/formTypes"
 interface Step3FormProps {
   dropdownData: DropdownData
   readOnly?: boolean
-  adultosConvivientes: { id: string; nombre: string; apellido: string }[]
+  adultosConvivientes: FormData["adultosConvivientes"]
 }
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
@@ -529,15 +529,15 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               />
                             </Grid>
                             <Grid item xs={12}>
-                              <Controller
+                            <Controller
                                 name={`ninosAdolescentes.${index}.vulneraciones.${vulIndex}.autor_dv`}
                                 control={control}
                                 render={({ field, fieldState: { error } }) => (
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Autor DV</InputLabel>
                                     <Select {...field} label="Autor DV" disabled={readOnly}>
-                                      {adultosConvivientes?.map((adulto) => (
-                                        <MenuItem key={adulto.id} value={adulto.id}>
+                                      {adultosConvivientes.map((adulto, adultIndex) => (
+                                        <MenuItem key={adultIndex} value={adultIndex}>
                                           {`${adulto.nombre} ${adulto.apellido}`}
                                         </MenuItem>
                                       ))}

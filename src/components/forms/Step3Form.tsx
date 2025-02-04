@@ -20,7 +20,8 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import AddIcon from "@mui/icons-material/Add"
 import LocalizacionFields from "./LocalizacionFields"
-import type { DropdownData, FormData } from "../types/formTypes"
+import type { DropdownData, FormData } from "./types/formTypes"
+import { format, parse } from "date-fns"
 
 interface Step3FormProps {
   dropdownData: DropdownData
@@ -117,6 +118,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                       {...field}
                       label="Fecha de Nacimiento"
                       disabled={readOnly}
+                      value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                      onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                       renderInput={(params) => <TextField {...params} fullWidth />}
                     />
                   )}
@@ -418,7 +421,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                       <InputLabel>Condiciones de Vulnerabilidad</InputLabel>
                       <Select {...field} multiple label="Condiciones de Vulnerabilidad" disabled={readOnly}>
                         {dropdownData.condiciones_vulnerabilidad
-                          .filter((cv) => !cv.adulto)
+                          .filter((cv) => cv.nnya && !cv.adulto) // Filter for nnya=true and adulto=false
                           .map((cv) => (
                             <MenuItem key={cv.id} value={cv.id}>
                               {`${cv.nombre} - ${cv.descripcion}`}
@@ -529,7 +532,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               />
                             </Grid>
                             <Grid item xs={12}>
-                            <Controller
+                              <Controller
                                 name={`ninosAdolescentes.${index}.vulneraciones.${vulIndex}.autor_dv`}
                                 control={control}
                                 render={({ field, fieldState: { error } }) => (

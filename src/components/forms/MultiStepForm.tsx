@@ -13,7 +13,13 @@ const steps = ["Información General", "Adultos Convivientes", "Niños y Adolesc
 
 const MultiStepForm: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0)
-  const methods = useForm<FormData>()
+  const methods = useForm<FormData>({
+    mode: "onChange",
+    defaultValues: {
+      adultosConvivientes: [],
+      ninosAdolescentes: [],
+    },
+  })
 
   const {
     data: dropdownData,
@@ -49,7 +55,7 @@ const MultiStepForm: React.FC = () => {
 
   const onSubmit = useCallback(
     (data: FormData) => {
-      console.log("onSubmit called with data:", data)
+      console.log("Form data before submission:", data)
       mutation.mutate(data)
     },
     [mutation],

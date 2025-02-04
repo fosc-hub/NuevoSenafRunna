@@ -13,6 +13,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormHelperText,
 } from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
@@ -21,6 +22,7 @@ import { es } from "date-fns/locale"
 import AddIcon from "@mui/icons-material/Add"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData } from "./types/formTypes"
+import { format, parse } from "date-fns"
 
 interface FormData {
   adultosConvivientes: {
@@ -32,7 +34,7 @@ interface FormData {
     situacionDni: string
     genero: string
     conviviente: boolean
-    supuesto_autordv: boolean
+    supuesto_autordv: string
     garantiza_proteccion: boolean
     observaciones: string
     useDefaultLocalizacion: boolean
@@ -72,7 +74,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       situacionDni: "",
       genero: "",
       conviviente: false,
-      supuesto_autordv: false,
+      supuesto_autordv: "",
       garantiza_proteccion: false,
       observaciones: "",
       useDefaultLocalizacion: true,
@@ -138,6 +140,8 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         {...field}
                         label="Fecha de Nacimiento"
                         disabled={readOnly}
+                        value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                        onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                         renderInput={(params) => <TextField {...params} fullWidth />}
                       />
                     )}
@@ -217,27 +221,38 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <Controller
-                        name={`adultosConvivientes.${index}.supuesto_autordv`}
+                        name={`adultosConvivientes.${index}.conviviente`}
                         control={control}
                         render={({ field: { onChange, value } }) => (
-                          <Checkbox
-                            checked={value}
-                            onChange={(e) => {
-                              onChange(e.target.checked)
-                              if (e.target.checked) {
-                                control.setValue(`adultosConvivientes.${index}.garantiza_proteccion`, false)
-                              }
-                            }}
-                            disabled={readOnly}
-                          />
+                          <Checkbox checked={value} onChange={(e) => onChange(e.target.checked)} disabled={readOnly} />
                         )}
                       />
                     }
-                    label="Supuesto Autor DV"
+                    label="Conviviente"
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`adultosConvivientes.${index}.supuesto_autordv`}
+                    control={control}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <InputLabel>Supuesto Autor DV</InputLabel>
+                        <Select {...field} label="Supuesto Autor DV" disabled={readOnly}>
+                          {dropdownData.supuesto_autordv_choices.map((option) => (
+                            <MenuItem key={option.key} value={option.key}>
+                              {option.value}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                      </FormControl>
+                    )}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -247,16 +262,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         name={`adultosConvivientes.${index}.garantiza_proteccion`}
                         control={control}
                         render={({ field: { onChange, value } }) => (
-                          <Checkbox
-                            checked={value}
-                            onChange={(e) => {
-                              onChange(e.target.checked)
-                              if (e.target.checked) {
-                                control.setValue(`adultosConvivientes.${index}.supuesto_autordv`, false)
-                              }
-                            }}
-                            disabled={readOnly}
-                          />
+                          <Checkbox checked={value} onChange={(e) => onChange(e.target.checked)} disabled={readOnly} />
                         )}
                       />
                     }
@@ -342,7 +348,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         <InputLabel>Condiciones de Vulnerabilidad</InputLabel>
                         <Select {...field} multiple label="Condiciones de Vulnerabilidad" disabled={readOnly}>
                           {dropdownData.condiciones_vulnerabilidad
-                            .filter((cv) => cv.adulto)
+                            .filter((cv) => cv.adulto && !cv.nnya)
                             .map((cv) => (
                               <MenuItem key={cv.id} value={cv.id}>
                                 {`${cv.nombre} - ${cv.descripcion}`}

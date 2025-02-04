@@ -7,7 +7,9 @@ export interface DropdownOption {
     situacion_dni_choices: DropdownOption[]
     genero_choices: DropdownOption[]
     vinculos: { id: string; nombre: string }[]
-    condiciones_vulnerabilidad: { id: string; nombre: string; descripcion: string; adulto: boolean }[]
+    condiciones_vulnerabilidad: {
+      nnya: any id: string; nombre: string; descripcion: string; adulto: boolean 
+}[]
     origenes: { id: string; nombre: string }[]
     // Add other dropdown fields as needed
   }

@@ -535,7 +535,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 render={({ field, fieldState: { error } }) => (
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Autor DV</InputLabel>
-                                    <Select {...field} label="Autor DV" disabled={readOnly}>
+                                    <Select {...field} label="Supuesto Autor DV" disabled={readOnly}>
                                       {adultosConvivientes.map((adulto, adultIndex) => (
                                         <MenuItem key={adultIndex} value={adultIndex}>
                                           {`${adulto.nombre} ${adulto.apellido}`}

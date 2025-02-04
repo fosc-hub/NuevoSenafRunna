@@ -1,5 +1,5 @@
 import type React from "react"
-import { type Control, Controller } from "react-hook-form"
+import { type Control, Controller, useWatch } from "react-hook-form"
 import {
   TextField,
   Grid,
@@ -16,45 +16,11 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
+import { format, parse } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { get } from "@/app/api/apiService"
 import LocalizacionFields from "./LocalizacionFields"
-
-interface DropdownOption {
-  key: string
-  value: string
-}
-
-interface DropdownData {
-  estado_demanda_choices: DropdownOption[]
-  ambito_vulneracion_choices: DropdownOption[]
-  tipo_calle_choices: DropdownOption[]
-  situacion_dni_choices: DropdownOption[]
-  genero_choices: DropdownOption[]
-  origenes: { id: number; nombre: string }[]
-  subOrigenes: { id: number; nombre: string; origen: number }[]
-  motivosIntervencion: { id: number; nombre: string }[]
-}
-
-interface FormData {
-  fecha_oficio_documento?: Date | null
-  fecha_ingreso_senaf?: Date | null
-  origen?: number
-  sub_origen?: number
-  institucion?: string
-  nro_notificacion_102?: number
-  nro_sac?: number
-  nro_suac?: number
-  nro_historia_clinica?: number
-  nro_oficio_web?: number
-  autos_caratulados?: string
-  ambito_vulneracion?: string
-  descripcion?: string
-  presuntaVulneracion?: {
-    motivos?: number
-  }
-  createNewUsuarioExterno?: boolean
-}
+import type { DropdownData, FormData } from "./types/formTypes"
 
 const fetchDropdowns = async () => {
   try {
@@ -67,6 +33,11 @@ const fetchDropdowns = async () => {
   }
 }
 
+interface Step1FormProps {
+  dropdownData: DropdownData
+  readOnly?: boolean
+}
+
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
   const {
     data: dropdownData,
@@ -75,6 +46,12 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   } = useQuery({
     queryKey: ["dropdowns"],
     queryFn: fetchDropdowns,
+  })
+
+  const createNewUser = useWatch({
+    control,
+    name: "createNewUsuarioExterno",
+    defaultValue: false,
   })
 
   if (isLoading) {
@@ -101,6 +78,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                 {...field}
                 label="Fecha de oficio/documento *"
                 disabled={readOnly}
+                value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                 renderInput={(params) => (
                   <TextField {...params} fullWidth error={!!error} helperText={error?.message} />
                 )}
@@ -117,6 +96,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                 {...field}
                 label="Fecha de ingreso SENAF *"
                 disabled={readOnly}
+                value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                 renderInput={(params) => (
                   <TextField {...params} fullWidth error={!!error} helperText={error?.message} />
                 )}
@@ -128,6 +109,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="origen"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Origen *</InputLabel>
@@ -146,6 +128,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="sub_origen"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Sub Origen *</InputLabel>
@@ -164,6 +147,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="institucion"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -265,6 +249,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="autos_caratulados"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -281,6 +266,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="ambito_vulneracion"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Ámbito de Vulneración *</InputLabel>
@@ -317,6 +303,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="presuntaVulneracion.motivos"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Motivo de Intervención *</InputLabel>
@@ -335,13 +322,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Datos de Localización
           </Typography>
+          <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </Grid>
-        <LocalizacionFields
-  control={control}
-  prefix="localizacion"
-  dropdownData={dropdownData}
-  readOnly={readOnly}
-/>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Informante
@@ -359,7 +341,97 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-        {/* Add conditional rendering for new user or existing user selection here */}
+        {createNewUser ? (
+          <>
+            <Grid item xs={6}>
+              <Controller
+                name="usuarioExterno.nombre"
+                control={control}
+                rules={{ required: "Este campo es obligatorio" }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="Nombre"
+                    fullWidth
+                    error={!!error}
+                    helperText={error?.message}
+                    InputProps={{ readOnly }}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Controller
+                name="usuarioExterno.apellido"
+                control={control}
+                rules={{ required: "Este campo es obligatorio" }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="Apellido"
+                    fullWidth
+                    error={!!error}
+                    helperText={error?.message}
+                    InputProps={{ readOnly }}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Controller
+                name="usuarioExterno.telefono"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="Teléfono"
+                    fullWidth
+                    error={!!error}
+                    helperText={error?.message}
+                    InputProps={{ readOnly }}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Controller
+                name="usuarioExterno.mail"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    type="email"
+                    fullWidth
+                    error={!!error}
+                    helperText={error?.message}
+                    InputProps={{ readOnly }}
+                  />
+                )}
+              />
+            </Grid>
+          </>
+        ) : (
+          <Grid item xs={12}>
+            <Controller
+              name="usuarioExterno.id"
+              control={control}
+              rules={{ required: "Este campo es obligatorio" }}
+              render={({ field, fieldState: { error } }) => (
+                <FormControl fullWidth error={!!error}>
+                  <InputLabel>Informante</InputLabel>
+                  <Select {...field} label="Informante" disabled={readOnly}>
+                    {dropdownData.informantes?.map((usuario) => (
+                      <MenuItem key={usuario.id} value={usuario.id}>
+                        {`${usuario.nombre} ${usuario.apellido}`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            />
+          </Grid>
+        )}
       </Grid>
     </LocalizationProvider>
   )

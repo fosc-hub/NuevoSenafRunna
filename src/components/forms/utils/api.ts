@@ -1,18 +1,7 @@
-import { get } from "@/app/api/apiService";
 import axios from "axios"
+import type { DropdownData } from "../types/formTypes"
+import { get, create } from "@/app/api/apiService"
 
-
-export type DropdownData = {
-  barrios: any;
-  localidades: any;
-  cpcs: any;
-  estado_demanda_choices: Array<{ key: string; value: string }>
-  ambito_vulneracion_choices: Array<{ key: string; value: string }>
-  tipo_calle_choices: Array<{ key: string; value: string }>
-  situacion_dni_choices: Array<{ key: string; value: string }>
-  genero_choices: Array<{ key: string; value: string }>
-  // Add other dropdown fields as needed
-}
 
 export const fetchDropdownData = async (): Promise<DropdownData> => {
   try {
@@ -21,6 +10,16 @@ export const fetchDropdownData = async (): Promise<DropdownData> => {
     return response
   } catch (error) {
     console.error("Error al obtener los datos del formulario:", error)
+    throw error
+  }
+}
+
+export const submitFormData = async (formData: any): Promise<any> => {
+  try {
+    const response = await create("registro-caso-form", formData)
+    return response.data
+  } catch (error) {
+    console.error("Error al enviar los datos del formulario:", error)
     throw error
   }
 }

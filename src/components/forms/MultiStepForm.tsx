@@ -1,12 +1,12 @@
 import type React from "react"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useForm, FormProvider } from "react-hook-form"
-import { Box, Button, Stepper, Step, StepLabel, Paper, Typography } from "@mui/material"
+import { Box, Button, Stepper, Step, StepLabel, Paper, Typography, CircularProgress } from "@mui/material"
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
-import { useQuery } from "@tanstack/react-query"
-import { fetchDropdownData } from "./utils/api"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { fetchDropdownData, submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
 
 const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
@@ -24,6 +24,18 @@ const MultiStepForm: React.FC = () => {
     queryFn: fetchDropdownData,
   })
 
+  const mutation = useMutation({
+    mutationFn: submitFormData,
+    onSuccess: (data) => {
+      console.log("Form submitted successfully:", data)
+      // Handle success (e.g., show a success message, redirect, etc.)
+    },
+    onError: (error) => {
+      console.error("Error submitting form:", error)
+      // Handle error (e.g., show an error message)
+    },
+  })
+
   const handleNext = async () => {
     const isValid = await methods.trigger()
     if (isValid) {
@@ -35,12 +47,17 @@ const MultiStepForm: React.FC = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
-  const onSubmit = (data: FormData) => {
-    console.log(data)
-    // Handle form submission
-  }
+  const onSubmit = useCallback(
+    (data: FormData) => {
+      console.log("onSubmit called with data:", data)
+      mutation.mutate(data)
+    },
+    [mutation],
+  )
 
-  if (isLoading) return <div>Cargando...</div>
+  const handleFormSubmit = methods.handleSubmit(onSubmit)
+
+  if (isLoading) return <CircularProgress />
   if (isError) return <div>Error al cargar los datos del formulario</div>
 
   return (
@@ -49,7 +66,7 @@ const MultiStepForm: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Formulario Multi-Paso
         </Typography>
-        <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <form onSubmit={handleFormSubmit}>
           <Stepper activeStep={activeStep} alternativeLabel>
             {steps.map((label) => (
               <Step key={label}>
@@ -71,14 +88,25 @@ const MultiStepForm: React.FC = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={activeStep === steps.length - 1 ? methods.handleSubmit(onSubmit) : handleNext}
-              type="button"
+              onClick={activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
+              type={activeStep === steps.length - 1 ? "submit" : "button"}
+              disabled={mutation.isPending}
             >
-              {activeStep === steps.length - 1 ? "Enviar" : "Siguiente"}
+              {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
             </Button>
           </Box>
         </form>
       </Paper>
+      {mutation.isError && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          Error al enviar el formulario. Por favor, intente nuevamente.
+        </Typography>
+      )}
+      {mutation.isSuccess && (
+        <Typography color="success" sx={{ mt: 2 }}>
+          Formulario enviado exitosamente.
+        </Typography>
+      )}
     </FormProvider>
   )
 }

@@ -1,40 +1,27 @@
 import type React from "react"
 import { useState } from "react"
 import { useForm, FormProvider } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Box, Button, Paper } from "@mui/material"
-import FormStepper from "./FormStepper"
+import { Box, Button, Stepper, Step, StepLabel, Paper, Typography } from "@mui/material"
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
+import { useQuery } from "@tanstack/react-query"
+import { fetchDropdownData } from "./utils/api"
+import type { DropdownData } from "./types/formTypes"
 
-const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  street: z.string().min(1, "Street is required"),
-  city: z.string().min(1, "City is required"),
-  country: z.string().min(1, "Country is required"),
-  subscribe: z.boolean(),
-  comments: z.string().optional(),
-})
+const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
 
-export type FormData = z.infer<typeof schema>
-
-interface MultiStepFormProps {
-  onSubmit: (data: FormData) => void
-  initialData?: Partial<FormData>
-  readOnly?: boolean
-}
-
-const steps = ["Personal Information", "Address Information", "Preferences"]
-
-const MultiStepForm: React.FC<MultiStepFormProps> = ({ onSubmit, initialData, readOnly = false }) => {
+const MultiStepForm: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0)
-  const methods = useForm<FormData>({
-    resolver: zodResolver(schema),
-    mode: "onChange",
-    defaultValues: initialData,
+  const methods = useForm<FormData>()
+
+  const {
+    data: dropdownData,
+    isLoading,
+    isError,
+  } = useQuery<DropdownData>({
+    queryKey: ["dropdowns"],
+    queryFn: fetchDropdownData,
   })
 
   const handleNext = async () => {
@@ -48,40 +35,47 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onSubmit, initialData, re
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
-  const handleStepClick = (step: number) => {
-    setActiveStep(step)
+  const onSubmit = (data: FormData) => {
+    console.log(data)
+    // Handle form submission
   }
 
-  const handleSubmit = methods.handleSubmit(onSubmit)
+  if (isLoading) return <div>Cargando...</div>
+  if (isError) return <div>Error al cargar los datos del formulario</div>
 
   return (
     <FormProvider {...methods}>
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <FormStepper steps={steps} activeStep={activeStep} onStepClick={handleStepClick} />
-        <Box sx={{ mt: 2, mb: 2 }}>
-          {activeStep === 0 && <Step1Form control={methods.control} readOnly={readOnly} />}
-          {activeStep === 1 && <Step2Form control={methods.control} readOnly={readOnly} />}
-          {activeStep === 2 && <Step3Form control={methods.control} readOnly={readOnly} />}
-        </Box>
-        {!readOnly && (
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-            <Button disabled={activeStep === 0} onClick={handleBack}>
-              Back
-            </Button>
-            <Box>
-              {activeStep !== steps.length - 1 && (
-                <Button variant="contained" onClick={handleNext}>
-                  Next
-                </Button>
-              )}
-              {activeStep === steps.length - 1 && (
-                <Button variant="contained" onClick={handleSubmit}>
-                  Submit
-                </Button>
-              )}
-            </Box>
+      <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
+        <Typography variant="h4" gutterBottom>
+          Formulario Multi-Paso
+        </Typography>
+        <form onSubmit={methods.handleSubmit(onSubmit)}>
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+          <Box sx={{ mt: 4, mb: 4 }}>
+            {activeStep === 0 && dropdownData && <Step1Form dropdownData={dropdownData} />}
+            {activeStep === 1 && dropdownData && <Step2Form dropdownData={dropdownData} />}
+            {activeStep === 2 && dropdownData && <Step3Form dropdownData={dropdownData} />}
           </Box>
-        )}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+            <Button disabled={activeStep === 0} onClick={handleBack} type="button">
+              Atrás
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={activeStep === steps.length - 1 ? methods.handleSubmit(onSubmit) : handleNext}
+              type="button"
+            >
+              {activeStep === steps.length - 1 ? "Enviar" : "Siguiente"}
+            </Button>
+          </Box>
+        </form>
       </Paper>
     </FormProvider>
   )

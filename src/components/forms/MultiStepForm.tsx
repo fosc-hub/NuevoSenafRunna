@@ -69,9 +69,7 @@ const MultiStepForm: React.FC = () => {
   return (
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
-        <Typography variant="h4" gutterBottom>
-          Formulario Multi-Paso
-        </Typography>
+
         <form onSubmit={handleFormSubmit}>
           <Stepper activeStep={activeStep} alternativeLabel>
             {steps.map((label) => (

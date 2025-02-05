@@ -1,7 +1,7 @@
 import type React from "react"
-import { Grid, TextField, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
+import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, Typography, Paper } from "@mui/material"
 import { type Control, Controller } from "react-hook-form"
-import type { DropdownData } from "./utils/api" // Assuming DropdownData is defined in Step1Form
+import type { DropdownData } from "../utils/api"
 
 interface LocalizacionFieldsProps {
   control: Control<any>
@@ -12,186 +12,196 @@ interface LocalizacionFieldsProps {
 
 const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix, dropdownData, readOnly = false }) => {
   return (
-    <>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.calle`}
-          control={control}
-          rules={{ required: "Este campo es requerido" }}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Calle"
-              fullWidth
-              error={!!error}
-              helperText={error?.message}
-              InputProps={{ readOnly }}
-            />
-          )}
-        />
+    <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
+      <Grid container spacing={3}>
+
+
+        {/* Calle y Tipo de Calle */}
+        <Grid item xs={12} md={8}>
+          <Controller
+            name={`${prefix}.calle`}
+            control={control}
+            rules={{ required: "Este campo es requerido" }}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Calle"
+                fullWidth
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Controller
+            name={`${prefix}.tipo_calle`}
+            control={control}
+            rules={{ required: "Este campo es requerido" }}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Tipo de Calle</InputLabel>
+                <Select {...field} label="Tipo de Calle" disabled={readOnly}>
+                  {dropdownData.tipo_calle_choices.map((option) => (
+                    <MenuItem key={option.key} value={option.key}>
+                      {option.value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        {/* Número de Casa y Piso/Depto */}
+        <Grid item xs={12} md={6}>
+          <Controller
+            name={`${prefix}.casa_nro`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Número de Casa"
+                fullWidth
+                type="number"
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Controller
+            name={`${prefix}.piso_depto`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Piso/Depto"
+                fullWidth
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* Lote y Manzana */}
+        <Grid item xs={12} md={6}>
+          <Controller
+            name={`${prefix}.lote`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Lote"
+                fullWidth
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Controller
+            name={`${prefix}.mza`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Manzana"
+                fullWidth
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* Referencia Geográfica */}
+        <Grid item xs={12}>
+          <Controller
+            name={`${prefix}.referencia_geo`}
+            control={control}
+            rules={{ required: "Este campo es requerido" }}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Referencia Geográfica"
+                fullWidth
+                multiline
+                rows={2}
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* Barrio, Localidad, y CPC */}
+        <Grid item xs={12} md={4}>
+          <Controller
+            name={`${prefix}.barrio`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Barrio</InputLabel>
+                <Select {...field} label="Barrio" disabled={readOnly}>
+                  {dropdownData.barrios?.map((barrio) => (
+                    <MenuItem key={barrio.id} value={barrio.id}>
+                      {barrio.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Controller
+            name={`${prefix}.localidad`}
+            control={control}
+            rules={{ required: "Este campo es requerido" }}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Localidad</InputLabel>
+                <Select {...field} label="Localidad" disabled={readOnly}>
+                  {dropdownData.localidades?.map((localidad) => (
+                    <MenuItem key={localidad.id} value={localidad.id}>
+                      {localidad.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Controller
+            name={`${prefix}.cpc`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>CPC</InputLabel>
+                <Select {...field} label="CPC" disabled={readOnly}>
+                  {dropdownData.cpcs?.map((cpc) => (
+                    <MenuItem key={cpc.id} value={cpc.id}>
+                      {cpc.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
       </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.tipo_calle`}
-          control={control}
-          rules={{ required: "Este campo es requerido" }}
-          render={({ field, fieldState: { error } }) => (
-            <FormControl fullWidth error={!!error}>
-              <InputLabel>Tipo de Calle</InputLabel>
-              <Select {...field} label="Tipo de Calle" disabled={readOnly}>
-                {dropdownData.tipo_calle_choices.map((option) => (
-                  <MenuItem key={option.key} value={option.key}>
-                    {option.value}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.piso_depto`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Piso/Depto"
-              fullWidth
-              type="number"
-              error={!!error}
-              helperText={error?.message}
-              InputProps={{ readOnly }}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.lote`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Lote"
-              fullWidth
-              type="number"
-              error={!!error}
-              helperText={error?.message}
-              InputProps={{ readOnly }}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.mza`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Manzana"
-              fullWidth
-              type="number"
-              error={!!error}
-              helperText={error?.message}
-              InputProps={{ readOnly }}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.casa_nro`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Número de Casa"
-              fullWidth
-              type="number"
-              error={!!error}
-              helperText={error?.message}
-              InputProps={{ readOnly }}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <Controller
-          name={`${prefix}.referencia_geo`}
-          control={control}
-          rules={{ required: "Este campo es requerido" }}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Referencia Geográfica"
-              fullWidth
-              multiline
-              rows={2}
-              error={!!error}
-              helperText={error?.message}
-              InputProps={{ readOnly }}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.barrio`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <FormControl fullWidth error={!!error}>
-              <InputLabel>Barrio</InputLabel>
-              <Select {...field} label="Barrio" disabled={readOnly}>
-                {dropdownData.barrios?.map((barrio: { id: React.Key | readonly string[] | null | undefined; nombre: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined }) => (
-                  <MenuItem key={barrio.id} value={barrio.id}>
-                    {barrio.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.localidad`}
-          control={control}
-          rules={{ required: "Este campo es requerido" }}
-          render={({ field, fieldState: { error } }) => (
-            <FormControl fullWidth error={!!error}>
-              <InputLabel>Localidad</InputLabel>
-              <Select {...field} label="Localidad" disabled={readOnly}>
-                {dropdownData.localidades?.map((localidad: { id: React.Key | readonly string[] | null | undefined; nombre: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined }) => (
-                  <MenuItem key={localidad.id} value={localidad.id}>
-                    {localidad.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Controller
-          name={`${prefix}.cpc`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <FormControl fullWidth error={!!error}>
-              <InputLabel>CPC</InputLabel>
-              <Select {...field} label="CPC" disabled={readOnly}>
-                {dropdownData.cpcs?.map((cpc: { id: React.Key | readonly string[] | null | undefined; nombre: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined }) => (
-                  <MenuItem key={cpc.id} value={cpc.id}>
-                    {cpc.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
-      </Grid>
-    </>
+    </Paper>
   )
 }
 

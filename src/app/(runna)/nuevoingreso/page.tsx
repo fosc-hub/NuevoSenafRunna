@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
 import React, { useState } from "react";
 import MultiStepForm, { type FormData } from "@/components/forms/MultiStepForm";
 import { Button, Box } from "@mui/material";
 
 const Page: React.FC = () => {
-  const [formData, setFormData] = useState<FormData | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<FormData | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
 
   const handleSubmit = (data: FormData) => {
-    console.log("Form data:", data);
-    setFormData(data);
-    setIsEditing(false);
-  };
+    console.log("Form data:", data)
+    setFormData(data)
+    setIsEditing(false)
+  }
 
   const initialData: FormData = {
     name: "John Doe",
@@ -22,34 +22,28 @@ const Page: React.FC = () => {
     country: "USA",
     subscribe: true,
     comments: "This is a sample comment.",
-  };
+  }
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px" }}>
-      <h1>Multi-Step Form Example</h1>
-      {!formData && !isEditing && (
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Button variant="contained" onClick={() => setIsEditing(true)}>
-            Create New Form
-          </Button>
-          <Button variant="contained" onClick={() => setFormData(initialData)}>
-            Load Sample Data
-          </Button>
-        </Box>
-      )}
-      {isEditing && <MultiStepForm onSubmit={handleSubmit} initialData={formData || undefined} />}
-      {formData && !isEditing && (
-        <>
-          <MultiStepForm onSubmit={() => {}} initialData={formData} readOnly />
-          <Box sx={{ mt: 2 }}>
-            <Button variant="contained" onClick={() => setIsEditing(true)}>
-              Edit Form
-            </Button>
-          </Box>
-        </>
-      )}
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="px-4 py-5 sm:p-6">
+          {isEditing || !formData ? (
+            <MultiStepForm onSubmit={handleSubmit} initialData={formData || initialData} />
+          ) : (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Submitted Data:</h2>
+              <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto">{JSON.stringify(formData, null, 2)}</pre>
+              <Button onClick={() => setIsEditing(true)} className="w-full">
+                Edit Submission
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default Page;
+export default Page
+

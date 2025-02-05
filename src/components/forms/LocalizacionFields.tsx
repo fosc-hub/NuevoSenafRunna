@@ -143,7 +143,24 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             )}
           />
         </Grid>
-
+        <Grid item xs={12}>
+          <Controller
+            name={`${prefix}.geolocalizacion`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Geolocalización"
+                fullWidth
+                multiline
+                rows={2}
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
         {/* Barrio, Localidad, y CPC */}
         <Grid item xs={12} md={4}>
           <Controller

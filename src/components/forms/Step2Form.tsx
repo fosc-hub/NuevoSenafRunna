@@ -314,10 +314,11 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                     />
                   </Grid>
                 )}
-                <Grid item xs={12}>
+                {/*  
+                <Grid item xs={12}> 
                   <Typography variant="subtitle2" gutterBottom>
                     Vinculación con NNyA Principal
-                  </Typography>
+                  </Typography> 
                   <Controller
                     name={`adultosConvivientes.${index}.vinculacion.vinculo`}
                     control={control}
@@ -336,6 +337,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                     )}
                   />
                 </Grid>
+                */}
                 <Grid item xs={12}>
                   <Typography variant="subtitle2" gutterBottom>
                     Condiciones de Vulnerabilidad

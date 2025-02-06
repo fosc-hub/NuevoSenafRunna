@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { CircularProgress, Typography } from "@mui/material"
+import { CircularProgress, Typography, Paper } from "@mui/material"
 import MultiStepForm from "@/components/forms/MultiStepForm"
 import { fetchCaseData } from "@/components/forms/utils/api"
 import type { FormData } from "@/components/forms/types/formTypes"
@@ -45,12 +45,18 @@ export default function DemandaDetail({ params }: DemandaDetailProps) {
   if (error) return <Typography color="error">{error}</Typography>
 
   return (
-    <div>
+    <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper", maxWidth: 800, margin: "0 auto" }}>
       <Typography variant="h4" gutterBottom>
         Demanda Details
       </Typography>
-      {formData && <MultiStepForm initialData={formData} onSubmit={handleSubmit} />}
-    </div>
+      {formData && (
+        <MultiStepForm
+          initialData={formData}
+          onSubmit={handleSubmit}
+          readOnly={false} // Set to true if you want the form to be read-only initially
+        />
+      )}
+    </Paper>
   )
 }
 

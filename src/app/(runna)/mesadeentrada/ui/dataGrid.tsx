@@ -209,12 +209,13 @@ const DemandaTable: React.FC = () => {
     <>
 
       <Paper sx={{ width: "100%", overflow: "hidden" }}>
-        <div style={{ height: 400, width: "100%" }}>
-                    <Buttons
+      <Buttons
         isLoading={isLoading}
         handleNuevoRegistro={handleNuevoRegistro}
         handleFilterClick={handleFilterClick}
       />
+        <div style={{ height: 400, width: "100%" }}>
+
           <DataGrid
             rows={rows}
             columns={columns}

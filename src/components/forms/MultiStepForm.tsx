@@ -21,7 +21,6 @@ interface MultiStepFormProps {
 
 const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit }) => {
   const [activeStep, setActiveStep] = useState(0)
-  const isNewForm = !initialData
   const methods = useForm<FormData>({
     mode: "onChange",
     defaultValues: initialData || {
@@ -84,53 +83,37 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
         <form onSubmit={handleFormSubmit}>
-          {!isNewForm && (
-            <Stepper activeStep={activeStep} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          )}
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
           <Box sx={{ mt: 4, mb: 4 }}>
-            {dropdownData && (
-              <>
-                {(activeStep === 0 || isNewForm) && <Step1Form dropdownData={dropdownData} readOnly={readOnly} />}
-                {!isNewForm && activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={readOnly} />}
-                {!isNewForm && activeStep === 2 && (
-                  <Step3Form
-                    dropdownData={dropdownData}
-                    adultosConvivientes={methods.watch("adultosConvivientes") || []}
-                    readOnly={readOnly}
-                  />
-                )}
-              </>
+            {activeStep === 0 && dropdownData && <Step1Form dropdownData={dropdownData} readOnly={readOnly} />}
+            {activeStep === 1 && dropdownData && <Step2Form dropdownData={dropdownData} readOnly={readOnly} />}
+            {activeStep === 2 && dropdownData && (
+              <Step3Form
+                dropdownData={dropdownData}
+                adultosConvivientes={methods.watch("adultosConvivientes") || []}
+                readOnly={readOnly}
+              />
             )}
           </Box>
           {!readOnly && (
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-              {!isNewForm && (
-                <Button disabled={activeStep === 0} onClick={handleBack} type="button">
-                  Atrás
-                </Button>
-              )}
+              <Button disabled={activeStep === 0} onClick={handleBack} type="button">
+                Atrás
+              </Button>
               <Button
                 variant="contained"
                 color="primary"
-                onClick={isNewForm || activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
-                type={isNewForm || activeStep === steps.length - 1 ? "submit" : "button"}
+                onClick={activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
+                type={activeStep === steps.length - 1 ? "submit" : "button"}
                 disabled={mutation.isPending}
               >
-                {isNewForm
-                  ? mutation.isPending
-                    ? "Enviando..."
-                    : "Enviar"
-                  : activeStep === steps.length - 1
-                    ? mutation.isPending
-                      ? "Enviando..."
-                      : "Enviar"
-                    : "Siguiente"}
+                {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
               </Button>
             </Box>
           )}

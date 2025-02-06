@@ -1,14 +1,17 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
-import { Paper, Button } from "@mui/material"
+import { Paper, Button, Modal, Box, Typography, CircularProgress } from "@mui/material"
 import { DataGrid, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid"
 import { get, update, create } from "@/app/api/apiService"
 import type { TDemanda } from "@/app/interfaces"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PersonAdd, Edit } from "@mui/icons-material"
 import { toast } from "react-toastify"
+import dynamic from "next/dynamic"
+
+// Dynamically import DemandaDetail with no SSR to avoid hydration issues
+const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
 
 interface PaginatedResponse<T> {
   count: number
@@ -26,6 +29,8 @@ const DemandaTable: React.FC = () => {
   })
   const [totalCount, setTotalCount] = useState(0)
   const queryClient = useQueryClient()
+  const [selectedDemandaId, setSelectedDemandaId] = useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const fetchDemandas = async (pageNumber: number, pageSize: number) => {
     try {
@@ -54,10 +59,9 @@ const DemandaTable: React.FC = () => {
       if (!demanda) throw new Error("Demanda not found")
 
       if (demanda.precalificacion) {
-        // If precalificacion exists, update it
         return update<TDemanda>(
           "precalificacion-demanda",
-          demanda.precalificacion.id, // Use the precalificacion ID, not the demanda ID
+          demanda.precalificacion.id,
           {
             estado_precalificacion: newValue,
             ultima_actualizacion: new Date().toISOString(),
@@ -66,14 +70,7 @@ const DemandaTable: React.FC = () => {
           "¡Precalificación actualizada con éxito!",
         )
       } else {
-        // If precalificacion doesn't exist, create a new one
         const currentDate = new Date().toISOString()
-        console.log("Creating new precalificacion:", {
-          fecha_y_hora: currentDate,
-          descripcion: `Nueva precalificación: ${newValue}`,
-          estado_precalificacion: newValue,
-          demanda: demandaId,
-        })
         return create<TDemanda>(
           `precalificacion-demanda`,
           {
@@ -90,7 +87,6 @@ const DemandaTable: React.FC = () => {
     onSuccess: (data, variables) => {
       console.log("Server response:", data)
       queryClient.invalidateQueries({ queryKey: ["demandas"] })
-      // Force a refetch of the specific demanda
       queryClient.refetchQueries({ queryKey: ["demandas", paginationModel.page, paginationModel.pageSize] })
     },
     onError: (error) => {
@@ -114,6 +110,16 @@ const DemandaTable: React.FC = () => {
 
   const formatPrecalificacionValue = (value: string | undefined | null) => {
     return value || "Seleccionar"
+  }
+
+  const handleOpenModal = (demandaId: number) => {
+    setSelectedDemandaId(demandaId)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setSelectedDemandaId(null)
+    setIsModalOpen(false)
   }
 
   const columns: GridColDef[] = [
@@ -150,55 +156,70 @@ const DemandaTable: React.FC = () => {
         </Button>
       ),
     },
-    {
-      field: "evaluar",
-      headerName: "Evaluar",
-      width: 120,
-      renderCell: () => (
-        <Button variant="contained" color="primary" startIcon={<Edit />}>
-          Evaluar
-        </Button>
-      ),
-    },
   ]
 
   const rows =
-    demandasData?.results.map((demanda: TDemanda) => {
-      console.log("Precalificacion value:", demanda.precalificacion?.estado_precalificacion)
-      return {
-        id: demanda.id,
-        score: demanda.demanda_score?.score || "N/A",
-        origen: demanda.origen_demanda?.nombre || "N/A",
-        nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
-        dni: demanda.nnya_principal?.dni || "N/A",
-        precalificacion: demanda.precalificacion?.estado_precalificacion || null,
-        ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      }
-    }) ?? []
+    demandasData?.results.map((demanda: TDemanda) => ({
+      id: demanda.id,
+      score: demanda.demanda_score?.score || "N/A",
+      origen: demanda.origen_demanda?.nombre || "N/A",
+      nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
+      dni: demanda.nnya_principal?.dni || "N/A",
+      precalificacion: demanda.precalificacion?.estado_precalificacion || null,
+      ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    })) || []
 
-  if (isError) return <div>Error al cargar la data</div>
+  if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
   return (
-    <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <div style={{ height: 400, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          pageSizeOptions={[5, 10, 25]}
-          rowCount={totalCount}
-          paginationMode="server"
-          loading={isLoading || updatePrecalificacion.isLoading}
-        />
-      </div>
-    </Paper>
+    <>
+      <Paper sx={{ width: "100%", overflow: "hidden" }}>
+        <div style={{ height: 400, width: "100%" }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[5, 10, 25]}
+            rowCount={totalCount}
+            paginationMode="server"
+            loading={isLoading || updatePrecalificacion.isLoading}
+            onRowClick={(params) => handleOpenModal(params.row.id)}
+            sx={{ cursor: "pointer" }}
+          />
+        </div>
+      </Paper>
+      <Modal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        aria-labelledby="demanda-detail-modal"
+        aria-describedby="demanda-detail-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "80%",
+            maxWidth: 800,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}
+        >
+          {selectedDemandaId ? <DemandaDetail params={{ id: selectedDemandaId.toString() }} /> : <CircularProgress />}
+        </Box>
+      </Modal>
+    </>
   )
 }
 

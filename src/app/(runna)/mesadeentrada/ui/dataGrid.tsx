@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PersonAdd, Edit } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
+import Buttons from "./Buttons"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
@@ -53,7 +54,14 @@ const DemandaTable: React.FC = () => {
     queryKey: ["demandas", paginationModel.page, paginationModel.pageSize],
     queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
   })
+  const handleNuevoRegistro = () => {
+      
+  }
 
+  const handleFilterClick = () => {
+    // Implement the logic for filter click
+    console.log("Filter clicked")
+  }
   const updatePrecalificacion = useMutation({
     mutationFn: async ({ demandaId, newValue }: { demandaId: number; newValue: string }) => {
       const demanda = demandasData?.results.find((d) => d.id === demandaId)
@@ -199,8 +207,14 @@ const DemandaTable: React.FC = () => {
 
   return (
     <>
+
       <Paper sx={{ width: "100%", overflow: "hidden" }}>
         <div style={{ height: 400, width: "100%" }}>
+                    <Buttons
+        isLoading={isLoading}
+        handleNuevoRegistro={handleNuevoRegistro}
+        handleFilterClick={handleFilterClick}
+      />
           <DataGrid
             rows={rows}
             columns={columns}

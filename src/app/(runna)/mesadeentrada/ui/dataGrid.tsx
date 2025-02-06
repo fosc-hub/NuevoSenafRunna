@@ -136,7 +136,11 @@ const DemandaTable: React.FC = () => {
       renderCell: (params) => (
         <select
           value={formatPrecalificacionValue(params.value)}
-          onChange={(e) => handlePrecalificacionChange(params.row.id, e.target.value)}
+          onChange={(e) => {
+            e.stopPropagation()
+            handlePrecalificacionChange(params.row.id, e.target.value)
+          }}
+          onClick={(e) => e.stopPropagation()}
           style={{ width: "100%", padding: "8px" }}
         >
           {params.value === null && <option value="">Seleccionar</option>}
@@ -147,29 +151,31 @@ const DemandaTable: React.FC = () => {
       ),
     },
     { field: "ultimaActualizacion", headerName: "Última Actualización", width: 200 },
-
-    {
-      field: "asignar",
-      headerName: "Asignar",
-      width: 135,
-      renderCell: () => (
-        <Button variant="outlined" color="primary" startIcon={<PersonAdd />}>
-          ASIGNAR
-        </Button>
-      ),
-    },
     {
       field: "evaluar",
       headerName: "Evaluar",
-      width: 135,
+      width: 120,
       renderCell: (params) => (
         <Button
           variant="contained"
           color="primary"
           startIcon={<Edit />}
-
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenModal(params.row.id)
+          }}
         >
           Evaluar
+        </Button>
+      ),
+    },
+    {
+      field: "asignar",
+      headerName: "Asignar",
+      width: 120,
+      renderCell: () => (
+        <Button variant="outlined" color="primary" startIcon={<PersonAdd />}>
+          ASIGNAR
         </Button>
       ),
     },
@@ -207,7 +213,12 @@ const DemandaTable: React.FC = () => {
             rowCount={totalCount}
             paginationMode="server"
             loading={isLoading || updatePrecalificacion.isLoading}
-            onRowClick={(params) => handleOpenModal(params.row.id)}
+            onRowClick={(params, event) => {
+              const cellElement = event.target as HTMLElement
+              if (!cellElement.closest('.MuiDataGrid-cell[data-field="precalificacion"]')) {
+                handleOpenModal(params.row.id)
+              }
+            }}
             sx={{ cursor: "pointer" }}
           />
         </div>

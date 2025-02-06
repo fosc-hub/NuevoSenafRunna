@@ -3,13 +3,23 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
-import { Box, Button, Stepper, Step, StepLabel, Paper, Typography, CircularProgress } from "@mui/material"
+import {
+  Box,
+  Button,
+  Stepper,
+  Step,
+  StepLabel,
+  Paper,
+  CircularProgress,
+} from "@mui/material"
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { fetchDropdownData, submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
 
@@ -22,6 +32,7 @@ interface MultiStepFormProps {
 const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit }) => {
   const [activeStep, setActiveStep] = useState(0)
   const isNewForm = !initialData
+
   const methods = useForm<FormData>({
     mode: "onChange",
     defaultValues: initialData || {
@@ -49,14 +60,16 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     mutationFn: submitFormData,
     onSuccess: (data) => {
       console.log("Form submitted successfully:", data)
+      toast.success("Formulario enviado exitosamente.")
       onSubmit(data)
     },
     onError: (error) => {
       console.error("Error submitting form:", error)
-      // Handle error (e.g., show an error message)
+      toast.error("Error al enviar el formulario. Por favor, intente nuevamente.")
     },
   })
 
+  // Handler for navigating to the next step (used in update mode)
   const handleNext = async () => {
     const isValid = await methods.trigger()
     if (isValid) {
@@ -84,6 +97,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
         <form onSubmit={handleFormSubmit}>
+          {/* Render the Stepper only in update mode */}
           {!isNewForm && (
             <Stepper activeStep={activeStep} alternativeLabel>
               {steps.map((label) => (
@@ -96,8 +110,13 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
           <Box sx={{ mt: 4, mb: 4 }}>
             {dropdownData && (
               <>
-                {(activeStep === 0 || isNewForm) && <Step1Form dropdownData={dropdownData} readOnly={readOnly} />}
-                {!isNewForm && activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={readOnly} />}
+                {(activeStep === 0 || isNewForm) && (
+                  <Step1Form dropdownData={dropdownData} readOnly={readOnly} />
+                )}
+                {/* In update mode, render the additional steps */}
+                {!isNewForm && activeStep === 1 && (
+                  <Step2Form dropdownData={dropdownData} readOnly={readOnly} />
+                )}
                 {!isNewForm && activeStep === 2 && (
                   <Step3Form
                     dropdownData={dropdownData}
@@ -110,6 +129,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
           </Box>
           {!readOnly && (
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+              {/* "Atrás" button available in update mode (when not on the first step) */}
               {!isNewForm && (
                 <Button disabled={activeStep === 0} onClick={handleBack} type="button">
                   Atrás
@@ -118,34 +138,33 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
               <Button
                 variant="contained"
                 color="primary"
-                onClick={isNewForm || activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
-                type={isNewForm || activeStep === steps.length - 1 ? "submit" : "button"}
+                // In new form mode we always submit the form.
+                // In update mode, if we’re not on the last step, navigate to the next step.
+                // On the final step, show "Guardar" with no action for now.
+                onClick={
+                  isNewForm
+                    ? handleFormSubmit
+                    : activeStep < steps.length - 1
+                      ? handleNext
+                      : undefined
+                }
+                type="button"
                 disabled={mutation.isPending}
               >
                 {isNewForm
                   ? mutation.isPending
                     ? "Enviando..."
                     : "Enviar"
-                  : activeStep === steps.length - 1
-                    ? mutation.isPending
-                      ? "Enviando..."
-                      : "Enviar"
-                    : "Siguiente"}
+                  : activeStep < steps.length - 1
+                    ? "Siguiente"
+                    : "Guardar"}
               </Button>
             </Box>
           )}
         </form>
       </Paper>
-      {mutation.isError && (
-        <Typography color="error" sx={{ mt: 2 }}>
-          Error al enviar el formulario. Por favor, intente nuevamente.
-        </Typography>
-      )}
-      {mutation.isSuccess && (
-        <Typography color="success" sx={{ mt: 2 }}>
-          Formulario enviado exitosamente.
-        </Typography>
-      )}
+      {/* Toast container for notifications */}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </FormProvider>
   )
 }

@@ -109,7 +109,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="origen"
             control={control}
-            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Origen *</InputLabel>
@@ -128,7 +127,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="sub_origen"
             control={control}
-            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Sub Origen *</InputLabel>
@@ -147,7 +145,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="institucion"
             control={control}
-            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -249,7 +246,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="autos_caratulados"
             control={control}
-            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -266,7 +262,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="ambito_vulneracion"
             control={control}
-            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Ámbito de Vulneración *</InputLabel>
@@ -303,7 +298,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="presuntaVulneracion.motivos"
             control={control}
-            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Motivo de Intervención *</InputLabel>

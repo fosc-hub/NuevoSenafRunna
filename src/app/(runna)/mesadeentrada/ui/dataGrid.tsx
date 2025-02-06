@@ -151,31 +151,28 @@ const DemandaTable: React.FC = () => {
       ),
     },
     { field: "ultimaActualizacion", headerName: "Última Actualización", width: 200 },
+
+    {
+      field: "asignar",
+      headerName: "Asignar",
+      width: 135,
+      renderCell: () => (
+        <Button variant="outlined" color="primary" startIcon={<PersonAdd />}>
+          ASIGNAR
+        </Button>
+      ),
+    },
     {
       field: "evaluar",
       headerName: "Evaluar",
-      width: 120,
+      width: 135,
       renderCell: (params) => (
         <Button
           variant="contained"
           color="primary"
           startIcon={<Edit />}
-          onClick={(e) => {
-            e.stopPropagation()
-            handleOpenModal(params.row.id)
-          }}
         >
           Evaluar
-        </Button>
-      ),
-    },
-    {
-      field: "asignar",
-      headerName: "Asignar",
-      width: 120,
-      renderCell: () => (
-        <Button variant="outlined" color="primary" startIcon={<PersonAdd />}>
-          ASIGNAR
         </Button>
       ),
     },

@@ -13,6 +13,7 @@ import dynamic from "next/dynamic"
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
 
+
 interface PaginatedResponse<T> {
   count: number
   next: string | null
@@ -146,13 +147,29 @@ const DemandaTable: React.FC = () => {
       ),
     },
     { field: "ultimaActualizacion", headerName: "Última Actualización", width: 200 },
+
     {
       field: "asignar",
       headerName: "Asignar",
-      width: 120,
+      width: 135,
       renderCell: () => (
         <Button variant="outlined" color="primary" startIcon={<PersonAdd />}>
           ASIGNAR
+        </Button>
+      ),
+    },
+    {
+      field: "evaluar",
+      headerName: "Evaluar",
+      width: 135,
+      renderCell: (params) => (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Edit />}
+
+        >
+          Evaluar
         </Button>
       ),
     },

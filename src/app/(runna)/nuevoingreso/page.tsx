@@ -1,12 +1,20 @@
 "use client"
 
-import React, { useState } from "react";
-import MultiStepForm, { type FormData } from "@/components/forms/MultiStepForm";
-import { Button, Box } from "@mui/material";
+import type React from "react"
+import { useState, useEffect } from "react"
+import MultiStepForm, { type FormData } from "../../../components/forms/MultiStepForm"
+import { Button, Box, CircularProgress, Typography } from "@mui/material"
+import { fetchCaseData } from "@/components/forms/utils/api"
 
-const Page: React.FC = () => {
+const Home: React.FC = () => {
   const [formData, setFormData] = useState<FormData | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    console.log("Current state:", { formData, isEditing, isLoading, error })
+  }, [formData, isEditing, isLoading, error])
 
   const handleSubmit = (data: FormData) => {
     console.log("Form data:", data)
@@ -14,36 +22,60 @@ const Page: React.FC = () => {
     setIsEditing(false)
   }
 
-  const initialData: FormData = {
-    name: "John Doe",
-    email: "john@example.com",
-    street: "123 Main St",
-    city: "Anytown",
-    country: "USA",
-    subscribe: true,
-    comments: "This is a sample comment.",
+  const loadCaseData = async (id: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await fetchCaseData(id)
+      console.log("Loaded case data:", data)
+      setFormData(data)
+      setIsEditing(true)
+      console.log("State after loading data:", { formData: data, isEditing: true })
+    } catch (err) {
+      setError("Error loading case data. Please try again.")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-4 py-5 sm:p-6">
-          {isEditing || !formData ? (
-            <MultiStepForm onSubmit={handleSubmit} initialData={formData || initialData} />
-          ) : (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800">Submitted Data:</h2>
-              <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto">{JSON.stringify(formData, null, 2)}</pre>
-              <Button onClick={() => setIsEditing(true)} className="w-full">
-                Edit Submission
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
+      <h1>Multi-Step Form Example</h1>
+      {!formData && !isEditing && (
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Button variant="contained" onClick={() => setIsEditing(true)}>
+            Create New Form
+          </Button>
+          <Button variant="contained" onClick={() => loadCaseData("5")}>
+            Load Case Data
+          </Button>
+        </Box>
+      )}
+      {isLoading && <CircularProgress />}
+      {error && <Typography color="error">{error}</Typography>}
+      {(isEditing || formData) && (
+        <>
+          <p>
+            Debug: isEditing={String(isEditing)}, formData exists={String(!!formData)}
+          </p>
+          <MultiStepForm
+            onSubmit={handleSubmit}
+            initialData={formData || undefined}
+            readOnly={!isEditing && !!formData}
+          />
+        </>
+      )}
+      {formData && !isEditing && (
+        <Box sx={{ mt: 2 }}>
+          <Button variant="contained" onClick={() => setIsEditing(true)}>
+            Edit Form
+          </Button>
+        </Box>
+      )}
     </div>
   )
 }
 
-export default Page
+export default Home
 

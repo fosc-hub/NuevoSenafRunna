@@ -1,5 +1,7 @@
+"use client"
+
 import type React from "react"
-import { useState, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { Box, Button, Stepper, Step, StepLabel, Paper, Typography, CircularProgress } from "@mui/material"
 import Step1Form from "./Step1Form"
@@ -11,15 +13,27 @@ import type { DropdownData, FormData } from "./types/formTypes"
 
 const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
 
-const MultiStepForm: React.FC = () => {
+interface MultiStepFormProps {
+  initialData?: FormData
+  readOnly?: boolean
+  onSubmit: (data: FormData) => void
+}
+
+const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit }) => {
   const [activeStep, setActiveStep] = useState(0)
   const methods = useForm<FormData>({
     mode: "onChange",
-    defaultValues: {
+    defaultValues: initialData || {
       adultosConvivientes: [],
       ninosAdolescentes: [],
     },
   })
+
+  useEffect(() => {
+    if (initialData) {
+      methods.reset(initialData)
+    }
+  }, [initialData, methods])
 
   const {
     data: dropdownData,
@@ -34,7 +48,7 @@ const MultiStepForm: React.FC = () => {
     mutationFn: submitFormData,
     onSuccess: (data) => {
       console.log("Form submitted successfully:", data)
-      // Handle success (e.g., show a success message, redirect, etc.)
+      onSubmit(data)
     },
     onError: (error) => {
       console.error("Error submitting form:", error)
@@ -53,15 +67,14 @@ const MultiStepForm: React.FC = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
-  const onSubmit = useCallback(
-    (data: FormData) => {
-      console.log("Form data before submission:", data)
+  const handleFormSubmit = methods.handleSubmit((data: FormData) => {
+    console.log("Form data before submission:", data)
+    if (!readOnly) {
       mutation.mutate(data)
-    },
-    [mutation],
-  )
-
-  const handleFormSubmit = methods.handleSubmit(onSubmit)
+    } else {
+      onSubmit(data)
+    }
+  })
 
   if (isLoading) return <CircularProgress />
   if (isError) return <div>Error al cargar los datos del formulario</div>
@@ -69,7 +82,6 @@ const MultiStepForm: React.FC = () => {
   return (
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
-
         <form onSubmit={handleFormSubmit}>
           <Stepper activeStep={activeStep} alternativeLabel>
             {steps.map((label) => (
@@ -79,26 +91,32 @@ const MultiStepForm: React.FC = () => {
             ))}
           </Stepper>
           <Box sx={{ mt: 4, mb: 4 }}>
-            {activeStep === 0 && dropdownData && <Step1Form dropdownData={dropdownData} />}
-            {activeStep === 1 && dropdownData && <Step2Form dropdownData={dropdownData} />}
+            {activeStep === 0 && dropdownData && <Step1Form dropdownData={dropdownData} readOnly={readOnly} />}
+            {activeStep === 1 && dropdownData && <Step2Form dropdownData={dropdownData} readOnly={readOnly} />}
             {activeStep === 2 && dropdownData && (
-              <Step3Form dropdownData={dropdownData} adultosConvivientes={methods.watch("adultosConvivientes") || []} />
+              <Step3Form
+                dropdownData={dropdownData}
+                adultosConvivientes={methods.watch("adultosConvivientes") || []}
+                readOnly={readOnly}
+              />
             )}
           </Box>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-            <Button disabled={activeStep === 0} onClick={handleBack} type="button">
-              Atrás
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
-              type={activeStep === steps.length - 1 ? "submit" : "button"}
-              disabled={mutation.isPending}
-            >
-              {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
-            </Button>
-          </Box>
+          {!readOnly && (
+            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+              <Button disabled={activeStep === 0} onClick={handleBack} type="button">
+                Atrás
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
+                type={activeStep === steps.length - 1 ? "submit" : "button"}
+                disabled={mutation.isPending}
+              >
+                {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
+              </Button>
+            </Box>
+          )}
         </form>
       </Paper>
       {mutation.isError && (

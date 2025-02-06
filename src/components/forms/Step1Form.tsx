@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { type Control, Controller, useWatch } from "react-hook-form"
 import { TextField, Grid, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
@@ -43,6 +43,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     name: "createNewUsuarioExterno",
     defaultValue: false,
   })
+
+  const [selectedNumberType, setSelectedNumberType] = React.useState<string>("nro_notificacion_102")
 
   if (isLoading) {
     return <CircularProgress />
@@ -101,8 +103,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Origen *</InputLabel>
-                <Select {...field} label="Origen *" disabled={readOnly}>
+                <InputLabel>Datos del remitente</InputLabel>
+                <Select {...field} label="Datos del remitente" disabled={readOnly}>
                   {dropdownData.origenes?.map((origen) => (
                     <MenuItem key={origen.id} value={origen.id}>
                       {origen.nombre}
@@ -119,8 +121,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Sub Origen *</InputLabel>
-                <Select {...field} label="Sub Origen *" disabled={readOnly}>
+                <InputLabel>Tipo de Institución</InputLabel>
+                <Select {...field} label="Tipo de Institución" disabled={readOnly}>
                   {dropdownData.sub_origenes?.map((subOrigen) => (
                     <MenuItem key={subOrigen.id} value={subOrigen.id}>
                       {subOrigen.nombre}
@@ -148,30 +150,31 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <Controller
-            name="nro_notificacion_102"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Nro. Notificación 102"
-                fullWidth
-                type="number"
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
+          <FormControl fullWidth>
+            <InputLabel>Tipo de Número</InputLabel>
+            <Select
+              value={selectedNumberType}
+              onChange={(e) => setSelectedNumberType(e.target.value as string)}
+              label="Tipo de Número"
+              disabled={readOnly}
+            >
+              <MenuItem value="nro_Notificacion_102">Nro. Notificación 102</MenuItem>
+              <MenuItem value="nro_SAC">Nro. SAC</MenuItem>
+              <MenuItem value="nro_SUAC">Nro. SUAC</MenuItem>
+              <MenuItem value="nro_Historia_Clinica">Nro. Historia Clínica</MenuItem>
+              <MenuItem value="nro_Oficio_Web">Nro. Oficio Web</MenuItem>
+              <MenuItem value="nro_Autos_Caratulados">Autos Caratulados</MenuItem>
+            </Select>
+          </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>
           <Controller
-            name="nro_sac"
+            name={selectedNumberType}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Nro. SAC"
+                label={`Número de ${selectedNumberType.replace("nro_", "").replace("_", " ")}`}
                 fullWidth
                 type="number"
                 error={!!error}
@@ -181,73 +184,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="nro_suac"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Nro. SUAC"
-                fullWidth
-                type="number"
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="nro_historia_clinica"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Nro. Historia Clínica"
-                fullWidth
-                type="number"
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Controller
-            name="nro_oficio_web"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Nro. Oficio Web"
-                fullWidth
-                type="number"
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Controller
-            name="autos_caratulados"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Autos Caratulados *"
-                fullWidth
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
+
         <Grid item xs={12}>
           <Controller
             name="ambito_vulneracion"
@@ -259,6 +196,44 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   {dropdownData.ambito_vulneracion_choices?.map((option) => (
                     <MenuItem key={option.key} value={option.key}>
                       {option.value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
+            name="presuntaVulneracion.motivos"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Motivo de Intervención *</InputLabel>
+                <Select {...field} label="Motivo de Intervención *" disabled={readOnly}>
+                  {dropdownData.categoria_motivos?.map((motivo) => (
+                    <MenuItem key={motivo.id} value={motivo.id}>
+                      {motivo.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+        
+        <Grid item xs={12}>
+          <Controller
+            name="presuntaVulneracion.motivos"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Submotivo de intervención</InputLabel>
+                <Select {...field} label="Submotivo de intervención" disabled={readOnly}>
+                  {dropdownData.categoria_submotivos?.map((motivo) => (
+                    <MenuItem key={motivo.id} value={motivo.id}>
+                      {motivo.nombre}
                     </MenuItem>
                   ))}
                 </Select>
@@ -285,31 +260,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           />
         </Grid>
         <Grid item xs={12}>
-          <Controller
-            name="presuntaVulneracion.motivos"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <InputLabel>Motivo de Intervención *</InputLabel>
-                <Select {...field} label="Motivo de Intervención *" disabled={readOnly}>
-                  {dropdownData.categoria_motivos?.map((motivo) => (
-                    <MenuItem key={motivo.id} value={motivo.id}>
-                      {motivo.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          />
-        </Grid>
-        <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Datos de Localización del grupo familiar
           </Typography>
           <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </Grid>
         <Grid item xs={12}>
-        <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Observaciones
           </Typography>
         </Grid>

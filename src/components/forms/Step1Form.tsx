@@ -1,17 +1,6 @@
 import type React from "react"
 import { type Control, Controller, useWatch } from "react-hook-form"
-import {
-  TextField,
-  Grid,
-  Typography,
-  FormControlLabel,
-  Switch,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-} from "@mui/material"
+import { TextField, Grid, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
@@ -21,6 +10,7 @@ import { useQuery } from "@tanstack/react-query"
 import { get } from "@/app/api/apiService"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
+import { Typography } from "@mui/material"
 
 const fetchDropdowns = async () => {
   try {
@@ -314,11 +304,51 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
-            Datos de Localización
+            Datos de Localización del grupo familiar
           </Typography>
           <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </Grid>
-
+        <Grid item xs={12}>
+        <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+            Observaciones
+          </Typography>
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
+            name="observaciones_adultos"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Observaciones sobre los adultos"
+                fullWidth
+                multiline
+                rows={4}
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
+            name="observaciones_nnya"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Observaciones sobre los NNyA"
+                fullWidth
+                multiline
+                rows={4}
+                error={!!error}
+                helperText={error?.message}
+                InputProps={{ readOnly }}
+              />
+            )}
+          />
+        </Grid>
       </Grid>
     </LocalizationProvider>
   )

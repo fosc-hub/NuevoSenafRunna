@@ -19,10 +19,12 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <h1>Multi-Step Form</h1>
+    <main className="max-w-[800px] mx-auto p-5">
+      <Typography variant="h4" gutterBottom>
+        Nuevo Registro
+      </Typography>
       <MultiStepForm onSubmit={handleSubmit} initialData={formData || undefined} readOnly={false} />
-    </div>
+    </main>
   )
 }
 

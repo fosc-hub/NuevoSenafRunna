@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link" // Make sure to import Link
 import { useEffect, useState } from "react"
 import { Bell, LogOut, UserIcon } from "lucide-react"
 import UserAvatar from "./UserAvatar"
@@ -63,11 +64,15 @@ export default function Header() {
 
   return (
     <header className="bg-sky-500 text-white p-4 flex justify-between items-center">
-      <UserAvatar
-        initials={user.initials}
-        name={user.name}
-        role={user.groups && user.groups.length > 0 ? user.groups[0].name : "Sin rol"}
-      />
+      {/* Wrap UserAvatar in a Link so it’s clickable */}
+      <Link href="/mesadeentrada">
+        <UserAvatar
+          initials={user.initials}
+          name={user.name}
+          role={user.groups && user.groups.length > 0 ? user.groups[0].name : "Sin rol"}
+        />
+      </Link>
+
       <div className="flex items-center space-x-4">
         <SearchBar />
         <Bell size={24} />
@@ -95,4 +100,3 @@ export default function Header() {
     </header>
   )
 }
-

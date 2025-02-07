@@ -14,7 +14,6 @@ import Buttons from "./Buttons"
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
 
-
 interface PaginatedResponse<T> {
   count: number
   next: string | null
@@ -33,10 +32,28 @@ const DemandaTable: React.FC = () => {
   const queryClient = useQueryClient()
   const [selectedDemandaId, setSelectedDemandaId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [filterState, setFilterState] = useState({
+    todos: true,
+    sinAsignar: false,
+    asignados: false,
+    archivados: false,
+    completados: false,
+    sinLeer: false,
+    leidos: false,
+    constatados: false,
+    evaluados: false,
+  })
+  const [user, setUser] = useState({ is_superuser: false, all_permissions: [] })
 
   const fetchDemandas = async (pageNumber: number, pageSize: number) => {
     try {
-      const response = await get<TDemandaPaginated>(`mesa-de-entrada/?page=${pageNumber + 1}&page_size=${pageSize}`)
+      const filterParams = Object.entries(filterState)
+        .filter(([_, value]) => value)
+        .map(([key]) => `${key}=true`)
+        .join("&")
+      const response = await get<TDemandaPaginated>(
+        `mesa-de-entrada/?page=${pageNumber + 1}&page_size=${pageSize}&${filterParams}`,
+      )
       console.log("Fetched demandas:", response)
       setTotalCount(response.count)
       return response
@@ -51,17 +68,20 @@ const DemandaTable: React.FC = () => {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["demandas", paginationModel.page, paginationModel.pageSize],
+    queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState],
     queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
   })
+
   const handleNuevoRegistro = () => {
-      
+    // Implement the logic for new registration
+    console.log("Nuevo registro clicked")
   }
 
   const handleFilterClick = () => {
-    // Implement the logic for filter click
+    // This function is no longer needed as filtering is handled in the Buttons component
     console.log("Filter clicked")
   }
+
   const updatePrecalificacion = useMutation({
     mutationFn: async ({ demandaId, newValue }: { demandaId: number; newValue: string }) => {
       const demanda = demandasData?.results.find((d) => d.id === demandaId)
@@ -159,7 +179,6 @@ const DemandaTable: React.FC = () => {
       ),
     },
     { field: "ultimaActualizacion", headerName: "Última Actualización", width: 200 },
-
     {
       field: "asignar",
       headerName: "Asignar",
@@ -175,11 +194,7 @@ const DemandaTable: React.FC = () => {
       headerName: "Evaluar",
       width: 135,
       renderCell: (params) => (
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Edit />}
-        >
+        <Button variant="contained" color="primary" startIcon={<Edit />}>
           Evaluar
         </Button>
       ),
@@ -207,15 +222,15 @@ const DemandaTable: React.FC = () => {
 
   return (
     <>
-
       <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <Buttons
-        isLoading={isLoading}
-        handleNuevoRegistro={handleNuevoRegistro}
-        handleFilterClick={handleFilterClick}
-      />
+        <Buttons
+          isLoading={isLoading}
+          handleNuevoRegistro={handleNuevoRegistro}
+          filterState={filterState}
+          setFilterState={setFilterState}
+          user={user}
+        />
         <div style={{ height: 400, width: "100%" }}>
-
           <DataGrid
             rows={rows}
             columns={columns}
@@ -236,11 +251,17 @@ const DemandaTable: React.FC = () => {
         </div>
       </Paper>
       <Modal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        aria-labelledby="demanda-detail-modal"
-        aria-describedby="demanda-detail-description"
-      >
+  open={isModalOpen}
+  aria-labelledby="demanda-detail-modal"
+  aria-describedby="demanda-detail-description"
+  onClose={(_event, reason) => {
+    // Only close if the reason is NOT a backdrop click
+    // (and if you like, also ensure it isn't escapeKeyDown)
+    if (reason !== "backdropClick") {
+      handleCloseModal()
+    }
+  }}
+>
         <Box
           sx={{
             position: "absolute",
@@ -256,7 +277,8 @@ const DemandaTable: React.FC = () => {
             overflowY: "auto",
           }}
         >
-          {selectedDemandaId ? <DemandaDetail params={{ id: selectedDemandaId.toString() }} /> : <CircularProgress />}
+          {selectedDemandaId ? <DemandaDetail params={{ id: selectedDemandaId.toString() }} onClose={
+          handleCloseModal } /> : <CircularProgress />}
         </Box>
       </Modal>
     </>

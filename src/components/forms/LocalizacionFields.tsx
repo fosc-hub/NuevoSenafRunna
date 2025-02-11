@@ -21,7 +21,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
           <Controller
             name={`${prefix}.calle`}
             control={control}
-            rules={{ required: "Este campo es requerido" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -38,7 +37,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
           <Controller
             name={`${prefix}.tipo_calle`}
             control={control}
-            rules={{ required: "Este campo es requerido" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Tipo de Calle</InputLabel>
@@ -128,7 +126,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
           <Controller
             name={`${prefix}.referencia_geo`}
             control={control}
-            rules={{ required: "Este campo es requerido" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -184,7 +181,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
           <Controller
             name={`${prefix}.localidad`}
             control={control}
-            rules={{ required: "Este campo es requerido" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Localidad</InputLabel>

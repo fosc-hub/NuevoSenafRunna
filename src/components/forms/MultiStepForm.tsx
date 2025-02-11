@@ -3,15 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
-import {
-  Box,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
-  Paper,
-  CircularProgress,
-} from "@mui/material"
+import { Box, Button, Stepper, Step, StepLabel, Paper, CircularProgress } from "@mui/material"
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
@@ -69,7 +61,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     },
   })
 
-  // Handler for navigating to the next step (used in update mode)
   const handleNext = async () => {
     const isValid = await methods.trigger()
     if (isValid) {
@@ -97,27 +88,19 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     <FormProvider {...methods}>
       <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
         <form onSubmit={handleFormSubmit}>
-          {/* Render the Stepper only in update mode */}
-          {!isNewForm && (
-            <Stepper activeStep={activeStep} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          )}
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
           <Box sx={{ mt: 4, mb: 4 }}>
             {dropdownData && (
               <>
-                {(activeStep === 0 || isNewForm) && (
-                  <Step1Form dropdownData={dropdownData} readOnly={readOnly} />
-                )}
-                {/* In update mode, render the additional steps */}
-                {!isNewForm && activeStep === 1 && (
-                  <Step2Form dropdownData={dropdownData} readOnly={readOnly} />
-                )}
-                {!isNewForm && activeStep === 2 && (
+                {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={readOnly} />}
+                {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={readOnly} />}
+                {activeStep === 2 && (
                   <Step3Form
                     dropdownData={dropdownData}
                     adultosConvivientes={methods.watch("adultosConvivientes") || []}
@@ -129,44 +112,26 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
           </Box>
           {!readOnly && (
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-              {/* "Atrás" button available in update mode (when not on the first step) */}
-              {!isNewForm && (
-                <Button disabled={activeStep === 0} onClick={handleBack} type="button">
-                  Atrás
-                </Button>
-              )}
+              <Button disabled={activeStep === 0} onClick={handleBack} type="button">
+                Atrás
+              </Button>
               <Button
                 variant="contained"
                 color="primary"
-                // In new form mode we always submit the form.
-                // In update mode, if we’re not on the last step, navigate to the next step.
-                // On the final step, show "Guardar" with no action for now.
-                onClick={
-                  isNewForm
-                    ? handleFormSubmit
-                    : activeStep < steps.length - 1
-                      ? handleNext
-                      : undefined
-                }
+                onClick={activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
                 type="button"
                 disabled={mutation.isPending}
               >
-                {isNewForm
-                  ? mutation.isPending
-                    ? "Enviando..."
-                    : "Enviar"
-                  : activeStep < steps.length - 1
-                    ? "Siguiente"
-                    : "Guardar"}
+                {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
               </Button>
             </Box>
           )}
         </form>
       </Paper>
-      {/* Toast container for notifications */}
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </FormProvider>
   )
 }
 
 export default MultiStepForm
+

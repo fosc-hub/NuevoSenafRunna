@@ -103,7 +103,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Datos del remitente</InputLabel>
+                <InputLabel>Bloque datos del remitente</InputLabel>
                 <Select {...field} label="Datos del remitente" disabled={readOnly}>
                   {dropdownData.origenes?.map((origen) => (
                     <MenuItem key={origen.id} value={origen.id}>

@@ -199,6 +199,13 @@ const DemandaTable: React.FC = () => {
         </Button>
       ),
     },
+    { field: "tipoDeNro", headerName: "Tipo de Nro", width: 150 },
+    { field: "nroEspecifico", headerName: "Nro Específico", width: 150 },
+    { field: "localidad", headerName: "Localidad", width: 150 },
+    { field: "cpc", headerName: "CPC", width: 100 },
+    { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
+    { field: "usuario", headerName: "Usuario", width: 150 },
+    { field: "areaSenaf", headerName: "Área Senaf", width: 150 },
   ]
 
   const rows =
@@ -216,6 +223,13 @@ const DemandaTable: React.FC = () => {
         hour: "2-digit",
         minute: "2-digit",
       }),
+      tipoDeNro: demanda.tipo_de_nro || "N/A",
+      nroEspecifico: demanda.nro_especifico || "N/A",
+      localidad: demanda.localidad || "N/A",
+      cpc: demanda.cpc || "N/A",
+      zonaEquipo: demanda.zona_equipo || "N/A",
+      usuario: demanda.usuario?.username || "N/A",
+      areaSenaf: demanda.area_senaf || "N/A",
     })) || []
 
   if (isError) return <Typography color="error">Error al cargar la data</Typography>
@@ -251,17 +265,17 @@ const DemandaTable: React.FC = () => {
         </div>
       </Paper>
       <Modal
-  open={isModalOpen}
-  aria-labelledby="demanda-detail-modal"
-  aria-describedby="demanda-detail-description"
-  onClose={(_event, reason) => {
-    // Only close if the reason is NOT a backdrop click
-    // (and if you like, also ensure it isn't escapeKeyDown)
-    if (reason !== "backdropClick") {
-      handleCloseModal()
-    }
-  }}
->
+        open={isModalOpen}
+        aria-labelledby="demanda-detail-modal"
+        aria-describedby="demanda-detail-description"
+        onClose={(_event, reason) => {
+          // Only close if the reason is NOT a backdrop click
+          // (and if you like, also ensure it isn't escapeKeyDown)
+          if (reason !== "backdropClick") {
+            handleCloseModal()
+          }
+        }}
+      >
         <Box
           sx={{
             position: "absolute",
@@ -277,8 +291,11 @@ const DemandaTable: React.FC = () => {
             overflowY: "auto",
           }}
         >
-          {selectedDemandaId ? <DemandaDetail params={{ id: selectedDemandaId.toString() }} onClose={
-          handleCloseModal } /> : <CircularProgress />}
+          {selectedDemandaId ? (
+            <DemandaDetail params={{ id: selectedDemandaId.toString() }} onClose={handleCloseModal} />
+          ) : (
+            <CircularProgress />
+          )}
         </Box>
       </Modal>
     </>

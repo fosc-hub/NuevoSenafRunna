@@ -10,6 +10,7 @@ import { PersonAdd, Edit } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "./Buttons"
+import AsignarModal from "./asignarModal"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
@@ -44,6 +45,8 @@ const DemandaTable: React.FC = () => {
     evaluados: false,
   })
   const [user, setUser] = useState({ is_superuser: false, all_permissions: [] })
+  const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
+  const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
 
   const fetchDemandas = async (pageNumber: number, pageSize: number) => {
     try {
@@ -151,6 +154,16 @@ const DemandaTable: React.FC = () => {
     setIsModalOpen(false)
   }
 
+  const handleOpenAsignarModal = (demandaId: number) => {
+    setSelectedDemandaIdForAssignment(demandaId)
+    setIsAsignarModalOpen(true)
+  }
+
+  const handleCloseAsignarModal = () => {
+    setSelectedDemandaIdForAssignment(null)
+    setIsAsignarModalOpen(false)
+  }
+
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "score", headerName: "Score", width: 100 },
@@ -183,8 +196,16 @@ const DemandaTable: React.FC = () => {
       field: "asignar",
       headerName: "Asignar",
       width: 135,
-      renderCell: () => (
-        <Button variant="outlined" color="primary" startIcon={<PersonAdd />}>
+      renderCell: (params) => (
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<PersonAdd />}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenAsignarModal(params.row.id)
+          }}
+        >
           ASIGNAR
         </Button>
       ),
@@ -298,6 +319,11 @@ const DemandaTable: React.FC = () => {
           )}
         </Box>
       </Modal>
+      <AsignarModal
+        open={isAsignarModalOpen}
+        onClose={handleCloseAsignarModal}
+        demandaId={selectedDemandaIdForAssignment}
+      />
     </>
   )
 }

@@ -45,6 +45,7 @@ interface FormData {
       vinculo: string
     }
     condicionesVulnerabilidad: string[]
+    nacionalidad: string
   }[]
   street: string
   city: string
@@ -80,6 +81,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       useDefaultLocalizacion: true,
       vinculacion: { vinculo: "" },
       condicionesVulnerabilidad: [],
+      nacionalidad: "",
     })
   }
 
@@ -144,6 +146,26 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                         renderInput={(params) => <TextField {...params} fullWidth />}
                       />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`adultosConvivientes.${index}.nacionalidad`}
+                    control={control}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <InputLabel>Nacionalidad</InputLabel>
+                        <Select {...field} label="Nacionalidad" disabled={readOnly}>
+                          {dropdownData.nacionalidad_choices?.map((option) => (
+                            <MenuItem key={option.key} value={option.key}>
+                              {option.value}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                      </FormControl>
                     )}
                   />
                 </Grid>

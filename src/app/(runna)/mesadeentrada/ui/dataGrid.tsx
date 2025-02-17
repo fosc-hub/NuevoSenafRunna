@@ -1,12 +1,14 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Paper, Button, Modal, Box, Typography, CircularProgress } from "@mui/material"
 import { DataGrid, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid"
 import { get, update, create } from "@/app/api/apiService"
 import type { TDemanda } from "@/app/interfaces"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { PersonAdd, Edit } from "@mui/icons-material"
+import { PersonAdd, Edit, Warning } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "./Buttons"
@@ -165,7 +167,17 @@ const DemandaTable: React.FC = () => {
   }
 
   const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", width: 70 },
+    {
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      renderCell: (params) => (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {params.value}
+          {params.row.precalificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "8px" }} />}
+        </div>
+      ),
+    },
     { field: "score", headerName: "Score", width: 100 },
     { field: "origen", headerName: "Origen", width: 150 },
     { field: "nombre", headerName: "Nombre", width: 200 },

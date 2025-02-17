@@ -99,7 +99,7 @@ const DemandaTable: React.FC = () => {
             ultima_actualizacion: new Date().toISOString(),
           },
           true,
-          "¡Precalificación actualizada con éxito!",
+          "¡Calificación actualizada con éxito!",
         )
       } else {
         const currentDate = new Date().toISOString()
@@ -107,12 +107,12 @@ const DemandaTable: React.FC = () => {
           `precalificacion-demanda`,
           {
             fecha_y_hora: currentDate,
-            descripcion: `Nueva precalificación: ${newValue}`,
+            descripcion: `Nueva Calificación: ${newValue}`,
             estado_precalificacion: newValue,
             demanda: demandaId,
           },
           true,
-          "¡Precalificación creada con éxito!",
+          "¡Calificación creada con éxito!",
         )
       }
     },
@@ -122,8 +122,8 @@ const DemandaTable: React.FC = () => {
       queryClient.refetchQueries({ queryKey: ["demandas", paginationModel.page, paginationModel.pageSize] })
     },
     onError: (error) => {
-      console.error("Error al actualizar la precalificación:", error)
-      toast.error("Error al actualizar la precalificación", {
+      console.error("Error al actualizar la Calificación:", error)
+      toast.error("Error al actualizar la Calificación", {
         position: "top-center",
         autoClose: 3000,
         hideProgressBar: true,
@@ -172,7 +172,7 @@ const DemandaTable: React.FC = () => {
     { field: "dni", headerName: "DNI", width: 100 },
     {
       field: "precalificacion",
-      headerName: "Precalificación",
+      headerName: "Calificación",
       width: 200,
       renderCell: (params) => (
         <select

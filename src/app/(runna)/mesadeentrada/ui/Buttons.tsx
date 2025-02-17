@@ -1,9 +1,22 @@
-import React from "react"
+"use client"
+
+import React, { useState } from "react"
 import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
-
-import { Check, Archive, ImageOffIcon as PersonOffIcon, UserCheckIcon as PersonCheckIcon, ClipboardCheck, Star, FileCheck, Mail, MailOpen } from 'lucide-react'
+import {
+  Check,
+  Archive,
+  ImageOffIcon as PersonOffIcon,
+  UserCheckIcon as PersonCheckIcon,
+  ClipboardCheck,
+  Star,
+  FileCheck,
+  Mail,
+  MailOpen,
+  SlidersHorizontal,
+} from "lucide-react"
+import SearchModal from "./SearchModal"
 
 interface ButtonsProps {
   isLoading: boolean
@@ -28,6 +41,7 @@ interface ButtonsProps {
 
 const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filterState, setFilterState, user }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
 
   const handleFilterClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -52,12 +66,21 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
     }))
   }
 
+  const handleOpenSearchModal = () => {
+    setIsSearchModalOpen(true)
+  }
+
+  const handleCloseSearchModal = () => {
+    setIsSearchModalOpen(false)
+  }
+
   return (
     <div className="flex gap-4">
       {isLoading ? (
         <>
           <Skeleton variant="rectangular" width={150} height={40} />
           <Skeleton variant="rectangular" width={100} height={40} />
+          <Skeleton variant="rectangular" width={130} height={40} />
         </>
       ) : (
         <>
@@ -88,6 +111,24 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
           >
             <FilterList className="h-4 w-4" />
             <span>Filtros</span>
+          </Button>
+
+          <Button
+            onClick={handleOpenSearchModal}
+            variant="outlined"
+            size="small"
+            className="flex items-center gap-2 px-4 py-2 bg-white"
+            sx={{
+              border: "1px solid rgba(0, 0, 0, 0.12)",
+              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
+              borderRadius: "4px",
+              "&:hover": {
+                boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            <span>Filtros avanzados</span>
           </Button>
 
           <Popover
@@ -298,6 +339,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
               </List>
             </Box>
           </Popover>
+          <SearchModal open={isSearchModalOpen} onClose={handleCloseSearchModal} />
         </>
       )}
     </div>

@@ -167,7 +167,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Barrio</InputLabel>
                 <Select {...field} label="Barrio" disabled={readOnly}>
-                  {dropdownData.barrios?.map((barrio) => (
+                  {dropdownData.barrio?.map((barrio) => (
                     <MenuItem key={barrio.id} value={barrio.id}>
                       {barrio.nombre}
                     </MenuItem>
@@ -185,7 +185,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Localidad</InputLabel>
                 <Select {...field} label="Localidad" disabled={readOnly}>
-                  {dropdownData.localidades?.map((localidad) => (
+                  {dropdownData.localidad?.map((localidad) => (
                     <MenuItem key={localidad.id} value={localidad.id}>
                       {localidad.nombre}
                     </MenuItem>
@@ -203,7 +203,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>CPC</InputLabel>
                 <Select {...field} label="CPC" disabled={readOnly}>
-                  {dropdownData.cpcs?.map((cpc) => (
+                  {dropdownData.cpc?.map((cpc) => (
                     <MenuItem key={cpc.id} value={cpc.id}>
                       {cpc.nombre}
                     </MenuItem>

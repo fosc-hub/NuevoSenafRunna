@@ -1,16 +1,29 @@
 import React from "react"
-import { type Control, Controller, useWatch } from "react-hook-form"
-import { TextField, Grid, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material"
+import { useWatch } from "react-hook-form"
+import { type Control, Controller, useFieldArray } from "react-hook-form"
+import {
+  TextField,
+  Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  IconButton,
+  CircularProgress,
+  Box,
+  Divider,
+} from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { format, parse } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
-import { get } from "@/app/api/apiService"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { Typography } from "@mui/material"
+import { Add, Remove } from "@mui/icons-material"
 
 interface Step1FormProps {
   dropdownData: DropdownData
@@ -33,7 +46,10 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   })
 
   const [selectedNumberType, setSelectedNumberType] = React.useState<string>("nro_notificacion_102")
-
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "codigosDemanda",
+  })
   if (isLoading) {
     return <CircularProgress />
   }
@@ -93,7 +109,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Bloque datos del remitente</InputLabel>
                 <Select {...field} label="Datos del remitente" disabled={readOnly}>
-                  {dropdownData.origenes?.map((origen) => (
+                  {dropdownData.bloques_datos_remitente?.map((origen) => (
                     <MenuItem key={origen.id} value={origen.id}>
                       {origen.nombre}
                     </MenuItem>
@@ -111,7 +127,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Tipo de Institución</InputLabel>
                 <Select {...field} label="Tipo de Institución" disabled={readOnly}>
-                  {dropdownData.sub_origenes?.map((subOrigen) => (
+                  {dropdownData.tipo_institucion_demanda?.map((subOrigen) => (
                     <MenuItem key={subOrigen.id} value={subOrigen.id}>
                       {subOrigen.nombre}
                     </MenuItem>
@@ -137,53 +153,95 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Tipo de Número</InputLabel>
-            <Select
-              value={selectedNumberType}
-              onChange={(e) => setSelectedNumberType(e.target.value as string)}
-              label="Tipo de Número"
+        
+        <Grid item xs={12}>
+          <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
+            {fields.map((field, index) => (
+              <React.Fragment key={field.id}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} md={5}>
+                    <FormControl fullWidth>
+                      <InputLabel>Tipo de Código</InputLabel>
+                      <Controller
+                        name={`codigosDemanda.${index}.tipo`}
+                        control={control}
+                        render={({ field }) => (
+                          <Select {...field} label="Tipo de Código" disabled={readOnly}>
+                            {dropdownData.tipo_codigo_demanda?.map((tipoCodigo) => (
+                              <MenuItem key={tipoCodigo.id} value={tipoCodigo.id}>
+                                {tipoCodigo.nombre}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        )}
+                      />
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={5}>
+                    <Controller
+                      name={`codigosDemanda.${index}.codigo`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <TextField
+                          {...field}
+                          label="Código"
+                          fullWidth
+                          error={!!error}
+                          helperText={error?.message}
+                          InputProps={{ readOnly }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={2}>
+                    <IconButton
+                      onClick={() => remove(index)}
+                      disabled={readOnly}
+                      sx={{
+                        color: "action.active",
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                      }}
+                    >
+                      <Remove />
+                    </IconButton>
+                  </Grid>
+                  {index < fields.length - 1 && (
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }} />
+                    </Grid>
+                  )}
+                </Grid>
+              </React.Fragment>
+            ))}
+            <Button
+              startIcon={<Add />}
+              onClick={() => append({ tipo: "", codigo: "" })}
               disabled={readOnly}
+              sx={{
+                mt: 2,
+                color: "primary.main",
+                "&:hover": {
+                  backgroundColor: "primary.lighter",
+                },
+              }}
             >
-              <MenuItem value="nro_Notificacion_102">Nro. Notificación 102</MenuItem>
-              <MenuItem value="nro_SAC">Nro. SAC</MenuItem>
-              <MenuItem value="nro_SUAC">Nro. SUAC</MenuItem>
-              <MenuItem value="nro_Historia_Clinica">Nro. Historia Clínica</MenuItem>
-              <MenuItem value="nro_Oficio_Web">Nro. Oficio Web</MenuItem>
-              <MenuItem value="nro_Autos_Caratulados">Autos Caratulados</MenuItem>
-            </Select>
-          </FormControl>
+              AGREGAR CÓDIGO
+            </Button>
+          </Box>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <Controller
-            name={selectedNumberType}
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label={`Número de ${selectedNumberType.replace("nro_", "").replace("_", " ")}`}
-                fullWidth
-                type="number"
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
-
         <Grid item xs={12}>
           <Controller
             name="ambito_vulneracion"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Ámbito de Vulneración *</InputLabel>
-                <Select {...field} label="Ámbito de Vulneración *" disabled={readOnly}>
-                  {dropdownData.ambito_vulneracion_choices?.map((option) => (
-                    <MenuItem key={option.key} value={option.key}>
-                      {option.value}
+                <InputLabel>Ámbito de Vulneración</InputLabel>
+                <Select {...field} label="Ámbito de Vulneración" disabled={readOnly}>
+                  {dropdownData.ambito_vulneracion?.map((motivo) => (
+                    <MenuItem key={motivo.id} value={motivo.id}>
+                      {motivo.nombre}
                     </MenuItem>
                   ))}
                 </Select>
@@ -191,7 +249,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-
         <Grid item xs={12}>
           <Controller
             name="presuntaVulneracion.motivos"
@@ -200,7 +257,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Motivo de Intervención *</InputLabel>
                 <Select {...field} label="Motivo de Intervención *" disabled={readOnly}>
-                  {dropdownData.categoria_motivos?.map((motivo) => (
+                  {dropdownData.categoria_motivo?.map((motivo) => (
                     <MenuItem key={motivo.id} value={motivo.id}>
                       {motivo.nombre}
                     </MenuItem>
@@ -210,16 +267,16 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-        
+
         <Grid item xs={12}>
           <Controller
-            name="presuntaVulneracion.motivos"
+            name="presuntaVulneracion.submotivos"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Submotivo de intervención</InputLabel>
                 <Select {...field} label="Submotivo de intervención" disabled={readOnly}>
-                  {dropdownData.categoria_submotivos?.map((motivo) => (
+                  {dropdownData.categoria_submotivo?.map((motivo) => (
                     <MenuItem key={motivo.id} value={motivo.id}>
                       {motivo.nombre}
                     </MenuItem>
@@ -229,6 +286,9 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
+
+        
+
         <Grid item xs={12}>
           <Controller
             name="descripcion"

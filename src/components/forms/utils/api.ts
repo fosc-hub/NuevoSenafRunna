@@ -3,7 +3,7 @@ import { create, get } from "@/app/api/apiService"
 
 export const fetchDropdownData = async (): Promise<DropdownData> => {
   try {
-    const response = await get<DropdownData>("registro-caso-form-dropdowns/")
+    const response = await get<DropdownData>("registro-demanda-form-dropdowns/")
     console.log("Fetched dropdown data:", response)
     return response
   } catch (error) {
@@ -120,7 +120,7 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
 
     console.log("Transformed data:", JSON.stringify(transformedData, null, 2))
 
-    const response = await create("registro-caso-form", transformedData)
+    const response = await create("registro-demanda-form", transformedData)
     console.log("Server response:", response.data)
     return response.data
   } catch (error) {
@@ -134,7 +134,7 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
 
 export const fetchCaseData = async (id: string): Promise<FormData> => {
   try {
-    const response = await get<FormData>(`registro-caso-form/${id}/`)
+    const response = await get<FormData>(`registro-demanda-form/${id}/`)
     console.log("Fetched case data:", response)
     return transformApiDataToFormData(response)
   } catch (error) {

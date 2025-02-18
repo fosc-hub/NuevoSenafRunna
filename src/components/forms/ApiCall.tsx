@@ -19,7 +19,7 @@ interface DropdownOption {
 
   const fetchDropdowns = async () => {
     try {
-      const response = await get<DropdownData>(`registro-caso-form-dropdowns/`)
+      const response = await get<DropdownData>(`registro-demanda-form-dropdowns/`)
       console.log("Fetched dropdown data:", response)
       return response
     } catch (error) {

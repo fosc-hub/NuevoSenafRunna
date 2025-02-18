@@ -144,7 +144,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         disabled={readOnly}
                         value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                         onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                        renderInput={(params) => <TextField {...params} fullWidth />}
+                        renderInput={(params: any) => <TextField {...params} fullWidth />}
                       />
                     )}
                   />
@@ -158,7 +158,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       <FormControl fullWidth error={!!error}>
                         <InputLabel>Nacionalidad</InputLabel>
                         <Select {...field} label="Nacionalidad" disabled={readOnly}>
-                          {dropdownData.nacionalidad_choices?.map((option) => (
+                          {dropdownData.nacionalidad_choices?.map((option: any) => (
                             <MenuItem key={option.key} value={option.key}>
                               {option.value}
                             </MenuItem>
@@ -256,28 +256,9 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                     }
                     label="Conviviente"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name={`adultosConvivientes.${index}.supuesto_autordv`}
-                    control={control}
-                    rules={{ required: "Este campo es obligatorio" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <FormControl fullWidth error={!!error}>
-                        <InputLabel>Supuesto Autor DV</InputLabel>
-                        <Select {...field} label="Supuesto Autor DV" disabled={readOnly}>
-                          {dropdownData.supuesto_autordv_choices.map((option) => (
-                            <MenuItem key={option.key} value={option.key}>
-                              {option.value}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        {error && <FormHelperText>{error.message}</FormHelperText>}
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
+
+
+
                   <FormControlLabel
                     control={
                       <Controller

@@ -35,7 +35,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     data: dropdownData,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<DropdownData>({
     queryKey: ["dropdowns"],
   })
 
@@ -76,7 +76,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                renderInput={(params) => (
+                renderInput={(params: any) => (
                   <TextField {...params} fullWidth error={!!error} helperText={error?.message} />
                 )}
               />
@@ -94,7 +94,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                renderInput={(params) => (
+                renderInput={(params: any) => (
                   <TextField {...params} fullWidth error={!!error} helperText={error?.message} />
                 )}
               />
@@ -109,7 +109,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Bloque datos del remitente</InputLabel>
                 <Select {...field} label="Datos del remitente" disabled={readOnly}>
-                  {dropdownData.bloques_datos_remitente?.map((origen) => (
+                  {dropdownData.bloques_datos_remitente?.map((origen: any) => (
                     <MenuItem key={origen.id} value={origen.id}>
                       {origen.nombre}
                     </MenuItem>
@@ -127,7 +127,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Tipo de Institución</InputLabel>
                 <Select {...field} label="Tipo de Institución" disabled={readOnly}>
-                  {dropdownData.tipo_institucion_demanda?.map((subOrigen) => (
+                  {dropdownData.tipo_institucion_demanda?.map((subOrigen: any) => (
                     <MenuItem key={subOrigen.id} value={subOrigen.id}>
                       {subOrigen.nombre}
                     </MenuItem>
@@ -167,7 +167,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                         control={control}
                         render={({ field }) => (
                           <Select {...field} label="Tipo de Código" disabled={readOnly}>
-                            {dropdownData.tipo_codigo_demanda?.map((tipoCodigo) => (
+                            {dropdownData.tipo_codigo_demanda?.map((tipoCodigo: any) => (
                               <MenuItem key={tipoCodigo.id} value={tipoCodigo.id}>
                                 {tipoCodigo.nombre}
                               </MenuItem>
@@ -239,7 +239,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Ámbito de Vulneración</InputLabel>
                 <Select {...field} label="Ámbito de Vulneración" disabled={readOnly}>
-                  {dropdownData.ambito_vulneracion?.map((motivo) => (
+                  {dropdownData.ambito_vulneracion?.map((motivo: any) => (
                     <MenuItem key={motivo.id} value={motivo.id}>
                       {motivo.nombre}
                     </MenuItem>
@@ -257,7 +257,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Motivo de Intervención *</InputLabel>
                 <Select {...field} label="Motivo de Intervención *" disabled={readOnly}>
-                  {dropdownData.categoria_motivo?.map((motivo) => (
+                  {dropdownData.categoria_motivo?.map((motivo: any) => (
                     <MenuItem key={motivo.id} value={motivo.id}>
                       {motivo.nombre}
                     </MenuItem>
@@ -276,7 +276,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Submotivo de intervención</InputLabel>
                 <Select {...field} label="Submotivo de intervención" disabled={readOnly}>
-                  {dropdownData.categoria_submotivo?.map((motivo) => (
+                  {dropdownData.categoria_submotivo?.map((motivo: any) => (
                     <MenuItem key={motivo.id} value={motivo.id}>
                       {motivo.nombre}
                     </MenuItem>

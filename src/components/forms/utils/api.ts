@@ -6,7 +6,7 @@ export const fetchDropdownData = async (): Promise<DropdownData> => {
     const response = await get<DropdownData>("registro-demanda-form-dropdowns/")
     console.log("Fetched dropdown data:", response)
     return response
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error al obtener los datos del formulario:", error)
     throw error
   }
@@ -18,7 +18,7 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
     // Transform the data to match the expected server format
     const transformedData = {
       ...formData,
-      adultos: formData.adultosConvivientes.map((adulto) => ({
+      adultos: formData.adultosConvivientes.map((adulto: any) => ({
         persona: {
           nombre: adulto.nombre,
           apellido: adulto.apellido,
@@ -77,13 +77,13 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
               formData.ninosAdolescentes[0].condicionesVulnerabilidad.condicion_vulnerabilidad,
             nnya_educacion: formData.ninosAdolescentes[0].educacion,
             nnya_salud: formData.ninosAdolescentes[0].salud,
-            vulneraciones: formData.ninosAdolescentes[0].vulneraciones.map((vulneracion, index) => ({
+            vulneraciones: formData.ninosAdolescentes[0].vulneraciones.map((vulneracion: any, index: any) => ({
               ...vulneracion,
               autordv_index: 0, // Assuming the first adult is the autordv for all vulneraciones
             })),
           }
         : null,
-      nnyas_secundarios: formData.ninosAdolescentes.slice(1).map((nnya) => ({
+      nnyas_secundarios: formData.ninosAdolescentes.slice(1).map((nnya: any) => ({
         persona: {
           nombre: nnya.nombre,
           apellido: nnya.apellido,
@@ -108,7 +108,7 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
         condiciones_vulnerabilidad: nnya.condicionesVulnerabilidad.condicion_vulnerabilidad,
         nnya_educacion: nnya.educacion,
         nnya_salud: nnya.salud,
-        vulneraciones: nnya.vulneraciones.map((vulneracion, index) => ({
+        vulneraciones: nnya.vulneraciones.map((vulneracion: any, index: any) => ({
           ...vulneracion,
           autordv_index: 0, // Assuming the first adult is the autordv for all vulneraciones
         })),
@@ -120,10 +120,10 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
 
     console.log("Transformed data:", JSON.stringify(transformedData, null, 2))
 
-    const response = await create("registro-demanda-form", transformedData)
+    const response: any = await create("registro-demanda-form", transformedData)
     console.log("Server response:", response.data)
     return response.data
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error al enviar los datos del formulario:", error)
     if (error.response) {
       console.error("Server error response:", error.response.data)

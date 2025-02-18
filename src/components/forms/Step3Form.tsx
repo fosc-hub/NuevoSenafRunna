@@ -120,7 +120,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                       disabled={readOnly}
                       value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                       onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                      renderInput={(params) => <TextField {...params} fullWidth />}
+                      renderInput={(params: any) => <TextField {...params} fullWidth />}
                     />
                   )}
                 />
@@ -274,7 +274,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <FormControl fullWidth error={!!error}>
                       <InputLabel>Institución Educativa</InputLabel>
                       <Select {...field} label="Institución Educativa" disabled={readOnly}>
-                        {dropdownData.instituciones_educativas.map((institucion) => (
+                        {dropdownData.instituciones_educativas.map((institucion: any) => (
                           <MenuItem key={institucion.id} value={institucion.id}>
                             {institucion.nombre}
                           </MenuItem>
@@ -380,7 +380,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <FormControl fullWidth error={!!error}>
                       <InputLabel>Institución Sanitaria</InputLabel>
                       <Select {...field} label="Institución Sanitaria" disabled={readOnly}>
-                        {dropdownData.instituciones_sanitarias.map((institucion) => (
+                        {dropdownData.instituciones_sanitarias.map((institucion: any) => (
                           <MenuItem key={institucion.id} value={institucion.id}>
                             {institucion.nombre}
                           </MenuItem>
@@ -441,7 +441,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   control={control}
                   render={({ field }) => (
                     <>
-                      {field.value.map((vulneracion, vulIndex) => (
+                      {field.value.map((vulneracion: any, vulIndex: any) => (
                         <Box key={vulIndex} sx={{ mb: 2, p: 2, border: "1px solid #ccc", borderRadius: "4px" }}>
                           <Typography variant="subtitle2" gutterBottom>
                             Vulneración {vulIndex + 1}
@@ -456,7 +456,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Categoría de Motivos</InputLabel>
                                     <Select {...field} label="Categoría de Motivos" disabled={readOnly}>
-                                      {dropdownData.categoria_motivos?.map((motivo) => (
+                                      {dropdownData.categoria_motivos?.map((motivo: any) => (
                                         <MenuItem key={motivo.id} value={motivo.id}>
                                           {motivo.nombre}
                                         </MenuItem>
@@ -477,13 +477,13 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                     <Select {...field} label="Subcategoría" disabled={readOnly}>
                                       {dropdownData.categoria_submotivos
                                         ?.filter(
-                                          (submotivo) =>
+                                          (submotivo: any) =>
                                             submotivo.motivo ===
                                             watch(
                                               `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_motivo`,
                                             ),
                                         )
-                                        .map((submotivo) => (
+                                        .map((submotivo: any) => (
                                           <MenuItem key={submotivo.id} value={submotivo.id}>
                                             {submotivo.nombre}
                                           </MenuItem>
@@ -502,7 +502,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Gravedad de la Vulneración</InputLabel>
                                     <Select {...field} label="Gravedad de la Vulneración" disabled={readOnly}>
-                                      {dropdownData.gravedades_vulneracion?.map((gravedad) => (
+                                      {dropdownData.gravedades_vulneracion?.map((gravedad: any) => (
                                         <MenuItem key={gravedad.id} value={gravedad.id}>
                                           {gravedad.nombre}
                                         </MenuItem>
@@ -521,7 +521,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Urgencia de la Vulneración</InputLabel>
                                     <Select {...field} label="Urgencia de la Vulneración" disabled={readOnly}>
-                                      {dropdownData.urgencias_vulneracion?.map((urgencia) => (
+                                      {dropdownData.urgencias_vulneracion?.map((urgencia: any) => (
                                         <MenuItem key={urgencia.id} value={urgencia.id}>
                                           {urgencia.nombre}
                                         </MenuItem>
@@ -539,7 +539,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Autor DV</InputLabel>
                                     <Select {...field} label="Supuesto Autor DV" disabled={readOnly}>
-                                      {adultosConvivientes.map((adulto, adultIndex) => (
+                                      {adultosConvivientes.map((adulto: any, adultIndex: any) => (
                                         <MenuItem key={adultIndex} value={adultIndex}>
                                           {`${adulto.nombre} ${adulto.apellido}`}
                                         </MenuItem>

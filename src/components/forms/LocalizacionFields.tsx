@@ -1,7 +1,8 @@
 import type React from "react"
 import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, Typography, Paper } from "@mui/material"
 import { type Control, Controller } from "react-hook-form"
-import type { DropdownData } from "../utils/api"
+import { DropdownData } from "./types/formTypes"
+
 
 interface LocalizacionFieldsProps {
   control: Control<any>
@@ -41,7 +42,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Tipo de Calle</InputLabel>
                 <Select {...field} label="Tipo de Calle" disabled={readOnly}>
-                  {dropdownData.tipo_calle_choices.map((option) => (
+                  {dropdownData.tipo_calle_choices.map((option: any) => (
                     <MenuItem key={option.key} value={option.key}>
                       {option.value}
                     </MenuItem>
@@ -167,7 +168,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Barrio</InputLabel>
                 <Select {...field} label="Barrio" disabled={readOnly}>
-                  {dropdownData.barrio?.map((barrio) => (
+                  {dropdownData.barrio?.map((barrio: any) => (
                     <MenuItem key={barrio.id} value={barrio.id}>
                       {barrio.nombre}
                     </MenuItem>
@@ -185,7 +186,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Localidad</InputLabel>
                 <Select {...field} label="Localidad" disabled={readOnly}>
-                  {dropdownData.localidad?.map((localidad) => (
+                  {dropdownData.localidad?.map((localidad : any) => (
                     <MenuItem key={localidad.id} value={localidad.id}>
                       {localidad.nombre}
                     </MenuItem>
@@ -203,7 +204,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>CPC</InputLabel>
                 <Select {...field} label="CPC" disabled={readOnly}>
-                  {dropdownData.cpc?.map((cpc) => (
+                  {dropdownData.cpc?.map((cpc: any) => (
                     <MenuItem key={cpc.id} value={cpc.id}>
                       {cpc.nombre}
                     </MenuItem>

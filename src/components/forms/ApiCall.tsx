@@ -17,14 +17,3 @@ interface DropdownOption {
     informantes: { id: number; nombre: string; apellido: string }[]
   }
 
-  const fetchDropdowns = async () => {
-    try {
-      const response = await get<DropdownData>(`registro-demanda-form-dropdowns/`)
-      console.log("Fetched dropdown data:", response)
-      return response
-    } catch (error) {
-      console.error("Error al obtener los datos del formulario:", error)
-      throw error
-    }
-  }
-  

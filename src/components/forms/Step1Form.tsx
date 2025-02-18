@@ -12,17 +12,6 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { Typography } from "@mui/material"
 
-const fetchDropdowns = async () => {
-  try {
-    const response = await get<DropdownData>(`registro-caso-form-dropdowns/`)
-    console.log("Fetched dropdown data:", response)
-    return response
-  } catch (error) {
-    console.error("Error al obtener los datos del formulario:", error)
-    throw error
-  }
-}
-
 interface Step1FormProps {
   dropdownData: DropdownData
   readOnly?: boolean
@@ -35,7 +24,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     isError,
   } = useQuery({
     queryKey: ["dropdowns"],
-    queryFn: fetchDropdowns,
   })
 
   const createNewUser = useWatch({

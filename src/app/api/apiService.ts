@@ -63,7 +63,7 @@ export const getWithCustomParams = async <T>(
  * @returns Newly created resource of type T.
  */
 export const create = async <T>(endpoint: string, data: Partial<T>, showToast: boolean = false, toastMessage: string = '¡Registro asignado con exito!'): Promise<T> => {
-  const response = await axiosInstance.post<T>(`${endpoint}/`, data);
+  const response = await axiosInstance.post<T>(`${endpoint}`);
   if (response.status === 201 && showToast) {
     // success toast
     toast.success(toastMessage, {

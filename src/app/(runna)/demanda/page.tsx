@@ -1,22 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  CircularProgress,
-  Typography,
-  IconButton,
-  Box
-} from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Button, Alert } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
+import MessageIcon from "@mui/icons-material/Message"
+import AssignmentIcon from "@mui/icons-material/Assignment"
 import MultiStepForm from "@/components/forms/MultiStepForm"
 import { fetchCaseData } from "@/components/forms/utils/api"
 import type { FormData } from "@/components/forms/types/formTypes"
+import { EnviarRespuestaModal } from "./ui/EnviarRespuestaModal"
+import { RegistrarActividadModal } from "./ui/RegistrarActividadModal"
 
 interface DemandaDetailProps {
   params: {
     id: string
   }
-  // This must come from the parent component
   onClose: () => void
 }
 
@@ -24,6 +22,8 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
   const [formData, setFormData] = useState<FormData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isRespuestaModalOpen, setIsRespuestaModalOpen] = useState(false)
+  const [isActividadModalOpen, setIsActividadModalOpen] = useState(false)
 
   useEffect(() => {
     const loadCaseData = async () => {
@@ -46,7 +46,11 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
 
   const handleSubmit = (data: FormData) => {
     console.log("Form submitted:", data)
-    // e.g., update the case data
+  }
+
+  const handleActividadSubmit = (activity: { type: string; description: string }) => {
+    console.log("Activity submitted:", activity)
+    // Handle the activity submission
   }
 
   if (isLoading) return <CircularProgress />
@@ -56,7 +60,7 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
       <IconButton
         aria-label="close"
-        onClick={onClose} // Make sure this is present
+        onClick={onClose}
         sx={{
           position: "absolute",
           right: 8,
@@ -68,11 +72,10 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
         <CloseIcon />
       </IconButton>
 
-      <Box sx={{ pt: 2 }}>
+      <Box sx={{ p: 3 }}>
         <Typography
           variant="h4"
           gutterBottom
-          id="demanda-detail-modal"
           sx={{
             color: "text.primary",
             mb: 3,
@@ -80,14 +83,56 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
         >
           Detalle de la Demanda
         </Typography>
-        {formData && (
-          <MultiStepForm
-            initialData={formData}
-            onSubmit={handleSubmit}
-            readOnly={false}
-          />
+
+        {formData?.unassigned && (
+          <Alert
+            severity="warning"
+            sx={{
+              mb: 3,
+              backgroundColor: "warning.lighter",
+              "& .MuiAlert-message": {
+                color: "warning.dark",
+              },
+            }}
+          >
+            La presente demanda aún no ha sido asignada.
+          </Alert>
         )}
+
+        <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<MessageIcon />}
+            onClick={() => setIsRespuestaModalOpen(true)}
+          >
+            ENVIAR RESPUESTA
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AssignmentIcon />}
+            onClick={() => setIsActividadModalOpen(true)}
+          >
+            REGISTRAR ACTIVIDAD
+          </Button>
+        </Box>
+
+        {formData && <MultiStepForm initialData={formData} onSubmit={handleSubmit} readOnly={false} />}
       </Box>
+
+      <EnviarRespuestaModal
+        isOpen={isRespuestaModalOpen}
+        onClose={() => setIsRespuestaModalOpen(false)}
+        demandaId={Number.parseInt(params.id)}
+      />
+
+      <RegistrarActividadModal
+        isOpen={isActividadModalOpen}
+        onClose={() => setIsActividadModalOpen(false)}
+        demandaId={Number.parseInt(params.id)}
+      />
     </Box>
   )
 }
+

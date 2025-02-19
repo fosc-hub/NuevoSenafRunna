@@ -230,9 +230,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
               <Grid item xs={12} md={6}>
 
               <Controller
-                  name={`ninosAdolescentes.${index}.genero`}
+                  name={`ninosAdolescentes.${index}.nacionalidad`}
                   control={control}
-                  rules={{ required: "Este campo es obligatorio" }}
                   render={({ field, fieldState: { error } }) => (
                     <FormControl fullWidth error={!!error}>
                       <InputLabel>Nacionalidad</InputLabel>

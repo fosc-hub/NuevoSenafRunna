@@ -1,8 +1,7 @@
 import type React from "react"
-import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, Typography, Paper } from "@mui/material"
-import { type Control, Controller } from "react-hook-form"
-import { DropdownData } from "./types/formTypes"
-
+import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, Paper } from "@mui/material"
+import { type Control, Controller, useWatch } from "react-hook-form"
+import type { DropdownData } from "./types/formTypes"
 
 interface LocalizacionFieldsProps {
   control: Control<any>
@@ -15,8 +14,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
   return (
     <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
       <Grid container spacing={3}>
-
-
         {/* Calle y Tipo de Calle */}
         <Grid item xs={12} md={8}>
           <Controller
@@ -159,25 +156,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             )}
           />
         </Grid>
-        {/* Barrio, Localidad, y CPC */}
-        <Grid item xs={12} md={4}>
-          <Controller
-            name={`${prefix}.barrio`}
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <InputLabel>Barrio</InputLabel>
-                <Select {...field} label="Barrio" disabled={readOnly}>
-                  {dropdownData.barrio?.map((barrio: any) => (
-                    <MenuItem key={barrio.id} value={barrio.id}>
-                      {barrio.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          />
-        </Grid>
+        {/* Localidad */}
         <Grid item xs={12} md={4}>
           <Controller
             name={`${prefix}.localidad`}
@@ -186,7 +165,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
               <FormControl fullWidth error={!!error}>
                 <InputLabel>Localidad</InputLabel>
                 <Select {...field} label="Localidad" disabled={readOnly}>
-                  {dropdownData.localidad?.map((localidad : any) => (
+                  {dropdownData.localidad?.map((localidad: any) => (
                     <MenuItem key={localidad.id} value={localidad.id}>
                       {localidad.nombre}
                     </MenuItem>
@@ -196,22 +175,62 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             )}
           />
         </Grid>
+
+        {/* Barrio */}
+        <Grid item xs={12} md={4}>
+          <Controller
+            name={`${prefix}.barrio`}
+            control={control}
+            render={({ field, fieldState: { error } }) => {
+              const selectedLocalidad = useWatch({
+                control,
+                name: `${prefix}.localidad`,
+              })
+              const filteredBarrios = dropdownData.barrio?.filter(
+                (barrio: any) => barrio.localidad === selectedLocalidad,
+              )
+
+              return (
+                <FormControl fullWidth error={!!error}>
+                  <InputLabel>Barrio</InputLabel>
+                  <Select {...field} label="Barrio" disabled={readOnly}>
+                    {filteredBarrios?.map((barrio: any) => (
+                      <MenuItem key={barrio.id} value={barrio.id}>
+                        {barrio.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )
+            }}
+          />
+        </Grid>
+
+        {/* CPC */}
         <Grid item xs={12} md={4}>
           <Controller
             name={`${prefix}.cpc`}
             control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <InputLabel>CPC</InputLabel>
-                <Select {...field} label="CPC" disabled={readOnly}>
-                  {dropdownData.cpc?.map((cpc: any) => (
-                    <MenuItem key={cpc.id} value={cpc.id}>
-                      {cpc.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            render={({ field, fieldState: { error } }) => {
+              const selectedLocalidad = useWatch({
+                control,
+                name: `${prefix}.localidad`,
+              })
+              const filteredCPCs = dropdownData.cpc?.filter((cpc: any) => cpc.localidad === selectedLocalidad)
+
+              return (
+                <FormControl fullWidth error={!!error}>
+                  <InputLabel>CPC</InputLabel>
+                  <Select {...field} label="CPC" disabled={readOnly}>
+                    {filteredCPCs?.map((cpc: any) => (
+                      <MenuItem key={cpc.id} value={cpc.id}>
+                        {cpc.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )
+            }}
           />
         </Grid>
       </Grid>

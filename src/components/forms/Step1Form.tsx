@@ -51,6 +51,9 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     control,
     name: "codigosDemanda",
   })
+
+  const selectedOrigen = useWatch({ control, name: "origen" })
+
   if (isLoading) {
     return <CircularProgress />
   }
@@ -124,18 +127,24 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="sub_origen"
             control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <InputLabel>Tipo de Institución</InputLabel>
-                <Select {...field} label="Tipo de Institución" disabled={readOnly}>
-                  {dropdownData.tipo_institucion_demanda?.map((subOrigen: any) => (
-                    <MenuItem key={subOrigen.id} value={subOrigen.id}>
-                      {subOrigen.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            render={({ field, fieldState: { error } }) => {
+              const filteredSubOrigins = dropdownData.tipo_institucion_demanda?.filter(
+                (subOrigen: any) => subOrigen.bloque_datos_remitente === selectedOrigen,
+              )
+
+              return (
+                <FormControl fullWidth error={!!error}>
+                  <InputLabel>Tipo de Institución</InputLabel>
+                  <Select {...field} label="Tipo de Institución" disabled={readOnly}>
+                    {filteredSubOrigins?.map((subOrigen: any) => (
+                      <MenuItem key={subOrigen.id} value={subOrigen.id}>
+                        {subOrigen.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )
+            }}
           />
         </Grid>
         <Grid item xs={12}>
@@ -338,39 +347,29 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="presuntaVulneracion.submotivos"
             control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <InputLabel>Submotivo de intervención</InputLabel>
-                <Select {...field} label="Submotivo de intervención" disabled={readOnly}>
-                  {dropdownData.categoria_submotivo?.map((motivo: any) => (
-                    <MenuItem key={motivo.id} value={motivo.id}>
-                      {motivo.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            render={({ field, fieldState: { error } }) => {
+              const selectedMotivo = useWatch({ control, name: "presuntaVulneracion.motivos" })
+              const filteredSubmotivos = dropdownData.categoria_submotivo?.filter(
+                (submotivo) => submotivo.motivo === selectedMotivo,
+              )
+
+              return (
+                <FormControl fullWidth error={!!error}>
+                  <InputLabel>Submotivo de intervención</InputLabel>
+                  <Select {...field} label="Submotivo de intervención" disabled={readOnly}>
+                    {filteredSubmotivos?.map((submotivo) => (
+                      <MenuItem key={submotivo.id} value={submotivo.id}>
+                        {submotivo.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {error && <FormHelperText>{error.message}</FormHelperText>}
+                </FormControl>
+              )
+            }}
           />
         </Grid>
 
-        <Grid item xs={12}>
-          <Controller
-            name="descripcion"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Descripción"
-                fullWidth
-                multiline
-                rows={4}
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Datos de Localización del grupo familiar
@@ -403,33 +402,15 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
-            name="observaciones_adultos"
+            name="observaciones"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Observaciones sobre los adultos"
+                label="Observaciones"
                 fullWidth
                 multiline
-                rows={4}
-                error={!!error}
-                helperText={error?.message}
-                InputProps={{ readOnly }}
-              />
-            )}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Controller
-            name="observaciones_nnya"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Observaciones sobre los NNyA"
-                fullWidth
-                multiline
-                rows={4}
+                rows={6}
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}

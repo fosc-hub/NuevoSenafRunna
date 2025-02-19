@@ -28,6 +28,7 @@ export interface DropdownOption {
     
   }
   export interface DropdownData {
+    obra_social_choices: any
     instituciones_educativas: any
     instituciones_sanitarias: any
     categoria_motivos: any

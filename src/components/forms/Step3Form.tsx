@@ -225,7 +225,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     </FormControl>
                   )}
                 />
+                                
               </Grid>
+              <Grid item xs={12} md={6}>
+
+              <Controller
+                  name={`ninosAdolescentes.${index}.genero`}
+                  control={control}
+                  rules={{ required: "Este campo es obligatorio" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <FormControl fullWidth error={!!error}>
+                      <InputLabel>Nacionalidad</InputLabel>
+                      <Select {...field} label="Nacionalidad" disabled={readOnly}>
+                        {dropdownData.nacionalidad_choices?.map((option) => (
+                          <MenuItem key={option.key} value={option.key}>
+                            {option.value}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+                </Grid>
               <Grid item xs={12}>
                 <Controller
                   name={`ninosAdolescentes.${index}.observaciones`}

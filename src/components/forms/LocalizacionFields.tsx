@@ -11,6 +11,19 @@ interface LocalizacionFieldsProps {
 }
 
 const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix, dropdownData, readOnly = false }) => {
+  const selectedLocalidad = useWatch({
+    control,
+    name: `${prefix}.localidad`,
+  });
+
+  const filteredBarrios = dropdownData.barrio?.filter(
+    (barrio: any) => barrio.localidad === selectedLocalidad
+  );
+
+  const filteredCPCs = dropdownData.cpc?.filter(
+    (cpc: any) => cpc.localidad === selectedLocalidad
+  );
+
   return (
     <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
       <Grid container spacing={3}>
@@ -182,13 +195,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             name={`${prefix}.barrio`}
             control={control}
             render={({ field, fieldState: { error } }) => {
-              const selectedLocalidad = useWatch({
-                control,
-                name: `${prefix}.localidad`,
-              })
-              const filteredBarrios = dropdownData.barrio?.filter(
-                (barrio: any) => barrio.localidad === selectedLocalidad,
-              )
 
               return (
                 <FormControl fullWidth error={!!error}>
@@ -212,11 +218,6 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             name={`${prefix}.cpc`}
             control={control}
             render={({ field, fieldState: { error } }) => {
-              const selectedLocalidad = useWatch({
-                control,
-                name: `${prefix}.localidad`,
-              })
-              const filteredCPCs = dropdownData.cpc?.filter((cpc: any) => cpc.localidad === selectedLocalidad)
 
               return (
                 <FormControl fullWidth error={!!error}>

@@ -60,7 +60,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          I'm looking for...
+          Im looking for...
         </Typography>
 
         <Box sx={{ display: "flex", gap: 1, mb: 4 }}>

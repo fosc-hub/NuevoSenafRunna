@@ -14,7 +14,10 @@ import {
   Select,
   MenuItem,
   Autocomplete,
+  Chip,
+  OutlinedInput,
 } from "@mui/material"
+import { type Theme, useTheme } from "@mui/material/styles"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
@@ -30,6 +33,7 @@ interface Step3FormProps {
 }
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
+  const theme = useTheme()
   const { control, watch } = useFormContext<FormData>()
   const { fields, append } = useFieldArray({
     control,
@@ -91,6 +95,24 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       condiciones_vulnerabilidad: [],
       vulneraciones: [],
     })
+  }
+
+  const ITEM_HEIGHT = 48
+  const ITEM_PADDING_TOP = 8
+  const MenuProps = {
+    PaperProps: {
+      style: {
+        maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+        width: 250,
+      },
+    },
+  }
+
+  function getStyles(name: string, selectedItems: readonly string[], theme: Theme) {
+    return {
+      fontWeight:
+        selectedItems.indexOf(name) === -1 ? theme.typography.fontWeightRegular : theme.typography.fontWeightMedium,
+    }
   }
 
   return (
@@ -225,11 +247,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     </FormControl>
                   )}
                 />
-                                
               </Grid>
               <Grid item xs={12} md={6}>
-
-              <Controller
+                <Controller
                   name={`ninosAdolescentes.${index}.nacionalidad`}
                   control={control}
                   render={({ field, fieldState: { error } }) => (
@@ -245,7 +265,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     </FormControl>
                   )}
                 />
-                </Grid>
+              </Grid>
               <Grid item xs={12}>
                 <Controller
                   name={`ninosAdolescentes.${index}.observaciones`}
@@ -488,8 +508,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                 </Grid>
               )}
 
-                {/* Education Information */}
-                <Grid item xs={12}>
+              {/* Education Information */}
+              <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
                   Información Educativa
                 </Typography>
@@ -641,23 +661,45 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   rules={{ required: "Seleccione al menos una condición de vulnerabilidad" }}
                   render={({ field, fieldState: { error } }) => (
                     <FormControl fullWidth error={!!error}>
-                      <InputLabel>Condiciones de Vulnerabilidad</InputLabel>
+                      <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>
+                        Condiciones de Vulnerabilidad
+                      </InputLabel>
                       <Select
                         {...field}
+                        labelId={`condiciones-vulnerabilidad-label-${index}`}
+                        id={`condiciones-vulnerabilidad-${index}`}
                         multiple
-                        label="Condiciones de Vulnerabilidad"
-                        disabled={readOnly}
-                        value={Array.isArray(field.value) ? field.value : []} // Ensure value is always an array
+                        value={Array.isArray(field.value) ? field.value : []}
                         onChange={(event) => {
-                          const value = event.target.value;
-                          field.onChange(typeof value === "string" ? value.split(",") : value);
+                          const value = event.target.value
+                          field.onChange(typeof value === "string" ? value.split(",") : value)
                         }}
+                        input={
+                          <OutlinedInput
+                            id={`condiciones-vulnerabilidad-chip-${index}`}
+                            label="Condiciones de Vulnerabilidad"
+                          />
+                        }
+                        renderValue={(selected) => (
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            {selected.map((value) => (
+                              <Chip
+                                key={value}
+                                label={
+                                  dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === value)?.nombre || value
+                                }
+                              />
+                            ))}
+                          </Box>
+                        )}
+                        MenuProps={MenuProps}
+                        disabled={readOnly}
                       >
                         {dropdownData.condiciones_vulnerabilidad
                           .filter((cv) => cv.nnya && !cv.adulto)
                           .map((cv) => (
-                            <MenuItem key={cv.id} value={cv.id}>
-                              {`${cv.nombre} - ${cv.descripcion}`}
+                            <MenuItem key={cv.id} value={cv.id} style={getStyles(cv.nombre, field.value || [], theme)}>
+                              {cv.nombre}
                             </MenuItem>
                           ))}
                       </Select>
@@ -687,10 +729,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     </FormControl>
                   )}
                 />
-
               </Grid>
-
-
 
               {/* Medical Coverage */}
               <Grid item xs={12}>
@@ -712,7 +751,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               </MenuItem>
                             ))}
                           </Select>
-
                         </FormControl>
                       )}
                     />
@@ -731,68 +769,67 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               </MenuItem>
                             ))}
                           </Select>
-
                         </FormControl>
                       )}
                     />
-                                      </Grid>
+                  </Grid>
 
-                              <Grid item xs={12}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Médico Cabecera
-                      </Typography>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={4}>
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
-                            control={control}
-                            render={({ field, fieldState }) => (
-                              <TextField
-                                {...field}
-                                label="Nombre del Médico"
-                                fullWidth
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                InputProps={{ readOnly }}
-                              />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.mail`}
-                            control={control}
-                            render={({ field, fieldState }) => (
-                              <TextField
-                                {...field}
-                                label="Email del Médico"
-                                fullWidth
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                InputProps={{ readOnly }}
-                                type="email"
-                              />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.telefono`}
-                            control={control}
-                            render={({ field, fieldState }) => (
-                              <TextField
-                                {...field}
-                                label="Teléfono del Médico"
-                                fullWidth
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                InputProps={{ readOnly }}
-                                type="tel"
-                              />
-                            )}
-                          />
-                        </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Médico Cabecera
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}>
+                        <Controller
+                          name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
+                          control={control}
+                          render={({ field, fieldState }) => (
+                            <TextField
+                              {...field}
+                              label="Nombre del Médico"
+                              fullWidth
+                              error={!!fieldState.error}
+                              helperText={fieldState.error?.message}
+                              InputProps={{ readOnly }}
+                            />
+                          )}
+                        />
                       </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Controller
+                          name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.mail`}
+                          control={control}
+                          render={({ field, fieldState }) => (
+                            <TextField
+                              {...field}
+                              label="Email del Médico"
+                              fullWidth
+                              error={!!fieldState.error}
+                              helperText={fieldState.error?.message}
+                              InputProps={{ readOnly }}
+                              type="email"
+                            />
+                          )}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Controller
+                          name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.telefono`}
+                          control={control}
+                          render={({ field, fieldState }) => (
+                            <TextField
+                              {...field}
+                              label="Teléfono del Médico"
+                              fullWidth
+                              error={!!fieldState.error}
+                              helperText={fieldState.error?.message}
+                              InputProps={{ readOnly }}
+                              type="tel"
+                            />
+                          )}
+                        />
+                      </Grid>
+                    </Grid>
                     <FormControlLabel
                       control={
                         <Controller
@@ -846,6 +883,24 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
                               <Controller
+                                name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.situacion_salud`}
+                                control={control}
+                                render={({ field, fieldState: { error } }) => (
+                                  <FormControl fullWidth error={!!error}>
+                                    <InputLabel>Situación de Salud</InputLabel>
+                                    <Select {...field} label="Situación de Salud" disabled={readOnly}>
+                                      {dropdownData.situacion_salud?.map((cat) => (
+                                        <MenuItem key={cat.id} value={cat.id}>
+                                          {cat.nombre}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                )}
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <Controller
                                 name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.id`}
                                 control={control}
                                 render={({ field: enfermedadField, fieldState: { error } }) => (
@@ -865,59 +920,24 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             </Grid>
                             {watch(`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.id`) ===
                               "other" && (
-                                <Grid item xs={12} md={6}>
-                                  <Controller
-                                    name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.nombre`}
-                                    control={control}
-                                    render={({ field, fieldState: { error } }) => (
-                                      <TextField
-                                        {...field}
-                                        label="Nombre de la Enfermedad"
-                                        fullWidth
-                                        error={!!error}
-                                        helperText={error?.message}
-                                        InputProps={{ readOnly }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-                              )}
-                            <Grid item xs={12} md={6}>
-                              <Controller
-                                name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.situacion_salud`}
-                                control={control}
-                                render={({ field, fieldState: { error } }) => (
-                                  <FormControl fullWidth error={!!error}>
-                                    <InputLabel>Situación de Salud</InputLabel>
-                                    <Select {...field} label="Situación de Salud" disabled={readOnly}>
-                                      {dropdownData.situacion_salud?.map((cat) => (
-                                        <MenuItem key={cat.id} value={cat.id}>
-                                          {cat.nombre}
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
-                                  </FormControl>
-                                )}
-                              />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                              <Controller
-                                name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.situacion_salud`}
-                                control={control}
-                                render={({ field, fieldState: { error } }) => (
-                                  <FormControl fullWidth error={!!error}>
-                                    <InputLabel>Situación de Salud</InputLabel>
-                                    <Select {...field} label="Situación de Salud" disabled={readOnly}>
-                                      {dropdownData.situacion_salud?.map((sit) => (
-                                        <MenuItem key={sit.id} value={sit.id}>
-                                          {sit.nombre}
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
-                                  </FormControl>
-                                )}
-                              />
-                            </Grid>
+                              <Grid item xs={12} md={6}>
+                                <Controller
+                                  name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.nombre`}
+                                  control={control}
+                                  render={({ field, fieldState: { error } }) => (
+                                    <TextField
+                                      {...field}
+                                      label="Nombre de la Enfermedad"
+                                      fullWidth
+                                      error={!!error}
+                                      helperText={error?.message}
+                                      InputProps={{ readOnly }}
+                                    />
+                                  )}
+                                />
+                              </Grid>
+                            )}
+
                             <Grid item xs={12} md={6}>
                               <Controller
                                 name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente.id`}
@@ -940,23 +960,23 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             {watch(
                               `ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente.id`,
                             ) === "other" && (
-                                <Grid item xs={12} md={6}>
-                                  <Controller
-                                    name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente.nombre`}
-                                    control={control}
-                                    render={({ field, fieldState: { error } }) => (
-                                      <TextField
-                                        {...field}
-                                        label="Nombre de la Institución Sanitaria"
-                                        fullWidth
-                                        error={!!error}
-                                        helperText={error?.message}
-                                        InputProps={{ readOnly }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-                              )}
+                              <Grid item xs={12} md={6}>
+                                <Controller
+                                  name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente.nombre`}
+                                  control={control}
+                                  render={({ field, fieldState: { error } }) => (
+                                    <TextField
+                                      {...field}
+                                      label="Nombre de la Institución Sanitaria"
+                                      fullWidth
+                                      error={!!error}
+                                      helperText={error?.message}
+                                      InputProps={{ readOnly }}
+                                    />
+                                  )}
+                                />
+                              </Grid>
+                            )}
                             <Grid item xs={12} md={6}>
                               <Controller
                                 name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.certificacion`}
@@ -971,7 +991,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                         </MenuItem>
                                       ))}
                                     </Select>
-
                                   </FormControl>
                                 )}
                               />
@@ -990,7 +1009,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                         </MenuItem>
                                       ))}
                                     </Select>
-
                                   </FormControl>
                                 )}
                               />
@@ -1143,7 +1161,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               </MenuItem>
                             ))}
                           </Select>
-
                         </FormControl>
                       )}
                     />
@@ -1156,14 +1173,12 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         <FormControl fullWidth error={!!error}>
                           <InputLabel>Vínculo con NNYA Principal</InputLabel>
                           <Select {...field} label="Obra Social" disabled={readOnly}>
-                            {dropdownData.
-                              vinculo_con_nnya_principal_choices?.map((enf: any) => (
-                                <MenuItem key={enf.key} value={enf.key}>
-                                  {enf.value} {/* Use `value` instead of `nombre` */}
-                                </MenuItem>
-                              ))}
+                            {dropdownData.vinculo_con_nnya_principal_choices?.map((enf: any) => (
+                              <MenuItem key={enf.key} value={enf.key}>
+                                {enf.value} {/* Use `value` instead of `nombre` */}
+                              </MenuItem>
+                            ))}
                           </Select>
-
                         </FormControl>
                       )}
                     />

@@ -32,6 +32,8 @@ interface Step1FormProps {
 }
 
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
+  const selectedMotivo = useWatch({ control, name: "presuntaVulneracion.motivos" })
+
   const {
     data: dropdownData,
     isLoading,
@@ -348,7 +350,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             name="presuntaVulneracion.submotivos"
             control={control}
             render={({ field, fieldState: { error } }) => {
-              const selectedMotivo = useWatch({ control, name: "presuntaVulneracion.motivos" })
               const filteredSubmotivos = dropdownData.categoria_submotivo?.filter(
                 (submotivo) => submotivo.motivo === selectedMotivo,
               )

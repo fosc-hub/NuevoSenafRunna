@@ -17,6 +17,7 @@ import {
   Autocomplete,
   Chip,
   OutlinedInput,
+  IconButton,
 } from "@mui/material"
 import { type Theme, useTheme } from "@mui/material/styles"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
@@ -24,6 +25,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import AddIcon from "@mui/icons-material/Add"
+import DeleteIcon from "@mui/icons-material/Delete"
 import type { DropdownData, FormData, GravedadVulneracion } from "./types/formTypes"
 import { format, parse } from "date-fns"
 
@@ -36,7 +38,7 @@ interface Step3FormProps {
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
   const theme = useTheme()
   const { control, watch } = useFormContext<FormData>()
-  const { fields, append } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "ninosAdolescentes",
   })
@@ -130,6 +132,12 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
             <Typography variant="subtitle1" gutterBottom>
               {index === 0 ? "Niño, Niña o Adolescente Principal" : `Niño, Niña o Adolescente ${index + 1}`}
             </Typography>
+            {/* Delete button for each child/adolescent */}
+            {!readOnly && index !== 0 && (
+              <IconButton onClick={() => remove(index)} color="error" sx={{ float: "right" }}>
+                <DeleteIcon />
+              </IconButton>
+            )}
             <Grid container spacing={2}>
               {/* Personal Information */}
               <Grid item xs={12} md={6}>
@@ -884,6 +892,22 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <>
                       {field.value.map((enfermedad: any, enfIndex: number) => (
                         <Box key={enfIndex} sx={{ mb: 2, p: 2, border: "1px solid #ccc", borderRadius: "4px" }}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Enfermedad {enfIndex + 1}
+                          </Typography>
+                          {!readOnly && (
+                            <IconButton
+                              onClick={() => {
+                                const newValue = [...field.value]
+                                newValue.splice(enfIndex, 1)
+                                field.onChange(newValue)
+                              }}
+                              color="error"
+                              sx={{ float: "right" }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                           <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
                               <Controller

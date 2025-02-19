@@ -1,3 +1,4 @@
+import { useState } from "react"
 import type React from "react"
 import { useFieldArray, useFormContext, Controller } from "react-hook-form"
 import {
@@ -41,6 +42,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
   })
 
   const watchedFields = watch("ninosAdolescentes")
+
+  // Add this line to track the selected situacion_salud for each ninoAdolescente
+  const [selectedSituacionSalud, setSelectedSituacionSalud] = useState<number[]>([])
 
   const addNinoAdolescente = () => {
     append({
@@ -888,7 +892,17 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 render={({ field, fieldState: { error } }) => (
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Situación de Salud</InputLabel>
-                                    <Select {...field} label="Situación de Salud" disabled={readOnly}>
+                                    <Select
+                                      {...field}
+                                      label="Situación de Salud"
+                                      disabled={readOnly}
+                                      onChange={(e) => {
+                                        field.onChange(e)
+                                        const newSelectedSituacionSalud = [...selectedSituacionSalud]
+                                        newSelectedSituacionSalud[index] = e.target.value as number
+                                        setSelectedSituacionSalud(newSelectedSituacionSalud)
+                                      }}
+                                    >
                                       {dropdownData.situacion_salud?.map((cat) => (
                                         <MenuItem key={cat.id} value={cat.id}>
                                           {cat.nombre}
@@ -906,12 +920,20 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 render={({ field: enfermedadField, fieldState: { error } }) => (
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Enfermedad</InputLabel>
-                                    <Select {...enfermedadField} label="Enfermedad" disabled={readOnly}>
-                                      {dropdownData.enfermedad?.map((enf) => (
-                                        <MenuItem key={enf.id} value={enf.id}>
-                                          {enf.nombre}
-                                        </MenuItem>
-                                      ))}
+                                    <Select
+                                      {...enfermedadField}
+                                      label="Enfermedad"
+                                      disabled={readOnly || !selectedSituacionSalud[index]}
+                                    >
+                                      {dropdownData.enfermedad
+                                        ?.filter(
+                                          (enf) => enf.situacion_salud_categoria === selectedSituacionSalud[index],
+                                        )
+                                        .map((enf) => (
+                                          <MenuItem key={enf.id} value={enf.id}>
+                                            {enf.nombre}
+                                          </MenuItem>
+                                        ))}
                                       <MenuItem value="other">Otra</MenuItem>
                                     </Select>
                                   </FormControl>

@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Box,
   Divider,
+  FormHelperText,
 } from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
@@ -153,7 +154,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-        
+
         <Grid item xs={12}>
           <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
             {fields.map((field, index) => (
@@ -251,6 +252,72 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
+            name="tipo_demanda"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Tipo de Demanda</InputLabel>
+                <Select {...field} label="Tipo de Demanda" disabled={readOnly}>
+                  {dropdownData.tipo_demanda_choices?.map((tipo: any) => (
+                    <MenuItem key={tipo.key} value={tipo.key}>
+                      {tipo.value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
+            name="presuntos_delitos"
+            control={control}
+            defaultValue={[]}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Presuntos Delitos</InputLabel>
+                <Select
+                  {...field}
+                  multiple
+                  label="Presuntos Delitos"
+                  disabled={readOnly}
+                  value={field.value || []}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    field.onChange(Array.isArray(value) ? value : [])
+                  }}
+                >
+                  {dropdownData.tipo_presunto_delito?.map((delito: any) => (
+                    <MenuItem key={delito.id} value={delito.id}>
+                      {delito.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {error && <FormHelperText>{error.message}</FormHelperText>}
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
+            name="envio_respuesta"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Envío de Respuesta</InputLabel>
+                <Select {...field} label="Envío de Respuesta" disabled={readOnly}>
+                  {dropdownData.envio_de_respuesta_choices?.map((choice: any) => (
+                    <MenuItem key={choice.key} value={choice.key}>
+                      {choice.value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
             name="presuntaVulneracion.motivos"
             control={control}
             render={({ field, fieldState: { error } }) => (
@@ -267,7 +334,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-
         <Grid item xs={12}>
           <Controller
             name="presuntaVulneracion.submotivos"
@@ -286,8 +352,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-
-        
 
         <Grid item xs={12}>
           <Controller
@@ -312,6 +376,25 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             Datos de Localización del grupo familiar
           </Typography>
           <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
+            name="zona"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <InputLabel>Zona a la cual se le asignará la demanda</InputLabel>
+                <Select {...field} label="Zona a la cual se le asignará la demanda" disabled={readOnly}>
+                  {dropdownData.zonas?.map((zona: any) => (
+                    <MenuItem key={zona.id} value={zona.id}>
+                      {zona.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {error && <FormHelperText>{error.message}</FormHelperText>}
+              </FormControl>
+            )}
+          />
         </Grid>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>

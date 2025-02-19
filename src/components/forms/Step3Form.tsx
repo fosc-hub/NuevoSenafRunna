@@ -1196,7 +1196,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Categoría de Motivos</InputLabel>
                                     <Select {...field} label="Categoría de Motivos" disabled={readOnly}>
-                                      {dropdownData.categoria_motivos?.map((motivo: any) => (
+                                      {dropdownData.categoria_motivo?.map((motivo: any) => (
                                         <MenuItem key={motivo.id} value={motivo.id}>
                                           {motivo.nombre}
                                         </MenuItem>
@@ -1215,7 +1215,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Subcategoría</InputLabel>
                                     <Select {...field} label="Subcategoría" disabled={readOnly}>
-                                      {dropdownData.categoria_submotivos
+                                      {dropdownData.categoria_submotivo
                                         ?.filter(
                                           (submotivo: any) =>
                                             submotivo.motivo ===
@@ -1242,7 +1242,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Gravedad de la Vulneración</InputLabel>
                                     <Select {...field} label="Gravedad de la Vulneración" disabled={readOnly}>
-                                      {dropdownData.gravedades_vulneracion?.map((gravedad: GravedadVulneracion) => (
+                                      {dropdownData.gravedad_vulneracion?.map((gravedad: GravedadVulneracion) => (
                                         <MenuItem key={gravedad.id} value={gravedad.id}>
                                           {gravedad.nombre}
                                         </MenuItem>
@@ -1261,7 +1261,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   <FormControl fullWidth error={!!error}>
                                     <InputLabel>Urgencia de la Vulneración</InputLabel>
                                     <Select {...field} label="Urgencia de la Vulneración" disabled={readOnly}>
-                                      {dropdownData.urgencias_vulneracion?.map((urgencia: any) => (
+                                      {dropdownData.urgencia_vulneracion?.map((urgencia: any) => (
                                         <MenuItem key={urgencia.id} value={urgencia.id}>
                                           {urgencia.nombre}
                                         </MenuItem>

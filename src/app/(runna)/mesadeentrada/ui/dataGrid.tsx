@@ -245,7 +245,7 @@ const DemandaTable: React.FC = () => {
     demandasData?.results.map((demanda: TDemanda) => ({
       id: demanda.id,
       score: demanda.demanda_score?.score || "N/A",
-      origen: demanda.origen_demanda?.nombre || "N/A",
+      origen: demanda.bloque_datos_remitente?.nombre || "N/A",
       nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
       dni: demanda.nnya_principal?.dni || "N/A",
       precalificacion: demanda.precalificacion?.estado_precalificacion || null,
@@ -257,11 +257,11 @@ const DemandaTable: React.FC = () => {
         minute: "2-digit",
       }),
       tipoDeNro: demanda.tipo_de_nro || "N/A",
-      nroEspecifico: demanda.nro_especifico || "N/A",
-      localidad: demanda.localidad || "N/A",
-      cpc: demanda.cpc || "N/A",
-      zonaEquipo: demanda.zona_equipo || "N/A",
-      usuario: demanda.usuario?.username || "N/A",
+      nroEspecifico: demanda.codigos_demanda.codigo || "N/A",
+      localidad: demanda.localidad.nombre || "N/A",
+      cpc: demanda.cpc.nombre || "N/A",
+      zonaEquipo: demanda.zona_asignada.nombre || "N/A",
+      usuario: demanda.registrado_por_user?.username || "N/A",
       areaSenaf: demanda.area_senaf || "N/A",
     })) || []
 

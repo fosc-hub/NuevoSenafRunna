@@ -32,7 +32,8 @@ interface Step1FormProps {
 }
 
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
-  const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
+  const selectedMotivo = useWatch({ control, name: "presuntaVulneracion.motivos" })
+  const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos" })
 
   const {
     data: dropdownData,
@@ -136,7 +137,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             name="tipo_institucion"
             control={control}
             render={({ field, fieldState: { error } }) => {
-              const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
               const filteredSubOrigins = dropdownData.tipo_institucion_demanda?.filter(
                 (subOrigen: any) => subOrigen.bloque_datos_remitente === selectedBloqueRemitente,
               )

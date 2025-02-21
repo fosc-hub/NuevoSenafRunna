@@ -1,18 +1,19 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Paper, Button, Modal, Box, Typography, CircularProgress } from "@mui/material"
 import { DataGrid, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid"
-import { get, update, create } from "@/app/api/apiService"
-import type { TDemanda } from "@/app/interfaces"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PersonAdd, Edit, Warning } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "./Buttons"
 import AsignarModal from "./asignarModal"
+
+// Assume these imports are available in your project
+import { get, update, create } from "@/app/api/apiService"
+import type { TDemanda } from "@/app/interfaces"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
@@ -50,16 +51,33 @@ const DemandaTable: React.FC = () => {
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
 
+  const [apiFilters, setApiFilters] = useState({
+    envio_de_respuesta: null,
+    estado_demanda: null,
+    tipo_demanda: null,
+  })
+
   const fetchDemandas = async (pageNumber: number, pageSize: number) => {
     try {
-      const filterParams = Object.entries(filterState)
-        .filter(([_, value]) => value)
-        .map(([key]) => `${key}=true`)
-        .join("&")
-      const response = await get<TDemandaPaginated>(
-        `mesa-de-entrada/?page=${pageNumber + 1}&page_size=${pageSize}&${filterParams}`,
-      )
-      console.log("Fetched demandas:", response)
+      // Construct query parameters
+      const params = new URLSearchParams()
+
+      // Add pagination params
+      params.append("page", (pageNumber + 1).toString())
+      params.append("page_size", pageSize.toString())
+
+      // Add filter params if they exist
+      if (apiFilters.envio_de_respuesta) {
+        params.append("envio_de_respuesta", apiFilters.envio_de_respuesta)
+      }
+      if (apiFilters.estado_demanda) {
+        params.append("estado_demanda", apiFilters.estado_demanda)
+      }
+      if (apiFilters.tipo_demanda) {
+        params.append("tipo_demanda", apiFilters.tipo_demanda)
+      }
+
+      const response = await get<TDemandaPaginated>(`mesa-de-entrada/?${params.toString()}`)
       setTotalCount(response.count)
       return response
     } catch (error) {
@@ -68,23 +86,23 @@ const DemandaTable: React.FC = () => {
     }
   }
 
+  const handleFilterChange = (newFilters: typeof apiFilters) => {
+    setApiFilters(newFilters)
+    // Reset to first page when filters change
+    setPaginationModel((prev) => ({ ...prev, page: 0 }))
+  }
+
   const {
     data: demandasData,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState],
+    queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState, apiFilters],
     queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
   })
 
   const handleNuevoRegistro = () => {
-    // Implement the logic for new registration
     console.log("Nuevo registro clicked")
-  }
-
-  const handleFilterClick = () => {
-    // This function is no longer needed as filtering is handled in the Buttons component
-    console.log("Filter clicked")
   }
 
   const updatePrecalificacion = useMutation({
@@ -258,9 +276,9 @@ const DemandaTable: React.FC = () => {
       }),
       tipoDeNro: demanda.tipo_de_nro || "N/A",
       nroEspecifico: demanda.codigos_demanda.codigo || "N/A",
-      localidad: demanda.localidad.nombre || "N/A",
+      localidad: demanda.localidad?.nombre || "N/A",
       cpc: demanda.cpc.nombre || "N/A",
-      zonaEquipo: demanda.zona_asignada.nombre || "N/A",
+      zonaEquipo: demanda.zona_asignada?.nombre || "N/A",
       usuario: demanda.registrado_por_user?.username || "N/A",
       areaSenaf: demanda.area_senaf || "N/A",
     })) || []
@@ -276,6 +294,7 @@ const DemandaTable: React.FC = () => {
           filterState={filterState}
           setFilterState={setFilterState}
           user={user}
+          onFilterChange={handleFilterChange}
         />
         <div style={{ height: 400, width: "100%" }}>
           <DataGrid
@@ -302,8 +321,6 @@ const DemandaTable: React.FC = () => {
         aria-labelledby="demanda-detail-modal"
         aria-describedby="demanda-detail-description"
         onClose={(_event, reason) => {
-          // Only close if the reason is NOT a backdrop click
-          // (and if you like, also ensure it isn't escapeKeyDown)
           if (reason !== "backdropClick") {
             handleCloseModal()
           }

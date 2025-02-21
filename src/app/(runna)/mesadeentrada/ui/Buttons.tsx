@@ -4,44 +4,34 @@ import React, { useState } from "react"
 import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
-import {
-  Check,
-  Archive,
-  ImageOffIcon as PersonOffIcon,
-  UserCheckIcon as PersonCheckIcon,
-  ClipboardCheck,
-  Star,
-  FileCheck,
-  Mail,
-  MailOpen,
-  SlidersHorizontal,
-} from "lucide-react"
-import SearchModal from "./SearchModal"
+import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive, Scale, Shield } from "lucide-react"
+
+interface FilterState {
+  envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
+  estado_demanda:
+    | "SIN_ASIGNAR"
+    | "CONSTATACION"
+    | "EVALUACION"
+    | "PENDIENTE_AUTORIZACION"
+    | "ARCHIVADA"
+    | "ADMITIDA"
+    | null
+  tipo_demanda: "DE_PROTECCION" | "PENAL_JUVENIL" | null
+}
 
 interface ButtonsProps {
   isLoading: boolean
   handleNuevoRegistro: () => void
-  filterState: {
-    todos: boolean
-    sinAsignar: boolean
-    asignados: boolean
-    archivados: boolean
-    completados: boolean
-    sinLeer: boolean
-    leidos: boolean
-    constatados: boolean
-    evaluados: boolean
-  }
-  setFilterState: React.Dispatch<React.SetStateAction<ButtonsProps["filterState"]>>
-  user: {
-    is_superuser: boolean
-    all_permissions: Array<{ codename: string }>
-  }
+  onFilterChange: (filters: FilterState) => void
 }
 
-const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filterState, setFilterState, user }) => {
+const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFilterChange }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
+  const [filterState, setFilterState] = useState<FilterState>({
+    envio_de_respuesta: null,
+    estado_demanda: null,
+    tipo_demanda: null,
+  })
 
   const handleFilterClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -51,27 +41,24 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
     setAnchorEl(null)
   }
 
-  const handleFilterChange = (key: keyof typeof filterState) => {
-    setFilterState((prevState) => ({
-      ...prevState,
-      [key]: !prevState[key],
-      todos: false, // Uncheck 'Todos' when any other filter is selected
-    }))
+  const handleFilterChange = (category: keyof FilterState, value: FilterState[keyof FilterState]) => {
+    const newState = {
+      ...filterState,
+      [category]: filterState[category] === value ? null : value,
+    }
+    setFilterState(newState)
+    onFilterChange(newState)
+    // Don't close the popover to allow multiple selections
   }
 
-  const handleTodosChange = () => {
-    setFilterState((prevState) => ({
-      ...Object.keys(prevState).reduce((acc, key) => ({ ...acc, [key]: false }), {}),
-      todos: !prevState.todos,
-    }))
-  }
-
-  const handleOpenSearchModal = () => {
-    setIsSearchModalOpen(true)
-  }
-
-  const handleCloseSearchModal = () => {
-    setIsSearchModalOpen(false)
+  const clearFilters = () => {
+    const newState = {
+      envio_de_respuesta: null,
+      estado_demanda: null,
+      tipo_demanda: null,
+    }
+    setFilterState(newState)
+    onFilterChange(newState)
   }
 
   return (
@@ -80,7 +67,6 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
         <>
           <Skeleton variant="rectangular" width={150} height={40} />
           <Skeleton variant="rectangular" width={100} height={40} />
-          <Skeleton variant="rectangular" width={130} height={40} />
         </>
       ) : (
         <>
@@ -113,24 +99,6 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
             <span>Filtros</span>
           </Button>
 
-          <Button
-            onClick={handleOpenSearchModal}
-            variant="outlined"
-            size="small"
-            className="flex items-center gap-2 px-4 py-2 bg-white"
-            sx={{
-              border: "1px solid rgba(0, 0, 0, 0.12)",
-              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-              borderRadius: "4px",
-              "&:hover": {
-                boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-              },
-            }}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span>Filtros avanzados</span>
-          </Button>
-
           <Popover
             open={Boolean(anchorEl)}
             anchorEl={anchorEl}
@@ -153,193 +121,170 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, filte
               },
             }}
           >
-            <Box
-              sx={{
-                maxHeight: 400,
-                overflowY: "auto",
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-              }}
-            >
+            <Box sx={{ p: 2 }}>
+              <div className="flex justify-between items-center mb-4">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Filtros
+                </Typography>
+                <Button size="small" onClick={clearFilters}>
+                  Limpiar
+                </Button>
+              </div>
+
               <List disablePadding>
+                {/* Envío de Respuesta Section */}
                 <ListItem sx={{ py: 1.5, px: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Estado
+                    Envío de Respuesta
                   </Typography>
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={handleTodosChange}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  onClick={() => handleFilterChange("envio_de_respuesta", "NO_NECESARIO")}
+                  sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <Star className="h-4 w-4" />
+                    <Mail className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="Todos" />
-                  {filterState?.todos && <Check className="h-4 w-4 text-primary" />}
+                  <ListItemText primary="No Necesario" />
+                  {filterState.envio_de_respuesta === "NO_NECESARIO" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("sinAsignar")}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  onClick={() => handleFilterChange("envio_de_respuesta", "PENDIENTE")}
+                  sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <PersonOffIcon className="h-4 w-4" />
+                    <Clock className="h-4 w-4" />
+                  </ListItemIcon>
+                  <ListItemText primary="Pendiente" />
+                  {filterState.envio_de_respuesta === "PENDIENTE" && <Check className="h-4 w-4 text-primary" />}
+                </ListItem>
+
+                <ListItem
+                  button
+                  onClick={() => handleFilterChange("envio_de_respuesta", "ENVIADO")}
+                  sx={{ py: 1, px: 2 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <Send className="h-4 w-4" />
+                  </ListItemIcon>
+                  <ListItemText primary="Enviado" />
+                  {filterState.envio_de_respuesta === "ENVIADO" && <Check className="h-4 w-4 text-primary" />}
+                </ListItem>
+
+                {/* Estado Demanda Section */}
+                <ListItem sx={{ py: 1.5, px: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Estado Demanda
+                  </Typography>
+                </ListItem>
+
+                <ListItem
+                  button
+                  onClick={() => handleFilterChange("estado_demanda", "SIN_ASIGNAR")}
+                  sx={{ py: 1, px: 2 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <AlertCircle className="h-4 w-4" />
                   </ListItemIcon>
                   <ListItemText primary="Sin Asignar" />
-                  {filterState?.sinAsignar && <Check className="h-4 w-4 text-primary" />}
+                  {filterState.estado_demanda === "SIN_ASIGNAR" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("asignados")}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  onClick={() => handleFilterChange("estado_demanda", "CONSTATACION")}
+                  sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <PersonCheckIcon className="h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="Asignados" />
-                  {filterState?.asignados && <Check className="h-4 w-4 text-primary" />}
-                </ListItem>
-
-                <ListItem sx={{ py: 1.5, px: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Proceso
-                  </Typography>
+                  <ListItemText primary="Constatación" />
+                  {filterState.estado_demanda === "CONSTATACION" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("constatados")}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <ClipboardCheck className="h-4 w-4" />
-                  </ListItemIcon>
-                  <ListItemText primary="Constatados" />
-                  {filterState?.constatados && <Check className="h-4 w-4 text-primary" />}
-                </ListItem>
-
-                <ListItem
-                  button
-                  onClick={() => handleFilterChange("evaluados")}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  onClick={() => handleFilterChange("estado_demanda", "EVALUACION")}
+                  sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <FileCheck className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="Evaluados" />
-                  {filterState?.evaluados && <Check className="h-4 w-4 text-primary" />}
-                </ListItem>
-
-                <ListItem sx={{ py: 1.5, px: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Archivo
-                  </Typography>
+                  <ListItemText primary="Evaluación" />
+                  {filterState.estado_demanda === "EVALUACION" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("archivados")}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  onClick={() => handleFilterChange("estado_demanda", "PENDIENTE_AUTORIZACION")}
+                  sx={{ py: 1, px: 2 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <Clock className="h-4 w-4" />
+                  </ListItemIcon>
+                  <ListItemText primary="Pendiente Autorización" />
+                  {filterState.estado_demanda === "PENDIENTE_AUTORIZACION" && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
+                </ListItem>
+
+                <ListItem
+                  button
+                  onClick={() => handleFilterChange("estado_demanda", "ARCHIVADA")}
+                  sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Archive className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="Archivados" />
-                  {filterState?.archivados && <Check className="h-4 w-4 text-primary" />}
+                  <ListItemText primary="Archivada" />
+                  {filterState.estado_demanda === "ARCHIVADA" && <Check className="h-4 w-4 text-primary" />}
+                </ListItem>
+
+                <ListItem button onClick={() => handleFilterChange("estado_demanda", "ADMITIDA")} sx={{ py: 1, px: 2 }}>
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <FileCheck className="h-4 w-4" />
+                  </ListItemIcon>
+                  <ListItemText primary="Admitida" />
+                  {filterState.estado_demanda === "ADMITIDA" && <Check className="h-4 w-4 text-primary" />}
+                </ListItem>
+
+                {/* Tipo Demanda Section */}
+                <ListItem sx={{ py: 1.5, px: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Tipo Demanda
+                  </Typography>
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("completados")}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  onClick={() => handleFilterChange("tipo_demanda", "DE_PROTECCION")}
+                  sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <FileCheck className="h-4 w-4" />
+                    <Shield className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="Completados" />
-                  {filterState?.completados && <Check className="h-4 w-4 text-primary" />}
+                  <ListItemText primary="De Protección" />
+                  {filterState.tipo_demanda === "DE_PROTECCION" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
-                {!user?.is_superuser && !user?.all_permissions.some((p) => p.codename === "add_tdemandaasignado") && (
-                  <>
-                    <ListItem sx={{ py: 1.5, px: 2 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Lectura
-                      </Typography>
-                    </ListItem>
-
-                    <ListItem
-                      button
-                      onClick={() => handleFilterChange("sinLeer")}
-                      sx={{
-                        py: 1,
-                        px: 2,
-                        "&:hover": { bgcolor: "action.hover" },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        <Mail className="h-4 w-4" />
-                      </ListItemIcon>
-                      <ListItemText primary="Sin Leer" />
-                      {filterState?.sinLeer && <Check className="h-4 w-4 text-primary" />}
-                    </ListItem>
-
-                    <ListItem
-                      button
-                      onClick={() => handleFilterChange("leidos")}
-                      sx={{
-                        py: 1,
-                        px: 2,
-                        "&:hover": { bgcolor: "action.hover" },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        <MailOpen className="h-4 w-4" />
-                      </ListItemIcon>
-                      <ListItemText primary="Leídos" />
-                      {filterState?.leidos && <Check className="h-4 w-4 text-primary" />}
-                    </ListItem>
-                  </>
-                )}
+                <ListItem
+                  button
+                  onClick={() => handleFilterChange("tipo_demanda", "PENAL_JUVENIL")}
+                  sx={{ py: 1, px: 2 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <Scale className="h-4 w-4" />
+                  </ListItemIcon>
+                  <ListItemText primary="Penal Juvenil" />
+                  {filterState.tipo_demanda === "PENAL_JUVENIL" && <Check className="h-4 w-4 text-primary" />}
+                </ListItem>
               </List>
             </Box>
           </Popover>
-          <SearchModal open={isSearchModalOpen} onClose={handleCloseSearchModal} />
         </>
       )}
     </div>

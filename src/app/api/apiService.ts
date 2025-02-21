@@ -62,23 +62,17 @@ export const getWithCustomParams = async <T>(
  * @param data Data to create a new resource.
  * @returns Newly created resource of type T.
  */
-export const create = async <T>(endpoint: string, data: Partial<T>, showToast: boolean = false, toastMessage: string = '¡Registro asignado con exito!'): Promise<T> => {
-  const response = await axiosInstance.post<T>(`${endpoint}`);
-  if (response.status === 201 && showToast) {
-    // success toast
-    toast.success(toastMessage, {
-      position: 'top-center',
-      autoClose: 3000,
-      hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: 'colored',
-    });
-  }
-  return response.data;
-};
+export const create = async <T>(endpoint: string, data: Partial<T>, showToast: boolean = false, toastMessage: string = '¡Registro asignado con exito!')
+: Promise<T> =>
+{
+  const response = await axiosInstance.post<T>(`${endpoint}/`, data)
 
+  if (showToast) {
+    toast.success(toastMessage)
+  }
+
+  return response.data;
+}
 /**
  * Generic function to update an existing resource.
  * @param endpoint API endpoint to send data to.

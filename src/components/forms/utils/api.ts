@@ -18,6 +18,24 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
     // Transform the data to match the expected server format
     const transformedData = {
       ...formData,
+      institucion: {
+        nombre: formData.institucion,
+        tipo_institucion: formData.tipo_institucion || 1 // Assuming tipo_institucion is part of your form data
+      },
+      relacion_demanda: {
+        codigos_demanda: formData.codigosDemanda.map(codigo => ({
+          codigo: codigo.codigo,
+          tipo_codigo: codigo.tipo
+        })),
+        demanda_zona: {
+          zona: formData.zona,
+          // Add other required fields for demanda_zona
+          fecha_recibido: new Date().toISOString(),
+          esta_activo: true,
+          recibido: false,
+          comentarios: formData.observaciones || "",
+        }
+      },
       adultos: formData.adultosConvivientes.map((adulto: any) => ({
         persona: {
           nombre: adulto.nombre,
@@ -115,8 +133,11 @@ export const submitFormData = async (formData: FormData): Promise<any> => {
       })),
     }
 
+    // Remove fields that are now part of other structures
     delete transformedData.adultosConvivientes
     delete transformedData.ninosAdolescentes
+    delete transformedData.codigosDemanda
+    delete transformedData.zona
 
     console.log("Transformed data:", JSON.stringify(transformedData, null, 2))
 
@@ -148,9 +169,14 @@ const transformApiDataToFormData = (apiData: any): FormData => {
   return {
     fecha_oficio_documento: apiData.fecha_oficio_documento || null,
     fecha_ingreso_senaf: apiData.fecha_ingreso_senaf || null,
-    origen: apiData.origen || null,
-    sub_origen: apiData.sub_origen || null,
-    institucion: apiData.institucion || "",
+    bloque_datos_remitente: apiData.bloque_datos_remitente || null,
+    tipo_institucion: apiData.institucion.tipo_institucion || null,
+    tipo_demanda: apiData.tipo_demanda || null,
+    presuntos_delitos: apiData.tipos_presuntos_delitos || [],
+    envio_de_respuesta: apiData.envio_de_respuesta || null,
+    motivo_ingreso: apiData.motivo_ingreso || null,
+    submotivo_ingreso: apiData.submotivo_ingreso || null,
+    institucion: apiData.institucion.nombre || "",
     nro_notificacion_102: apiData.nro_notificacion_102 || null,
     nro_sac: apiData.nro_sac || null,
     nro_suac: apiData.nro_suac || null,
@@ -165,6 +191,11 @@ const transformApiDataToFormData = (apiData: any): FormData => {
     localizacion: apiData.localizacion || null,
     createNewUsuarioExterno: false,
     usuarioExterno: apiData.informante || null,
+    relacion_demanda: {
+      codigos_demanda: apiData.relacion_demanda?.codigos_demanda || [],
+      demanda_zona: apiData.relacion_demanda?.demanda_zona || null,
+    },
+    zona: apiData.relacion_demanda?.demanda_zona?.zona || null,
     adultosConvivientes: (apiData.adultos || []).map(transformAdulto),
     ninosAdolescentes: [
       ...(apiData.nnya_principal ? [transformNNYA(apiData.nnya_principal, true)] : []),
@@ -208,4 +239,3 @@ const transformNNYA = (nnya: any, isPrincipal: boolean) => ({
   condicionesVulnerabilidad: { condicion_vulnerabilidad: nnya.condiciones_vulnerabilidad || [] },
   vinculacion: isPrincipal ? undefined : { vinculo: nnya.vinculo_nnya_principal?.vinculo || "" },
 })
-

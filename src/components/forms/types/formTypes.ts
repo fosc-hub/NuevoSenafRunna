@@ -10,8 +10,9 @@ export interface DropdownOption {
     nombre: string
     fecha_oficio_documento: string | null;
     fecha_ingreso_senaf: string | null;
-    origen: string | null;
-    sub_origen: string | null;
+    bloque_datos_remitente: string | null;
+    tipo_demanda: string | null;
+    tipo_institucion: string | null;
     institucion: string;
     nro_notificacion_102: string | null;
     nro_sac: string | null;

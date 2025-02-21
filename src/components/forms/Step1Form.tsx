@@ -32,7 +32,7 @@ interface Step1FormProps {
 }
 
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
-  const selectedMotivo = useWatch({ control, name: "presuntaVulneracion.motivos" })
+  const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
 
   const {
     data: dropdownData,
@@ -54,7 +54,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     name: "codigosDemanda",
   })
 
-  const selectedOrigen = useWatch({ control, name: "origen" })
+  const {
+    data: zonasData,
+    isLoading: isLoadingZonas,
+    isError: isErrorZonas,
+  } = useQuery({
+    queryKey: ["zonas"],
+  })
 
   if (isLoading) {
     return <CircularProgress />
@@ -109,7 +115,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12} md={6}>
           <Controller
-            name="origen"
+            name="bloque_datos_remitente"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
@@ -127,11 +133,12 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12} md={6}>
           <Controller
-            name="sub_origen"
+            name="tipo_institucion"
             control={control}
             render={({ field, fieldState: { error } }) => {
+              const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
               const filteredSubOrigins = dropdownData.tipo_institucion_demanda?.filter(
-                (subOrigen: any) => subOrigen.bloque_datos_remitente === selectedOrigen,
+                (subOrigen: any) => subOrigen.bloque_datos_remitente === selectedBloqueRemitente,
               )
 
               return (
@@ -144,6 +151,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                       </MenuItem>
                     ))}
                   </Select>
+                  {error && <FormHelperText>{error.message}</FormHelperText>}
                 </FormControl>
               )
             }}
@@ -311,7 +319,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
-            name="envio_respuesta"
+            name="envio_de_respuesta"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
@@ -329,11 +337,11 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
-            name="presuntaVulneracion.motivos"
+            name="motivo_ingreso"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Motivo de Intervención *</InputLabel>
+                <InputLabel>Motivo de Ingreso </InputLabel>
                 <Select {...field} label="Motivo de Intervención *" disabled={readOnly}>
                   {dropdownData.categoria_motivo?.map((motivo: any) => (
                     <MenuItem key={motivo.id} value={motivo.id}>
@@ -347,7 +355,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
-            name="presuntaVulneracion.submotivos"
+            name="submotivo_ingreso"
             control={control}
             render={({ field, fieldState: { error } }) => {
               const filteredSubmotivos = dropdownData.categoria_submotivo?.filter(
@@ -356,7 +364,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
 
               return (
                 <FormControl fullWidth error={!!error}>
-                  <InputLabel>Submotivo de intervención</InputLabel>
+                  <InputLabel>Submotivo de Ingreso</InputLabel>
                   <Select {...field} label="Submotivo de intervención" disabled={readOnly}>
                     {filteredSubmotivos?.map((submotivo) => (
                       <MenuItem key={submotivo.id} value={submotivo.id}>

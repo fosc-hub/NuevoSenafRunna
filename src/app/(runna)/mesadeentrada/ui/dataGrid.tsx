@@ -47,9 +47,10 @@ const DemandaTable: React.FC = () => {
     constatados: false,
     evaluados: false,
   })
-  const [user, setUser] = useState({ is_superuser: false, all_permissions: [] })
+  const [user, setUser] = useState({ id: 1, is_superuser: false, all_permissions: [] })
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
+  const [demandasData, setDemandasData] = useState<TDemandaPaginated | null>(null)
 
   const [apiFilters, setApiFilters] = useState({
     envio_de_respuesta: null,
@@ -79,7 +80,15 @@ const DemandaTable: React.FC = () => {
 
       const response = await get<TDemandaPaginated>(`mesa-de-entrada/?${params.toString()}`)
       setTotalCount(response.count)
-      return response
+      const updatedResponse = {
+        ...response,
+        results: response.results.map((demanda) => ({
+          ...demanda,
+          demanda_zona_id: demanda.demanda_zona?.id,
+        })),
+      }
+      setDemandasData(updatedResponse)
+      return updatedResponse
     } catch (error) {
       console.error("Error al obtener las demandas:", error)
       throw error
@@ -92,13 +101,10 @@ const DemandaTable: React.FC = () => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
 
-  const {
-    data: demandasData,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState, apiFilters],
     queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
+    onSuccess: (data) => setDemandasData(data),
   })
 
   const handleNuevoRegistro = () => {
@@ -155,6 +161,52 @@ const DemandaTable: React.FC = () => {
     },
   })
 
+  const updateDemandaZona = useMutation({
+    mutationFn: async ({ id, userId }: { id: number; userId: number }) => {
+      const currentDate = new Date().toISOString()
+      const updateData = {
+        fecha_recibido: currentDate,
+        recibido: true,
+        recibido_por: userId,
+      }
+      return update<TDemanda>("demanda-zona", id, updateData, true, "Demanda marcada como recibida")
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["demandas"] })
+      // Update the local state to reflect the changes
+      setDemandasData((prevData) => ({
+        ...prevData,
+        results: prevData.results.map((demanda) =>
+          demanda.demanda_zona_id === data.id
+            ? {
+                ...demanda,
+                demanda_zona: {
+                  ...demanda.demanda_zona,
+                  recibido: true,
+                  fecha_recibido: data.fecha_recibido,
+                  recibido_por: data.recibido_por,
+                },
+              }
+            : demanda,
+        ),
+      }))
+      // Open DemandaDetalle modal after successful update
+      handleOpenModal(data.demanda)
+    },
+    onError: (error) => {
+      console.error("Error al actualizar la Demanda Zona:", error)
+      toast.error("Error al marcar la demanda como recibida", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      })
+    },
+  })
+
   const handlePrecalificacionChange = (demandaId: number, newValue: string) => {
     console.log(`Updating precalificacion for demanda ${demandaId} to ${newValue}`)
     updatePrecalificacion.mutate({ demandaId, newValue })
@@ -182,6 +234,25 @@ const DemandaTable: React.FC = () => {
   const handleCloseAsignarModal = () => {
     setSelectedDemandaIdForAssignment(null)
     setIsAsignarModalOpen(false)
+  }
+
+  const getStatusColor = (estado: string) => {
+    switch (estado) {
+      case "SIN_ASIGNAR":
+        return "#e0e0e0" // gray
+      case "CONSTATACION":
+        return "#4caf50" // green
+      case "EVALUACION":
+        return "#2196f3" // blue
+      case "PENDIENTE_AUTORIZACION":
+        return "#ff9800" // orange
+      case "ARCHIVADA":
+        return "#9e9e9e" // dark gray
+      case "ADMITIDA":
+        return "#673ab7" // purple
+      default:
+        return "transparent"
+    }
   }
 
   const columns: GridColDef[] = [
@@ -252,6 +323,7 @@ const DemandaTable: React.FC = () => {
     },
     { field: "tipoDeNro", headerName: "Tipo de Nro", width: 150 },
     { field: "nroEspecifico", headerName: "Nro Específico", width: 150 },
+    { field: "localidad", headerName: "Localidad", headerName: "Nro Específico", width: 150 },
     { field: "localidad", headerName: "Localidad", width: 150 },
     { field: "cpc", headerName: "CPC", width: 100 },
     { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
@@ -281,6 +353,9 @@ const DemandaTable: React.FC = () => {
       zonaEquipo: demanda.zona_asignada?.nombre || "N/A",
       usuario: demanda.registrado_por_user?.username || "N/A",
       areaSenaf: demanda.area_senaf || "N/A",
+      estado_demanda: demanda.estado_demanda,
+      recibido: demanda.demanda_zona?.recibido || false,
+      demanda_zona_id: demanda.demanda_zona_id,
     })) || []
 
   if (isError) return <Typography color="error">Error al cargar la data</Typography>
@@ -305,14 +380,60 @@ const DemandaTable: React.FC = () => {
             pageSizeOptions={[5, 10, 25]}
             rowCount={totalCount}
             paginationMode="server"
-            loading={isLoading || updatePrecalificacion.isLoading}
+            loading={isLoading || updatePrecalificacion.isLoading || updateDemandaZona.isLoading}
             onRowClick={(params, event) => {
               const cellElement = event.target as HTMLElement
               if (!cellElement.closest('.MuiDataGrid-cell[data-field="precalificacion"]')) {
-                handleOpenModal(params.row.id)
+                if (!params.row.recibido && params.row.demanda_zona_id) {
+                  updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
+                } else {
+                  handleOpenModal(params.row.id)
+                }
               }
             }}
-            sx={{ cursor: "pointer" }}
+            sx={{
+              cursor: "pointer",
+              "& .MuiDataGrid-row": {
+                position: "relative",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: "4px",
+                },
+              },
+              // Add specific styles for each estado_demanda
+              "& .row-sin-asignar::before": {
+                backgroundColor: "#e0e0e0",
+              },
+              "& .row-constatacion::before": {
+                backgroundColor: "#4caf50",
+              },
+              "& .row-evaluacion::before": {
+                backgroundColor: "#2196f3",
+              },
+              "& .row-pendiente-autorizacion::before": {
+                backgroundColor: "#ff9800",
+              },
+              "& .row-archivada::before": {
+                backgroundColor: "#9e9e9e",
+              },
+              "& .row-admitida::before": {
+                backgroundColor: "#673ab7",
+              },
+              // Add style for non-received rows
+              "& .row-not-received": {
+                color: "#000000",
+                fontWeight: "bold",
+              },
+            }}
+            getRowClassName={(params) => {
+              const estado = params.row.estado_demanda?.toLowerCase() || ""
+              const recibido = params.row.recibido
+              return `row-${estado.replace("_", "-")}${recibido ? "" : " row-not-received"}`
+            }}
           />
         </div>
       </Paper>

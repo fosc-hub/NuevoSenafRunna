@@ -99,7 +99,7 @@ export function EnviarRespuestaModal({ isOpen, onClose, demandaId }: EnviarRespu
     setIsLoading(true)
     setError(null)
     try {
-      await create<Respuesta>("respuesta/", {
+      await create<Respuesta>("respuesta", {
         ...data,
         demanda: demandaId,
       })

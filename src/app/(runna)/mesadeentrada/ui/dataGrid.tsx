@@ -111,17 +111,17 @@ const DemandaTable: React.FC = () => {
     console.log("Nuevo registro clicked")
   }
 
-  const updatePrecalificacion = useMutation({
+  const updateCalificacion = useMutation({
     mutationFn: async ({ demandaId, newValue }: { demandaId: number; newValue: string }) => {
       const demanda = demandasData?.results.find((d) => d.id === demandaId)
       if (!demanda) throw new Error("Demanda not found")
 
-      if (demanda.precalificacion) {
+      if (demanda.calificacion) {
         return update<TDemanda>(
-          "precalificacion-demanda",
-          demanda.precalificacion.id,
+          "calificacion-demanda",
+          demanda.calificacion.id,
           {
-            estado_precalificacion: newValue,
+            estado_calificacion: newValue,
             ultima_actualizacion: new Date().toISOString(),
           },
           true,
@@ -130,12 +130,13 @@ const DemandaTable: React.FC = () => {
       } else {
         const currentDate = new Date().toISOString()
         return create<TDemanda>(
-          `precalificacion-demanda`,
+          `calificacion-demanda`,
           {
             fecha_y_hora: currentDate,
             descripcion: `Nueva Calificación: ${newValue}`,
-            estado_precalificacion: newValue,
+            estado_calificacion: newValue,
             demanda: demandaId,
+            justificacion: "N/A",
           },
           true,
           "¡Calificación creada con éxito!",
@@ -207,12 +208,12 @@ const DemandaTable: React.FC = () => {
     },
   })
 
-  const handlePrecalificacionChange = (demandaId: number, newValue: string) => {
-    console.log(`Updating precalificacion for demanda ${demandaId} to ${newValue}`)
-    updatePrecalificacion.mutate({ demandaId, newValue })
+  const handleCalificacionChange = (demandaId: number, newValue: string) => {
+    console.log(`Updating calificacion for demanda ${demandaId} to ${newValue}`)
+    updateCalificacion.mutate({ demandaId, newValue })
   }
 
-  const formatPrecalificacionValue = (value: string | undefined | null) => {
+  const formatCalificacionValue = (value: string | undefined | null) => {
     return value || "Seleccionar"
   }
 
@@ -263,7 +264,7 @@ const DemandaTable: React.FC = () => {
       renderCell: (params) => (
         <div style={{ display: "flex", alignItems: "center" }}>
           {params.value}
-          {params.row.precalificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "8px" }} />}
+          {params.row.calificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "8px" }} />}
         </div>
       ),
     },
@@ -272,15 +273,15 @@ const DemandaTable: React.FC = () => {
     { field: "nombre", headerName: "Nombre", width: 200 },
     { field: "dni", headerName: "DNI", width: 100 },
     {
-      field: "precalificacion",
+      field: "calificacion",
       headerName: "Calificación",
       width: 200,
       renderCell: (params) => (
         <select
-          value={formatPrecalificacionValue(params.value)}
+          value={formatCalificacionValue(params.value)}
           onChange={(e) => {
             e.stopPropagation()
-            handlePrecalificacionChange(params.row.id, e.target.value)
+            handleCalificacionChange(params.row.id, e.target.value)
           }}
           onClick={(e) => e.stopPropagation()}
           style={{ width: "100%", padding: "8px" }}
@@ -289,6 +290,11 @@ const DemandaTable: React.FC = () => {
           <option value="URGENTE">Urgente</option>
           <option value="NO_URGENTE">No Urgente</option>
           <option value="COMPLETAR">Completar</option>
+          <option value="NO_PERTINENTE_SIPPDD">No Pertinente (SIPPDD)</option>
+          <option value="NO_PERTINENTE_OTRAS_PROVINCIAS">No Pertinente (Otras Provincias)</option>
+          <option value="NO_PERTINENTE_OFICIOS_INCOMPLETOS">No Pertinente (Oficios Incompletos)</option>
+          <option value="NO_PERTINENTE_LEY_9944">No Pertinente (Ley 9944)</option>
+          <option value="PASA_A_LEGAJO">Pasa a Legajo</option>
         </select>
       ),
     },
@@ -323,7 +329,6 @@ const DemandaTable: React.FC = () => {
     },
     { field: "tipoDeNro", headerName: "Tipo de Nro", width: 150 },
     { field: "nroEspecifico", headerName: "Nro Específico", width: 150 },
-    { field: "localidad", headerName: "Localidad", headerName: "Nro Específico", width: 150 },
     { field: "localidad", headerName: "Localidad", width: 150 },
     { field: "cpc", headerName: "CPC", width: 100 },
     { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
@@ -338,7 +343,7 @@ const DemandaTable: React.FC = () => {
       origen: demanda.bloque_datos_remitente?.nombre || "N/A",
       nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
       dni: demanda.nnya_principal?.dni || "N/A",
-      precalificacion: demanda.precalificacion?.estado_precalificacion || null,
+      calificacion: demanda.calificacion?.estado_calificacion || null,
       ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
         day: "2-digit",
         month: "2-digit",
@@ -380,10 +385,10 @@ const DemandaTable: React.FC = () => {
             pageSizeOptions={[5, 10, 25]}
             rowCount={totalCount}
             paginationMode="server"
-            loading={isLoading || updatePrecalificacion.isLoading || updateDemandaZona.isLoading}
+            loading={isLoading || updateCalificacion.isLoading || updateDemandaZona.isLoading}
             onRowClick={(params, event) => {
               const cellElement = event.target as HTMLElement
-              if (!cellElement.closest('.MuiDataGrid-cell[data-field="precalificacion"]')) {
+              if (!cellElement.closest('.MuiDataGrid-cell[data-field="calificacion"]')) {
                 if (!params.row.recibido && params.row.demanda_zona_id) {
                   updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
                 } else {

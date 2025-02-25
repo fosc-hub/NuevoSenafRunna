@@ -264,7 +264,7 @@ const DemandaTable: React.FC = () => {
       renderCell: (params) => (
         <div style={{ display: "flex", alignItems: "center" }}>
           {params.value}
-          {params.row.calificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "8px" }} />}
+          {params.row.calificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "7px" }} />}
         </div>
       ),
     },
@@ -284,7 +284,7 @@ const DemandaTable: React.FC = () => {
             handleCalificacionChange(params.row.id, e.target.value)
           }}
           onClick={(e) => e.stopPropagation()}
-          style={{ width: "100%", padding: "8px" }}
+          style={{ width: "100%", padding: "7px" }}
         >
           {params.value === null && <option value="">Seleccionar</option>}
           <option value="URGENTE">Urgente</option>
@@ -442,27 +442,33 @@ const DemandaTable: React.FC = () => {
                   left: 0,
                   top: 0,
                   bottom: 0,
-                  width: "4px",
+                  width: "5px", // Increased from 4px to 5px (25% increase)
                 },
               },
               // Add specific styles for each estado_demanda
               "& .row-sin-asignar::before": {
                 backgroundColor: "#e0e0e0",
+                width: "7px", // Increased by approximately 30%
               },
               "& .row-constatacion::before": {
                 backgroundColor: "#4caf50",
+                width: "7px", // Increased by approximately 30%
               },
               "& .row-evaluacion::before": {
                 backgroundColor: "#2196f3",
+                width: "7px", // Increased by approximately 30%
               },
               "& .row-pendiente-autorizacion::before": {
                 backgroundColor: "#ff9800",
+                width: "7px", // Increased by approximately 30%
               },
               "& .row-archivada::before": {
                 backgroundColor: "#9e9e9e",
+                width: "7px", // Increased by approximately 30%
               },
               "& .row-admitida::before": {
                 backgroundColor: "#673ab7",
+                width: "7px", // Increased by approximately 30%
               },
               // Add style for non-received rows
               "& .row-not-received": {

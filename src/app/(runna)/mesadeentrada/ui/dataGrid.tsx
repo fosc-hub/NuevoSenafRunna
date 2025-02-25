@@ -175,22 +175,24 @@ const DemandaTable: React.FC = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["demandas"] })
       // Update the local state to reflect the changes
-      setDemandasData((prevData) => ({
-        ...prevData,
-        results: prevData.results.map((demanda) =>
-          demanda.demanda_zona_id === data.id
-            ? {
-                ...demanda,
-                demanda_zona: {
-                  ...demanda.demanda_zona,
-                  recibido: true,
-                  fecha_recibido: data.fecha_recibido,
-                  recibido_por: data.recibido_por,
-                },
-              }
-            : demanda,
-        ),
-      }))
+      setDemandasData((prevData) => {
+        if (!prevData) return null;
+        return {
+          ...prevData,
+          results: prevData.results.map((demanda) =>
+            demanda.demanda_zona_id === data.id
+              ? {
+                  ...demanda,
+                  demanda_zona: {
+                    ...demanda.demanda_zona,
+                    recibido: true,
+                    fecha_recibido: data.fecha_recibido,
+                  },
+                }
+              : demanda,
+          ),
+        };
+      });
       // Open DemandaDetalle modal after successful update
       handleOpenModal(data.demanda)
     },
@@ -269,7 +271,7 @@ const DemandaTable: React.FC = () => {
       ),
     },
     { field: "score", headerName: "Score", width: 100 },
-    { field: "origen", headerName: "Origen", width: 150 },
+    { field: "origen", headerName: "Bloque de Datos del Remitente", width: 150 },
     { field: "nombre", headerName: "Nombre", width: 200 },
     { field: "dni", headerName: "DNI", width: 100 },
     {
@@ -321,7 +323,7 @@ const DemandaTable: React.FC = () => {
     {
       field: "asignar",
       headerName: "Asignar",
-      width: 135,
+      width: 145,
       renderCell: (params) => (
         <Button
           variant="outlined"
@@ -357,7 +359,6 @@ const DemandaTable: React.FC = () => {
     { field: "cpc", headerName: "CPC", width: 100 },
     { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
     { field: "usuario", headerName: "Usuario", width: 150 },
-    { field: "areaSenaf", headerName: "Área Senaf", width: 150 },
     {
       field: "envioRespuesta",
       headerName: "Envío Respuesta",

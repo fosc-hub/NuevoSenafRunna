@@ -668,56 +668,47 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   Condiciones de Vulnerabilidad
                 </Typography>
                 <Controller
-                  name={`ninosAdolescentes.${index}.condicionesVulnerabilidad.condicion_vulnerabilidad`}
-                  control={control}
-                  rules={{ required: "Seleccione al menos una condición de vulnerabilidad" }}
-                  render={({ field, fieldState: { error } }) => (
-                    <FormControl fullWidth error={!!error}>
-                      <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>
-                        Condiciones de Vulnerabilidad
-                      </InputLabel>
-                      <Select
-                        {...field}
-                        labelId={`condiciones-vulnerabilidad-label-${index}`}
-                        id={`condiciones-vulnerabilidad-${index}`}
-                        multiple
-                        value={Array.isArray(field.value) ? field.value : []}
-                        onChange={(event) => {
-                          const value = event.target.value
-                          field.onChange(typeof value === "string" ? value.split(",") : value)
-                        }}
-                        input={
-                          <OutlinedInput
-                            id={`condiciones-vulnerabilidad-chip-${index}`}
-                            label="Condiciones de Vulnerabilidad"
-                          />
-                        }
-                        renderValue={(selected) => (
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                            {selected.map((value) => (
-                              <Chip
-                                key={value}
-                                label={
-                                  dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === value)?.nombre || value
-                                }
-                              />
-                            ))}
-                          </Box>
-                        )}
-                        MenuProps={MenuProps}
-                        disabled={readOnly}
-                      >
-                        {dropdownData.condiciones_vulnerabilidad
-                          .filter((cv) => cv.nnya && !cv.adulto)
-                          .map((cv) => (
-                            <MenuItem key={cv.id} value={cv.id} style={getStyles(cv.nombre, field.value || [], theme)}>
-                              {cv.nombre}
-                            </MenuItem>
-                          ))}
-                      </Select>
-                    </FormControl>
-                  )}
-                />
+  name={`ninosAdolescentes.${index}.condicionesVulnerabilidad.condicion_vulnerabilidad`}
+  control={control}
+  rules={{ required: "Seleccione al menos una condición de vulnerabilidad" }}
+  render={({ field, fieldState: { error } }) => (
+    <FormControl fullWidth error={!!error}>
+      <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>
+        Condiciones de Vulnerabilidad
+      </InputLabel>
+      <Select
+        {...field}
+        labelId={`condiciones-vulnerabilidad-label-${index}`}
+        id={`condiciones-vulnerabilidad-${index}`}
+        multiple
+        value={Array.isArray(field.value) ? field.value : []}  // Ensuring it's an array
+        onChange={(event) => field.onChange(event.target.value)} 
+        input={<OutlinedInput id={`condiciones-vulnerabilidad-chip-${index}`} label="Condiciones de Vulnerabilidad" />}
+        renderValue={(selected) => (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {selected.map((value) => (
+              <Chip
+                key={value}
+                label={dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === value)?.nombre || value}
+              />
+            ))}
+          </Box>
+        )}
+        MenuProps={MenuProps}
+        disabled={readOnly}
+      >
+        {dropdownData.condiciones_vulnerabilidad
+          .filter((cv) => cv.nnya && !cv.adulto)
+          .map((cv) => (
+            <MenuItem key={cv.id} value={cv.id} style={getStyles(cv.nombre, field.value || [], theme)}>
+              {cv.nombre}
+            </MenuItem>
+          ))}
+      </Select>
+    </FormControl>
+  )}
+/>
+
               </Grid>
               {/* Health Information */}
               <Grid item xs={12}>

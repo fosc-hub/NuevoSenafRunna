@@ -322,7 +322,12 @@ const DemandaTable: React.FC = () => {
       headerName: "Evaluar",
       width: 135,
       renderCell: (params) => (
-        <Button variant="contained" color="primary" startIcon={<Edit />}>
+        <Button
+          variant="contained"
+          color={params.row.estado_demanda === "EVALUACION" ? "primary" : "inherit"}
+          startIcon={<Edit />}
+          disabled={params.row.estado_demanda !== "EVALUACION"}
+        >
           Evaluar
         </Button>
       ),
@@ -334,6 +339,36 @@ const DemandaTable: React.FC = () => {
     { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
     { field: "usuario", headerName: "Usuario", width: 150 },
     { field: "areaSenaf", headerName: "Área Senaf", width: 150 },
+    {
+      field: "envioRespuesta",
+      headerName: "Envío Respuesta",
+      width: 150,
+      renderCell: (params) => {
+        const value = params.value as string
+        let displayText = value
+        let color = "inherit"
+
+        switch (value) {
+          case "NO_NECESARIO":
+            displayText = "No Necesario"
+            color = "text.secondary"
+            break
+          case "PENDIENTE":
+            displayText = "Pendiente"
+            color = "warning.main"
+            break
+          case "ENVIADO":
+            displayText = "Enviado"
+            color = "success.main"
+            break
+          default:
+            displayText = "N/A"
+            break
+        }
+
+        return <Typography color={color}>{displayText}</Typography>
+      },
+    },
   ]
 
   const rows =
@@ -361,6 +396,7 @@ const DemandaTable: React.FC = () => {
       estado_demanda: demanda.estado_demanda,
       recibido: demanda.demanda_zona?.recibido || false,
       demanda_zona_id: demanda.demanda_zona_id,
+      envioRespuesta: demanda.envio_de_respuesta || "N/A",
     })) || []
 
   if (isError) return <Typography color="error">Error al cargar la data</Typography>

@@ -232,7 +232,7 @@ export function RegistrarActividadModal({ isOpen, onClose, demandaId }: Registra
         formDataToSend.append("archivos", file)
       })
 
-      await create<Actividad>("actividad/", formDataToSend)
+      await create<Actividad>("actividad", formDataToSend)
       await fetchActividades()
       reset()
       setSelectedFiles([])

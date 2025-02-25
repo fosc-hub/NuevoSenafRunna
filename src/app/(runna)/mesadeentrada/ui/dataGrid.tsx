@@ -466,14 +466,18 @@ const DemandaTable: React.FC = () => {
               },
               // Add style for non-received rows
               "& .row-not-received": {
-                color: "#000000",
+                color: "#333333", // Lighter black color
                 fontWeight: "bold",
+              },
+              // Add a new style for received rows
+              "& .row-received": {
+                color: "#666666", // Slightly darker gray
               },
             }}
             getRowClassName={(params) => {
               const estado = params.row.estado_demanda?.toLowerCase() || ""
               const recibido = params.row.recibido
-              return `row-${estado.replace("_", "-")}${recibido ? "" : " row-not-received"}`
+              return `row-${estado.replace("_", "-")}${recibido ? " row-received" : " row-not-received"}`
             }}
           />
         </div>

@@ -264,7 +264,7 @@ const DemandaTable: React.FC = () => {
       renderCell: (params) => (
         <div style={{ display: "flex", alignItems: "center" }}>
           {params.value}
-          {params.row.calificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "7px" }} />}
+          {params.row.calificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "8px" }} />}
         </div>
       ),
     },
@@ -284,7 +284,26 @@ const DemandaTable: React.FC = () => {
             handleCalificacionChange(params.row.id, e.target.value)
           }}
           onClick={(e) => e.stopPropagation()}
-          style={{ width: "100%", padding: "7px" }}
+          style={{
+            width: "100%",
+            padding: "8px",
+            border: "1px solid #e0e0e0",
+            borderRadius: "4px",
+            backgroundColor: "#fff",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            cursor: "pointer",
+            outline: "none",
+            fontSize: "0.875rem",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              borderColor: "#bdbdbd",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            },
+            "&:focus": {
+              borderColor: "#2196f3",
+              boxShadow: "0 0 0 2px rgba(33,150,243,0.2)",
+            },
+          }}
         >
           {params.value === null && <option value="">Seleccionar</option>}
           <option value="URGENTE">Urgente</option>

@@ -1,19 +1,13 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
-  IconButton,
   List,
   ListItem,
   ListItemText,
@@ -23,8 +17,8 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Paper,
 } from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
 import MessageIcon from "@mui/icons-material/Message"
 import { create, get } from "@/app/api/apiService"
 
@@ -37,12 +31,6 @@ interface Respuesta {
   demanda: number
 }
 
-interface EnviarRespuestaModalProps {
-  isOpen: boolean
-  onClose: () => void
-  demandaId: number
-}
-
 const respuestaSchema = z.object({
   mail: z.string().email({ message: "Correo electrónico inválido" }),
   institucion: z.string().min(1, { message: "Este campo es requerido" }),
@@ -51,7 +39,11 @@ const respuestaSchema = z.object({
 
 type RespuestaFormData = z.infer<typeof respuestaSchema>
 
-export function EnviarRespuestaModal({ isOpen, onClose, demandaId }: EnviarRespuestaModalProps) {
+interface EnviarRespuestaFormProps {
+  demandaId: number
+}
+
+export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const [respuestas, setRespuestas] = useState<Respuesta[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,10 +68,8 @@ export function EnviarRespuestaModal({ isOpen, onClose, demandaId }: EnviarRespu
   })
 
   useEffect(() => {
-    if (isOpen) {
-      fetchRespuestas()
-    }
-  }, [isOpen])
+    fetchRespuestas()
+  }, [])
 
   const fetchRespuestas = async () => {
     setIsLoading(true)
@@ -89,7 +79,7 @@ export function EnviarRespuestaModal({ isOpen, onClose, demandaId }: EnviarRespu
       setRespuestas(data)
     } catch (err) {
       console.error("Error fetching respuestas:", err)
-      setError("Error al cargar las respuestas. Por favor, intente de nuevo.")
+      setError("Error al cargar las respuestas")
     } finally {
       setIsLoading(false)
     }
@@ -104,15 +94,14 @@ export function EnviarRespuestaModal({ isOpen, onClose, demandaId }: EnviarRespu
         demanda: demandaId,
       })
       reset()
-      await fetchRespuestas() // Refresh the list after successful submission
+      await fetchRespuestas()
       setSnackbar({ open: true, message: "Respuesta enviada con éxito", severity: "success" })
     } catch (err) {
       console.error("Error submitting respuesta:", err)
-      setError("Error al enviar la respuesta. La respuesta podría haberse guardado. Actualizando la lista...")
-      await fetchRespuestas() // Attempt to refresh the list even if there was an error
+      setError("Error al enviar la respuesta")
       setSnackbar({
         open: true,
-        message: "Error al enviar la respuesta. Por favor, verifique si se guardó.",
+        message: "Error al enviar la respuesta. Por favor, intente nuevamente.",
         severity: "error",
       })
     } finally {
@@ -120,123 +109,101 @@ export function EnviarRespuestaModal({ isOpen, onClose, demandaId }: EnviarRespu
     }
   }
 
-  const handleSnackbarClose = () => {
-    setSnackbar({ ...snackbar, open: false })
-  }
-
   return (
-    <>
-      <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ m: 0, p: 2 }}>
-          Enviar Respuesta
-          <IconButton
-            aria-label="close"
-            onClick={onClose}
-            sx={{
-              position: "absolute",
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box
-            component="form"
-            onSubmit={handleSubmit(onSubmit)}
-            sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}
-          >
-            <Controller
-              name="mail"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Correo Electrónico"
-                  fullWidth
-                  error={!!errors.mail}
-                  helperText={errors.mail?.message}
-                />
-              )}
+    <Paper sx={{ p: 3 }}>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Controller
+          name="mail"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Correo Electrónico"
+              fullWidth
+              error={!!errors.mail}
+              helperText={errors.mail?.message}
             />
-            <Controller
-              name="institucion"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Institución"
-                  fullWidth
-                  error={!!errors.institucion}
-                  helperText={errors.institucion?.message}
-                />
-              )}
-            />
-            <Controller
-              name="mensaje"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Mensaje"
-                  multiline
-                  rows={4}
-                  fullWidth
-                  error={!!errors.mensaje}
-                  helperText={errors.mensaje?.message}
-                />
-              )}
-            />
-          </Box>
-          <Typography variant="h6" gutterBottom>
-            Historial de Respuestas
-          </Typography>
-          {isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexGrow: 1 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Typography color="error">{error}</Typography>
-          ) : (
-            <List sx={{ overflowY: "auto", maxHeight: "40vh" }}>
-              {respuestas.map((respuesta, index) => (
-                <React.Fragment key={respuesta.id}>
-                  <ListItem alignItems="flex-start">
-                    <ListItemText
-                      primary={respuesta.mail}
-                      secondary={
-                        <>
-                          <Typography component="span" variant="body2" color="text.primary">
-                            {new Date(respuesta.fecha_y_hora).toLocaleString()} - {respuesta.institucion}
-                          </Typography>
-                          {" — " + respuesta.mensaje}
-                        </>
-                      }
-                    />
-                  </ListItem>
-                  {index < respuestas.length - 1 && <Divider variant="inset" component="li" />}
-                </React.Fragment>
-              ))}
-            </List>
           )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button variant="outlined" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button variant="contained" onClick={handleSubmit(onSubmit)} startIcon={<MessageIcon />} disabled={isLoading}>
-            Enviar Respuesta
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
+        />
+        <Controller
+          name="institucion"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Institución"
+              fullWidth
+              error={!!errors.institucion}
+              helperText={errors.institucion?.message}
+            />
+          )}
+        />
+        <Controller
+          name="mensaje"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Mensaje"
+              multiline
+              rows={4}
+              fullWidth
+              error={!!errors.mensaje}
+              helperText={errors.mensaje?.message}
+            />
+          )}
+        />
+        <Button type="submit" variant="contained" startIcon={<MessageIcon />} disabled={isLoading}>
+          Enviar Respuesta
+        </Button>
+      </Box>
+
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          Historial de Respuestas
+        </Typography>
+        {isLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : (
+          <List sx={{ width: "100%", bgcolor: "background.paper", maxHeight: "400px", overflow: "auto" }}>
+            {respuestas.map((respuesta, index) => (
+              <React.Fragment key={respuesta.id}>
+                <ListItem alignItems="flex-start">
+                  <ListItemText
+                    primary={respuesta.mail}
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" color="text.primary">
+                          {new Date(respuesta.fecha_y_hora).toLocaleString()} - {respuesta.institucion}
+                        </Typography>
+                        {" — " + respuesta.mensaje}
+                      </>
+                    }
+                  />
+                </ListItem>
+                {index < respuestas.length - 1 && <Divider variant="inset" component="li" />}
+              </React.Fragment>
+            ))}
+          </List>
+        )}
+      </Box>
+
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </>
+    </Paper>
   )
 }
 

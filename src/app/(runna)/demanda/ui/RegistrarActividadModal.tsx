@@ -1,16 +1,11 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
@@ -22,6 +17,7 @@ import {
   Snackbar,
   Alert,
   IconButton,
+  Paper,
 } from "@mui/material"
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
@@ -31,12 +27,6 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid"
 import { create, get } from "@/app/api/apiService"
 import type { Actividad, ActividadTipo } from "@/types/actividad"
 import { AttachFile, Download, Upload } from "@mui/icons-material"
-
-interface RegistrarActividadModalProps {
-  isOpen: boolean
-  onClose: () => void
-  demandaId: number
-}
 
 const actividadSchema = z.object({
   fecha_y_hora: z.date().min(new Date(1900, 0, 1), "La fecha y hora es requerida"),
@@ -96,7 +86,11 @@ const columns: GridColDef[] = [
   },
 ]
 
-export function RegistrarActividadModal({ isOpen, onClose, demandaId }: RegistrarActividadModalProps) {
+interface RegistrarActividadFormProps {
+  demandaId: number
+}
+
+export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProps) {
   const [actividades, setActividades] = useState<Actividad[]>([])
   const [actividadTipos, setActividadTipos] = useState<ActividadTipo[]>([])
   const [instituciones, setInstituciones] = useState<{ id: number; nombre: string }[]>([])
@@ -127,12 +121,10 @@ export function RegistrarActividadModal({ isOpen, onClose, demandaId }: Registra
   const selectedTipoNombre = actividadTipos.find((tipo) => tipo.id === selectedTipo)?.nombre || ""
 
   useEffect(() => {
-    if (isOpen) {
-      fetchActividadTipos()
-      fetchActividades()
-      fetchInstituciones()
-    }
-  }, [isOpen])
+    fetchActividadTipos()
+    fetchActividades()
+    fetchInstituciones()
+  }, [])
 
   const fetchActividadTipos = async () => {
     try {
@@ -195,7 +187,6 @@ export function RegistrarActividadModal({ isOpen, onClose, demandaId }: Registra
       return
     }
 
-    // Create a template file based on the selected activity type
     const templateContent =
       `Modelo de ${selectedTipoNombre}\n\n` +
       `Fecha: ${new Date().toLocaleDateString()}\n` +
@@ -253,126 +244,129 @@ export function RegistrarActividadModal({ isOpen, onClose, demandaId }: Registra
   }
 
   return (
-    <>
-      <Dialog open={isOpen} onClose={onClose} maxWidth="lg" fullWidth>
-        <DialogTitle>Registrar Actividad</DialogTitle>
-        <DialogContent dividers>
-          <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-              <Controller
-                name="fecha_y_hora"
-                control={control}
-                render={({ field }) => (
-                  <DateTimePicker
-                    label="Fecha y Hora"
-                    value={field.value}
-                    onChange={(newValue) => field.onChange(newValue)}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
-                  />
-                )}
+    <Paper sx={{ p: 3 }}>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+          <Controller
+            name="fecha_y_hora"
+            control={control}
+            render={({ field }) => (
+              <DateTimePicker
+                label="Fecha y Hora"
+                value={field.value}
+                onChange={(newValue) => field.onChange(newValue)}
+                renderInput={(params) => <TextField {...params} fullWidth />}
               />
-            </LocalizationProvider>
-            <Controller
-              name="descripcion"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Descripción"
-                  multiline
-                  rows={4}
-                  error={!!errors.descripcion}
-                  helperText={errors.descripcion?.message}
-                />
-              )}
-            />
-            <Controller
-              name="tipo"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.tipo}>
-                  <InputLabel>Tipo de Actividad</InputLabel>
-                  <Select {...field} label="Tipo de Actividad">
-                    {actividadTipos.map((tipo) => (
-                      <MenuItem key={tipo.id} value={tipo.id}>
-                        {tipo.nombre}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.tipo && <Typography color="error">{errors.tipo.message}</Typography>}
-                </FormControl>
-              )}
-            />
-            {selectedTipo > 0 && (
-              <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate}>
-                Descargar Modelo
-              </Button>
             )}
-            <Controller
-              name="institucion"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.institucion}>
-                  <InputLabel>Institución</InputLabel>
-                  <Select {...field} label="Institución">
-                    {instituciones.map((institucion) => (
-                      <MenuItem key={institucion.id} value={institucion.id}>
-                        {institucion.nombre}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.institucion && <Typography color="error">{errors.institucion.message}</Typography>}
-                </FormControl>
-              )}
-            />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <input type="file" multiple onChange={handleFileChange} style={{ display: "none" }} ref={fileInputRef} />
-              <Button variant="outlined" startIcon={<Upload />} onClick={() => fileInputRef.current?.click()}>
-                Subir Archivos
-              </Button>
-              {selectedFiles.length > 0 && (
-                <Typography variant="body2">{selectedFiles.length} archivo(s) seleccionado(s)</Typography>
-              )}
-            </Box>
-            {selectedFiles.length > 0 && (
-              <Box sx={{ mt: 1 }}>
-                {selectedFiles.map((file, index) => (
-                  <Typography key={index} variant="body2" color="text.secondary">
-                    {file.name}
-                  </Typography>
-                ))}
-              </Box>
-            )}
-          </Box>
-          <Typography variant="h6" gutterBottom>
-            Actividades Registradas
-          </Typography>
-          <DataGrid
-            rows={actividades}
-            columns={columns}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 100, page: 0 },
-              },
-            }}
-            pageSizeOptions={[10, 25, 50, 100]}
-            autoHeight
-            disableSelectionOnClick
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSubmit(onSubmit)} disabled={isLoading} variant="contained">
-            Registrar
+        </LocalizationProvider>
+
+        <Controller
+          name="descripcion"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Descripción"
+              multiline
+              rows={4}
+              error={!!errors.descripcion}
+              helperText={errors.descripcion?.message}
+            />
+          )}
+        />
+
+        <Controller
+          name="tipo"
+          control={control}
+          render={({ field }) => (
+            <FormControl fullWidth error={!!errors.tipo}>
+              <InputLabel>Tipo de Actividad</InputLabel>
+              <Select {...field} label="Tipo de Actividad">
+                {actividadTipos.map((tipo) => (
+                  <MenuItem key={tipo.id} value={tipo.id}>
+                    {tipo.nombre}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.tipo && <Typography color="error">{errors.tipo.message}</Typography>}
+            </FormControl>
+          )}
+        />
+
+        {selectedTipo > 0 && (
+          <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate}>
+            Descargar Modelo
           </Button>
-        </DialogActions>
-      </Dialog>
+        )}
+
+        <Controller
+          name="institucion"
+          control={control}
+          render={({ field }) => (
+            <FormControl fullWidth error={!!errors.institucion}>
+              <InputLabel>Institución</InputLabel>
+              <Select {...field} label="Institución">
+                {instituciones.map((institucion) => (
+                  <MenuItem key={institucion.id} value={institucion.id}>
+                    {institucion.nombre}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.institucion && <Typography color="error">{errors.institucion.message}</Typography>}
+            </FormControl>
+          )}
+        />
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <input type="file" multiple onChange={handleFileChange} style={{ display: "none" }} ref={fileInputRef} />
+          <Button variant="outlined" startIcon={<Upload />} onClick={() => fileInputRef.current?.click()}>
+            Subir Archivos
+          </Button>
+          {selectedFiles.length > 0 && (
+            <Typography variant="body2">{selectedFiles.length} archivo(s) seleccionado(s)</Typography>
+          )}
+        </Box>
+
+        {selectedFiles.length > 0 && (
+          <Box sx={{ mt: 1 }}>
+            {selectedFiles.map((file, index) => (
+              <Typography key={index} variant="body2" color="text.secondary">
+                {file.name}
+              </Typography>
+            ))}
+          </Box>
+        )}
+
+        <Button type="submit" variant="contained" disabled={isLoading}>
+          Registrar Actividad
+        </Button>
+      </Box>
+
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          Actividades Registradas
+        </Typography>
+        <DataGrid
+          rows={actividades}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 100, page: 0 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+          autoHeight
+          disableSelectionOnClick
+        />
+      </Box>
+
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </>
+    </Paper>
   )
 }
 

@@ -1,15 +1,44 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { CircularProgress, Typography, IconButton, Box, Button, Alert } from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
-import MessageIcon from "@mui/icons-material/Message"
-import AssignmentIcon from "@mui/icons-material/Assignment"
-import MultiStepForm from "@/components/forms/MultiStepForm"
 import { fetchCaseData } from "@/components/forms/utils/api"
 import type { FormData } from "@/components/forms/types/formTypes"
-import { EnviarRespuestaModal } from "./ui/EnviarRespuestaModal"
-import { RegistrarActividadModal } from "./ui/RegistrarActividadModal"
+import MultiStepForm from "@/components/forms/MultiStepForm"
+import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
+import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
+
+interface TabPanelProps {
+  children?: React.ReactNode
+  index: number
+  value: number
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`demanda-tabpanel-${index}`}
+      aria-labelledby={`demanda-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  )
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `demanda-tab-${index}`,
+    "aria-controls": `demanda-tabpanel-${index}`,
+  }
+}
 
 interface DemandaDetailProps {
   params: {
@@ -22,8 +51,7 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
   const [formData, setFormData] = useState<FormData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isRespuestaModalOpen, setIsRespuestaModalOpen] = useState(false)
-  const [isActividadModalOpen, setIsActividadModalOpen] = useState(false)
+  const [tabValue, setTabValue] = useState(0)
 
   useEffect(() => {
     const loadCaseData = async () => {
@@ -44,17 +72,29 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
     loadCaseData()
   }, [params.id])
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue)
+  }
+
   const handleSubmit = (data: FormData) => {
     console.log("Form submitted:", data)
   }
 
-  const handleActividadSubmit = (activity: { type: string; description: string }) => {
-    console.log("Activity submitted:", activity)
-    // Handle the activity submission
+  if (isLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <CircularProgress />
+      </Box>
+    )
   }
 
-  if (isLoading) return <CircularProgress />
-  if (error) return <Typography color="error">{error}</Typography>
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ m: 2 }}>
+        {error}
+      </Alert>
+    )
+  }
 
   return (
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
@@ -99,39 +139,28 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
           </Alert>
         )}
 
-        <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<MessageIcon />}
-            onClick={() => setIsRespuestaModalOpen(true)}
-          >
-            ENVIAR RESPUESTA
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AssignmentIcon />}
-            onClick={() => setIsActividadModalOpen(true)}
-          >
-            REGISTRAR ACTIVIDAD
-          </Button>
-        </Box>
+        <Paper sx={{ width: "100%", mb: 2 }}>
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+            <Tabs value={tabValue} onChange={handleTabChange} aria-label="demanda tabs" variant="fullWidth">
+              <Tab label="Detalles" {...a11yProps(0)} />
+              <Tab label="Enviar Respuesta" {...a11yProps(1)} />
+              <Tab label="Registrar Actividad" {...a11yProps(2)} />
+            </Tabs>
+          </Box>
 
-        {formData && <MultiStepForm initialData={formData} onSubmit={handleSubmit} readOnly={false} />}
+          <TabPanel value={tabValue} index={0}>
+            {formData && <MultiStepForm initialData={formData} onSubmit={handleSubmit} readOnly={false} />}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={1}>
+            <EnviarRespuestaForm demandaId={Number.parseInt(params.id)} />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={2}>
+            <RegistrarActividadForm demandaId={Number.parseInt(params.id)} />
+          </TabPanel>
+        </Paper>
       </Box>
-
-      <EnviarRespuestaModal
-        isOpen={isRespuestaModalOpen}
-        onClose={() => setIsRespuestaModalOpen(false)}
-        demandaId={Number.parseInt(params.id)}
-      />
-
-      <RegistrarActividadModal
-        isOpen={isActividadModalOpen}
-        onClose={() => setIsActividadModalOpen(false)}
-        demandaId={Number.parseInt(params.id)}
-      />
     </Box>
   )
 }

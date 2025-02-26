@@ -1,6 +1,9 @@
 import type { DropdownData, FormData } from "../types/formTypes"
 import { create, get, update } from "@/app/api/apiService"
 
+// Track if a submission is in progress to prevent duplicates
+let isSubmissionInProgress = false;
+
 /**
  * Fetch dropdown data for the form
  */
@@ -20,6 +23,14 @@ export const fetchDropdownData = async (): Promise<DropdownData> => {
  */
 export const submitFormData = async (formData: FormData, id?: string): Promise<any> => {
   console.log("Original form data:", JSON.stringify(formData, null, 2))
+
+  // Prevent duplicate submissions
+  if (isSubmissionInProgress) {
+    console.log("Submission already in progress, preventing duplicate")
+    return Promise.reject(new Error("Submission already in progress"))
+  }
+
+  isSubmissionInProgress = true
 
   try {
     // Build the data structure we want to send
@@ -46,7 +57,6 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
         })),
         demanda_zona: {
           zona: formData.zona,
-          fecha_recibido: new Date().toISOString(),
           esta_activo: true,
           recibido: false,
           comentarios: formData.observaciones || "",
@@ -184,6 +194,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
     }
 
     console.log("Server response:", response)
+    isSubmissionInProgress = false
     return response
   } catch (error: any) {
     console.error("Error al enviar los datos del formulario:", error)
@@ -193,8 +204,10 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
     // If the server responds with 201, treat it as a success
     if (error.response && error.response.status === 201) {
       console.log("Form submitted successfully with status 201")
+      isSubmissionInProgress = false
       return error.response.data
     }
+    isSubmissionInProgress = false
     throw error
   }
 }
@@ -310,4 +323,3 @@ const transformApiDataToFormData = (apiData: any): FormData => {
       })),
   }
 }
-

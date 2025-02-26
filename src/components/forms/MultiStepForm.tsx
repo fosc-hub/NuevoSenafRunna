@@ -73,7 +73,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
-  const handleFormSubmit = methods.handleSubmit((data: FormData) => {
+  const handleFormSubmit = methods.handleSubmit((data) => {
     console.log("Form data before submission:", data)
     // Ensure ninosAdolescentes and adultosConvivientes are always arrays
     const formDataWithArrays = {
@@ -88,6 +88,11 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     }
   })
 
+  // Add this new function to handle the final step button click
+  const handleFinalSubmit = (e) => {
+    e.preventDefault() // Prevent default button behavior
+    handleFormSubmit() // Call the form submission handler
+  }
   if (isDropdownLoading) return <CircularProgress />
   if (isDropdownError) return <div>Error al cargar los datos del formulario</div>
 
@@ -125,7 +130,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
               <Button
                 variant="contained"
                 color="primary"
-                onClick={activeStep === steps.length - 1 ? handleFormSubmit : handleNext}
+                onClick={activeStep === steps.length - 1 ? handleFinalSubmit : handleNext}
                 type="button"
                 disabled={mutation.isPending}
               >

@@ -24,6 +24,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Chip,
+  OutlinedInput,
+  useTheme,
 } from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
@@ -56,6 +59,7 @@ interface FormData {
     }
     vinculacion: string
     vinculo_con_nnya_principal: number
+    vinculo_demanda: string
     condicionesVulnerabilidad: string[]
     nacionalidad: string
     vinculo_demanda: string
@@ -131,6 +135,26 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         return newExpandedSections
       })
       closeDeleteDialog()
+    }
+  }
+
+  const theme = useTheme()
+
+  const ITEM_HEIGHT = 48
+  const ITEM_PADDING_TOP = 8
+  const MenuProps = {
+    PaperProps: {
+      style: {
+        maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+        width: 250,
+      },
+    },
+  }
+
+  const getStyles = (name: string, selectedItems: string[], theme: any) => {
+    return {
+      fontWeight:
+        selectedItems.indexOf(name) === -1 ? theme.typography.fontWeightRegular : theme.typography.fontWeightMedium,
     }
   }
 
@@ -409,15 +433,49 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                     <Controller
                       name={`adultosConvivientes.${index}.condicionesVulnerabilidad`}
                       control={control}
-                      render={({ field }) => (
-                        <FormControl fullWidth>
-                          <InputLabel>Condiciones de Vulnerabilidad</InputLabel>
-                          <Select {...field} multiple label="Condiciones de Vulnerabilidad" disabled={readOnly}>
+                      render={({ field, fieldState: { error } }) => (
+                        <FormControl fullWidth error={!!error}>
+                          <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>
+                            Condiciones de Vulnerabilidad
+                          </InputLabel>
+                          <Select
+                            {...field}
+                            labelId={`condiciones-vulnerabilidad-label-${index}`}
+                            id={`condiciones-vulnerabilidad-${index}`}
+                            multiple
+                            value={Array.isArray(field.value) ? field.value : []} // Ensuring it's an array
+                            onChange={(event) => field.onChange(event.target.value)}
+                            input={
+                              <OutlinedInput
+                                id={`condiciones-vulnerabilidad-chip-${index}`}
+                                label="Condiciones de Vulnerabilidad"
+                              />
+                            }
+                            renderValue={(selected) => (
+                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                {selected.map((value) => (
+                                  <Chip
+                                    key={value}
+                                    label={
+                                      dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === value)?.nombre ||
+                                      value
+                                    }
+                                  />
+                                ))}
+                              </Box>
+                            )}
+                            MenuProps={MenuProps}
+                            disabled={readOnly}
+                          >
                             {dropdownData.condiciones_vulnerabilidad
                               .filter((cv) => cv.adulto && !cv.nnya)
                               .map((cv) => (
-                                <MenuItem key={cv.id} value={cv.id}>
-                                  {`${cv.nombre} - ${cv.descripcion}`}
+                                <MenuItem
+                                  key={cv.id}
+                                  value={cv.id}
+                                  style={getStyles(cv.nombre, field.value || [], theme)}
+                                >
+                                  {cv.nombre}
                                 </MenuItem>
                               ))}
                           </Select>

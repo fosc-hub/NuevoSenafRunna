@@ -40,7 +40,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
       localizacion: formData.localizacion,
 
       relacion_demanda: {
-        codigos_demanda: formData.codigosDemanda.map((codigo) => ({
+        codigos_demanda: (formData.codigosDemanda || []).map((codigo) => ({
           codigo: codigo.codigo,
           tipo_codigo: codigo.tipo,
         })),
@@ -55,13 +55,13 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
 
       personas: [
         // Niños/niñas/adolescentes
-        ...formData.ninosAdolescentes.map((nnya: any, index: number) => ({
+        ...(formData.ninosAdolescentes || []).map((nnya: any, index: number) => ({
           localizacion: nnya.useDefaultLocalizacion ? null : nnya.localizacion,
-          educacion: nnya.educacion,
-          cobertura_medica: nnya.cobertura_medica,
+          educacion: nnya.educacion || null,
+          cobertura_medica: nnya.cobertura_medica || null,
 
           // Transform each enfermedad
-          persona_enfermedades: nnya.persona_enfermedades.map((enfermedad: any) => ({
+          persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
             situacion_salud: enfermedad.situacion_salud,
             enfermedad: {
               id: enfermedad.enfermedad.id,
@@ -83,16 +83,15 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
           demanda_persona: {
             ...(nnya.demandaPersonaId ? { id: nnya.demandaPersonaId } : {}),
             deleted: false,
-            conviviente: nnya.demanda_persona.conviviente,
-            vinculo_demanda: nnya.demanda_persona.vinculo_demanda,
-            vinculo_con_nnya_principal:
-              index === 0 ? null : nnya.demanda_persona.vinculo_con_nnya_principal,
+            conviviente: nnya.demanda_persona?.conviviente || false,
+            vinculo_demanda: nnya.demanda_persona?.vinculo_demanda || "",
+            vinculo_con_nnya_principal: index === 0 ? null : nnya.demanda_persona?.vinculo_con_nnya_principal || "",
           },
 
-          use_demanda_localizacion: nnya.useDefaultLocalizacion,
+          use_demanda_localizacion: nnya.useDefaultLocalizacion || false,
 
           // Condiciones de vulnerabilidad
-          condiciones_vulnerabilidad: nnya.condicionesVulnerabilidad.condicion_vulnerabilidad.map(
+          condiciones_vulnerabilidad: ((nnya.condicionesVulnerabilidad || {}).condicion_vulnerabilidad || []).map(
             (condicion: number) => ({
               si_no: true,
               condicion_vulnerabilidad: condicion,
@@ -103,24 +102,24 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
           persona: {
             ...(nnya.personaId ? { id: nnya.personaId } : {}),
             deleted: false,
-            nombre: nnya.nombre,
+            nombre: nnya.nombre || "",
             nombre_autopercibido: "",
-            apellido: nnya.apellido,
-            fecha_nacimiento: nnya.fechaNacimiento,
-            edad_aproximada: nnya.edadAproximada,
-            nacionalidad: nnya.nacionalidad,
-            dni: nnya.dni,
-            situacion_dni: nnya.situacionDni,
-            genero: nnya.genero,
-            observaciones: nnya.observaciones,
+            apellido: nnya.apellido || "",
+            fecha_nacimiento: nnya.fechaNacimiento || null,
+            edad_aproximada: nnya.edadAproximada || "",
+            nacionalidad: nnya.nacionalidad || null,
+            dni: nnya.dni || "",
+            situacion_dni: nnya.situacionDni || null,
+            genero: nnya.genero || null,
+            observaciones: nnya.observaciones || "",
             adulto: false,
             nnya: true,
           },
-          vulneraciones: nnya.vulneraciones,
+          vulneraciones: nnya.vulneraciones || [],
         })),
 
         // Adultos convivientes
-        ...formData.adultosConvivientes.map((adulto: any) => ({
+        ...(formData.adultosConvivientes || []).map((adulto: any) => ({
           localizacion: adulto.useDefaultLocalizacion ? null : adulto.localizacion,
           educacion: null,
           cobertura_medica: null,
@@ -130,35 +129,33 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
           demanda_persona: {
             ...(adulto.demandaPersonaId ? { id: adulto.demandaPersonaId } : {}),
             deleted: false,
-            conviviente: adulto.conviviente,
-            vinculo_demanda: adulto.vinculacion,
-            vinculo_con_nnya_principal: adulto.vinculo_con_nnya_principal,
+            conviviente: adulto.conviviente || false,
+            vinculo_demanda: adulto.vinculacion || "",
+            vinculo_con_nnya_principal: adulto.vinculo_con_nnya_principal || "",
           },
 
-          use_demanda_localizacion: adulto.useDefaultLocalizacion,
+          use_demanda_localizacion: adulto.useDefaultLocalizacion || false,
 
           // Condiciones de vulnerabilidad
-          condiciones_vulnerabilidad: adulto.condicionesVulnerabilidad.map(
-            (condicion: number) => ({
-              si_no: true,
-              condicion_vulnerabilidad: condicion,
-            }),
-          ),
+          condiciones_vulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: number) => ({
+            si_no: true,
+            condicion_vulnerabilidad: condicion,
+          })),
 
           // Conditionally include persona.id
           persona: {
             ...(adulto.personaId ? { id: adulto.personaId } : {}),
             deleted: false,
-            nombre: adulto.nombre,
+            nombre: adulto.nombre || "",
             nombre_autopercibido: "",
-            apellido: adulto.apellido,
-            fecha_nacimiento: adulto.fechaNacimiento,
-            edad_aproximada: adulto.edadAproximada,
-            nacionalidad: adulto.nacionalidad,
-            dni: adulto.dni,
-            situacion_dni: adulto.situacionDni,
-            genero: adulto.genero,
-            observaciones: adulto.observaciones,
+            apellido: adulto.apellido || "",
+            fecha_nacimiento: adulto.fechaNacimiento || null,
+            edad_aproximada: adulto.edadAproximada || "",
+            nacionalidad: adulto.nacionalidad || null,
+            dni: adulto.dni || "",
+            situacion_dni: adulto.situacionDni || null,
+            genero: adulto.genero || null,
+            observaciones: adulto.observaciones || "",
             adulto: true,
             nnya: false,
           },
@@ -179,16 +176,11 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
         Number(id),
         transformedData,
         true,
-        "Demanda actualizada con éxito"
+        "Demanda actualizada con éxito",
       )
     } else {
       // POST (create) new Demanda
-      response = await create(
-        "registro-demanda-form",
-        transformedData,
-        true,
-        "Demanda creada con éxito"
-      )
+      response = await create("registro-demanda-form", transformedData, true, "Demanda creada con éxito")
     }
 
     console.log("Server response:", response)
@@ -279,14 +271,11 @@ const transformApiDataToFormData = (apiData: any): FormData => {
         demanda_persona: {
           conviviente: nnya.demanda_persona.conviviente,
           vinculo_demanda: nnya.demanda_persona.vinculo_demanda,
-          vinculo_con_nnya_principal:
-            index === 0 ? null : nnya.demanda_persona.vinculo_con_nnya_principal,
+          vinculo_con_nnya_principal: index === 0 ? null : nnya.demanda_persona.vinculo_con_nnya_principal,
         },
 
         condicionesVulnerabilidad: {
-          condicion_vulnerabilidad: nnya.condiciones_vulnerabilidad.map(
-            (cv: any) => cv.condicion_vulnerabilidad
-          ),
+          condicion_vulnerabilidad: nnya.condiciones_vulnerabilidad.map((cv: any) => cv.condicion_vulnerabilidad),
         },
 
         vulneraciones: nnya.vulneraciones,
@@ -317,9 +306,8 @@ const transformApiDataToFormData = (apiData: any): FormData => {
         vinculacion: adulto.demanda_persona.vinculo_demanda,
         vinculo_con_nnya_principal: adulto.demanda_persona.vinculo_con_nnya_principal,
 
-        condicionesVulnerabilidad: adulto.condiciones_vulnerabilidad.map(
-          (cv: any) => cv.condicion_vulnerabilidad
-        ),
+        condicionesVulnerabilidad: adulto.condiciones_vulnerabilidad.map((cv: any) => cv.condicion_vulnerabilidad),
       })),
   }
 }
+

@@ -28,9 +28,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 
   const methods = useForm<FormData>({
     mode: "onChange",
-    defaultValues: initialData || {
+    defaultValues: {
       adultosConvivientes: [],
       ninosAdolescentes: [],
+      ...initialData,
     },
   })
 
@@ -74,10 +75,16 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 
   const handleFormSubmit = methods.handleSubmit((data: FormData) => {
     console.log("Form data before submission:", data)
+    // Ensure ninosAdolescentes and adultosConvivientes are always arrays
+    const formDataWithArrays = {
+      ...data,
+      ninosAdolescentes: data.ninosAdolescentes || [],
+      adultosConvivientes: data.adultosConvivientes || [],
+    }
     if (!readOnly) {
-      mutation.mutate(data)
+      mutation.mutate(formDataWithArrays)
     } else {
-      onSubmit(data)
+      onSubmit(formDataWithArrays)
     }
   })
 

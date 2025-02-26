@@ -349,12 +349,11 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <Controller
                       name={`ninosAdolescentes.${index}.vinculacion.vinculo`}
                       control={control}
-                      rules={{ required: "Este campo es obligatorio" }}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>
                           <InputLabel>Vínculo con NNYA principal</InputLabel>
                           <Select {...field} label="Vínculo con NNYA principal" disabled={readOnly}>
-                            {dropdownData.vinculos?.map((vinculo) => (
+                            {dropdownData.vinculo_con_nnya_principal_choices?.map((vinculo) => (
                               <MenuItem key={vinculo.id} value={vinculo.id}>
                                 {vinculo.nombre}
                               </MenuItem>
@@ -544,7 +543,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   <Controller
                     name={`ninosAdolescentes.${index}.condicionesVulnerabilidad.condicion_vulnerabilidad`}
                     control={control}
-                    rules={{ required: "Seleccione al menos una condición de vulnerabilidad" }}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
                         <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>

@@ -815,14 +815,31 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               </Grid>
                               <Grid item xs={12} md={6}>
                                 <Controller
+                                  name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.nombre`}
+                                  control={control}
+                                  rules={{ required: "Este campo es obligatorio" }}
+                                  render={({ field, fieldState: { error } }) => (
+                                    <TextField
+                                      {...field}
+                                      label="Nombre de la Enfermedad"
+                                      fullWidth
+                                      error={!!error}
+                                      helperText={error?.message}
+                                      InputProps={{ readOnly }}
+                                    />
+                                  )}
+                                />
+                              </Grid>
+                              <Grid item xs={12} md={6}>
+                                <Controller
                                   name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.id`}
                                   control={control}
                                   render={({ field: enfermedadField, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Enfermedad</InputLabel>
+                                      <InputLabel>Tipo de Enfermedad</InputLabel>
                                       <Select
                                         {...enfermedadField}
-                                        label="Enfermedad"
+                                        label="Tipo de Enfermedad"
                                         disabled={readOnly || !selectedSituacionSalud[index]}
                                       >
                                         {dropdownData.enfermedad
@@ -840,29 +857,10 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   )}
                                 />
                               </Grid>
-                              {watch(`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.id`) ===
-                                "other" && (
-                                <Grid item xs={12} md={6}>
-                                  <Controller
-                                    name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.nombre`}
-                                    control={control}
-                                    render={({ field, fieldState: { error } }) => (
-                                      <TextField
-                                        {...field}
-                                        label="Nombre de la Enfermedad"
-                                        fullWidth
-                                        error={!!error}
-                                        helperText={error?.message}
-                                        InputProps={{ readOnly }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-                              )}
 
                               <Grid item xs={12} md={6}>
                                 <Controller
-                                  name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente.id`}
+                                  name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente`}
                                   control={control}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>

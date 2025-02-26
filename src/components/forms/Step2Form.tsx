@@ -55,7 +55,7 @@ interface FormData {
       // Add localizacion fields here
     }
     vinculacion: string
-    vinculo_con_nnya_principal: string
+    vinculo_con_nnya_principal: number
     condicionesVulnerabilidad: string[]
     nacionalidad: string
     vinculo_demanda: string
@@ -96,7 +96,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       observaciones: "",
       useDefaultLocalizacion: true,
       vinculacion: "",
-      vinculo_con_nnya_principal: "",
+      vinculo_con_nnya_principal: 0,
       vinculo_demanda: "",
       condicionesVulnerabilidad: [],
       nacionalidad: "",
@@ -331,7 +331,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           <InputLabel>Vínculo con NNYA Principal</InputLabel>
                           <Select {...field} label="Vínculo con NNYA Principal" disabled={readOnly}>
                             {dropdownData.vinculo_con_nnya_principal_choices.map((option) => (
-                              <MenuItem key={option.id} value={option.nombre}>
+                              <MenuItem key={option.id} value={option.id}>
                                 {option.nombre}
                               </MenuItem>
                             ))}
@@ -340,7 +340,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         </FormControl>
                       )}
                     />
-                                        <FormControlLabel
+                    <FormControlLabel
                       control={
                         <Controller
                           name={`adultosConvivientes.${index}.conviviente`}
@@ -425,7 +425,6 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       )}
                     />
                   </Grid>
-                  
                 </Grid>
               </Collapse>
             </Box>

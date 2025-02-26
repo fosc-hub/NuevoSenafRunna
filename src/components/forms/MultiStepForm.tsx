@@ -4,14 +4,15 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { Box, Button, Stepper, Step, StepLabel, Paper, CircularProgress } from "@mui/material"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
-import { useQuery, useMutation } from "@tanstack/react-query"
 import { fetchDropdownData, submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
-import { toast, ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
 
 const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
 
@@ -19,11 +20,11 @@ interface MultiStepFormProps {
   initialData?: FormData
   readOnly?: boolean
   onSubmit: (data: FormData) => void
+  id?: string
 }
 
-const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit }) => {
+const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit, id }) => {
   const [activeStep, setActiveStep] = useState(0)
-  const isNewForm = !initialData
 
   const methods = useForm<FormData>({
     mode: "onChange",
@@ -41,18 +42,17 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 
   const {
     data: dropdownData,
-    isLoading,
-    isError,
+    isLoading: isDropdownLoading,
+    isError: isDropdownError,
   } = useQuery<DropdownData>({
     queryKey: ["dropdowns"],
     queryFn: fetchDropdownData,
   })
 
   const mutation = useMutation({
-    mutationFn: submitFormData,
+    mutationFn: (data: FormData) => submitFormData(data, id),
     onSuccess: (data) => {
       console.log("Form submitted successfully:", data)
-      toast.success("Formulario enviado exitosamente.")
       onSubmit(data)
     },
     onError: (error) => {
@@ -81,8 +81,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     }
   })
 
-  if (isLoading) return <CircularProgress />
-  if (isError) return <div>Error al cargar los datos del formulario</div>
+  if (isDropdownLoading) return <CircularProgress />
+  if (isDropdownError) return <div>Error al cargar los datos del formulario</div>
 
   return (
     <FormProvider {...methods}>

@@ -1,5 +1,5 @@
 import type { DropdownData, FormData } from "../types/formTypes"
-import { create, get } from "@/app/api/apiService"
+import { create, get, update } from "@/app/api/apiService"
 
 export const fetchDropdownData = async (): Promise<DropdownData> => {
   try {
@@ -12,142 +12,155 @@ export const fetchDropdownData = async (): Promise<DropdownData> => {
   }
 }
 
-export const submitFormData = async (formData: FormData): Promise<any> => {
+export const submitFormData = async (formData: FormData, id?: string): Promise<any> => {
   console.log("Original form data:", JSON.stringify(formData, null, 2))
   try {
-    // Transform the data to match the expected server format
     const transformedData = {
-      ...formData,
+      fecha_oficio_documento: formData.fecha_oficio_documento,
+      fecha_ingreso_senaf: formData.fecha_ingreso_senaf,
+      bloque_datos_remitente: formData.bloque_datos_remitente,
+      tipo_institucion: formData.tipo_institucion,
       institucion: {
         nombre: formData.institucion,
-        tipo_institucion: formData.tipo_institucion || 1 // Assuming tipo_institucion is part of your form data
+        tipo_institucion: formData.tipo_institucion,
       },
+      ambito_vulneracion: formData.ambito_vulneracion,
+      tipo_demanda: formData.tipo_demanda,
+      presuntos_delitos: formData.presuntos_delitos,
+      motivo_ingreso: formData.motivo_ingreso,
+      submotivo_ingreso: formData.submotivo_ingreso,
+      localizacion: formData.localizacion,
       relacion_demanda: {
-        codigos_demanda: formData.codigosDemanda.map(codigo => ({
+        codigos_demanda: formData.codigosDemanda.map((codigo) => ({
           codigo: codigo.codigo,
-          tipo_codigo: codigo.tipo
+          tipo_codigo: codigo.tipo,
         })),
         demanda_zona: {
           zona: formData.zona,
-          // Add other required fields for demanda_zona
           fecha_recibido: new Date().toISOString(),
           esta_activo: true,
           recibido: false,
           comentarios: formData.observaciones || "",
-        }
+        },
       },
-      adultos: formData.adultosConvivientes.map((adulto: any) => ({
-        persona: {
-          nombre: adulto.nombre,
-          apellido: adulto.apellido,
-          fecha_nacimiento: adulto.fechaNacimiento,
-          edad_aproximada: adulto.edadAproximada,
-          dni: adulto.dni,
-          situacion_dni: adulto.situacionDni,
-          genero: adulto.genero,
-          observaciones: adulto.observaciones,
-          adulto: true,
-          nnya: false,
-        },
-        demanda_persona: {
-          conviviente: adulto.conviviente,
-          supuesto_autordv: adulto.supuesto_autordv,
-          garantiza_proteccion: adulto.garantiza_proteccion,
-          supuesto_autordv_principal: true, // REVISAR ESTO
-          nnya_principal: false,
-        },
-        localizacion: adulto.useDefaultLocalizacion ? null : adulto.localizacion,
-        use_demanda_localizacion: adulto.useDefaultLocalizacion,
-        vinculo_nnya_principal: {
-          vinculo: adulto.vinculacion.vinculo,
-          conviven: adulto.conviviente,
-          autordv: true, //REVISAR ESTO
-          garantiza_proteccion: adulto.garantiza_proteccion,
-        },
-        condiciones_vulnerabilidad: adulto.condicionesVulnerabilidad,
-      })),
-      nnya_principal: formData.ninosAdolescentes[0]
-        ? {
-            persona: {
-              nombre: formData.ninosAdolescentes[0].nombre,
-              apellido: formData.ninosAdolescentes[0].apellido,
-              fecha_nacimiento: formData.ninosAdolescentes[0].fechaNacimiento,
-              edad_aproximada: formData.ninosAdolescentes[0].edadAproximada,
-              dni: formData.ninosAdolescentes[0].dni,
-              situacion_dni: formData.ninosAdolescentes[0].situacionDni,
-              genero: formData.ninosAdolescentes[0].genero,
-              observaciones: formData.ninosAdolescentes[0].observaciones,
-              adulto: false,
-              nnya: true,
+      personas: [
+        ...formData.ninosAdolescentes.map((nnya: any, index: number) => ({
+          localizacion: nnya.useDefaultLocalizacion ? null : nnya.localizacion,
+          educacion: nnya.educacion,
+          cobertura_medica: nnya.cobertura_medica,
+          persona_enfermedades: nnya.persona_enfermedades.map((enfermedad: any) => ({
+            situacion_salud: enfermedad.situacion_salud,
+            enfermedad: {
+              id: enfermedad.enfermedad.id,
+              nombre: enfermedad.enfermedad.nombre,
+              situacion_salud_categoria: enfermedad.situacion_salud,
+              institucion_sanitaria_interviniente: {
+                id: enfermedad.institucion_sanitaria_interviniente.id,
+                nombre: enfermedad.institucion_sanitaria_interviniente.nombre,
+              },
             },
-            demanda_persona: {
-              conviviente: true, // Assuming NNYA principal is always conviviente
-              supuesto_autordv: "NO_CORRESPONDE",
-              garantiza_proteccion: false,
-              supuesto_autordv_principal: false,
-              nnya_principal: true,
-            },
-            localizacion: formData.ninosAdolescentes[0].useDefaultLocalizacion
-              ? null
-              : formData.ninosAdolescentes[0].localizacion,
-            use_demanda_localizacion: formData.ninosAdolescentes[0].useDefaultLocalizacion,
-            condiciones_vulnerabilidad:
-              formData.ninosAdolescentes[0].condicionesVulnerabilidad.condicion_vulnerabilidad,
-            nnya_educacion: formData.ninosAdolescentes[0].educacion,
-            nnya_salud: formData.ninosAdolescentes[0].salud,
-            vulneraciones: formData.ninosAdolescentes[0].vulneraciones.map((vulneracion: any, index: any) => ({
-              ...vulneracion,
-              autordv_index: 0, // Assuming the first adult is the autordv for all vulneraciones
-            })),
-          }
-        : null,
-      nnyas_secundarios: formData.ninosAdolescentes.slice(1).map((nnya: any) => ({
-        persona: {
-          nombre: nnya.nombre,
-          apellido: nnya.apellido,
-          fecha_nacimiento: nnya.fechaNacimiento,
-          edad_aproximada: nnya.edadAproximada,
-          dni: nnya.dni,
-          situacion_dni: nnya.situacionDni,
-          genero: nnya.genero,
-          observaciones: nnya.observaciones,
-          adulto: false,
-          nnya: true,
-        },
-        demanda_persona: {
-          conviviente: true, // Assuming all NNYAs are conviviente
-          supuesto_autordv: "NO_CORRESPONDE",
-          garantiza_proteccion: false,
-          supuesto_autordv_principal: false,
-          nnya_principal: false,
-        },
-        localizacion: nnya.useDefaultLocalizacion ? null : nnya.localizacion,
-        use_demanda_localizacion: nnya.useDefaultLocalizacion,
-        condiciones_vulnerabilidad: nnya.condicionesVulnerabilidad.condicion_vulnerabilidad,
-        nnya_educacion: nnya.educacion,
-        nnya_salud: nnya.salud,
-        vulneraciones: nnya.vulneraciones.map((vulneracion: any, index: any) => ({
-          ...vulneracion,
-          autordv_index: 0, // Assuming the first adult is the autordv for all vulneraciones
+            certificacion: enfermedad.certificacion,
+            beneficios_gestionados: enfermedad.beneficios_gestionados,
+            recibe_tratamiento: enfermedad.recibe_tratamiento,
+            informacion_tratamiento: enfermedad.informacion_tratamiento,
+            medico_tratamiento: enfermedad.medico_tratamiento,
+          })),
+          demanda_persona: {
+            deleted: false,
+            conviviente: nnya.demanda_persona.conviviente,
+            vinculo_demanda: nnya.demanda_persona.vinculo_demanda,
+            vinculo_con_nnya_principal: index === 0 ? null : nnya.demanda_persona.vinculo_con_nnya_principal,
+          },
+          use_demanda_localizacion: nnya.useDefaultLocalizacion,
+          condiciones_vulnerabilidad: nnya.condicionesVulnerabilidad.condicion_vulnerabilidad.map(
+            (condicion: number) => ({
+              si_no: true,
+              condicion_vulnerabilidad: condicion,
+            }),
+          ),
+          persona: {
+            deleted: false,
+            nombre: nnya.nombre,
+            nombre_autopercibido: "",
+            apellido: nnya.apellido,
+            fecha_nacimiento: nnya.fechaNacimiento,
+            edad_aproximada: nnya.edadAproximada,
+            nacionalidad: nnya.nacionalidad,
+            dni: nnya.dni,
+            situacion_dni: nnya.situacionDni,
+            genero: nnya.genero,
+            observaciones: nnya.observaciones,
+            adulto: false,
+            nnya: true,
+          },
+          vulneraciones: nnya.vulneraciones,
         })),
-      })),
+        ...formData.adultosConvivientes.map((adulto: any) => ({
+          localizacion: adulto.useDefaultLocalizacion ? null : adulto.localizacion,
+          educacion: null,
+          cobertura_medica: null,
+          persona_enfermedades: [],
+          demanda_persona: {
+            deleted: false,
+            conviviente: adulto.conviviente,
+            vinculo_demanda: adulto.vinculacion,
+            vinculo_con_nnya_principal: adulto.vinculo_con_nnya_principal,
+          },
+          use_demanda_localizacion: adulto.useDefaultLocalizacion,
+          condiciones_vulnerabilidad: adulto.condicionesVulnerabilidad.map((condicion: number) => ({
+            si_no: true,
+            condicion_vulnerabilidad: condicion,
+          })),
+          persona: {
+            deleted: false,
+            nombre: adulto.nombre,
+            nombre_autopercibido: "",
+            apellido: adulto.apellido,
+            fecha_nacimiento: adulto.fechaNacimiento,
+            edad_aproximada: adulto.edadAproximada,
+            nacionalidad: adulto.nacionalidad,
+            dni: adulto.dni,
+            situacion_dni: adulto.situacionDni,
+            genero: adulto.genero,
+            observaciones: adulto.observaciones,
+            adulto: true,
+            nnya: false,
+          },
+          vulneraciones: [],
+        })),
+      ],
     }
-
-    // Remove fields that are now part of other structures
-    delete transformedData.adultosConvivientes
-    delete transformedData.ninosAdolescentes
-    delete transformedData.codigosDemanda
-    delete transformedData.zona
 
     console.log("Transformed data:", JSON.stringify(transformedData, null, 2))
 
-    const response: any = await create("registro-demanda-form", transformedData)
-    console.log("Server response:", response.data)
-    return response.data
+    let response: any
+
+    if (id) {
+      // Use update function for updating existing form (constatacion)
+      response = await update(
+        "registro-demanda-form",
+        Number(id),
+        transformedData,
+        true,
+        "Demanda actualizada con éxito",
+      )
+    } else {
+      // Use create function for creating new form
+      response = await create("registro-demanda-form", transformedData, true, "Demanda creada con éxito")
+    }
+
+    console.log("Server response:", response)
+    return response
   } catch (error: any) {
     console.error("Error al enviar los datos del formulario:", error)
     if (error.response) {
       console.error("Server error response:", error.response.data)
+    }
+    // Check if the error is due to a 201 status code
+    if (error.response && error.response.status === 201) {
+      // If it's a 201, treat it as a success
+      console.log("Form submitted successfully with status 201")
+      return error.response.data
     }
     throw error
   }
@@ -218,7 +231,7 @@ const transformAdulto = (adulto: any) => ({
   observaciones: adulto.persona?.observaciones || "",
   useDefaultLocalizacion: adulto.use_demanda_localizacion || false,
   localizacion: adulto.localizacion || null,
-  vinculacion: { vinculo: adulto.vinculo_nnya_principal?.vinculo || "" },
+  vinculo_con_nnya_principal: adulto.demanda_persona?.vinculo_con_nnya_principal || null,
   condicionesVulnerabilidad: adulto.condiciones_vulnerabilidad || [],
 })
 
@@ -239,3 +252,4 @@ const transformNNYA = (nnya: any, isPrincipal: boolean) => ({
   condicionesVulnerabilidad: { condicion_vulnerabilidad: nnya.condiciones_vulnerabilidad || [] },
   vinculacion: isPrincipal ? undefined : { vinculo: nnya.vinculo_nnya_principal?.vinculo || "" },
 })
+

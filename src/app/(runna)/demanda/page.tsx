@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
@@ -78,6 +77,7 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
 
   const handleSubmit = (data: FormData) => {
     console.log("Form submitted:", data)
+    // The actual submission is handled in the MultiStepForm component
   }
 
   if (isLoading) {
@@ -149,7 +149,14 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
           </Box>
 
           <TabPanel value={tabValue} index={0}>
-            {formData && <MultiStepForm initialData={formData} onSubmit={handleSubmit} readOnly={false} />}
+            {formData && (
+              <MultiStepForm
+                initialData={formData}
+                onSubmit={handleSubmit}
+                readOnly={false}
+                id={params.id} // Pass the id as a string
+              />
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>

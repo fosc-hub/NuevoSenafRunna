@@ -32,8 +32,6 @@ interface Step1FormProps {
 }
 
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
-  const selectedMotivo = useWatch({ control, name: "presuntaVulneracion.motivos" })
-
   const {
     data: dropdownData,
     isLoading,
@@ -41,6 +39,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   } = useQuery<DropdownData>({
     queryKey: ["dropdowns"],
   })
+  const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
+  const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
 
   const createNewUser = useWatch({
     control,
@@ -136,7 +136,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             name="tipo_institucion"
             control={control}
             render={({ field, fieldState: { error } }) => {
-              const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
               const filteredSubOrigins = dropdownData.tipo_institucion_demanda?.filter(
                 (subOrigen: any) => subOrigen.bloque_datos_remitente === selectedBloqueRemitente,
               )
@@ -341,7 +340,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Motivo de Ingreso </InputLabel>
+                <InputLabel>Motivo de Ingreso</InputLabel>
                 <Select {...field} label="Motivo de Intervención *" disabled={readOnly}>
                   {dropdownData.categoria_motivo?.map((motivo: any) => (
                     <MenuItem key={motivo.id} value={motivo.id}>

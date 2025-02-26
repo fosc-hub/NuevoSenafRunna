@@ -16,7 +16,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Autocomplete,
   Chip,
   OutlinedInput,
   IconButton,
@@ -38,6 +37,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import ExpandLessIcon from "@mui/icons-material/ExpandLess"
 import type { DropdownData, FormData, GravedadVulneracion } from "./types/formTypes"
 import { format, parse } from "date-fns"
+import LocalizacionFields from "./LocalizacionFields" // Import the LocalizacionFields component
 
 interface Step3FormProps {
   dropdownData: DropdownData
@@ -385,186 +385,12 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <Typography variant="subtitle2" gutterBottom>
                       Localización específica
                     </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.calle`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Calle"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.tipo_calle`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <FormControl fullWidth error={!!error}>
-                              <InputLabel>Tipo de Calle</InputLabel>
-                              <Select {...field} label="Tipo de Calle" disabled={readOnly}>
-                                <MenuItem value="CALLE">Calle</MenuItem>
-                                <MenuItem value="AVENIDA">Avenida</MenuItem>
-                                <MenuItem value="PASAJE">Pasaje</MenuItem>
-                              </Select>
-                            </FormControl>
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.piso_depto`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Piso/Depto"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.lote`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Lote"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.mza`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Manzana"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.casa_nro`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Número de Casa"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.referencia_geo`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Referencia Geográfica"
-                              fullWidth
-                              multiline
-                              rows={2}
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.geolocalizacion`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Geolocalización"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                              InputProps={{ readOnly }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.barrio`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Autocomplete
-                              {...field}
-                              options={dropdownData.barrios || []}
-                              getOptionLabel={(option) => option.nombre}
-                              renderInput={(params) => <TextField {...params} label="Barrio" error={!!error} />}
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                              disabled={readOnly}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.localidad`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Autocomplete
-                              {...field}
-                              options={dropdownData.localidades || []}
-                              getOptionLabel={(option) => option.nombre}
-                              renderInput={(params) => <TextField {...params} label="Localidad" error={!!error} />}
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                              disabled={readOnly}
-                            />
-                          )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.localizacion.cpc`}
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Autocomplete
-                              {...field}
-                              options={dropdownData.cpcs || []}
-                              getOptionLabel={(option) => option.nombre}
-                              renderInput={(params) => <TextField {...params} label="CPC" error={!!error} />}
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                              disabled={readOnly}
-                            />
-                          )}
-                        />
-                      </Grid>
-                    </Grid>
+                    <LocalizacionFields
+                      control={control}
+                      prefix={`ninosAdolescentes.${index}.localizacion`}
+                      dropdownData={dropdownData}
+                      readOnly={readOnly}
+                    />
                   </Grid>
                 )}
 

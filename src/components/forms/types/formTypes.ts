@@ -29,6 +29,8 @@ export interface DropdownOption {
     
   }
   export interface DropdownData {
+    vinculo_demanda_choices: any
+    vinculo_con_nnya_principal_choices: any
     obra_social_choices: any
     instituciones_educativas: any
     instituciones_sanitarias: any

@@ -54,11 +54,11 @@ interface FormData {
     localizacion?: {
       // Add localizacion fields here
     }
-    vinculacion: {
-      vinculo: string
-    }
+    vinculacion: string
+    vinculo_con_nnya_principal: string
     condicionesVulnerabilidad: string[]
     nacionalidad: string
+    vinculo_demanda: string
   }[]
   street: string
   city: string
@@ -95,7 +95,9 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       garantiza_proteccion: false,
       observaciones: "",
       useDefaultLocalizacion: true,
-      vinculacion: { vinculo: "" },
+      vinculacion: "",
+      vinculo_con_nnya_principal: "",
+      vinculo_demanda: "",
       condicionesVulnerabilidad: [],
       nacionalidad: "",
     })
@@ -301,8 +303,44 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
-                    <FormControlLabel
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.vinculacion`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <FormControl fullWidth error={!!error}>
+                          <InputLabel>Vinculación</InputLabel>
+                          <Select {...field} label="Vinculación" disabled={readOnly}>
+                            {dropdownData.vinculo_demanda_choices.map((option) => (
+                              <MenuItem key={option.key} value={option.key}>
+                                {option.value}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {error && <FormHelperText>{error.message}</FormHelperText>}
+                        </FormControl>
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.vinculo_con_nnya_principal`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <FormControl fullWidth error={!!error}>
+                          <InputLabel>Vínculo con NNYA Principal</InputLabel>
+                          <Select {...field} label="Vínculo con NNYA Principal" disabled={readOnly}>
+                            {dropdownData.vinculo_con_nnya_principal_choices.map((option) => (
+                              <MenuItem key={option.id} value={option.nombre}>
+                                {option.nombre}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {error && <FormHelperText>{error.message}</FormHelperText>}
+                        </FormControl>
+                      )}
+                    />
+                                        <FormControlLabel
                       control={
                         <Controller
                           name={`adultosConvivientes.${index}.conviviente`}
@@ -317,23 +355,6 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         />
                       }
                       label="Conviviente"
-                    />
-
-                    <FormControlLabel
-                      control={
-                        <Controller
-                          name={`adultosConvivientes.${index}.garantiza_proteccion`}
-                          control={control}
-                          render={({ field: { onChange, value } }) => (
-                            <Checkbox
-                              checked={value}
-                              onChange={(e) => onChange(e.target.checked)}
-                              disabled={readOnly}
-                            />
-                          )}
-                        />
-                      }
-                      label="Garantiza Protección"
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -404,6 +425,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       )}
                     />
                   </Grid>
+                  
                 </Grid>
               </Collapse>
             </Box>

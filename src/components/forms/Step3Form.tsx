@@ -1123,6 +1123,19 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             <Typography variant="subtitle2" gutterBottom>
                               Vulneración {vulIndex + 1}
                             </Typography>
+                            {!readOnly && (
+                              <IconButton
+                                onClick={() => {
+                                  const newValue = [...field.value]
+                                  newValue.splice(vulIndex, 1)
+                                  field.onChange(newValue)
+                                }}
+                                color="error"
+                                sx={{ float: "right" }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            )}
                             <Grid container spacing={2}>
                               <Grid item xs={12} md={6}>
                                 <Controller

@@ -2,7 +2,7 @@ import type { DropdownData, FormData } from "../types/formTypes"
 import { create, get, update } from "@/app/api/apiService"
 
 // Track if a submission is in progress to prevent duplicates
-let isSubmissionInProgress = false;
+let isSubmissionInProgress = false
 
 /**
  * Fetch dropdown data for the form
@@ -45,9 +45,11 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
       },
       ambito_vulneracion: formData.ambito_vulneracion,
       tipo_demanda: formData.tipo_demanda,
-      presuntos_delitos: formData.presuntos_delitos,
+      // Ensure presuntos_delitos is always an array, even if it's null or undefined
+      tipos_presuntos_delitos: formData.presuntos_delitos || null,
       motivo_ingreso: formData.motivo_ingreso,
       submotivo_ingreso: formData.submotivo_ingreso,
+      envio_de_respuesta: formData.envio_de_respuesta,
       localizacion: formData.localizacion,
 
       relacion_demanda: {
@@ -240,7 +242,9 @@ const transformApiDataToFormData = (apiData: any): FormData => {
     institucion: apiData.institucion?.nombre || "",
     ambito_vulneracion: apiData.ambito_vulneracion || null,
     tipo_demanda: apiData.tipo_demanda || null,
-    presuntos_delitos: apiData.presuntos_delitos || [],
+    // Ensure presuntos_delitos is properly initialized as an array
+    tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || null,
+    envio_de_respuesta: apiData.envio_de_respuesta || null,
     motivo_ingreso: apiData.motivo_ingreso || null,
     submotivo_ingreso: apiData.submotivo_ingreso || null,
     localizacion: apiData.localizacion || null,
@@ -323,3 +327,4 @@ const transformApiDataToFormData = (apiData: any): FormData => {
       })),
   }
 }
+

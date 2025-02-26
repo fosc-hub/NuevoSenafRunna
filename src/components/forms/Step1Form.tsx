@@ -41,6 +41,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   })
   const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
   const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
+  //const selectedPresuntosDelitos = useWatch({ control, name: "presuntos_delitos" }) || []
 
   const createNewUser = useWatch({
     control,
@@ -61,6 +62,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   } = useQuery({
     queryKey: ["zonas"],
   })
+
+  // Function to get delito name by id
+  /*const getDelitoName = (id: number) => {
+    if (!dropdownData?.tipo_presunto_delito) return id.toString()
+    const delito = dropdownData.tipo_presunto_delito.find((d) => d.id === id)
+    return delito ? delito.nombre : id.toString()
+  }*/
 
   if (isLoading) {
     return <CircularProgress />
@@ -288,21 +296,20 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
-            name="presuntos_delitos"
+            name="tipos_presuntos_delitos"
             control={control}
-            defaultValue={[]}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Presuntos Delitos</InputLabel>
+                <InputLabel>Presunto Delito</InputLabel>
                 <Select
                   {...field}
-                  multiple
-                  label="Presuntos Delitos"
+                  label="Presunto Delito"
                   disabled={readOnly}
-                  value={field.value || []}
+                  value={field.value || ""}
                   onChange={(event) => {
                     const value = event.target.value
-                    field.onChange(Array.isArray(value) ? value : [])
+                    console.log("Selected presunto_delito:", value)
+                    field.onChange(value)
                   }}
                 >
                   {dropdownData.tipo_presunto_delito?.map((delito: any) => (

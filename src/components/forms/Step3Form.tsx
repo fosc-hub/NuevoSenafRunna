@@ -47,7 +47,7 @@ interface Step3FormProps {
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
   const theme = useTheme()
-  const { control, watch } = useFormContext<FormData>()
+  const { control, watch, getValues, setValue } = useFormContext<FormData>()
   const { fields, append, remove } = useFieldArray({
     control,
     name: "ninosAdolescentes",
@@ -599,13 +599,32 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     Información de Salud
                   </Typography>
                   <Controller
-                    name={`ninosAdolescentes.${index}.salud.institucion_sanitaria`}
+                    name={`ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria`}
                     control={control}
                     rules={{ required: "Este campo es obligatorio" }}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
                         <InputLabel>Institución Sanitaria</InputLabel>
-                        <Select {...field} label="Institución Sanitaria" disabled={readOnly}>
+                        <Select
+                          {...field}
+                          label="Institución Sanitaria"
+                          disabled={readOnly}
+                          onChange={(e) => {
+                            field.onChange(e.target.value)
+                            // Also store the name for reference
+                            if (e.target.value) {
+                              const selectedInst = dropdownData.institucion_sanitaria?.find(
+                                (inst: any) => inst.id === e.target.value,
+                              )
+                              if (selectedInst) {
+                                setValue(
+                                  `ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria_nombre`,
+                                  selectedInst.nombre,
+                                )
+                              }
+                            }
+                          }}
+                        >
                           {dropdownData.institucion_sanitaria?.map((institucion: any) => (
                             <MenuItem key={institucion.id} value={institucion.id}>
                               {institucion.nombre}
@@ -867,13 +886,26 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                         {...field}
                                         label="Institución Sanitaria Interviniente"
                                         disabled={readOnly}
+                                        onChange={(e) => {
+                                          field.onChange(e.target.value)
+                                          if (e.target.value) {
+                                            const selectedInst = dropdownData.institucion_sanitaria?.find(
+                                              (inst: any) => inst.id === e.target.value,
+                                            )
+                                            if (selectedInst) {
+                                              setValue(
+                                                `ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente_nombre`,
+                                                selectedInst.nombre,
+                                              )
+                                            }
+                                          }
+                                        }}
                                       >
                                         {dropdownData.institucion_sanitaria?.map((inst) => (
                                           <MenuItem key={inst.id} value={inst.id}>
                                             {inst.nombre}
                                           </MenuItem>
                                         ))}
-                                        <MenuItem value="other">Otra</MenuItem>
                                       </Select>
                                     </FormControl>
                                   )}

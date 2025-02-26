@@ -4,6 +4,13 @@ export interface DropdownOption {
   }
   export interface FormData
   {
+    presuntos_delitos: null
+    motivo_ingreso: any
+    submotivo_ingreso: any
+    envio_de_respuesta: any
+    codigosDemanda: never[]
+    zona: any
+    observaciones: string
     ninosAdolescentes: any
     adultosConvivientes: any
     id: number

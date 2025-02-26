@@ -69,26 +69,55 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
         // Niños/niñas/adolescentes
         ...(formData.ninosAdolescentes || []).map((nnya: any, index: number) => ({
           localizacion: nnya.useDefaultLocalizacion ? null : nnya.localizacion,
-          educacion: nnya.educacion || null,
-          cobertura_medica: nnya.cobertura_medica || null,
+          educacion: nnya.educacion
+            ? {
+                institucion_educativa: {
+                  nombre: nnya.educacion.institucion_educativa?.nombre || "",
+                },
+                nivel_alcanzado: nnya.educacion.nivel_alcanzado || "",
+                esta_escolarizado: nnya.educacion.esta_escolarizado || false,
+                ultimo_cursado: nnya.educacion.ultimo_cursado || "",
+                tipo_escuela: nnya.educacion.tipo_escuela || "",
+                comentarios_educativos: nnya.educacion.comentarios_educativos || "",
+                deleted: false,
+              }
+            : null,
+
+          cobertura_medica: nnya.cobertura_medica
+            ? {
+                ...nnya.cobertura_medica,
+                institucion_sanitaria: nnya.cobertura_medica.institucion_sanitaria
+                  ? {
+                      id: nnya.cobertura_medica.institucion_sanitaria,
+                      nombre: nnya.cobertura_medica.institucion_sanitaria || "",
+                    }
+                  : null,
+              }
+            : null,
 
           // Transform each enfermedad
           persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
             situacion_salud: enfermedad.situacion_salud,
             enfermedad: {
-              id: enfermedad.enfermedad.id,
-              nombre: enfermedad.enfermedad.nombre,
+              nombre: enfermedad.enfermedad?.nombre || "",
               situacion_salud_categoria: enfermedad.situacion_salud,
-              institucion_sanitaria_interviniente: {
-                id: enfermedad.institucion_sanitaria_interviniente.id,
-                nombre: enfermedad.institucion_sanitaria_interviniente.nombre,
-              },
             },
-            certificacion: enfermedad.certificacion,
-            beneficios_gestionados: enfermedad.beneficios_gestionados,
-            recibe_tratamiento: enfermedad.recibe_tratamiento,
-            informacion_tratamiento: enfermedad.informacion_tratamiento,
-            medico_tratamiento: enfermedad.medico_tratamiento,
+            institucion_sanitaria_interviniente: enfermedad.institucion_sanitaria_interviniente
+              ? {
+                  id: enfermedad.institucion_sanitaria_interviniente,
+                  nombre: enfermedad.institucion_sanitaria_interviniente || "",
+                }
+              : null,
+            medico_tratamiento: enfermedad.medico_tratamiento || {
+              nombre: "",
+              mail: "",
+              telefono: null,
+            },
+            certificacion: enfermedad.certificacion || "",
+            beneficios_gestionados: enfermedad.beneficios_gestionados || "",
+            recibe_tratamiento: enfermedad.recibe_tratamiento || false,
+            informacion_tratamiento: enfermedad.informacion_tratamiento || "",
+            deleted: false,
           })),
 
           // Conditionally include demanda_persona.id
@@ -127,7 +156,11 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
             adulto: false,
             nnya: true,
           },
-          vulneraciones: nnya.vulneraciones || [],
+          vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => ({
+            ...vulneracion,
+            principal_demanda: vulneracion.principal_demanda || false,
+            transcurre_actualidad: vulneracion.transcurre_actualidad || false,
+          })),
         })),
 
         // Adultos convivientes
@@ -282,8 +315,16 @@ const transformApiDataToFormData = (apiData: any): FormData => {
         useDefaultLocalizacion: nnya.use_demanda_localizacion,
         localizacion: nnya.localizacion,
         educacion: nnya.educacion,
-        cobertura_medica: nnya.cobertura_medica,
-        persona_enfermedades: nnya.persona_enfermedades,
+        cobertura_medica: {
+          ...nnya.cobertura_medica,
+          institucion_sanitaria: nnya.cobertura_medica?.institucion_sanitaria?.id || null,
+          institucion_sanitaria_nombre: nnya.cobertura_medica?.institucion_sanitaria?.nombre || "",
+        },
+        persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
+          ...enfermedad,
+          institucion_sanitaria_interviniente: enfermedad.institucion_sanitaria_interviniente?.id || null,
+          institucion_sanitaria_interviniente_nombre: enfermedad.institucion_sanitaria_interviniente?.nombre || "",
+        })),
 
         demanda_persona: {
           conviviente: nnya.demanda_persona.conviviente,

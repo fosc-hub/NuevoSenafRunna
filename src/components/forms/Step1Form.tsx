@@ -380,9 +380,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
 
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
-            Datos de Localización del grupo familiar
+            Zona de asignación de la demanda
           </Typography>
-          <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </Grid>
         <Grid item xs={12}>
           <Controller
@@ -402,6 +401,12 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               </FormControl>
             )}
           />
+        </Grid>
+        <Grid item xs={12}>
+          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+            Datos de Localización del grupo familiar
+          </Typography>
+          <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </Grid>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>

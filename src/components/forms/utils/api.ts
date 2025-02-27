@@ -66,7 +66,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
 
       personas: [
         // Niños/niñas/adolescentes
-        ...(formData.ninosAdolescentes || []).map((nnya: any) => ({
+        ...(formData.ninosAdolescentes || []).map((nnya: any, nnyaIndex: number) => ({
           persona_id: nnya.personaId, // Add this line to pass the persona_id
           localizacion: nnya.useDefaultLocalizacion ? null : nnya.localizacion,
           educacion: nnya.educacion
@@ -174,16 +174,29 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
             adulto: false,
             nnya: true,
           },
-          vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => ({
-            ...vulneracion,
-            principal_demanda: vulneracion.principal_demanda || false,
-            transcurre_actualidad: vulneracion.transcurre_actualidad || false,
-            autor_dv: (vulneracion.autor_dv || []).map((indiceAutor: number) => ({
-              persona_index: indiceAutor,
-          })),
-          })),
-        })),
+          vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => {
+            const vulneracionData: any = {
+              id: vulneracion.id || 0,
+              principal_demanda: vulneracion.principal_demanda || false,
+              transcurre_actualidad: vulneracion.transcurre_actualidad || false,
+              nnya: nnyaIndex,
+              categoria_motivo: vulneracion.categoria_motivo || 0,
+              categoria_submotivo: vulneracion.categoria_submotivo || 0,
+              gravedad_vulneracion: vulneracion.gravedad_vulneracion || 0,
+              urgencia_vulneracion: vulneracion.urgencia_vulneracion || 0,
+            }
 
+            // Si autor_dv existe y es válido, lo incluimos
+            if (vulneracion.autor_dv && vulneracion.autor_dv !== 0) {
+              vulneracionData.autor_dv = vulneracion.autor_dv
+            } else {
+              // Si no tenemos autor_dv válido, usamos autordv_index
+              vulneracionData.autordv_index = vulneracion.autordv_index || 0
+            }
+
+            return vulneracionData
+          }),
+        })),
 
         // Adultos convivientes
         ...(formData.adultosConvivientes || []).map((adulto: any) => ({
@@ -296,7 +309,7 @@ const transformApiDataToFormData = (apiData: any): FormData => {
     ambito_vulneracion: apiData.ambito_vulneracion || null,
     tipo_demanda: apiData.tipo_demanda || null,
     // Ensure presuntos_delitos is properly initialized as an array
-    tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || null,
+    tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || [],
     envio_de_respuesta: apiData.envio_de_respuesta || null,
     motivo_ingreso: apiData.motivo_ingreso || null,
     submotivo_ingreso: apiData.submotivo_ingreso || null,
@@ -380,7 +393,18 @@ const transformApiDataToFormData = (apiData: any): FormData => {
           condicion_vulnerabilidad: nnya.condiciones_vulnerabilidad.map((cv: any) => cv.condicion_vulnerabilidad),
         },
 
-        vulneraciones: nnya.vulneraciones,
+        vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => ({
+          id: vulneracion.id || 0,
+          principal_demanda: vulneracion.principal_demanda || false,
+          transcurre_actualidad: vulneracion.transcurre_actualidad || false,
+          nnya: index,
+          autor_dv: vulneracion.autor_dv || 0,
+          autordv_index: vulneracion.autordv_index || 0,
+          categoria_motivo: vulneracion.categoria_motivo || 0,
+          categoria_submotivo: vulneracion.categoria_submotivo || 0,
+          gravedad_vulneracion: vulneracion.gravedad_vulneracion || 0,
+          urgencia_vulneracion: vulneracion.urgencia_vulneracion || 0,
+        })),
       })),
 
     // Adultos convivientes

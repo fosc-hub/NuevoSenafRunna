@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,15 +18,19 @@ import {
   Alert,
   IconButton,
   Paper,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Divider,
 } from "@mui/material"
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
-import { DataGrid, type GridColDef } from "@mui/x-data-grid"
+import { AttachFile, Download, Upload } from "@mui/icons-material"
 import { create, get } from "@/app/api/apiService"
 import type { Actividad, ActividadTipo } from "@/types/actividad"
-import { AttachFile, Download, Upload } from "@mui/icons-material"
 
 const actividadSchema = z.object({
   fecha_y_hora: z.date().min(new Date(1900, 0, 1), "La fecha y hora es requerida"),
@@ -37,54 +41,6 @@ const actividadSchema = z.object({
 })
 
 type ActividadFormData = z.infer<typeof actividadSchema>
-
-const columns: GridColDef[] = [
-  {
-    field: "fecha_y_hora_manual",
-    headerName: "Fecha y Hora",
-    width: 200,
-    valueFormatter: (params) => {
-      try {
-        return new Date(params.value).toLocaleString("es-ES", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-      } catch (e) {
-        return "Fecha inválida"
-      }
-    },
-  },
-  {
-    field: "descripcion",
-    headerName: "Descripción",
-    width: 300,
-  },
-  {
-    field: "tipoNombre",
-    headerName: "Tipo",
-    width: 150,
-  },
-  {
-    field: "institucionNombre",
-    headerName: "Institución",
-    width: 200,
-  },
-  {
-    field: "archivos",
-    headerName: "Archivos",
-    width: 150,
-    renderCell: (params) => {
-      if (params.row.archivos?.length > 0) {
-        return (
-          <IconButton size="small" onClick={() => window.open(params.row.archivos[0].url, "_blank")}>
-            <AttachFile />
-          </IconButton>
-        )
-      }
-      return null
-    },
-  },
-]
 
 interface RegistrarActividadFormProps {
   demandaId: number
@@ -347,18 +303,42 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
         <Typography variant="h6" gutterBottom>
           Actividades Registradas
         </Typography>
-        <DataGrid
-          rows={actividades}
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 100, page: 0 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          autoHeight
-          disableSelectionOnClick
-        />
+        <List sx={{ width: "100%", bgcolor: "background.paper", maxHeight: "400px", overflow: "auto" }}>
+          {actividades.map((actividad, index) => (
+            <React.Fragment key={actividad.id}>
+              <ListItem alignItems="flex-start">
+                <ListItemText
+                  primary={
+                    <Typography component="span" variant="body1">
+                      {actividad.descripcion}
+                    </Typography>
+                  }
+                  secondary={
+                    <>
+                      <Typography component="span" variant="body2" color="text.primary">
+                        {new Date(actividad.fecha_y_hora_manual).toLocaleString("es-ES", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}{" "}
+                        - {actividad.tipoNombre}
+                      </Typography>
+                      {" — "}
+                      {actividad.institucionNombre}
+                    </>
+                  }
+                />
+                {actividad.archivos?.length > 0 && (
+                  <ListItemSecondaryAction>
+                    <IconButton edge="end" onClick={() => window.open(actividad.archivos[0].url, "_blank")}>
+                      <AttachFile />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                )}
+              </ListItem>
+              {index < actividades.length - 1 && <Divider variant="inset" component="li" />}
+            </React.Fragment>
+          ))}
+        </List>
       </Box>
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

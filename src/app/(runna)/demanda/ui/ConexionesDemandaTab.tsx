@@ -86,7 +86,8 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     const lowerQuery = searchQuery.toLowerCase()
     return allDemandas.filter(
       (demanda) =>
-        (demanda.id.toString().includes(lowerQuery) || demanda.descripcion.toLowerCase().includes(lowerQuery)) &&
+        (demanda.id.toString().includes(lowerQuery) ||
+          (demanda.descripcion && demanda.descripcion.toLowerCase().includes(lowerQuery))) &&
         demanda.id !== demandaId &&
         !conexiones.some((c) => c.id === demanda.id),
     )
@@ -181,7 +182,9 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
             fullWidth
             freeSolo
             options={searchResults}
-            getOptionLabel={(option) => (typeof option === "string" ? option : `${option.id} - ${option.descripcion}`)}
+            getOptionLabel={(option) =>
+              typeof option === "string" ? option : `${option.id} - ${option.descripcion || "Sin descripción"}`
+            }
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -213,7 +216,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
           <Box sx={{ mt: 2, p: 2, border: 1, borderColor: "divider", borderRadius: 1 }}>
             <Typography variant="subtitle2">Demanda seleccionada:</Typography>
             <Typography>
-              ID: {selectedDemanda.id} - {selectedDemanda.descripcion}
+              ID: {selectedDemanda.id} - {selectedDemanda.descripcion || "Sin descripción"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Estado: {selectedDemanda.estado_demanda} | Fecha:{" "}
@@ -259,7 +262,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                   }
                 >
                   <ListItemText
-                    primary={`ID: ${demanda.id} - ${demanda.descripcion}`}
+                    primary={`ID: ${demanda.id} - ${demanda.descripcion || "Sin descripción"}`}
                     secondary={`Estado: ${demanda.estado_demanda} | Fecha: ${new Date(demanda.fecha_ingreso_senaf).toLocaleDateString()}`}
                   />
                 </ListItem>

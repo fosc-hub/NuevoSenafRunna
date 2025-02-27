@@ -2,9 +2,11 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper } from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper, Button } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
+import SendIcon from "@mui/icons-material/Send"
 import { fetchCaseData } from "@/components/forms/utils/api"
+import { update } from "@/app/api/apiService"
 import type { FormData } from "@/components/forms/types/formTypes"
 import MultiStepForm from "@/components/forms/MultiStepForm"
 import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
@@ -52,6 +54,7 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tabValue, setTabValue] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     const loadCaseData = async () => {
@@ -81,6 +84,38 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
     // The actual submission is handled in the MultiStepForm component
   }
 
+  const handleEnviarEvaluacion = async () => {
+    if (!params.id) return
+
+    setIsSubmitting(true)
+    try {
+      const updatedData = await update(
+        "demanda",
+        Number.parseInt(params.id),
+        { estado_demanda: "EVALUACION" },
+        true,
+        "Demanda enviada a evaluación exitosamente",
+      )
+
+      // Update local state to reflect the change
+      if (formData) {
+        setFormData({
+          ...formData,
+          estado_demanda: "EVALUACION",
+        })
+      }
+    } catch (err) {
+      console.error("Error updating case status:", err)
+      // Error toast is handled by the API service
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCloseSnackbar = () => {
+    //This function is no longer needed
+  }
+
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
@@ -96,6 +131,8 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
       </Alert>
     )
   }
+
+  const isEvaluacionDisabled = formData?.estado_demanda === "EVALUACION"
 
   return (
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
@@ -114,16 +151,16 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
       </IconButton>
 
       <Box sx={{ p: 3 }}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{
-            color: "text.primary",
-            mb: 3,
-          }}
-        >
-          Detalle de la Demanda
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              color: "text.primary",
+            }}
+          >
+            Detalle de la Demanda
+          </Typography>
+        </Box>
 
         {formData?.unassigned && (
           <Alert
@@ -140,6 +177,21 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
           </Alert>
         )}
 
+        {isEvaluacionDisabled && (
+          <Alert
+            severity="info"
+            sx={{
+              mb: 3,
+              backgroundColor: "info.lighter",
+              "& .MuiAlert-message": {
+                color: "info.dark",
+              },
+            }}
+          >
+            Esta demanda ya se encuentra en evaluación.
+          </Alert>
+        )}
+
         <Paper sx={{ width: "100%", mb: 2 }}>
           <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
             <Tabs value={tabValue} onChange={handleTabChange} aria-label="demanda tabs" variant="fullWidth">
@@ -152,12 +204,26 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
 
           <TabPanel value={tabValue} index={0}>
             {formData && (
-              <MultiStepForm
-                initialData={formData}
-                onSubmit={handleSubmit}
-                readOnly={false}
-                id={params.id} // Pass the id as a string
-              />
+              <>
+                <MultiStepForm initialData={formData} onSubmit={handleSubmit} readOnly={false} id={params.id} />
+                <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<SendIcon />}
+                    onClick={handleEnviarEvaluacion}
+                    disabled={isSubmitting || isEvaluacionDisabled}
+                    sx={{
+                      backgroundColor: "primary.main",
+                      "&:hover": {
+                        backgroundColor: "primary.dark",
+                      },
+                    }}
+                  >
+                    {isSubmitting ? "Enviando..." : "Enviar a Evaluación"}
+                  </Button>
+                </Box>
+              </>
             )}
           </TabPanel>
 

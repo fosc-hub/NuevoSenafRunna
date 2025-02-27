@@ -348,6 +348,13 @@ const DemandaTable: React.FC = () => {
           color={params.row.estado_demanda === "EVALUACION" ? "primary" : "inherit"}
           startIcon={<Edit />}
           disabled={params.row.estado_demanda !== "EVALUACION"}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (params.row.estado_demanda === "EVALUACION") {
+              // Navigate to the evaluation page without ID in the URL
+              window.location.href = `/evaluacion?id=${params.row.id}`
+            }
+          }}
         >
           Evaluar
         </Button>

@@ -178,8 +178,12 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
             ...vulneracion,
             principal_demanda: vulneracion.principal_demanda || false,
             transcurre_actualidad: vulneracion.transcurre_actualidad || false,
+            autor_dv: (vulneracion.autor_dv || []).map((indiceAutor: number) => ({
+              persona_index: indiceAutor,
+          })),
           })),
         })),
+
 
         // Adultos convivientes
         ...(formData.adultosConvivientes || []).map((adulto: any) => ({

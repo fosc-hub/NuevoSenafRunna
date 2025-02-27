@@ -344,6 +344,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
+                {/*
                 {index !== 0 && (
                   <Grid item xs={12}>
                     <Controller
@@ -364,6 +365,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     />
                   </Grid>
                 )}
+                */}
                 {/* Location Information */}
                 <Grid item xs={12}>
                   <FormControlLabel
@@ -1137,6 +1139,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         )}
                       />
                     </Grid>
+                    
                   </Grid>
                 </Grid>
 

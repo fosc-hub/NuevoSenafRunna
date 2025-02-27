@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Modal,
   Box,
@@ -16,10 +16,9 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
   TextField,
 } from "@mui/material"
-import { Star, StarBorder } from "@mui/icons-material"
+import { Person, PersonOutline, Delete } from "@mui/icons-material"
 import { get, create, update } from "@/app/api/apiService"
 import { toast } from "react-toastify"
 
@@ -44,6 +43,11 @@ interface Zona {
 interface User {
   id: number
   username: string
+  first_name: string
+  last_name: string
+  email: string
+  zonas: Array<{ id: number; zona: number }>
+  zonas_ids: number[]
 }
 
 interface DemandaZona {
@@ -52,6 +56,8 @@ interface DemandaZona {
   user_responsable: User | null
   enviado_por: User | null
   recibido_por: User | null
+  esta_activo: boolean
+  comentarios: string
 }
 
 const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId }) => {
@@ -61,12 +67,27 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   const [demandaZonas, setDemandaZonas] = useState<DemandaZona[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [comentarios, setComentarios] = useState("")
+  const [auditHistory, setAuditHistory] = useState<
+    Array<{
+      id: number
+      descripcion: string
+      action: string
+      timestamp: string
+    }>
+  >([])
 
   useEffect(() => {
     if (open && demandaId) {
       fetchData()
+      fetchAuditHistory()
     }
   }, [open, demandaId])
+
+  useEffect(() => {
+    if (value === 2 && demandaId) {
+      fetchAuditHistory()
+    }
+  }, [value, demandaId])
 
   const fetchData = async () => {
     try {
@@ -81,6 +102,18 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     } catch (error) {
       console.error("Error fetching data:", error)
       toast.error("Error al cargar los datos")
+    }
+  }
+
+  const fetchAuditHistory = async () => {
+    if (!demandaId) return
+
+    try {
+      const historyData = await get<any[]>(`auditoria-demanda-zona/${demandaId}`)
+      setAuditHistory(historyData)
+    } catch (error) {
+      console.error("Error fetching audit history:", error)
+      toast.error("Error al cargar el historial")
     }
   }
 
@@ -110,7 +143,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           esta_activo: true,
           recibido: true,
           comentarios: comentarios,
-          enviado_por: getCurrentUserId(), // Get the ID of the current user
+          enviado_por: getCurrentUserId(),
           recibido_por: null,
           zona: selectedZona,
           user_responsable: null,
@@ -120,7 +153,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
         "Demanda asignada exitosamente",
       )
 
-      fetchData() // Refresh data after assigning
+      fetchData()
       setSelectedZona("")
       setComentarios("")
     } catch (error) {
@@ -135,12 +168,35 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
         user_responsable: userId,
       })
       toast.success("Usuario responsable actualizado exitosamente")
-      fetchData() // Refresh data after updating
+      fetchData()
     } catch (error) {
       console.error("Error updating user responsable:", error)
       toast.error("Error al actualizar el usuario responsable")
     }
   }
+
+  const handleDeleteDemandaZona = async (demandaZonaId: number) => {
+    if (window.confirm("¿Está seguro que desea eliminar esta asignación?")) {
+      try {
+        await update("demanda-zona", demandaZonaId, {
+          esta_activo: false,
+        })
+        toast.success("Asignación eliminada exitosamente")
+        fetchData()
+      } catch (error) {
+        console.error("Error deleting demanda zona:", error)
+        toast.error("Error al eliminar la asignación")
+      }
+    }
+  }
+
+  const activeDemandaZonas = useMemo(() => demandaZonas.filter((dz) => dz.esta_activo), [demandaZonas])
+
+  const filteredUsersByZona = useMemo(() => {
+    return (zonaId: number) => {
+      return users.filter((user) => user.zonas_ids.includes(zonaId))
+    }
+  }, [users])
 
   return (
     <Modal
@@ -158,10 +214,12 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           width: "80%",
           maxWidth: 800,
           minHeight: 500,
+          maxHeight: "90vh",
           bgcolor: "background.paper",
           boxShadow: 24,
           p: 4,
           borderRadius: 1,
+          overflow: "auto",
         }}
       >
         <Typography
@@ -241,65 +299,118 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
         </TabPanel>
         <TabPanel value={value} index={1}>
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-            Usuarios asignados a esta demanda
+            Usuarios asignados a esta demanda (Derivaciones activas)
           </Typography>
-          <List>
-            {demandaZonas.map((demandaZona) => (
-              <ListItem key={demandaZona.id}>
-                <ListItemText
-                  primary={`Zona: ${demandaZona.zona.nombre}`}
-                  secondary={
-                    <>
-                      <Typography component="span" variant="body2" color="text.primary">
-                        Enviado por: {demandaZona.enviado_por?.username || "No especificado"}
-                      </Typography>
-                      <br />
-                      <Typography component="span" variant="body2" color="text.primary">
-                        Recibido por: {demandaZona.recibido_por?.username || "No recibido"}
-                      </Typography>
-                    </>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <Select
-                    value={demandaZona.user_responsable?.id || ""}
-                    onChange={(e) =>
-                      handleChangeResponsable(demandaZona.id, e.target.value ? Number(e.target.value) : null)
+          {activeDemandaZonas.length > 0 ? (
+            <List>
+              {activeDemandaZonas.map((demandaZona) => (
+                <ListItem
+                  key={demandaZona.id}
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    py: 2,
+                    "& .MuiListItemSecondaryAction-root": {
+                      position: "static",
+                      transform: "none",
+                      marginTop: { xs: 2, sm: 0 },
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={`Zona: ${demandaZona.zona.nombre}`}
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" sx={{ color: "text.primary", fontWeight: 500 }}>
+                          Enviado por: {demandaZona.enviado_por?.username || "No especificado"}
+                        </Typography>
+                        <br />
+                        <Typography component="span" variant="body2" sx={{ color: "text.primary", fontWeight: 500 }}>
+                          Recibido por: {demandaZona.recibido_por?.username || "No recibido"}
+                        </Typography>
+                      </>
                     }
-                    renderValue={(selected) => (
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Star sx={{ mr: 1, color: "gold" }} />
-                        {users.find((user) => user.id === selected)?.username || "No asignado"}
-                      </Box>
-                    )}
+                    primaryTypographyProps={{
+                      sx: { color: "text.primary", fontWeight: 600 },
+                    }}
+                    sx={{ flex: 1, mr: { xs: 0, sm: 2 } }}
+                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      width: { xs: "100%", sm: "auto" },
+                    }}
                   >
-                    <MenuItem value="">
-                      <em>Ninguno</em>
-                    </MenuItem>
-                    {users.map((user) => (
-                      <MenuItem key={user.id} value={user.id}>
-                        {user.id === demandaZona.user_responsable?.id ? (
-                          <Star sx={{ mr: 1, color: "gold" }} />
-                        ) : (
-                          <StarBorder sx={{ mr: 1 }} />
-                        )}
-                        {user.username}
+                    <Select
+                      value={demandaZona.user_responsable?.id || ""}
+                      onChange={(e) =>
+                        handleChangeResponsable(demandaZona.id, e.target.value ? Number(e.target.value) : null)
+                      }
+                      renderValue={(selected) => (
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Person sx={{ mr: 1, color: "primary.main" }} />
+                          {users.find((user) => user.id === selected)?.username || "No asignado"}
+                        </Box>
+                      )}
+                      sx={{ mr: 1, minWidth: 200 }}
+                    >
+                      <MenuItem value="">
+                        <em>Ninguno</em>
                       </MenuItem>
-                    ))}
-                  </Select>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
+                      {filteredUsersByZona(demandaZona.zona.id).map((user) => (
+                        <MenuItem key={user.id} value={user.id}>
+                          {user.id === demandaZona.user_responsable?.id ? (
+                            <Person sx={{ mr: 1, color: "primary.main" }} />
+                          ) : (
+                            <PersonOutline sx={{ mr: 1 }} />
+                          )}
+                          {user.username}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <Button onClick={() => handleDeleteDemandaZona(demandaZona.id)} color="error" size="small">
+                      <Delete />
+                    </Button>
+                  </Box>
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body1" color="text.secondary">
+              No hay derivaciones activas para esta demanda.
+            </Typography>
+          )}
         </TabPanel>
         <TabPanel value={value} index={2}>
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
             Historial de asignaciones para esta demanda
           </Typography>
-          {/* Add table or list of assignment history */}
-          <Typography variant="body1" color="text.secondary">
-            Funcionalidad de historial pendiente de implementación.
-          </Typography>
+          {auditHistory.length > 0 ? (
+            <List sx={{ maxHeight: "300px", overflow: "auto" }}>
+              {auditHistory
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .map((record) => (
+                  <ListItem key={record.id} divider>
+                    <ListItemText
+                      primary={record.descripcion}
+                      secondary={new Date(record.timestamp).toLocaleString()}
+                      primaryTypographyProps={{
+                        sx: { color: "text.primary", fontWeight: 500 },
+                      }}
+                      secondaryTypographyProps={{
+                        sx: { color: "text.primary" },
+                      }}
+                    />
+                  </ListItem>
+                ))}
+            </List>
+          ) : (
+            <Typography variant="body1" color="text.secondary">
+              No hay registros de historial disponibles.
+            </Typography>
+          )}
         </TabPanel>
         <Box
           sx={{

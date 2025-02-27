@@ -834,7 +834,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 <Controller
                                   name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.nombre`}
                                   control={control}
-                                  rules={{ required: "Este campo es obligatorio" }}
                                   render={({ field, fieldState: { error } }) => (
                                     <TextField
                                       {...field}
@@ -847,6 +846,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   )}
                                 />
                               </Grid>
+{/*
                               <Grid item xs={12} md={6}>
                                 <Controller
                                   name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.id`}
@@ -874,7 +874,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   )}
                                 />
                               </Grid>
-
+*/}
                               <Grid item xs={12} md={6}>
                                 <Controller
                                   name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente`}

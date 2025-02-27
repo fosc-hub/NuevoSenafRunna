@@ -46,7 +46,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
       ambito_vulneracion: formData.ambito_vulneracion,
       tipo_demanda: formData.tipo_demanda,
       // Ensure presuntos_delitos is always an array, even if it's null or undefined
-      tipos_presuntos_delitos: formData.presuntos_delitos || null,
+      tipos_presuntos_delitos: formData.tipos_presuntos_delitos || null,
       motivo_ingreso: formData.motivo_ingreso,
       submotivo_ingreso: formData.submotivo_ingreso,
       envio_de_respuesta: formData.envio_de_respuesta,
@@ -126,7 +126,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
             deleted: false,
             conviviente: nnya.demanda_persona?.conviviente || false,
             vinculo_demanda: nnya.demanda_persona?.vinculo_demanda || "",
-            vinculo_con_nnya_principal: index === 0 ? null : nnya.demanda_persona?.vinculo_con_nnya_principal || "",
+            vinculo_con_nnya_principal: nnya.demanda_persona?.vinculo_con_nnya_principal || "",
           },
 
           use_demanda_localizacion: nnya.useDefaultLocalizacion || false,
@@ -317,7 +317,7 @@ const transformApiDataToFormData = (apiData: any): FormData => {
         educacion: nnya.educacion,
         cobertura_medica: {
           ...nnya.cobertura_medica,
-          institucion_sanitaria: nnya.cobertura_medica?.institucion_sanitaria?.id || null,
+          institucion_sanitaria: nnya.cobertura_medica?.institucion_sanitaria?.nombre || null,
           institucion_sanitaria_nombre: nnya.cobertura_medica?.institucion_sanitaria?.nombre || "",
         },
         persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({

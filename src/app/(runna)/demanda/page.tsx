@@ -90,7 +90,7 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
     setIsSubmitting(true)
     try {
       const updatedData = await update(
-        "demanda",
+        "registro-demanda-form",
         Number.parseInt(params.id),
         { estado_demanda: "EVALUACION" },
         true,

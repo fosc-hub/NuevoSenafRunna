@@ -386,7 +386,7 @@ const transformApiDataToFormData = (apiData: any): FormData => {
           id: nnya.demanda_persona.id,
           conviviente: nnya.demanda_persona.conviviente,
           vinculo_demanda: nnya.demanda_persona.vinculo_demanda,
-          vinculo_con_nnya_principal: index === 0 ? null : nnya.demanda_persona.vinculo_con_nnya_principal,
+          vinculo_con_nnya_principal: nnya.demanda_persona.vinculo_con_nnya_principal,
         },
 
         condicionesVulnerabilidad: {

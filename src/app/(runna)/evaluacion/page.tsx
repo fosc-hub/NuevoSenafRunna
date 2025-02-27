@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import {
@@ -17,7 +16,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
+  Button,
+  IconButton,
 } from "@mui/material"
+import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 
@@ -29,6 +32,14 @@ interface TabPanelProps {
   children?: React.ReactNode
   index: number
   value: number
+}
+
+interface Activity {
+  id?: number
+  actividad: string
+  fecha: string
+  institucion: string
+  observaciones: string
 }
 
 function CustomTabPanel(props: TabPanelProps) {
@@ -45,13 +56,9 @@ export default function EvaluacionPage() {
   const searchParams = useSearchParams()
   const demandaId = searchParams.get("id")
   const queryClient = useQueryClient()
-  const [evaluacionData, setEvaluacionData] = useState({
-    conclusion: "",
-    recomendaciones: "",
-    estado_evaluacion: "PENDIENTE",
-    observaciones: "",
-  })
   const [tabValue, setTabValue] = useState(0)
+  const [editableDemanda, setEditableDemanda] = useState<Partial<TDemanda>>({})
+  const [activities, setActivities] = useState<Activity[]>([])
 
   // Fetch demanda details
   const {
@@ -64,91 +71,78 @@ export default function EvaluacionPage() {
     enabled: !!demandaId,
   })
 
-  // Update evaluacion mutation
-  const updateEvaluacion = useMutation({
-    mutationFn: async (data: typeof evaluacionData) => {
+  // Update demanda mutation
+  const updateDemanda = useMutation({
+    mutationFn: async (data: Partial<TDemanda>) => {
       if (!demandaId) throw new Error("Demanda ID is required")
-
-      // If evaluacion exists, update it, otherwise create it
-      if (demanda?.evaluacion?.id) {
-        return update(
-          "evaluacion",
-          demanda.evaluacion.id,
-          {
-            ...data,
-            ultima_actualizacion: new Date().toISOString(),
-          },
-          true,
-          "Evaluación actualizada con éxito",
-        )
-      } else {
-        // Create new evaluacion
-        return update(
-          "evaluacion",
-          null,
-          {
-            ...data,
-            demanda: demandaId,
-            fecha_creacion: new Date().toISOString(),
-            ultima_actualizacion: new Date().toISOString(),
-          },
-          true,
-          "Evaluación creada con éxito",
-        )
-      }
+      return update<TDemanda>("registro-demanda-form", demandaId, data, true, "Demanda actualizada con éxito")
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demanda", demandaId] })
-      toast.success("Evaluación guardada correctamente", {
+      toast.success("Demanda actualizada correctamente", {
         position: "top-center",
         autoClose: 3000,
         hideProgressBar: false,
       })
     },
     onError: (error) => {
-      console.error("Error al guardar la evaluación:", error)
-      toast.error("Error al guardar la evaluación", {
+      console.error("Error al actualizar la demanda:", error)
+      toast.error("Error al actualizar la demanda", {
         position: "top-center",
         autoClose: 3000,
       })
     },
   })
 
-  // Load existing evaluacion data if available
   useEffect(() => {
-    if (demanda?.evaluacion) {
-      setEvaluacionData({
-        conclusion: demanda.evaluacion.conclusion || "",
-        recomendaciones: demanda.evaluacion.recomendaciones || "",
-        estado_evaluacion: demanda.evaluacion.estado_evaluacion || "PENDIENTE",
-        observaciones: demanda.evaluacion.observaciones || "",
-      })
+    if (demanda) {
+      setEditableDemanda(demanda)
+      setActivities(demanda.actividades || [])
     }
   }, [demanda])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setEvaluacionData((prev) => ({
+    setEditableDemanda((prev) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  const handleSelectChange = (e: any) => {
+  const handleLocationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setEvaluacionData((prev) => ({
+    setEditableDemanda((prev) => ({
       ...prev,
-      [name]: value,
+      localizacion: {
+        ...prev.localizacion,
+        [name]: value,
+      },
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    updateEvaluacion.mutate(evaluacionData)
+  const handleActivityChange = (index: number, field: keyof Activity, value: string) => {
+    const newActivities = [...activities]
+    newActivities[index] = {
+      ...newActivities[index],
+      [field]: value,
+    }
+    setActivities(newActivities)
   }
 
-  const handleGoBack = () => {
-    window.location.href = "/"
+  const handleAddActivity = () => {
+    setActivities([...activities, { actividad: "", fecha: "", institucion: "", observaciones: "" }])
+  }
+
+  const handleDeleteActivity = (index: number) => {
+    setActivities(activities.filter((_, i) => i !== index))
+  }
+
+  const handleSave = () => {
+    const updatedData = {
+      ...editableDemanda,
+      actividades: activities,
+    }
+    updateDemanda.mutate(updatedData)
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -174,11 +168,10 @@ export default function EvaluacionPage() {
   return (
     <main className="max-w-[1200px] mx-auto p-5">
       <Box>
-        {/* Fixed position tabs */}
         <Box
           sx={{
             position: "sticky",
-            top: "64px", // Add top offset for navbar
+            top: "64px",
             bgcolor: "#0EA5E9",
             zIndex: 1100,
             width: "100%",
@@ -213,8 +206,8 @@ export default function EvaluacionPage() {
           </Tabs>
         </Box>
 
-        {/* Content area with top margin to account for both navbar and tabs */}
         <Box>
+          {/* Tab 1: Información General */}
           <CustomTabPanel value={tabValue} index={0}>
             <TableContainer component={Paper} sx={{ mt: 0, borderRadius: 0 }}>
               <Table sx={{ minWidth: 650 }} aria-label="información general table">
@@ -223,56 +216,303 @@ export default function EvaluacionPage() {
                     <TableCell>Localidad</TableCell>
                     <TableCell>Fecha</TableCell>
                     <TableCell>Cargo/Función</TableCell>
-                    <TableCell>Nombre y Apellido</TableCell>
+                    <TableCell>Institución</TableCell>
                     <TableCell>N° de Sticker SUAC</TableCell>
                     <TableCell>N° de Sticker sac</TableCell>
                     <TableCell>N° de Oficio Web</TableCell>
                     <TableCell>Origen</TableCell>
                     <TableCell>Suborigen</TableCell>
-                    <TableCell>Institución</TableCell>
+                    <TableCell>Estado Demanda</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    <TableCell></TableCell>
-                    <TableCell>2025-02-1</TableCell>
-                    <TableCell>superuser</TableCell>
-                    <TableCell></TableCell>
-                    <TableCell>62</TableCell>
-                    <TableCell>77</TableCell>
-                    <TableCell>31</TableCell>
-                    <TableCell>if</TableCell>
-                    <TableCell>go</TableCell>
-                    <TableCell>soon</TableCell>
+                    <TableCell>
+                      <TextField
+                        name="localidad"
+                        value={editableDemanda.localizacion?.localidad || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="fecha_ingreso_senaf"
+                        value={editableDemanda.fecha_ingreso_senaf || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                        type="date"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="cargo_funcion"
+                        value={editableDemanda.registrado_por_user?.username || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="institucion"
+                        value={editableDemanda.institucion?.nombre || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="sticker_suac"
+                        value={
+                          editableDemanda.relacion_demanda?.codigos_demanda.find((c) => c.tipo_codigo === 3)?.codigo ||
+                          ""
+                        }
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="sticker_sac"
+                        value={
+                          editableDemanda.relacion_demanda?.codigos_demanda.find((c) => c.tipo_codigo === 1)?.codigo ||
+                          ""
+                        }
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="oficio_web"
+                        value={editableDemanda.oficio_web || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="tipo_demanda"
+                        value={editableDemanda.tipo_demanda || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="submotivo_ingreso"
+                        value={editableDemanda.submotivo_ingreso || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        name="estado_demanda"
+                        value={editableDemanda.estado_demanda || ""}
+                        onChange={handleInputChange}
+                        variant="standard"
+                      />
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
           </CustomTabPanel>
+
+          {/* Tab 2: Datos de Localización */}
           <CustomTabPanel value={tabValue} index={1}>
-            <Typography variant="h6">Datos de Localización</Typography>
-            {/* Add table for location data */}
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Datos de Localización
+              </Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+                <TextField
+                  label="Calle"
+                  name="calle"
+                  value={editableDemanda.localizacion?.calle || ""}
+                  onChange={handleLocationInputChange}
+                  required
+                  fullWidth
+                />
+                <TextField
+                  label="Tipo de Calle"
+                  name="tipo_calle"
+                  value={editableDemanda.localizacion?.tipo_calle || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label="Piso/Depto"
+                  name="piso_depto"
+                  value={editableDemanda.localizacion?.piso_depto || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label="Lote"
+                  name="lote"
+                  value={editableDemanda.localizacion?.lote || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label="Manzana"
+                  name="mza"
+                  value={editableDemanda.localizacion?.mza || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label="Número de Casa"
+                  name="casa_nro"
+                  value={editableDemanda.localizacion?.casa_nro || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label="Referencia Geográfica"
+                  name="referencia_geo"
+                  value={editableDemanda.localizacion?.referencia_geo || ""}
+                  onChange={handleLocationInputChange}
+                  required
+                  fullWidth
+                />
+                <TextField
+                  label="Barrio"
+                  name="barrio"
+                  value={editableDemanda.localizacion?.barrio || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label="Localidad"
+                  name="localidad"
+                  value={editableDemanda.localizacion?.localidad || ""}
+                  onChange={handleLocationInputChange}
+                  required
+                  fullWidth
+                />
+                <TextField
+                  label="CPC"
+                  name="cpc"
+                  value={editableDemanda.localizacion?.cpc || ""}
+                  onChange={handleLocationInputChange}
+                  fullWidth
+                />
+              </Box>
+            </Paper>
           </CustomTabPanel>
+
+          {/* Tab 3: Descripción de la Situación Inicial */}
           <CustomTabPanel value={tabValue} index={2}>
-            <Typography variant="h6">Descripción de la Situación Inicial</Typography>
-            {/* Add content for initial situation */}
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Descripción de la Situación Inicial
+              </Typography>
+              <TextField
+                name="descripcion"
+                value={editableDemanda.descripcion || ""}
+                onChange={handleInputChange}
+                multiline
+                rows={6}
+                fullWidth
+                variant="outlined"
+              />
+            </Paper>
           </CustomTabPanel>
+
+          {/* Tab 4: Actividades */}
           <CustomTabPanel value={tabValue} index={3}>
-            <Typography variant="h6">Actividades</Typography>
-            {/* Add table for activities */}
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Actividades
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Actividad</TableCell>
+                      <TableCell>Fecha</TableCell>
+                      <TableCell>Institución</TableCell>
+                      <TableCell>Observaciones</TableCell>
+                      <TableCell>Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {activities.map((activity, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <TextField
+                            value={activity.actividad}
+                            onChange={(e) => handleActivityChange(index, "actividad", e.target.value)}
+                            variant="standard"
+                            fullWidth
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            type="date"
+                            value={activity.fecha}
+                            onChange={(e) => handleActivityChange(index, "fecha", e.target.value)}
+                            variant="standard"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            value={activity.institucion}
+                            onChange={(e) => handleActivityChange(index, "institucion", e.target.value)}
+                            variant="standard"
+                            fullWidth
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            value={activity.observaciones}
+                            onChange={(e) => handleActivityChange(index, "observaciones", e.target.value)}
+                            variant="standard"
+                            fullWidth
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <IconButton onClick={() => handleDeleteActivity(index)} color="error">
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Button
+                startIcon={<AddIcon />}
+                onClick={handleAddActivity}
+                sx={{ mt: 2 }}
+                variant="outlined"
+                color="primary"
+              >
+                AGREGAR FILA
+              </Button>
+            </Paper>
           </CustomTabPanel>
+
+          {/* Other tabs remain the same */}
           <CustomTabPanel value={tabValue} index={4}>
             <Typography variant="h6">NNYA Convivientes</Typography>
-            {/* Add table for cohabiting NNYA */}
           </CustomTabPanel>
           <CustomTabPanel value={tabValue} index={5}>
             <Typography variant="h6">NNYA No Convivientes</Typography>
-            {/* Add table for non-cohabiting NNYA */}
           </CustomTabPanel>
           <CustomTabPanel value={tabValue} index={6}>
             <Typography variant="h6">Adulto</Typography>
-            {/* Add table for adult information */}
           </CustomTabPanel>
+        </Box>
+
+        {/* Save Button */}
+        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+          <Button variant="contained" color="primary" onClick={handleSave}>
+            Guardar Cambios
+          </Button>
         </Box>
       </Box>
     </main>

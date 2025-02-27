@@ -2,12 +2,14 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import MultiStepForm, { type FormData } from "../../../components/forms/MultiStepForm"
 import { Typography, CircularProgress } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 
 const Home: React.FC = () => {
+  const router = useRouter()
   const [formData, setFormData] = useState<FormData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -19,6 +21,8 @@ const Home: React.FC = () => {
       setFormData(data)
       setError(null)
       toast.success("Formulario enviado exitosamente.")
+      // Redirect to mesadeentrada after successful submission
+      router.push("/mesadeentrada")
     },
     onError: (error: any) => {
       console.error("Error with form data:", error)
@@ -52,4 +56,3 @@ const Home: React.FC = () => {
 }
 
 export default Home
-

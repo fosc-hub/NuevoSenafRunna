@@ -371,7 +371,7 @@ const DemandaTable: React.FC = () => {
             {params.value.map((codigo: any, index: number) => (
               <div key={index}>
                 <Typography variant="body2">
-                  Código: {codigo.codigo} - Tipo: {codigo.tipo_codigo}
+                  Código: {codigo.codigo} - Tipo: {codigo.tipo_codigo_nombre}
                 </Typography>
               </div>
             ))}

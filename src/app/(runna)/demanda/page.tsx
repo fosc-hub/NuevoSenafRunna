@@ -9,6 +9,7 @@ import type { FormData } from "@/components/forms/types/formTypes"
 import MultiStepForm from "@/components/forms/MultiStepForm"
 import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
 import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
+import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -145,6 +146,7 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
               <Tab label="Detalles" {...a11yProps(0)} />
               <Tab label="Enviar Respuesta" {...a11yProps(1)} />
               <Tab label="Registrar Actividad" {...a11yProps(2)} />
+              <Tab label="Conexiones" {...a11yProps(3)} />
             </Tabs>
           </Box>
 
@@ -165,6 +167,10 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
 
           <TabPanel value={tabValue} index={2}>
             <RegistrarActividadForm demandaId={Number.parseInt(params.id)} />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
+            <ConexionesDemandaTab demandaId={Number.parseInt(params.id)} />
           </TabPanel>
         </Paper>
       </Box>

@@ -322,7 +322,7 @@ const transformApiDataToFormData = (apiData: any): FormData => {
         },
         persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
           ...enfermedad,
-          institucion_sanitaria_interviniente: enfermedad.institucion_sanitaria_interviniente?.id || null,
+          institucion_sanitaria_interviniente: enfermedad.institucion_sanitaria_interviniente?.nombre || null,
           institucion_sanitaria_interviniente_nombre: enfermedad.institucion_sanitaria_interviniente?.nombre || "",
         })),
 

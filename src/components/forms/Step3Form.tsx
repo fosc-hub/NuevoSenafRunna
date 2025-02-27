@@ -1128,7 +1128,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             <InputLabel>Vínculo con NNYA Principal</InputLabel>
                             <Select {...field} label="Obra Social" disabled={readOnly}>
                               {dropdownData.vinculo_con_nnya_principal_choices?.map((enf: any) => (
-                                <MenuItem key={enf.id} value={enf.nombre}>
+                                <MenuItem key={enf.id} value={enf.id}>
                                   {enf.nombre} {/* Use `value` instead of `nombre` */}
                                 </MenuItem>
                               ))}

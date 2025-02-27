@@ -31,6 +31,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
         <Grid item xs={12} md={8}>
           <Controller
             name={`${prefix}.calle`}
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <TextField
@@ -137,6 +138,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
         <Grid item xs={12}>
           <Controller
             name={`${prefix}.referencia_geo`}
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <TextField
@@ -174,6 +176,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
         <Grid item xs={12} md={4}>
           <Controller
             name={`${prefix}.localidad`}
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>

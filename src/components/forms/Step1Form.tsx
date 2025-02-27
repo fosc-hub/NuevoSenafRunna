@@ -93,6 +93,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <DatePicker
                 {...field}
                 label="Fecha de oficio/documento *"
+                rules={{ required: "Este campo es obligatorio" }}
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
@@ -111,6 +112,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               <DatePicker
                 {...field}
                 label="Fecha de ingreso SENAF *"
+                rules={{ required: "Este campo es obligatorio" }}
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
@@ -124,6 +126,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12} md={6}>
           <Controller
             name="bloque_datos_remitente"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
@@ -279,6 +282,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12}>
           <Controller
             name="tipo_demanda"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
@@ -326,6 +330,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12}>
           <Controller
             name="envio_de_respuesta"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>

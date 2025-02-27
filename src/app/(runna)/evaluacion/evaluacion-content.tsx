@@ -51,6 +51,14 @@ interface NnyaConviviente {
   legajo_runna: string
 }
 
+interface VulnerabilityIndicator {
+  id: number
+  nombre: string
+  descripcion: string | null
+  peso: number
+  selected?: boolean
+}
+
 function CustomTabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props
 
@@ -69,6 +77,95 @@ export default function EvaluacionContent() {
   const [editableDemanda, setEditableDemanda] = useState<Partial<TDemanda>>({})
   const [activities, setActivities] = useState<Activity[]>([])
   const [nnyaConvivientes, setNnyaConvivientes] = useState<NnyaConviviente[]>([])
+  const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState<VulnerabilityIndicator[]>([
+    {
+      id: 1,
+      nombre: "Progenitores y/o adultos responsables con condición de discapacidad/consumo/adicción/salud mental",
+      descripcion: null,
+      peso: 1,
+      selected: false,
+    },
+    {
+      id: 2,
+      nombre:
+        "Sospecha de violencia sexual contra NNyA, previa denuncia ante los organismos judiciales correspondientes, si es que no se hubiere formulado con atenrioridad.",
+      descripcion: null,
+      peso: 1,
+      selected: false,
+    },
+    {
+      id: 3,
+      nombre: "Evidencia física relacionada a la vulneración de la integridad personal",
+      descripcion: null,
+      peso: 5,
+      selected: false,
+    },
+    {
+      id: 4,
+      nombre: "Cronicidad del maltrato y lesiones graves en el NNyA",
+      descripcion: null,
+      peso: 1,
+      selected: false,
+    },
+    {
+      id: 5,
+      nombre: "Agresor/a del NNyA conviviente o con contacto",
+      descripcion: null,
+      peso: 2,
+      selected: false,
+    },
+    {
+      id: 6,
+      nombre: "Inexistencia de figuras adultas convivientes que garanticen protección de derechos al NNyA",
+      descripcion: null,
+      peso: 4,
+      selected: false,
+    },
+    {
+      id: 7,
+      nombre:
+        "Inexistencia de redes familiares y comunitarias que aporten a la familia a garantizar el cuidado, ó con limitaciones graves en el cuidado personal que impiden al cuidador/a hacerse cargo del mismo/a, poniendo en riesgo la integridad psicofísica del niño",
+      descripcion: null,
+      peso: 2,
+      selected: false,
+    },
+    {
+      id: 8,
+      nombre: "El NNA manifiesta posible vulneración de sus derechos",
+      descripcion: null,
+      peso: 5,
+      selected: false,
+    },
+    {
+      id: 9,
+      nombre: "Negligencia en los cuidados",
+      descripcion: null,
+      peso: 4,
+      selected: false,
+    },
+    {
+      id: 10,
+      nombre: "Trabajo infantil o posible explotación sexual/laboral infantil/adolescente desprotegido",
+      descripcion: null,
+      peso: 3,
+      selected: false,
+    },
+    {
+      id: 11,
+      nombre:
+        "Existen antecedentes de intervenciones previas -recientes o actuales- propias y/o de otros equipos provinciales, locales de otras instituciones u otras jurisdicciones provinciales",
+      descripcion: null,
+      peso: 1,
+      selected: false,
+    },
+    {
+      id: 12,
+      nombre: "No se cumplen las medidas cautelares que protegen a NNA víctimas o se amenaza con incumplir",
+      descripcion: null,
+      peso: 3,
+      selected: false,
+    },
+  ])
 
   // Fetch demanda details
   const {
@@ -223,6 +320,12 @@ export default function EvaluacionContent() {
       console.error(`Error updating case status for ${action}:`, err)
       // Error toast is handled by the API service
     }
+  }
+
+  const handleIndicatorChange = (id: number, value: boolean) => {
+    setVulnerabilityIndicators(
+      vulnerabilityIndicators.map((indicator) => (indicator.id === id ? { ...indicator, selected: value } : indicator)),
+    )
   }
 
   if (isLoading) {
@@ -691,64 +794,119 @@ export default function EvaluacionContent() {
               </Box>
 
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mt: 2 }}>
-                <Box sx={{ flex: "1 1 45%", minWidth: 300 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                    Demanda Scores:
+                {/* Vulnerability Indicators - Left Side */}
+                <Box sx={{ flex: "1 1 55%", minWidth: 400 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2 }}>
+                    Indicadores de Vulneración:
                   </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
-                          <TableCell align="right">73</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
-                          <TableCell align="right">0</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
-                          <TableCell align="right">67</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
-                          <TableCell align="right">0</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score indicadores valoración</TableCell>
-                          <TableCell align="right">6</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <Paper variant="outlined" sx={{ p: 2, maxHeight: "400px", overflow: "auto" }}>
+                    {vulnerabilityIndicators.map((indicator) => (
+                      <Box key={indicator.id} sx={{ mb: 2, pb: 2, borderBottom: "1px solid #eee" }}>
+                        <Box sx={{ display: "flex", mb: 1 }}>
+                          <Typography variant="body2" sx={{ flex: 1 }}>
+                            {indicator.nombre}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: "bold", ml: 2 }}>
+                            Peso: {indicator.peso}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", gap: 2 }}>
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <input
+                              type="radio"
+                              id={`indicator-${indicator.id}-yes`}
+                              name={`indicator-${indicator.id}`}
+                              checked={indicator.selected === true}
+                              onChange={() => handleIndicatorChange(indicator.id, true)}
+                            />
+                            <label htmlFor={`indicator-${indicator.id}-yes`} style={{ marginLeft: "4px" }}>
+                              Sí
+                            </label>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <input
+                              type="radio"
+                              id={`indicator-${indicator.id}-no`}
+                              name={`indicator-${indicator.id}`}
+                              checked={indicator.selected === false}
+                              onChange={() => handleIndicatorChange(indicator.id, false)}
+                            />
+                            <label htmlFor={`indicator-${indicator.id}-no`} style={{ marginLeft: "4px" }}>
+                              No
+                            </label>
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Paper>
                 </Box>
 
-                <Box sx={{ flex: "1 1 45%", minWidth: 300 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                    NNyA Scores:
+                {/* Scores - Right Side */}
+                <Box sx={{ flex: "1 1 40%", minWidth: 300 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2 }}>
+                    Scores:
                   </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
-                          <TableCell align="right">433</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
-                          <TableCell align="right">0</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
-                          <TableCell align="right">433</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
-                          <TableCell align="right">-</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
+                        Demanda Scores:
+                      </Typography>
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                          <TableBody>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
+                              <TableCell align="right">73</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
+                              <TableCell align="right">0</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
+                              <TableCell align="right">67</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
+                              <TableCell align="right">0</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score indicadores valoración</TableCell>
+                              <TableCell align="right">6</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
+                        NNyA Scores:
+                      </Typography>
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                          <TableBody>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
+                              <TableCell align="right">433</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
+                              <TableCell align="right">0</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
+                              <TableCell align="right">433</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
+                              <TableCell align="right">-</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  </Box>
                 </Box>
               </Box>
             </Box>
@@ -768,6 +926,7 @@ export default function EvaluacionContent() {
                 descripcion: editableDemanda.descripcion,
                 actividades: activities,
                 nnyaConvivientes: nnyaConvivientes,
+                vulnerabilityIndicators,
               }
 
               // You would need to implement this function

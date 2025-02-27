@@ -1057,7 +1057,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           type="number"
                                           helperText={error?.message}
                                           InputProps={{ readOnly }}
-                                          type="tel"
                                         />
                                       )}
                                     />

@@ -353,8 +353,25 @@ const DemandaTable: React.FC = () => {
         </Button>
       ),
     },
-    { field: "tipoDeNro", headerName: "Tipo de Nro", width: 150 },
-    { field: "nroEspecifico", headerName: "Nro Específico", width: 150 },
+    {
+      field: "codigosDemanda",
+      headerName: "Códigos Demanda",
+      width: 200,
+      renderCell: (params) => {
+        if (!params.value || params.value.length === 0) return "N/A"
+        return (
+          <div>
+            {params.value.map((codigo: any, index: number) => (
+              <div key={index}>
+                <Typography variant="body2">
+                  Código: {codigo.codigo} - Tipo: {codigo.tipo_codigo}
+                </Typography>
+              </div>
+            ))}
+          </div>
+        )
+      },
+    },
     { field: "localidad", headerName: "Localidad", width: 150 },
     { field: "cpc", headerName: "CPC", width: 100 },
     { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
@@ -406,11 +423,10 @@ const DemandaTable: React.FC = () => {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      tipoDeNro: demanda.tipo_de_nro || "N/A",
-      nroEspecifico: demanda.codigos_demanda.codigo || "N/A",
+      codigosDemanda: demanda.codigos_demanda || [],
       localidad: demanda.localidad?.nombre || "N/A",
       cpc: demanda.cpc.nombre || "N/A",
-      zonaEquipo: demanda.zona_asignada?.nombre || "N/A",
+      zonaEquipo: demanda.demanda_zona?.zona?.nombre || demanda.registrado_por_user_zona?.nombre || "N/A",
       usuario: demanda.registrado_por_user?.username || "N/A",
       areaSenaf: demanda.area_senaf || "N/A",
       estado_demanda: demanda.estado_demanda,

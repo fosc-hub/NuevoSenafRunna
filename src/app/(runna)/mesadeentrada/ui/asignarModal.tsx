@@ -233,7 +233,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
             mb: 3,
           }}
         >
-          Asignar Demanda {demandaId}
+          Derivar Demanda {demandaId}
         </Typography>
         <Box
           sx={{
@@ -265,7 +265,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
         </Box>
         <TabPanel value={value} index={0}>
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-            Asignar a zona
+            Derivar a zona
           </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel id="zona-select-label">Zona</InputLabel>
@@ -385,7 +385,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
         </TabPanel>
         <TabPanel value={value} index={2}>
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-            Historial de asignaciones para esta demanda
+            Historial de derivaciones para esta demanda
           </Typography>
           {auditHistory.length > 0 ? (
             <List sx={{ maxHeight: "300px", overflow: "auto" }}>

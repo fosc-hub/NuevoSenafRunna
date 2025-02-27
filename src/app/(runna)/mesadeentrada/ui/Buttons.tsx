@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState } from "react"
+import type React from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
@@ -26,14 +27,14 @@ interface ButtonsProps {
 }
 
 const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFilterChange }) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [filterState, setFilterState] = useState<FilterState>({
     envio_de_respuesta: null,
     estado_demanda: null,
     tipo_demanda: null,
   })
 
-  const handleFilterClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
   }
 
@@ -48,7 +49,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
     }
     setFilterState(newState)
     onFilterChange(newState)
-    // Don't close the popover to allow multiple selections
+    handleFilterClose() // Close the popover after selecting a filter
   }
 
   const clearFilters = () => {
@@ -100,9 +101,11 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
           </Button>
 
           <Popover
+            id="filter-menu"
             open={Boolean(anchorEl)}
             anchorEl={anchorEl}
             onClose={handleFilterClose}
+            elevation={4}
             anchorOrigin={{
               vertical: "bottom",
               horizontal: "left",
@@ -111,13 +114,13 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
               vertical: "top",
               horizontal: "left",
             }}
-            PaperProps={{
-              sx: {
+            sx={{
+              "& .MuiPopover-paper": {
                 width: 280,
                 maxHeight: 400,
                 boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
                 borderRadius: "8px",
-                mt: 1,
+                marginTop: "4px",
               },
             }}
           >

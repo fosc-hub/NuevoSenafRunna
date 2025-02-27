@@ -176,7 +176,7 @@ const DemandaTable: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["demandas"] })
       // Update the local state to reflect the changes
       setDemandasData((prevData) => {
-        if (!prevData) return null;
+        if (!prevData) return null
         return {
           ...prevData,
           results: prevData.results.map((demanda) =>
@@ -191,8 +191,8 @@ const DemandaTable: React.FC = () => {
                 }
               : demanda,
           ),
-        };
-      });
+        }
+      })
       // Open DemandaDetalle modal after successful update
       handleOpenModal(data.demanda)
     },
@@ -424,14 +424,16 @@ const DemandaTable: React.FC = () => {
   return (
     <>
       <Paper sx={{ width: "100%", overflow: "hidden" }}>
-        <Buttons
-          isLoading={isLoading}
-          handleNuevoRegistro={handleNuevoRegistro}
-          filterState={filterState}
-          setFilterState={setFilterState}
-          user={user}
-          onFilterChange={handleFilterChange}
-        />
+        <div className="flex gap-4 relative z-10">
+          <Buttons
+            isLoading={isLoading}
+            handleNuevoRegistro={handleNuevoRegistro}
+            filterState={filterState}
+            setFilterState={setFilterState}
+            user={user}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
         <div style={{ height: 400, width: "100%" }}>
           <DataGrid
             rows={rows}

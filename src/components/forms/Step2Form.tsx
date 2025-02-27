@@ -280,6 +280,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           label="DNI"
                           fullWidth
                           error={!!error}
+                          type="number"
                           helperText={error?.message}
                           InputProps={{ readOnly }}
                         />

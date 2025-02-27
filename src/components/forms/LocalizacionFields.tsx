@@ -67,6 +67,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
         <Grid item xs={12} md={6}>
           <Controller
             name={`${prefix}.casa_nro`}
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <TextField

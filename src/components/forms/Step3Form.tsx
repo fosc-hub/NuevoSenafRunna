@@ -264,6 +264,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         label="DNI"
                         fullWidth
                         error={!!error}
+                        type="number"
                         helperText={error?.message}
                         InputProps={{ readOnly }}
                       />
@@ -728,10 +729,10 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 {...field}
                                 label="Teléfono del Médico"
                                 fullWidth
+                                type="number"
                                 error={!!fieldState.error}
                                 helperText={fieldState.error?.message}
                                 InputProps={{ readOnly }}
-                                type="tel"
                               />
                             )}
                           />
@@ -1053,6 +1054,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           label="Teléfono del Médico"
                                           fullWidth
                                           error={!!error}
+                                          type="number"
                                           helperText={error?.message}
                                           InputProps={{ readOnly }}
                                           type="tel"

@@ -309,7 +309,7 @@ const transformApiDataToFormData = (apiData: any): FormData => {
     ambito_vulneracion: apiData.ambito_vulneracion || null,
     tipo_demanda: apiData.tipo_demanda || null,
     // Ensure presuntos_delitos is properly initialized as an array
-    tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || [],
+    tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || null,
     envio_de_respuesta: apiData.envio_de_respuesta || null,
     motivo_ingreso: apiData.motivo_ingreso || null,
     submotivo_ingreso: apiData.submotivo_ingreso || null,

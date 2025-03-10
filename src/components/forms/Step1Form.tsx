@@ -1,3 +1,5 @@
+"use client"
+
 import React from "react"
 import { useWatch } from "react-hook-form"
 import { type Control, Controller, useFieldArray } from "react-hook-form"
@@ -24,7 +26,7 @@ import { useQuery } from "@tanstack/react-query"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { Typography } from "@mui/material"
-import { Add, Remove } from "@mui/icons-material"
+import { Add, Remove, CloudUpload } from "@mui/icons-material"
 
 interface Step1FormProps {
   dropdownData: DropdownData
@@ -419,6 +421,76 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             Datos de Localización del grupo familiar
           </Typography>
           <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
+        </Grid>
+        <Grid item xs={12}>
+          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+            Archivos Adjuntos
+          </Typography>
+          <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
+            <Controller
+              name="archivosAdjuntos"
+              control={control}
+              defaultValue={[]}
+              render={({ field }) => (
+                <>
+                  <input
+                    type="file"
+                    id="file-upload"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      field.onChange([...field.value, ...files])
+                    }}
+                    style={{ display: "none" }}
+                    disabled={readOnly}
+                  />
+                  <label htmlFor="file-upload">
+                    <Button
+                      component="span"
+                      startIcon={<CloudUpload />}
+                      variant="outlined"
+                      disabled={readOnly}
+                      sx={{
+                        mb: 2,
+                        color: "primary.main",
+                        "&:hover": {
+                          backgroundColor: "primary.lighter",
+                        },
+                      }}
+                    >
+                      AGREGAR ARCHIVOS
+                    </Button>
+                  </label>
+
+                  {field.value.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Archivos seleccionados:
+                      </Typography>
+                      {field.value.map((file: File, index: number) => (
+                        <Box key={index} sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                            {file.name}
+                          </Typography>
+                          <IconButton
+                            onClick={() => {
+                              const newFiles = [...field.value]
+                              newFiles.splice(index, 1)
+                              field.onChange(newFiles)
+                            }}
+                            disabled={readOnly}
+                            size="small"
+                          >
+                            <Remove fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </>
+              )}
+            />
+          </Box>
         </Grid>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>

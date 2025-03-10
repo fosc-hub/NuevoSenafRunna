@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useRef } from "react"
 import { useState, useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -21,12 +21,14 @@ import {
 } from "@mui/material"
 import MessageIcon from "@mui/icons-material/Message"
 import { create, get } from "@/app/api/apiService"
+import { Upload } from "lucide-react"
 
 interface Respuesta {
   id: number
   fecha_y_hora: string
   mail: string
   mensaje: string
+  asunto: string
   institucion: string
   demanda: number
 }
@@ -34,6 +36,7 @@ interface Respuesta {
 const respuestaSchema = z.object({
   mail: z.string().email({ message: "Correo electrónico inválido" }),
   institucion: z.string().min(1, { message: "Este campo es requerido" }),
+  asunto: z.string().min(1, { message: "Este campo es requerido" }),
   mensaje: z.string().min(1, { message: "Este campo es requerido" }),
 })
 
@@ -46,6 +49,9 @@ interface EnviarRespuestaFormProps {
 export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const [respuestas, setRespuestas] = useState<Respuesta[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [error, setError] = useState<string | null>(null)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
@@ -63,10 +69,15 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     defaultValues: {
       mail: "",
       institucion: "",
+      asunto: "",
       mensaje: "",
     },
   })
-
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setSelectedFiles(Array.from(event.target.files))
+    }
+  }
   useEffect(() => {
     fetchRespuestas()
   }, [])
@@ -139,6 +150,17 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           )}
         />
         <Controller
+          name="asunto"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Asunto"
+              fullWidth
+            />
+          )}
+        />
+        <Controller
           name="mensaje"
           control={control}
           render={({ field }) => (
@@ -153,6 +175,15 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
             />
           )}
         />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <input type="file" multiple onChange={handleFileChange} style={{ display: "none" }} ref={fileInputRef} />
+          <Button variant="outlined" startIcon={<Upload />} onClick={() => fileInputRef.current?.click()}>
+            Subir Archivos
+          </Button>
+          {selectedFiles.length > 0 && (
+            <Typography variant="body2">{selectedFiles.length} archivo(s) seleccionado(s)</Typography>
+          )}
+        </Box>
         <Button type="submit" variant="contained" startIcon={<MessageIcon />} disabled={isLoading}>
           Enviar Respuesta
         </Button>

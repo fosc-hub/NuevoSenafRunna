@@ -9,14 +9,12 @@ import {
   Tabs,
   Typography,
   Button,
-  Select,
-  MenuItem,
   FormControl,
-  InputLabel,
   List,
   ListItem,
   ListItemText,
   TextField,
+  Autocomplete,
 } from "@mui/material"
 import { Person, PersonOutline, Delete } from "@mui/icons-material"
 import { get, create, update } from "@/app/api/apiService"
@@ -63,7 +61,7 @@ interface DemandaZona {
 const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId }) => {
   const [value, setValue] = useState(0)
   const [zonas, setZonas] = useState<Zona[]>([])
-  const [selectedZona, setSelectedZona] = useState<number | "">("")
+  const [selectedZona, setSelectedZona] = useState<number | null>(null)
   const [demandaZonas, setDemandaZonas] = useState<DemandaZona[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [comentarios, setComentarios] = useState("")
@@ -121,10 +119,6 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     setValue(newValue)
   }
 
-  const handleZonaChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setSelectedZona(event.target.value as number)
-  }
-
   const handleComentariosChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setComentarios(event.target.value)
   }
@@ -154,7 +148,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       )
 
       fetchData()
-      setSelectedZona("")
+      setSelectedZona(null)
       setComentarios("")
     } catch (error) {
       console.error("Error assigning demanda:", error)
@@ -257,6 +251,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
                 color: "primary.main",
               },
             }}
+            size="small"
           >
             <Tab label="Asignar" {...a11yProps(0)} />
             <Tab label="Ver asignados" {...a11yProps(1)} />
@@ -268,20 +263,17 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
             Derivar a zona
           </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="zona-select-label">Zona</InputLabel>
-            <Select
-              labelId="zona-select-label"
-              id="zona-select"
-              value={selectedZona}
-              label="Zona"
-              onChange={handleZonaChange}
-            >
-              {zonas.map((zona) => (
-                <MenuItem key={zona.id} value={zona.id}>
-                  {zona.nombre}
-                </MenuItem>
-              ))}
-            </Select>
+            <Autocomplete
+              options={zonas}
+              getOptionLabel={(option) => option.nombre}
+              value={zonas.find((zona) => zona.id === selectedZona) || null}
+              onChange={(_, newValue) => setSelectedZona(newValue ? newValue.id : null)}
+              renderInput={(params) => <TextField {...params} label="Zona" size="small" />}
+              PopperProps={{
+                style: { width: "auto", maxWidth: "300px" },
+              }}
+              size="small"
+            />
           </FormControl>
           <TextField
             fullWidth
@@ -292,8 +284,9 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
             value={comentarios}
             onChange={handleComentariosChange}
             sx={{ mb: 2 }}
+            size="small"
           />
-          <Button variant="contained" color="primary" onClick={handleAsignar}>
+          <Button variant="contained" color="primary" onClick={handleAsignar} size="small">
             Asignar
           </Button>
         </TabPanel>
@@ -343,33 +336,37 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
                       width: { xs: "100%", sm: "auto" },
                     }}
                   >
-                    <Select
-                      value={demandaZona.user_responsable?.id || ""}
-                      onChange={(e) =>
-                        handleChangeResponsable(demandaZona.id, e.target.value ? Number(e.target.value) : null)
+                    <Autocomplete
+                      options={[{ id: "", username: "Ninguno" }, ...filteredUsersByZona(demandaZona.zona.id)]}
+                      getOptionLabel={(option) => option.username}
+                      value={
+                        demandaZona.user_responsable
+                          ? users.find((user) => user.id === demandaZona.user_responsable?.id) || null
+                          : { id: "", username: "Ninguno" }
                       }
-                      renderValue={(selected) => (
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Person sx={{ mr: 1, color: "primary.main" }} />
-                          {users.find((user) => user.id === selected)?.username || "No asignado"}
-                        </Box>
-                      )}
-                      sx={{ mr: 1, minWidth: 200 }}
-                    >
-                      <MenuItem value="">
-                        <em>Ninguno</em>
-                      </MenuItem>
-                      {filteredUsersByZona(demandaZona.zona.id).map((user) => (
-                        <MenuItem key={user.id} value={user.id}>
-                          {user.id === demandaZona.user_responsable?.id ? (
+                      onChange={(_, newValue) =>
+                        handleChangeResponsable(
+                          demandaZona.id,
+                          newValue && newValue.id !== "" ? Number(newValue.id) : null,
+                        )
+                      }
+                      renderOption={(props, option) => (
+                        <li {...props}>
+                          {option.id === demandaZona.user_responsable?.id ? (
                             <Person sx={{ mr: 1, color: "primary.main" }} />
                           ) : (
                             <PersonOutline sx={{ mr: 1 }} />
                           )}
-                          {user.username}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                          {option.username}
+                        </li>
+                      )}
+                      sx={{ mr: 1, minWidth: 200 }}
+                      PopperProps={{
+                        style: { width: "auto", maxWidth: "300px" },
+                      }}
+                      size="small"
+                      renderInput={(params) => <TextField {...params} label="Usuario responsable" size="small" />}
+                    />
                     <Button onClick={() => handleDeleteDemandaZona(demandaZona.id)} color="error" size="small">
                       <Delete />
                     </Button>
@@ -387,22 +384,22 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
             Historial de derivaciones para esta demanda
           </Typography>
-            {auditHistory.length > 0 ? (
+          {auditHistory.length > 0 ? (
             <List sx={{ maxHeight: "300px", overflow: "auto" }}>
               {auditHistory
-              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-              .map((record) => (
-                <ListItem key={record.id} divider>
-                <ListItemText
-                  primary={record.descripcion}
-                  primaryTypographyProps={{
-                  sx: { color: "text.primary", fontWeight: 600 },
-                  }}
-                />
-                </ListItem>
-              ))}
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .map((record) => (
+                  <ListItem key={record.id} divider>
+                    <ListItemText
+                      primary={record.descripcion}
+                      primaryTypographyProps={{
+                        sx: { color: "text.primary", fontWeight: 600 },
+                      }}
+                    />
+                  </ListItem>
+                ))}
             </List>
-            ) : (
+          ) : (
             <Typography variant="body1" color="text.secondary">
               No hay registros de historial disponibles.
             </Typography>
@@ -418,7 +415,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           <Button
             onClick={onClose}
             variant="contained"
-            size="large"
+            size="small"
             sx={{
               fontSize: "1rem",
               fontWeight: 500,

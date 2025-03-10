@@ -387,26 +387,22 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
             Historial de derivaciones para esta demanda
           </Typography>
-          {auditHistory.length > 0 ? (
+            {auditHistory.length > 0 ? (
             <List sx={{ maxHeight: "300px", overflow: "auto" }}>
               {auditHistory
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                .map((record) => (
-                  <ListItem key={record.id} divider>
-                    <ListItemText
-                      primary={record.descripcion}
-                      secondary={new Date(record.timestamp).toLocaleString()}
-                      primaryTypographyProps={{
-                        sx: { color: "text.primary", fontWeight: 500 },
-                      }}
-                      secondaryTypographyProps={{
-                        sx: { color: "text.primary" },
-                      }}
-                    />
-                  </ListItem>
-                ))}
+              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+              .map((record) => (
+                <ListItem key={record.id} divider>
+                <ListItemText
+                  primary={record.descripcion}
+                  primaryTypographyProps={{
+                  sx: { color: "text.primary", fontWeight: 600 },
+                  }}
+                />
+                </ListItem>
+              ))}
             </List>
-          ) : (
+            ) : (
             <Typography variant="body1" color="text.secondary">
               No hay registros de historial disponibles.
             </Typography>

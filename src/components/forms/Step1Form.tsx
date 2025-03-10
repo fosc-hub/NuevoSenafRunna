@@ -218,7 +218,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                             getOptionLabel={(option) => option.nombre || ""}
                             value={dropdownData.tipo_codigo_demanda?.find((item) => item.id === field.value) || null}
                             onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                            renderInput={(params) => <TextField {...params} label="Tipo de Código" size="small" />}
+                            renderInput={(params) => <TextField {...params} label="Tipo de Número" size="small" />}
                             PopperProps={{
                               style: { width: "auto", maxWidth: "300px" },
                             }}
@@ -235,7 +235,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                       render={({ field, fieldState: { error } }) => (
                         <TextField
                           {...field}
-                          label="Código"
+                          label="Número"
                           fullWidth
                           error={!!error}
                           helperText={error?.message}
@@ -281,7 +281,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
               }}
               size="small"
             >
-              AGREGAR CÓDIGO
+              AGREGAR NÚMERO
             </Button>
           </Box>
         </Grid>
@@ -426,7 +426,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Motivo de Intervención *"
+                      label="Presunto motivo de Intervención *"
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -461,7 +461,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Submotivo de intervención"
+                        label="Presunto submotivo de intervención"
                         error={!!error}
                         helperText={error?.message}
                         size="small"

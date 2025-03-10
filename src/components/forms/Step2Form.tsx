@@ -448,7 +448,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           )}
                         />
                       }
-                      label="Conviviente"
+                      label="Conviviente con el NNYA"
                     />
                   </Grid>
                   <Grid item xs={12}>

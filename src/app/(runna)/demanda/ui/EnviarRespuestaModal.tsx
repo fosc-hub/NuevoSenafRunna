@@ -110,7 +110,7 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Box sx={{ p: 3 }}>
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <Controller
           name="mail"
@@ -203,7 +203,7 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Paper>
+    </Box>
   )
 }
 

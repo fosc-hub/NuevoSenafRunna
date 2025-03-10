@@ -200,7 +200,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Box sx={{ p: 3 }}>
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
           <Controller
@@ -346,7 +346,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Paper>
+    </Box>
   )
 }
 

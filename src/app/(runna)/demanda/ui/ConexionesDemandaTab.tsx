@@ -172,7 +172,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Box sx={{ p: 2, mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
           Buscar demandas para conectar
         </Typography>
@@ -234,9 +234,9 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
             </Button>
           </Box>
         )}
-      </Paper>
+      </Box>
 
-      <Paper sx={{ p: 2 }}>
+      <Box sx={{ p: 2 }}>
         <Typography variant="subtitle1" gutterBottom>
           Demandas Conectadas
         </Typography>
@@ -275,7 +275,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
             No hay demandas conectadas
           </Typography>
         )}
-      </Paper>
+      </Box>
     </Box>
   )
 }

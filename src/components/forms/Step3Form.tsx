@@ -13,11 +13,7 @@ import {
   Button,
   Box,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
-  OutlinedInput,
   IconButton,
   Collapse,
   Dialog,
@@ -25,6 +21,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Autocomplete,
 } from "@mui/material"
 import { type Theme, useTheme } from "@mui/material/styles"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
@@ -35,7 +32,7 @@ import AddIcon from "@mui/icons-material/Add"
 import DeleteIcon from "@mui/icons-material/Delete"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import ExpandLessIcon from "@mui/icons-material/ExpandLess"
-import type { DropdownData, FormData, GravedadVulneracion } from "./types/formTypes"
+import type { DropdownData, FormData } from "./types/formTypes"
 import { format, parse } from "date-fns"
 import LocalizacionFields from "./LocalizacionFields" // Import the LocalizacionFields component
 
@@ -201,6 +198,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         error={!!error}
                         helperText={error?.message}
                         InputProps={{ readOnly }}
+                        size="small"
                       />
                     )}
                   />
@@ -218,6 +216,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         error={!!error}
                         helperText={error?.message}
                         InputProps={{ readOnly }}
+                        size="small"
                       />
                     )}
                   />
@@ -232,7 +231,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                         onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                         disabled={readOnly}
-                        renderInput={(params) => <TextField {...params} fullWidth />}
+                        renderInput={(params) => <TextField {...params} fullWidth size="small" />}
                       />
                     )}
                   />
@@ -250,6 +249,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         error={!!error}
                         helperText={error?.message}
                         InputProps={{ readOnly }}
+                        size="small"
                       />
                     )}
                   />
@@ -267,6 +267,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         type="number"
                         helperText={error?.message}
                         InputProps={{ readOnly }}
+                        size="small"
                       />
                     )}
                   />
@@ -278,14 +279,26 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     rules={{ required: "Este campo es obligatorio" }}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
-                        <InputLabel>Situación DNI</InputLabel>
-                        <Select {...field} label="Situación DNI" disabled={readOnly}>
-                          {dropdownData.situacion_dni_choices?.map((option) => (
-                            <MenuItem key={option.key} value={option.key}>
-                              {option.value}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.situacion_dni_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.situacion_dni_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Situación DNI"
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
                       </FormControl>
                     )}
                   />
@@ -297,14 +310,26 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     rules={{ required: "Este campo es obligatorio" }}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
-                        <InputLabel>Género</InputLabel>
-                        <Select {...field} label="Género" disabled={readOnly}>
-                          {dropdownData.genero_choices?.map((option) => (
-                            <MenuItem key={option.key} value={option.key}>
-                              {option.value}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.genero_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.genero_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Género"
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
                       </FormControl>
                     )}
                   />
@@ -315,14 +340,26 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
-                        <InputLabel>Nacionalidad</InputLabel>
-                        <Select {...field} label="Nacionalidad" disabled={readOnly}>
-                          {dropdownData.nacionalidad_choices?.map((option) => (
-                            <MenuItem key={option.key} value={option.key}>
-                              {option.value}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.nacionalidad_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.nacionalidad_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Nacionalidad"
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
                       </FormControl>
                     )}
                   />
@@ -341,6 +378,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         error={!!error}
                         helperText={error?.message}
                         InputProps={{ readOnly }}
+                        size="small"
                       />
                     )}
                   />
@@ -375,7 +413,12 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         name={`ninosAdolescentes.${index}.useDefaultLocalizacion`}
                         control={control}
                         render={({ field: { onChange, value } }) => (
-                          <Switch checked={value} onChange={(e) => onChange(e.target.checked)} disabled={readOnly} />
+                          <Switch
+                            checked={value}
+                            onChange={(e) => onChange(e.target.checked)}
+                            disabled={readOnly}
+                            size="small"
+                          />
                         )}
                       />
                     }
@@ -409,15 +452,31 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         rules={{ required: "Este campo es obligatorio" }}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Institución Educativa</InputLabel>
-                            <Select {...field} label="Institución Educativa" disabled={readOnly}>
-                              {dropdownData.institucion_educativa?.map((institucion: any) => (
-                                <MenuItem key={institucion.id} value={institucion.nombre}>
-                                  {institucion.nombre}
-                                </MenuItem>
-                              ))}
-                              <MenuItem value="other">Otra</MenuItem>
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={[...(dropdownData.institucion_educativa || []), { id: "other", nombre: "Otra" }]}
+                              getOptionLabel={(option) => option.nombre || ""}
+                              value={
+                                field.value === "other"
+                                  ? { id: "other", nombre: "Otra" }
+                                  : dropdownData.institucion_educativa?.find((item) => item.nombre === field.value) ||
+                                    null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.nombre : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Institución Educativa"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -438,6 +497,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               error={!!error}
                               helperText={error?.message}
                               InputProps={{ readOnly }}
+                              size="small"
                             />
                           )}
                         />
@@ -450,14 +510,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         rules={{ required: "Este campo es obligatorio" }}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Nivel Alcanzado</InputLabel>
-                            <Select {...field} label="Nivel Alcanzado" disabled={readOnly}>
-                              {dropdownData.nivel_alcanzado_choices?.map((option) => (
-                                <MenuItem key={option.key} value={option.key}>
-                                  {option.value}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.nivel_alcanzado_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={
+                                dropdownData.nivel_alcanzado_choices?.find((item) => item.key === field.value) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Nivel Alcanzado"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -473,6 +547,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 checked={value}
                                 onChange={(e) => onChange(e.target.checked)}
                                 disabled={readOnly}
+                                size="small"
                               />
                             )}
                           />
@@ -487,14 +562,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         rules={{ required: "Este campo es obligatorio" }}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Último Cursado</InputLabel>
-                            <Select {...field} label="Último Cursado" disabled={readOnly}>
-                              {dropdownData.ultimo_cursado_choices?.map((option) => (
-                                <MenuItem key={option.key} value={option.key}>
-                                  {option.value}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.ultimo_cursado_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={
+                                dropdownData.ultimo_cursado_choices?.find((item) => item.key === field.value) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Último Cursado"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -506,14 +595,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         rules={{ required: "Este campo es obligatorio" }}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Tipo de Escuela</InputLabel>
-                            <Select {...field} label="Tipo de Escuela" disabled={readOnly}>
-                              {dropdownData.tipo_escuela_choices?.map((option) => (
-                                <MenuItem key={option.key} value={option.key}>
-                                  {option.value}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.tipo_escuela_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={
+                                dropdownData.tipo_escuela_choices?.find((item) => item.key === field.value) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Tipo de Escuela"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -532,6 +635,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             error={!!error}
                             helperText={error?.message}
                             InputProps={{ readOnly }}
+                            size="small"
                           />
                         )}
                       />
@@ -548,50 +652,36 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
-                        <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>
-                          Condiciones de Vulnerabilidad
-                        </InputLabel>
-                        <Select
-                          {...field}
-                          labelId={`condiciones-vulnerabilidad-label-${index}`}
-                          id={`condiciones-vulnerabilidad-${index}`}
-                          multiple
-                          value={Array.isArray(field.value) ? field.value : []} // Ensuring it's an array
-                          onChange={(event) => field.onChange(event.target.value)}
-                          input={
-                            <OutlinedInput
-                              id={`condiciones-vulnerabilidad-chip-${index}`}
-                              label="Condiciones de Vulnerabilidad"
-                            />
-                          }
-                          renderValue={(selected) => (
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                              {selected.map((value) => (
-                                <Chip
-                                  key={value}
-                                  label={
-                                    dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === value)?.nombre ||
-                                    value
-                                  }
-                                />
-                              ))}
-                            </Box>
-                          )}
-                          MenuProps={MenuProps}
+                        <Autocomplete
                           disabled={readOnly}
-                        >
-                          {dropdownData.condiciones_vulnerabilidad
-                            .filter((cv) => cv.nnya && !cv.adulto)
-                            .map((cv) => (
-                              <MenuItem
-                                key={cv.id}
-                                value={cv.id}
-                                style={getStyles(cv.nombre, field.value || [], theme)}
-                              >
-                                {cv.nombre}
-                              </MenuItem>
-                            ))}
-                        </Select>
+                          multiple
+                          options={dropdownData.condiciones_vulnerabilidad.filter((cv) => cv.nnya && !cv.adulto) || []}
+                          getOptionLabel={(option) => option.nombre || ""}
+                          value={(field.value || [])
+                            .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))
+                            .filter(Boolean)}
+                          onChange={(_, newValues) => {
+                            field.onChange(newValues.map((item) => item.id))
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Condiciones de Vulnerabilidad"
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          renderTags={(tagValue, getTagProps) =>
+                            tagValue.map((option, index) => (
+                              <Chip key={option.id} label={option.nombre} {...getTagProps({ index })} size="small" />
+                            ))
+                          }
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
                       </FormControl>
                     )}
                   />
@@ -607,33 +697,35 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     rules={{ required: "Este campo es obligatorio" }}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
-                        <InputLabel>Institución Sanitaria</InputLabel>
-                        <Select
-                          {...field}
-                          label="Institución Sanitaria"
+                        <Autocomplete
                           disabled={readOnly}
-                          onChange={(e) => {
-                            field.onChange(e.target.value)
+                          options={dropdownData.institucion_sanitaria || []}
+                          getOptionLabel={(option) => option.nombre || ""}
+                          value={dropdownData.institucion_sanitaria?.find((item) => item.id === field.value) || null}
+                          onChange={(_, newValue) => {
+                            field.onChange(newValue ? newValue.id : null)
                             // Also store the name for reference
-                            if (e.target.value) {
-                              const selectedInst = dropdownData.institucion_sanitaria?.find(
-                                (inst: any) => inst.id === e.target.value,
+                            if (newValue) {
+                              setValue(
+                                `ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria_nombre`,
+                                newValue.nombre,
                               )
-                              if (selectedInst) {
-                                setValue(
-                                  `ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria_nombre`,
-                                  selectedInst.nombre,
-                                )
-                              }
                             }
                           }}
-                        >
-                          {dropdownData.institucion_sanitaria?.map((institucion: any) => (
-                            <MenuItem key={institucion.id} value={institucion.id}>
-                              {institucion.nombre}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Institución Sanitaria"
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
                       </FormControl>
                     )}
                   />
@@ -651,14 +743,26 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Obra Social</InputLabel>
-                            <Select {...field} label="Obra Social" disabled={readOnly}>
-                              {dropdownData.obra_social_choices?.map((enf: any) => (
-                                <MenuItem key={enf.key} value={enf.key}>
-                                  {enf.value} {/* Use `value` instead of `nombre` */}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.obra_social_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={dropdownData.obra_social_choices?.find((item) => item.key === field.value) || null}
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Obra Social"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -669,14 +773,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Intervención</InputLabel>
-                            <Select {...field} label="Obra Social" disabled={readOnly}>
-                              {dropdownData.intervencion_choices?.map((enf: any) => (
-                                <MenuItem key={enf.key} value={enf.key}>
-                                  {enf.value} {/* Use `value` instead of `nombre` */}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.intervencion_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={
+                                dropdownData.intervencion_choices?.find((item) => item.key === field.value) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Intervención"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -699,6 +817,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 error={!!fieldState.error}
                                 helperText={fieldState.error?.message}
                                 InputProps={{ readOnly }}
+                                size="small"
                               />
                             )}
                           />
@@ -716,6 +835,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 helperText={fieldState.error?.message}
                                 InputProps={{ readOnly }}
                                 type="email"
+                                size="small"
                               />
                             )}
                           />
@@ -733,6 +853,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 error={!!fieldState.error}
                                 helperText={fieldState.error?.message}
                                 InputProps={{ readOnly }}
+                                size="small"
                               />
                             )}
                           />
@@ -748,6 +869,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 checked={value}
                                 onChange={(e) => onChange(e.target.checked)}
                                 disabled={readOnly}
+                                size="small"
                               />
                             )}
                           />
@@ -769,6 +891,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             error={!!error}
                             helperText={error?.message}
                             InputProps={{ readOnly }}
+                            size="small"
                           />
                         )}
                       />
@@ -800,6 +923,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 }}
                                 color="error"
                                 sx={{ float: "right" }}
+                                size="small"
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -811,24 +935,33 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   control={control}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Situación de Salud</InputLabel>
-                                      <Select
-                                        {...field}
-                                        label="Situación de Salud"
+                                      <Autocomplete
                                         disabled={readOnly}
-                                        onChange={(e) => {
-                                          field.onChange(e)
+                                        options={dropdownData.situacion_salud || []}
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          dropdownData.situacion_salud?.find((item) => item.id === field.value) || null
+                                        }
+                                        onChange={(_, newValue) => {
+                                          field.onChange(newValue ? newValue.id : null)
                                           const newSelectedSituacionSalud = [...selectedSituacionSalud]
-                                          newSelectedSituacionSalud[index] = e.target.value as number
+                                          newSelectedSituacionSalud[index] = newValue ? newValue.id : null
                                           setSelectedSituacionSalud(newSelectedSituacionSalud)
                                         }}
-                                      >
-                                        {dropdownData.situacion_salud?.map((cat) => (
-                                          <MenuItem key={cat.id} value={cat.id}>
-                                            {cat.nombre}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Situación de Salud"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -845,71 +978,48 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                       error={!!error}
                                       helperText={error?.message}
                                       InputProps={{ readOnly }}
+                                      size="small"
                                     />
                                   )}
                                 />
                               </Grid>
-{/*
-                              <Grid item xs={12} md={6}>
-                                <Controller
-                                  name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.enfermedad.id`}
-                                  control={control}
-                                  render={({ field: enfermedadField, fieldState: { error } }) => (
-                                    <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Tipo de Enfermedad</InputLabel>
-                                      <Select
-                                        {...enfermedadField}
-                                        label="Tipo de Enfermedad"
-                                        disabled={readOnly || !selectedSituacionSalud[index]}
-                                      >
-                                        {dropdownData.enfermedad
-                                          ?.filter(
-                                            (enf) => enf.situacion_salud_categoria === selectedSituacionSalud[index],
-                                          )
-                                          .map((enf) => (
-                                            <MenuItem key={enf.id} value={enf.id}>
-                                              {enf.nombre}
-                                            </MenuItem>
-                                          ))}
-                                        <MenuItem value="other">Otra</MenuItem>
-                                      </Select>
-                                    </FormControl>
-                                  )}
-                                />
-                              </Grid>
-*/}
                               <Grid item xs={12} md={6}>
                                 <Controller
                                   name={`ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente`}
                                   control={control}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Institución Sanitaria Interviniente</InputLabel>
-                                      <Select
-                                        {...field}
-                                        label="Institución Sanitaria Interviniente"
+                                      <Autocomplete
                                         disabled={readOnly}
-                                        onChange={(e) => {
-                                          field.onChange(e.target.value)
-                                          if (e.target.value) {
-                                            const selectedInst = dropdownData.institucion_sanitaria?.find(
-                                              (inst: any) => inst.id === e.target.value,
+                                        options={dropdownData.institucion_sanitaria || []}
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          dropdownData.institucion_sanitaria?.find((item) => item.id === field.value) ||
+                                          null
+                                        }
+                                        onChange={(_, newValue) => {
+                                          field.onChange(newValue ? newValue.id : null)
+                                          if (newValue) {
+                                            setValue(
+                                              `ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente_nombre`,
+                                              newValue.nombre,
                                             )
-                                            if (selectedInst) {
-                                              setValue(
-                                                `ninosAdolescentes.${index}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente_nombre`,
-                                                selectedInst.nombre,
-                                              )
-                                            }
                                           }
                                         }}
-                                      >
-                                        {dropdownData.institucion_sanitaria?.map((inst) => (
-                                          <MenuItem key={inst.id} value={inst.id}>
-                                            {inst.nombre}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Institución Sanitaria Interviniente"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -929,6 +1039,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                         error={!!error}
                                         helperText={error?.message}
                                         InputProps={{ readOnly }}
+                                        size="small"
                                       />
                                     )}
                                   />
@@ -940,14 +1051,30 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   control={control}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Certificación</InputLabel>
-                                      <Select {...field} label="Obra Social" disabled={readOnly}>
-                                        {dropdownData.certificacion_choices?.map((enf: any) => (
-                                          <MenuItem key={enf.key} value={enf.key}>
-                                            {enf.value} {/* Use `value` instead of `nombre` */}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={dropdownData.certificacion_choices || []}
+                                        getOptionLabel={(option) => option.value || ""}
+                                        value={
+                                          dropdownData.certificacion_choices?.find(
+                                            (item) => item.key === field.value,
+                                          ) || null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Certificación"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -958,14 +1085,29 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   control={control}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Beneficios Gestionados</InputLabel>
-                                      <Select {...field} label="Obra Social" disabled={readOnly}>
-                                        {dropdownData.beneficios_choices?.map((enf: any) => (
-                                          <MenuItem key={enf.key} value={enf.key}>
-                                            {enf.value} {/* Use `value` instead of `nombre` */}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={dropdownData.beneficios_choices || []}
+                                        getOptionLabel={(option) => option.value || ""}
+                                        value={
+                                          dropdownData.beneficios_choices?.find((item) => item.key === field.value) ||
+                                          null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Beneficios Gestionados"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -981,6 +1123,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           checked={value}
                                           onChange={(e) => onChange(e.target.checked)}
                                           disabled={readOnly}
+                                          size="small"
                                         />
                                       )}
                                     />
@@ -1002,6 +1145,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                       error={!!error}
                                       helperText={error?.message}
                                       InputProps={{ readOnly }}
+                                      size="small"
                                     />
                                   )}
                                 />
@@ -1023,6 +1167,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           error={!!error}
                                           helperText={error?.message}
                                           InputProps={{ readOnly }}
+                                          size="small"
                                         />
                                       )}
                                     />
@@ -1040,6 +1185,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           helperText={error?.message}
                                           InputProps={{ readOnly }}
                                           type="email"
+                                          size="small"
                                         />
                                       )}
                                     />
@@ -1057,6 +1203,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           type="number"
                                           helperText={error?.message}
                                           InputProps={{ readOnly }}
+                                          size="small"
                                         />
                                       )}
                                     />
@@ -1071,6 +1218,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             startIcon={<AddIcon />}
                             onClick={() => field.onChange([...field.value, {}])}
                             sx={{ mt: 1, color: "primary.main" }}
+                            size="small"
                           >
                             Añadir otra enfermedad
                           </Button>
@@ -1097,6 +1245,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 checked={value}
                                 onChange={(e) => onChange(e.target.checked)}
                                 disabled={readOnly}
+                                size="small"
                               />
                             )}
                           />
@@ -1110,14 +1259,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Vínculo con la Demanda</InputLabel>
-                            <Select {...field} label="Obra Social" disabled={readOnly}>
-                              {dropdownData.vinculo_demanda_choices?.map((enf: any) => (
-                                <MenuItem key={enf.key} value={enf.key}>
-                                  {enf.value} {/* Use `value` instead of `nombre` */}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.vinculo_demanda_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={
+                                dropdownData.vinculo_demanda_choices?.find((item) => item.key === field.value) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Vínculo con la Demanda"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -1128,19 +1291,34 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Vínculo con NNYA Principal</InputLabel>
-                            <Select {...field} label="Obra Social" disabled={readOnly}>
-                              {dropdownData.vinculo_con_nnya_principal_choices?.map((enf: any) => (
-                                <MenuItem key={enf.id} value={enf.id}>
-                                  {enf.nombre} {/* Use `value` instead of `nombre` */}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.vinculo_con_nnya_principal_choices || []}
+                              getOptionLabel={(option) => option.nombre || ""}
+                              value={
+                                dropdownData.vinculo_con_nnya_principal_choices?.find(
+                                  (item) => item.id === field.value,
+                                ) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Vínculo con NNYA Principal"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
                     </Grid>
-                    
                   </Grid>
                 </Grid>
 
@@ -1168,6 +1346,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                 }}
                                 color="error"
                                 sx={{ float: "right" }}
+                                size="small"
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -1180,14 +1359,28 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   rules={{ required: "Este campo es obligatorio" }}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Categoría de Motivos</InputLabel>
-                                      <Select {...field} label="Categoría de Motivos" disabled={readOnly}>
-                                        {dropdownData.categoria_motivo?.map((motivo: any) => (
-                                          <MenuItem key={motivo.id} value={motivo.id}>
-                                            {motivo.nombre}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={dropdownData.categoria_motivo || []}
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          dropdownData.categoria_motivo?.find((item) => item.id === field.value) || null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Categoría de Motivos"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -1199,22 +1392,44 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   rules={{ required: "Este campo es obligatorio" }}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Subcategoría</InputLabel>
-                                      <Select {...field} label="Subcategoría" disabled={readOnly}>
-                                        {dropdownData.categoria_submotivo
-                                          ?.filter(
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={
+                                          dropdownData.categoria_submotivo?.filter(
                                             (submotivo: any) =>
                                               submotivo.motivo ===
                                               watch(
                                                 `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_motivo`,
                                               ),
-                                          )
-                                          .map((submotivo: any) => (
-                                            <MenuItem key={submotivo.id} value={submotivo.id}>
-                                              {submotivo.nombre}
-                                            </MenuItem>
-                                          ))}
-                                      </Select>
+                                          ) || []
+                                        }
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          dropdownData.categoria_submotivo
+                                            ?.filter(
+                                              (submotivo: any) =>
+                                                submotivo.motivo ===
+                                                watch(
+                                                  `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_motivo`,
+                                                ),
+                                            )
+                                            .find((item) => item.id === field.value) || null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Subcategoría"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -1226,14 +1441,29 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   rules={{ required: "Este campo es obligatorio" }}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Gravedad de la Vulneración</InputLabel>
-                                      <Select {...field} label="Gravedad de la Vulneración" disabled={readOnly}>
-                                        {dropdownData.gravedad_vulneracion?.map((gravedad: GravedadVulneracion) => (
-                                          <MenuItem key={gravedad.id} value={gravedad.id}>
-                                            {gravedad.nombre}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={dropdownData.gravedad_vulneracion || []}
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          dropdownData.gravedad_vulneracion?.find((item) => item.id === field.value) ||
+                                          null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Gravedad de la Vulneración"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -1245,14 +1475,29 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   rules={{ required: "Este campo es obligatorio" }}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Urgencia de la Vulneración</InputLabel>
-                                      <Select {...field} label="Urgencia de la Vulneración" disabled={readOnly}>
-                                        {dropdownData.urgencia_vulneracion?.map((urgencia: any) => (
-                                          <MenuItem key={urgencia.id} value={urgencia.id}>
-                                            {urgencia.nombre}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={dropdownData.urgencia_vulneracion || []}
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          dropdownData.urgencia_vulneracion?.find((item) => item.id === field.value) ||
+                                          null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Urgencia de la Vulneración"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -1263,14 +1508,36 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   control={control}
                                   render={({ field, fieldState: { error } }) => (
                                     <FormControl fullWidth error={!!error}>
-                                      <InputLabel>Autor DV</InputLabel>
-                                      <Select {...field} label="Supuesto Autor DV" disabled={readOnly}>
-                                        {adultosConvivientes.map((adulto: any, adultIndex: any) => (
-                                          <MenuItem key={adultIndex} value={adultIndex}>
-                                            {`${adulto.nombre} ${adulto.apellido}`}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
+                                      <Autocomplete
+                                        disabled={readOnly}
+                                        options={adultosConvivientes.map((adulto: any, adultIndex: any) => ({
+                                          id: adultIndex,
+                                          nombre: `${adulto.nombre} ${adulto.apellido}`,
+                                        }))}
+                                        getOptionLabel={(option) => option.nombre || ""}
+                                        value={
+                                          adultosConvivientes
+                                            .map((adulto: any, adultIndex: any) => ({
+                                              id: adultIndex,
+                                              nombre: `${adulto.nombre} ${adulto.apellido}`,
+                                            }))
+                                            .find((item) => item.id === field.value) || null
+                                        }
+                                        onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label="Autor DV"
+                                            error={!!error}
+                                            helperText={error?.message}
+                                            size="small"
+                                          />
+                                        )}
+                                        PopperProps={{
+                                          style: { width: "auto", maxWidth: "300px" },
+                                        }}
+                                        size="small"
+                                      />
                                     </FormControl>
                                   )}
                                 />
@@ -1286,6 +1553,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           checked={value}
                                           onChange={(e) => onChange(e.target.checked)}
                                           disabled={readOnly}
+                                          size="small"
                                         />
                                       )}
                                     />
@@ -1304,6 +1572,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                           checked={value}
                                           onChange={(e) => onChange(e.target.checked)}
                                           disabled={readOnly}
+                                          size="small"
                                         />
                                       )}
                                     />
@@ -1319,6 +1588,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                             startIcon={<AddIcon />}
                             onClick={() => field.onChange([...field.value, {}])}
                             sx={{ mt: 1, color: "primary.main" }}
+                            size="small"
                           >
                             Añadir otra vulneración
                           </Button>
@@ -1332,7 +1602,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
           </Box>
         ))}
         {!readOnly && (
-          <Button startIcon={<AddIcon />} onClick={addNinoAdolescente} sx={{ mt: 2 }}>
+          <Button startIcon={<AddIcon />} onClick={addNinoAdolescente} sx={{ mt: 2 }} size="small">
             Añadir otro niño o adolescente
           </Button>
         )}
@@ -1342,6 +1612,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         onClose={closeDeleteDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
+        maxWidth="xs"
       >
         <DialogTitle id="alert-dialog-title">{"Confirmar eliminación"}</DialogTitle>
         <DialogContent>
@@ -1350,10 +1621,10 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
+          <Button onClick={closeDeleteDialog} color="primary" size="small">
             Cancelar
           </Button>
-          <Button onClick={confirmDelete} color="error" autoFocus>
+          <Button onClick={confirmDelete} color="error" autoFocus size="small">
             Eliminar
           </Button>
         </DialogActions>

@@ -13,9 +13,6 @@ import {
   Button,
   Box,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   FormHelperText,
   IconButton,
   Collapse,
@@ -25,8 +22,8 @@ import {
   DialogContentText,
   DialogTitle,
   Chip,
-  OutlinedInput,
   useTheme,
+  Autocomplete,
 } from "@mui/material"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
@@ -196,6 +193,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           error={!!error}
                           helperText={error?.message}
                           InputProps={{ readOnly }}
+                          size="small"
                         />
                       )}
                     />
@@ -213,6 +211,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           error={!!error}
                           helperText={error?.message}
                           InputProps={{ readOnly }}
+                          size="small"
                         />
                       )}
                     />
@@ -228,7 +227,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           disabled={readOnly}
                           value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                           onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                          renderInput={(params: any) => <TextField {...params} fullWidth />}
+                          renderInput={(params: any) => <TextField {...params} fullWidth size="small" />}
                         />
                       )}
                     />
@@ -240,15 +239,26 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       rules={{ required: "Este campo es obligatorio" }}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>
-                          <InputLabel>Nacionalidad</InputLabel>
-                          <Select {...field} label="Nacionalidad" disabled={readOnly}>
-                            {dropdownData.nacionalidad_choices?.map((option: any) => (
-                              <MenuItem key={option.key} value={option.key}>
-                                {option.value}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                          {error && <FormHelperText>{error.message}</FormHelperText>}
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={dropdownData.nacionalidad_choices || []}
+                            getOptionLabel={(option) => option.value || ""}
+                            value={dropdownData.nacionalidad_choices?.find((item) => item.key === field.value) || null}
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Nacionalidad"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
                         </FormControl>
                       )}
                     />
@@ -266,6 +276,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           error={!!error}
                           helperText={error?.message}
                           InputProps={{ readOnly }}
+                          size="small"
                         />
                       )}
                     />
@@ -283,6 +294,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           type="number"
                           helperText={error?.message}
                           InputProps={{ readOnly }}
+                          size="small"
                         />
                       )}
                     />
@@ -295,14 +307,28 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         rules={{ required: "Este campo es obligatorio" }}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
-                            <InputLabel>Situación DNI</InputLabel>
-                            <Select {...field} label="Situación DNI" disabled={readOnly}>
-                              {dropdownData.situacion_dni_choices.map((option) => (
-                                <MenuItem key={option.key} value={option.key}>
-                                  {option.value}
-                                </MenuItem>
-                              ))}
-                            </Select>
+                            <Autocomplete
+                              disabled={readOnly}
+                              options={dropdownData.situacion_dni_choices || []}
+                              getOptionLabel={(option) => option.value || ""}
+                              value={
+                                dropdownData.situacion_dni_choices?.find((item) => item.key === field.value) || null
+                              }
+                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Situación DNI"
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  size="small"
+                                />
+                              )}
+                              PopperProps={{
+                                style: { width: "auto", maxWidth: "300px" },
+                              }}
+                              size="small"
+                            />
                           </FormControl>
                         )}
                       />
@@ -315,14 +341,26 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       rules={{ required: "Este campo es obligatorio" }}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>
-                          <InputLabel>Género</InputLabel>
-                          <Select {...field} label="Género" disabled={readOnly}>
-                            {dropdownData.genero_choices.map((option) => (
-                              <MenuItem key={option.key} value={option.key}>
-                                {option.value}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={dropdownData.genero_choices || []}
+                            getOptionLabel={(option) => option.value || ""}
+                            value={dropdownData.genero_choices?.find((item) => item.key === field.value) || null}
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Género"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
                         </FormControl>
                       )}
                     />
@@ -334,14 +372,28 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>
-                          <InputLabel>Vinculación</InputLabel>
-                          <Select {...field} label="Vinculación" disabled={readOnly}>
-                            {dropdownData.vinculo_demanda_choices.map((option) => (
-                              <MenuItem key={option.key} value={option.key}>
-                                {option.value}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={dropdownData.vinculo_demanda_choices || []}
+                            getOptionLabel={(option) => option.value || ""}
+                            value={
+                              dropdownData.vinculo_demanda_choices?.find((item) => item.key === field.value) || null
+                            }
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Vinculación"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
                           {error && <FormHelperText>{error.message}</FormHelperText>}
                         </FormControl>
                       )}
@@ -353,14 +405,30 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>
-                          <InputLabel>Vínculo con NNYA Principal</InputLabel>
-                          <Select {...field} label="Vínculo con NNYA Principal" disabled={readOnly}>
-                            {dropdownData.vinculo_con_nnya_principal_choices.map((option) => (
-                              <MenuItem key={option.id} value={option.id}>
-                                {option.nombre}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={dropdownData.vinculo_con_nnya_principal_choices || []}
+                            getOptionLabel={(option) => option.nombre || ""}
+                            value={
+                              dropdownData.vinculo_con_nnya_principal_choices?.find(
+                                (item) => item.id === field.value,
+                              ) || null
+                            }
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Vínculo con NNYA Principal"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
                           {error && <FormHelperText>{error.message}</FormHelperText>}
                         </FormControl>
                       )}
@@ -375,6 +443,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                               checked={value}
                               onChange={(e) => onChange(e.target.checked)}
                               disabled={readOnly}
+                              size="small"
                             />
                           )}
                         />
@@ -396,6 +465,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           error={!!error}
                           helperText={error?.message}
                           InputProps={{ readOnly }}
+                          size="small"
                         />
                       )}
                     />
@@ -407,7 +477,12 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                           name={`adultosConvivientes.${index}.useDefaultLocalizacion`}
                           control={control}
                           render={({ field: { onChange, value } }) => (
-                            <Switch checked={value} onChange={(e) => onChange(e.target.checked)} disabled={readOnly} />
+                            <Switch
+                              checked={value}
+                              onChange={(e) => onChange(e.target.checked)}
+                              disabled={readOnly}
+                              size="small"
+                            />
                           )}
                         />
                       }
@@ -436,50 +511,38 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>
-                          <InputLabel id={`condiciones-vulnerabilidad-label-${index}`}>
-                            Condiciones de Vulnerabilidad
-                          </InputLabel>
-                          <Select
-                            {...field}
-                            labelId={`condiciones-vulnerabilidad-label-${index}`}
-                            id={`condiciones-vulnerabilidad-${index}`}
-                            multiple
-                            value={Array.isArray(field.value) ? field.value : []} // Ensuring it's an array
-                            onChange={(event) => field.onChange(event.target.value)}
-                            input={
-                              <OutlinedInput
-                                id={`condiciones-vulnerabilidad-chip-${index}`}
-                                label="Condiciones de Vulnerabilidad"
-                              />
-                            }
-                            renderValue={(selected) => (
-                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                                {selected.map((value) => (
-                                  <Chip
-                                    key={value}
-                                    label={
-                                      dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === value)?.nombre ||
-                                      value
-                                    }
-                                  />
-                                ))}
-                              </Box>
-                            )}
-                            MenuProps={MenuProps}
+                          <Autocomplete
                             disabled={readOnly}
-                          >
-                            {dropdownData.condiciones_vulnerabilidad
-                              .filter((cv) => cv.adulto && !cv.nnya)
-                              .map((cv) => (
-                                <MenuItem
-                                  key={cv.id}
-                                  value={cv.id}
-                                  style={getStyles(cv.nombre, field.value || [], theme)}
-                                >
-                                  {cv.nombre}
-                                </MenuItem>
-                              ))}
-                          </Select>
+                            multiple
+                            options={
+                              dropdownData.condiciones_vulnerabilidad.filter((cv) => cv.adulto && !cv.nnya) || []
+                            }
+                            getOptionLabel={(option) => option.nombre || ""}
+                            value={(field.value || [])
+                              .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))
+                              .filter(Boolean)}
+                            onChange={(_, newValues) => {
+                              field.onChange(newValues.map((item) => item.id))
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Condiciones de Vulnerabilidad"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            renderTags={(tagValue, getTagProps) =>
+                              tagValue.map((option, index) => (
+                                <Chip key={option.id} label={option.nombre} {...getTagProps({ index })} size="small" />
+                              ))
+                            }
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
                         </FormControl>
                       )}
                     />
@@ -490,7 +553,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
           )
         })}
         {!readOnly && (
-          <Button startIcon={<AddIcon />} onClick={addAdultoConviviente} sx={{ mt: 2 }}>
+          <Button startIcon={<AddIcon />} onClick={addAdultoConviviente} sx={{ mt: 2 }} size="small">
             Añadir otro adulto
           </Button>
         )}
@@ -500,6 +563,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         onClose={closeDeleteDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
+        maxWidth="xs"
       >
         <DialogTitle id="alert-dialog-title">{"Confirmar eliminación"}</DialogTitle>
         <DialogContent>
@@ -508,10 +572,10 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
+          <Button onClick={closeDeleteDialog} color="primary" size="small">
             Cancelar
           </Button>
-          <Button onClick={confirmDelete} color="error" autoFocus>
+          <Button onClick={confirmDelete} color="error" autoFocus size="small">
             Eliminar
           </Button>
         </DialogActions>

@@ -1,5 +1,7 @@
+"use client"
+
 import type React from "react"
-import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, Paper } from "@mui/material"
+import { Grid, TextField, FormControl, Paper, Autocomplete } from "@mui/material"
 import { type Control, Controller, useWatch } from "react-hook-form"
 import type { DropdownData } from "./types/formTypes"
 
@@ -14,15 +16,11 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
   const selectedLocalidad = useWatch({
     control,
     name: `${prefix}.localidad`,
-  });
+  })
 
-  const filteredBarrios = dropdownData.barrio?.filter(
-    (barrio: any) => barrio.localidad === selectedLocalidad
-  );
+  const filteredBarrios = dropdownData.barrio?.filter((barrio: any) => barrio.localidad === selectedLocalidad)
 
-  const filteredCPCs = dropdownData.cpc?.filter(
-    (cpc: any) => cpc.localidad === selectedLocalidad
-  );
+  const filteredCPCs = dropdownData.cpc?.filter((cpc: any) => cpc.localidad === selectedLocalidad)
 
   return (
     <Paper elevation={0} sx={{ p: 2, mt: 2 }}>
@@ -41,6 +39,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -51,14 +50,26 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Tipo de Calle</InputLabel>
-                <Select {...field} label="Tipo de Calle" disabled={readOnly}>
-                  {dropdownData.tipo_calle_choices.map((option: any) => (
-                    <MenuItem key={option.key} value={option.key}>
-                      {option.value}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={dropdownData.tipo_calle_choices || []}
+                  getOptionLabel={(option) => option.value || ""}
+                  value={dropdownData.tipo_calle_choices?.find((item) => item.key === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Tipo de Calle"
+                      error={!!error}
+                      helperText={error?.message}
+                      size="small"
+                    />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
               </FormControl>
             )}
           />
@@ -79,6 +90,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -95,6 +107,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -113,6 +126,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -129,6 +143,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -150,6 +165,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -168,6 +184,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                size="small"
               />
             )}
           />
@@ -180,14 +197,20 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
-                <InputLabel>Localidad</InputLabel>
-                <Select {...field} label="Localidad" disabled={readOnly}>
-                  {dropdownData.localidad?.map((localidad: any) => (
-                    <MenuItem key={localidad.id} value={localidad.id}>
-                      {localidad.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={dropdownData.localidad || []}
+                  getOptionLabel={(option) => option.nombre || ""}
+                  value={dropdownData.localidad?.find((item) => item.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Localidad" error={!!error} helperText={error?.message} size="small" />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
               </FormControl>
             )}
           />
@@ -199,17 +222,22 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             name={`${prefix}.barrio`}
             control={control}
             render={({ field, fieldState: { error } }) => {
-
               return (
                 <FormControl fullWidth error={!!error}>
-                  <InputLabel>Barrio</InputLabel>
-                  <Select {...field} label="Barrio" disabled={readOnly}>
-                    {filteredBarrios?.map((barrio: any) => (
-                      <MenuItem key={barrio.id} value={barrio.id}>
-                        {barrio.nombre}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  <Autocomplete
+                    disabled={readOnly}
+                    options={filteredBarrios || []}
+                    getOptionLabel={(option) => option.nombre || ""}
+                    value={filteredBarrios?.find((item) => item.id === field.value) || null}
+                    onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Barrio" error={!!error} helperText={error?.message} size="small" />
+                    )}
+                    PopperProps={{
+                      style: { width: "auto", maxWidth: "300px" },
+                    }}
+                    size="small"
+                  />
                 </FormControl>
               )
             }}
@@ -222,17 +250,22 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             name={`${prefix}.cpc`}
             control={control}
             render={({ field, fieldState: { error } }) => {
-
               return (
                 <FormControl fullWidth error={!!error}>
-                  <InputLabel>CPC</InputLabel>
-                  <Select {...field} label="CPC" disabled={readOnly}>
-                    {filteredCPCs?.map((cpc: any) => (
-                      <MenuItem key={cpc.id} value={cpc.id}>
-                        {cpc.nombre}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  <Autocomplete
+                    disabled={readOnly}
+                    options={filteredCPCs || []}
+                    getOptionLabel={(option) => option.nombre || ""}
+                    value={filteredCPCs?.find((item) => item.id === field.value) || null}
+                    onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                    renderInput={(params) => (
+                      <TextField {...params} label="CPC" error={!!error} helperText={error?.message} size="small" />
+                    )}
+                    PopperProps={{
+                      style: { width: "auto", maxWidth: "300px" },
+                    }}
+                    size="small"
+                  />
                 </FormControl>
               )
             }}

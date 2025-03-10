@@ -98,7 +98,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 
   return (
     <FormProvider {...methods}>
-      <Paper elevation={3} sx={{ p: 3, bgcolor: "background.paper" }}>
         <form onSubmit={handleFormSubmit}>
           <Stepper activeStep={activeStep} alternativeLabel>
             {steps.map((label) => (
@@ -139,7 +138,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
             </Box>
           )}
         </form>
-      </Paper>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </FormProvider>
   )

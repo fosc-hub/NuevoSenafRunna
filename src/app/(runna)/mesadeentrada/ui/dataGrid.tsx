@@ -362,7 +362,7 @@ const DemandaTable: React.FC = () => {
     },
     {
       field: "codigosDemanda",
-      headerName: "Códigos Demanda",
+      headerName: "Números Demanda",
       width: 200,
       renderCell: (params) => {
         if (!params.value || params.value.length === 0) return "N/A"
@@ -371,7 +371,7 @@ const DemandaTable: React.FC = () => {
             {params.value.map((codigo: any, index: number) => (
               <div key={index}>
                 <Typography variant="body2">
-                  Código: {codigo.codigo} - Tipo: {codigo.tipo_codigo_nombre}
+                  Número: {codigo.codigo} - Tipo: {codigo.tipo_codigo_nombre}
                 </Typography>
               </div>
             ))}

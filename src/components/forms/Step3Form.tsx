@@ -31,7 +31,7 @@ import { es } from "date-fns/locale"
 import AddIcon from "@mui/icons-material/Add"
 import DeleteIcon from "@mui/icons-material/Delete"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import ExpandLessIcon from "@mui/icons-material/ExpandLess"
+import ExpandLessIcon from "@mui/icons-material/ExpandMore"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { format, parse } from "date-fns"
 import LocalizacionFields from "./LocalizacionFields" // Import the LocalizacionFields component
@@ -107,7 +107,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         vinculo_demanda: "",
         vinculo_con_nnya_principal: "",
       },
-      condiciones_vulnerabilidad: [],
+      condicionesVulnerabilidad: [],
       vulneraciones: [],
     })
     setExpandedSections([...expandedSections, true])
@@ -656,7 +656,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           disabled={readOnly}
                           multiple
                           options={dropdownData.condiciones_vulnerabilidad.filter((cv) => cv.nnya && !cv.adulto) || []}
-                          getOptionLabel={(option) => option.nombre || ""}
+                          getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
                           value={(field.value || [])
                             .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))
                             .filter(Boolean)}
@@ -674,7 +674,12 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           )}
                           renderTags={(tagValue, getTagProps) =>
                             tagValue.map((option, index) => (
-                              <Chip key={option.id} label={option.nombre} {...getTagProps({ index })} size="small" />
+                              <Chip
+                                key={option.id}
+                                label={`${option.nombre} (Peso: ${option.peso})`}
+                                {...getTagProps({ index })}
+                                size="small"
+                              />
                             ))
                           }
                           PopperProps={{
@@ -682,6 +687,21 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           }}
                           size="small"
                         />
+                        {/* Display total count of selected conditions */}
+                        <Box sx={{ mt: 1, display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Total seleccionado: {(field.value || []).length}
+                          </Typography>
+                          {(field.value || []).length > 0 && (
+                            <Typography variant="caption" color="text.secondary">
+                              Peso total:{" "}
+                              {(field.value || [])
+                                .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))
+                                .filter(Boolean)
+                                .reduce((sum, condition) => sum + condition.peso, 0)}
+                            </Typography>
+                          )}
+                        </Box>
                       </FormControl>
                     )}
                   />
@@ -1362,7 +1382,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                       <Autocomplete
                                         disabled={readOnly}
                                         options={dropdownData.categoria_motivo || []}
-                                        getOptionLabel={(option) => option.nombre || ""}
+                                        getOptionLabel={(option) =>
+                                          option.nombre ? `${option.nombre} (Peso: ${option.peso})` : ""
+                                        }
                                         value={
                                           dropdownData.categoria_motivo?.find((item) => item.id === field.value) || null
                                         }
@@ -1403,7 +1425,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                               ),
                                           ) || []
                                         }
-                                        getOptionLabel={(option) => option.nombre || ""}
+                                        getOptionLabel={(option) =>
+                                          option.nombre ? `${option.nombre} (Peso: ${option.peso})` : ""
+                                        }
                                         value={
                                           dropdownData.categoria_submotivo
                                             ?.filter(
@@ -1444,7 +1468,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                       <Autocomplete
                                         disabled={readOnly}
                                         options={dropdownData.gravedad_vulneracion || []}
-                                        getOptionLabel={(option) => option.nombre || ""}
+                                        getOptionLabel={(option) =>
+                                          option.nombre ? `${option.nombre} (Peso: ${option.peso})` : ""
+                                        }
                                         value={
                                           dropdownData.gravedad_vulneracion?.find((item) => item.id === field.value) ||
                                           null
@@ -1478,7 +1504,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                       <Autocomplete
                                         disabled={readOnly}
                                         options={dropdownData.urgencia_vulneracion || []}
-                                        getOptionLabel={(option) => option.nombre || ""}
+                                        getOptionLabel={(option) =>
+                                          option.nombre ? `${option.nombre} (Peso: ${option.peso})` : ""
+                                        }
                                         value={
                                           dropdownData.urgencia_vulneracion?.find((item) => item.id === field.value) ||
                                           null
@@ -1579,6 +1607,130 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                                   }
                                   label="Transcurre Actualidad"
                                 />
+                              </Grid>
+                              <Grid item xs={12}>
+                                <Box
+                                  sx={{
+                                    mt: 2,
+                                    p: 1,
+                                    bgcolor: "background.paper",
+                                    borderRadius: 1,
+                                    border: "1px dashed",
+                                  }}
+                                >
+                                  <Typography variant="subtitle2" color="text.secondary">
+                                    Peso Total: {(() => {
+                                      const categoriaMotivo = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_motivo`,
+                                      )
+                                      const categoriaSubmotivo = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_submotivo`,
+                                      )
+                                      const gravedadVulneracion = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.gravedad_vulneracion`,
+                                      )
+                                      const urgenciaVulneracion = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.urgencia_vulneracion`,
+                                      )
+
+                                      let total = 0
+
+                                      // Add categoria_motivo peso
+                                      const categoriaMotivoPeso =
+                                        dropdownData.categoria_motivo?.find((item) => item.id === categoriaMotivo)
+                                          ?.peso || 0
+                                      total += categoriaMotivoPeso
+
+                                      // Add categoria_submotivo peso
+                                      const categoriaSubmotivoPeso =
+                                        dropdownData.categoria_submotivo?.find((item) => item.id === categoriaSubmotivo)
+                                          ?.peso || 0
+                                      total += categoriaSubmotivoPeso
+
+                                      // Add gravedad_vulneracion peso
+                                      const gravedadVulneracionPeso =
+                                        dropdownData.gravedad_vulneracion?.find(
+                                          (item) => item.id === gravedadVulneracion,
+                                        )?.peso || 0
+                                      total += gravedadVulneracionPeso
+
+                                      // Add urgencia_vulneracion peso
+                                      const urgenciaVulneracionPeso =
+                                        dropdownData.urgencia_vulneracion?.find(
+                                          (item) => item.id === urgenciaVulneracion,
+                                        )?.peso || 0
+                                      total += urgenciaVulneracionPeso
+
+                                      return total
+                                    })()}
+                                  </Typography>
+                                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+                                    {(() => {
+                                      const categoriaMotivo = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_motivo`,
+                                      )
+                                      const categoriaSubmotivo = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.categoria_submotivo`,
+                                      )
+                                      const gravedadVulneracion = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.gravedad_vulneracion`,
+                                      )
+                                      const urgenciaVulneracion = watch(
+                                        `ninosAdolescentes.${index}.vulneraciones.${vulIndex}.urgencia_vulneracion`,
+                                      )
+
+                                      const categoriaMotivoPeso = dropdownData.categoria_motivo?.find(
+                                        (item) => item.id === categoriaMotivo,
+                                      )?.peso
+                                      const categoriaSubmotivoPeso = dropdownData.categoria_submotivo?.find(
+                                        (item) => item.id === categoriaSubmotivo,
+                                      )?.peso
+                                      const gravedadVulneracionPeso = dropdownData.gravedad_vulneracion?.find(
+                                        (item) => item.id === gravedadVulneracion,
+                                      )?.peso
+                                      const urgenciaVulneracionPeso = dropdownData.urgencia_vulneracion?.find(
+                                        (item) => item.id === urgenciaVulneracion,
+                                      )?.peso
+
+                                      return (
+                                        <>
+                                          {categoriaMotivoPeso && (
+                                            <Chip
+                                              size="small"
+                                              label={`Categoría: ${categoriaMotivoPeso}`}
+                                              color="primary"
+                                              variant="outlined"
+                                            />
+                                          )}
+                                          {categoriaSubmotivoPeso && (
+                                            <Chip
+                                              size="small"
+                                              label={`Subcategoría: ${categoriaSubmotivoPeso}`}
+                                              color="secondary"
+                                              variant="outlined"
+                                            />
+                                          )}
+                                          {gravedadVulneracionPeso && (
+                                            <Chip
+                                              size="small"
+                                              label={`Gravedad: ${gravedadVulneracionPeso}`}
+                                              color="error"
+                                              variant="outlined"
+                                            />
+                                          )}
+                                          {urgenciaVulneracionPeso && (
+                                            <Chip
+                                              size="small"
+                                              label={`Urgencia: ${urgenciaVulneracionPeso}`}
+                                              color="warning"
+                                              variant="outlined"
+                                            />
+                                          )}
+                                        </>
+                                      )
+                                    })()}
+                                  </Box>
+                                </Box>
                               </Grid>
                             </Grid>
                           </Box>

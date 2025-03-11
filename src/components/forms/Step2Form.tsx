@@ -517,7 +517,9 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             options={
                               dropdownData.condiciones_vulnerabilidad.filter((cv) => cv.adulto && !cv.nnya) || []
                             }
-                            getOptionLabel={(option) => option.nombre || ""}
+                            getOptionLabel={(option) =>
+                              option.nombre ? `${option.nombre} (Peso: ${option.peso})` : ""
+                            }
                             value={(field.value || [])
                               .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))
                               .filter(Boolean)}
@@ -535,7 +537,12 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             )}
                             renderTags={(tagValue, getTagProps) =>
                               tagValue.map((option, index) => (
-                                <Chip key={option.id} label={option.nombre} {...getTagProps({ index })} size="small" />
+                                <Chip
+                                  key={option.id}
+                                  label={`${option.nombre} (Peso: ${option.peso})`}
+                                  {...getTagProps({ index })}
+                                  size="small"
+                                />
                               ))
                             }
                             PopperProps={{
@@ -543,6 +550,21 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             }}
                             size="small"
                           />
+                          {/* Display total count of selected conditions */}
+                          <Box sx={{ mt: 1, display: "flex", justifyContent: "space-between" }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Total seleccionado: {(field.value || []).length}
+                            </Typography>
+                            {(field.value || []).length > 0 && (
+                              <Typography variant="caption" color="text.secondary">
+                                Peso total:{" "}
+                                {(field.value || [])
+                                  .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))
+                                  .filter(Boolean)
+                                  .reduce((sum, condition) => sum + condition.peso, 0)}
+                              </Typography>
+                            )}
+                          </Box>
                         </FormControl>
                       )}
                     />

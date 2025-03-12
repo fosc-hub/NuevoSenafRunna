@@ -51,6 +51,7 @@ interface FormData {
     garantiza_proteccion: boolean
     observaciones: string
     useDefaultLocalizacion: boolean
+    telefono: string // Added phone number field
     localizacion?: {
       // Add localizacion fields here
     }
@@ -96,6 +97,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       garantiza_proteccion: false,
       observaciones: "",
       useDefaultLocalizacion: true,
+      telefono: "", // Initialize phone number field
       vinculacion: "",
       vinculo_con_nnya_principal: 0,
       vinculo_demanda: "",
@@ -502,6 +504,31 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       />
                     </Grid>
                   )}
+
+                  <Grid item xs={12}>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                      Datos de Localización del grupo familiar
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.telefono`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <TextField
+                          {...field}
+                          label="Número de Teléfono"
+                          fullWidth
+                          error={!!error}
+                          helperText={error?.message}
+                          InputProps={{ readOnly }}
+                          size="small"
+                          type="number"
+                          inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                        />
+                      )}
+                    />
+                  </Grid>
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
                       Condiciones de Vulnerabilidad

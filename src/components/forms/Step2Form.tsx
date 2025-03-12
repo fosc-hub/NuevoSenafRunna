@@ -507,7 +507,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
 
                   <Grid item xs={12}>
                     <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                      Datos de Localización del grupo familiar
+                      Datos de Contacto del Adulto
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>

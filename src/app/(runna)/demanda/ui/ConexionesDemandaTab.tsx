@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -9,7 +9,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  Paper,
   Divider,
   CircularProgress,
   Alert,
@@ -17,7 +16,6 @@ import {
   Autocomplete,
 } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
-import SearchIcon from "@mui/icons-material/Search"
 import LinkIcon from "@mui/icons-material/Link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
@@ -43,6 +41,7 @@ interface ConexionesDemandaTabProps {
 
 export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -79,11 +78,20 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     enabled: !isLoadingDemandas, // Only run this query after allDemandas is loaded
   })
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Filtered search results
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return []
+    if (!debouncedSearchQuery.trim()) return []
 
-    const lowerQuery = searchQuery.toLowerCase()
+    const lowerQuery = debouncedSearchQuery.toLowerCase()
     return allDemandas.filter(
       (demanda) =>
         (demanda.id.toString().includes(lowerQuery) ||
@@ -91,7 +99,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
         demanda.id !== demandaId &&
         !conexiones.some((c) => c.id === demanda.id),
     )
-  }, [searchQuery, allDemandas, demandaId, conexiones])
+  }, [debouncedSearchQuery, allDemandas, demandaId, conexiones])
 
   // Create connection mutation
   const createConnectionMutation = useMutation({
@@ -202,12 +210,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
             loading={isLoading}
             sx={{ mr: 1 }}
           />
-          <Button
-            variant="contained"
-            onClick={() => setSearchQuery(searchQuery)} // Trigger re-render
-            disabled={isLoading || !searchQuery.trim()}
-            startIcon={<SearchIcon />}
-          >
+          <Button variant="contained" disabled={isLoading || !searchQuery.trim()}>
             Buscar
           </Button>
         </Box>

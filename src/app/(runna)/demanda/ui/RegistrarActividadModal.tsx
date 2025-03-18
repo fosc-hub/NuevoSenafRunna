@@ -16,12 +16,9 @@ import {
   Typography,
   Snackbar,
   Alert,
-  IconButton,
-  Paper,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
   Divider,
 } from "@mui/material"
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker"
@@ -32,11 +29,30 @@ import { AttachFile, Download, Upload } from "@mui/icons-material"
 import { create, get } from "@/app/api/apiService"
 import type { Actividad, ActividadTipo } from "@/types/actividad"
 
+// Update the Actividad type to match the new API response structure
+type Adjunto = {
+  archivo: string
+}
+
+// Update the existing Actividad type if needed
+// interface Actividad {
+//   id: number;
+//   adjuntos: Adjunto[];
+//   fecha_y_hora: string;
+//   fecha_y_hora_manual: string;
+//   descripcion: string;
+//   demanda: number;
+//   tipo: number;
+//   institucion: number;
+//   tipoNombre?: string;
+//   institucionNombre?: string;
+// }
+
 const actividadSchema = z.object({
   fecha_y_hora: z.date().min(new Date(1900, 0, 1), "La fecha y hora es requerida"),
   descripcion: z.string().min(1, "La descripción es requerida"),
   tipo: z.number().min(1, "El tipo de actividad es requerido"),
-  institucion: z.number().min(1, "La institución es requerida"),
+  institucion: z.number().optional(),
   archivos: z.array(z.instanceof(File)).optional(),
 })
 
@@ -173,10 +189,14 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
       formDataToSend.append("descripcion", formData.descripcion)
       formDataToSend.append("demanda", demandaId.toString())
       formDataToSend.append("tipo", formData.tipo.toString())
-      formDataToSend.append("institucion", formData.institucion.toString())
 
-      selectedFiles.forEach((file) => {
-        formDataToSend.append("archivos", file)
+      if (formData.institucion) {
+        formDataToSend.append("institucion", formData.institucion.toString())
+      }
+
+      // Update file upload format to match new API structure
+      selectedFiles.forEach((file, index) => {
+        formDataToSend.append(`adjuntos[${index}]archivo`, file)
       })
 
       await create<Actividad>("actividad", formDataToSend)
@@ -324,16 +344,35 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
                       </Typography>
                       {" — "}
                       {actividad.institucionNombre}
+                      {actividad.adjuntos && actividad.adjuntos.length > 0 && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography component="span" variant="body2" color="text.primary">
+                            Archivos adjuntos:
+                          </Typography>
+                          <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                            {actividad.adjuntos.map((adjunto, idx) => (
+                              <Box component="li" key={idx}>
+                                <Button
+                                  size="small"
+                                  startIcon={<AttachFile />}
+                                  onClick={() =>
+                                    window.open(
+                                      `https://web-production-c6370.up.railway.app${adjunto.archivo}`,
+                                      "_blank",
+                                    )
+                                  }
+                                  sx={{ textTransform: "none", justifyContent: "flex-start" }}
+                                >
+                                  {adjunto.archivo.split("/").pop()}
+                                </Button>
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
                     </>
                   }
                 />
-                {actividad.archivos?.length > 0 && (
-                  <ListItemSecondaryAction>
-                    <IconButton edge="end" onClick={() => window.open(actividad.archivos[0].url, "_blank")}>
-                      <AttachFile />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                )}
               </ListItem>
               {index < actividades.length - 1 && <Divider variant="inset" component="li" />}
             </React.Fragment>

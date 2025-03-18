@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useRef } from "react"
-import { useState, useEffect } from "react"
+
+import { useRef, useState, useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -22,25 +22,32 @@ import {
 import { DataGrid } from "@mui/x-data-grid"
 import MessageIcon from "@mui/icons-material/Message"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
-import { create, get, uploadFiles } from "@/app/api/apiService"
+import { get } from "@/app/api/apiService"
+import axiosInstance from "@/app/api/utils/axiosInstance"
 
 interface Respuesta {
   id: number
   fecha_y_hora: string
-  mail: string
+  to: string[]
   mensaje: string
   asunto: string
   institucion: string
   demanda: number
-  attachments?: string[] // URLs to attachments
-  tags?: string[] // Optional tags
+  adjuntos?: Array<{ archivo: string }>
+  etiqueta?: number
+}
+
+interface RespuestaEtiqueta {
+  id: number
+  nombre: string
 }
 
 const respuestaSchema = z.object({
-  mail: z.string().email({ message: "Correo electrónico inválido" }),
+  to: z.string().min(1, { message: "Este campo es requerido" }),
   institucion: z.string().min(1, { message: "Este campo es requerido" }),
   asunto: z.string().min(1, { message: "Este campo es requerido" }),
   mensaje: z.string().min(1, { message: "Este campo es requerido" }),
+  etiqueta: z.number().optional(),
 })
 
 type RespuestaFormData = z.infer<typeof respuestaSchema>
@@ -53,16 +60,8 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const [respuestas, setRespuestas] = useState<Respuesta[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [tags, setTags] = useState<string[]>([])
-  const [availableTags, setAvailableTags] = useState<string[]>([
-    "Urgente",
-    "Pendiente",
-    "Completado",
-    "Alta prioridad",
-    "Baja prioridad",
-    "Requiere seguimiento",
-    "Documentación incompleta",
-  ])
+  const [etiquetas, setEtiquetas] = useState<RespuestaEtiqueta[]>([])
+  const [selectedEtiqueta, setSelectedEtiqueta] = useState<RespuestaEtiqueta | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [filterSubject, setFilterSubject] = useState("")
 
@@ -81,19 +80,22 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   } = useForm<RespuestaFormData>({
     resolver: zodResolver(respuestaSchema),
     defaultValues: {
-      mail: "",
+      to: "",
       institucion: "",
       asunto: "",
       mensaje: "",
     },
   })
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setSelectedFiles(Array.from(event.target.files))
     }
   }
+
   useEffect(() => {
     fetchRespuestas()
+    fetchEtiquetas()
   }, [])
 
   const fetchRespuestas = async () => {
@@ -110,41 +112,55 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     }
   }
 
+  const fetchEtiquetas = async () => {
+    try {
+      const data = await get<RespuestaEtiqueta[]>("respuesta-etiqueta/")
+      setEtiquetas(data)
+    } catch (err) {
+      console.error("Error fetching etiquetas:", err)
+    }
+  }
+
   const onSubmit = async (data: RespuestaFormData) => {
     setIsLoading(true)
     setError(null)
-    try {
-      // Handle file uploads first if there are any
-      const attachmentUrls: string[] = []
 
-      if (selectedFiles.length > 0) {
-        try {
-          // Upload files and get URLs
-          const uploadedFiles = await uploadFiles(selectedFiles)
-          attachmentUrls.push(...uploadedFiles.map((file) => file.url))
-        } catch (uploadError) {
-          console.error("Error uploading files:", uploadError)
-          setError("Error al subir los archivos adjuntos")
-          setSnackbar({
-            open: true,
-            message: "Error al subir los archivos. Por favor, intente nuevamente.",
-            severity: "error",
-          })
-          setIsLoading(false)
-          return
-        }
+    try {
+      // Create FormData for multipart/form-data request
+      const formData = new FormData()
+
+      // Parse email fields as arrays
+      const toEmails = data.to
+        .split(",")
+        .map((email) => email.trim())
+        .filter((email) => email !== "")
+      formData.append("to", JSON.stringify(toEmails))
+
+
+      formData.append("asunto", data.asunto)
+      formData.append("mensaje", data.mensaje)
+      formData.append("institucion", data.institucion)
+      formData.append("demanda", demandaId.toString())
+
+      if (selectedEtiqueta) {
+        formData.append("etiqueta", selectedEtiqueta.id.toString())
       }
 
-      await create<Respuesta>("respuesta", {
-        ...data,
-        demanda: demandaId,
-        attachments: attachmentUrls,
-        tags: tags,
+      // Add files
+      selectedFiles.forEach((file, index) => {
+        formData.append(`adjuntos[${index}]archivo`, file)
+      })
+
+      // Send the request
+      await axiosInstance.post("respuesta/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       })
 
       reset()
       setSelectedFiles([])
-      setTags([])
+      setSelectedEtiqueta(null)
       await fetchRespuestas()
       setSnackbar({ open: true, message: "Respuesta enviada con éxito", severity: "success" })
     } catch (err) {
@@ -164,15 +180,15 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     <Box sx={{ p: 3 }}>
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <Controller
-          name="mail"
+          name="to"
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
-              label="Correo Electrónico"
+              label="Para (To)"
               fullWidth
-              error={!!errors.mail}
-              helperText={errors.mail?.message}
+              error={!!errors.to}
+              helperText={errors.to?.message || "Ingrese correos separados por comas"}
             />
           )}
         />
@@ -218,42 +234,21 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           )}
         />
 
-        {/* Tags section */}
+        {/* Etiquetas section */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle2" gutterBottom>
-            Etiquetas
+            Etiqueta
           </Typography>
           <Autocomplete
-            multiple
-            id="tags-standard"
-            options={availableTags}
-            value={tags}
-            onChange={(event, newValue) => {
-              // Check if the last value is a string (new tag)
-              if (newValue.length > 0 && typeof newValue[newValue.length - 1] === "string") {
-                // It's a new tag
-                const newTag = newValue[newValue.length - 1] as string
-                // Add to available tags if it doesn't exist
-                if (!availableTags.includes(newTag)) {
-                  setAvailableTags([...availableTags, newTag])
-                }
-              }
-              setTags(newValue)
+            id="etiqueta-select"
+            options={etiquetas}
+            getOptionLabel={(option) => option.nombre}
+            value={selectedEtiqueta}
+            onChange={(_, newValue) => {
+              setSelectedEtiqueta(newValue)
             }}
-            freeSolo
-            renderTags={(value: readonly string[], getTagProps) =>
-              value.map((option: string, index: number) => (
-                <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
-              ))
-            }
             renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="outlined"
-                label="Seleccionar etiquetas"
-                placeholder="Buscar o crear etiquetas"
-                helperText="Puedes buscar etiquetas existentes o crear nuevas"
-              />
+              <TextField {...params} variant="outlined" label="Seleccionar etiqueta" placeholder="Buscar etiqueta" />
             )}
           />
         </Box>
@@ -328,56 +323,67 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
                   width: 180,
                   valueFormatter: (params) => {
                     try {
-                      // Parse the ISO date string
                       const date = new Date(params.value)
-                      // Check if date is valid
-                      if (isNaN(date.getTime())) {
-                        return "Fecha inválida"
-                      }
-                      // Format the date
-                      return date.toLocaleString()
+                      return isNaN(date.getTime()) ? "Fecha inválida" : date.toLocaleString()
                     } catch (error) {
-                      console.error("Error formatting date:", error)
                       return "Fecha inválida"
                     }
                   },
                 },
-                { field: "mail", headerName: "Correo", width: 200 },
+                {
+                  field: "to",
+                  headerName: "Para",
+                  width: 200,
+                  valueFormatter: (params) => {
+                    const emails = params.value as string[] | undefined
+                    return emails ? emails.join(", ") : ""
+                  },
+                },
                 { field: "institucion", headerName: "Institución", width: 150 },
                 { field: "asunto", headerName: "Asunto", width: 150 },
                 { field: "mensaje", headerName: "Mensaje", width: 300 },
                 {
-                  field: "attachments",
+                  field: "adjuntos",
                   headerName: "Adjuntos",
                   width: 150,
                   renderCell: (params) => {
-                    const attachments = params.value as string[] | undefined
-                    return attachments && attachments.length > 0 ? (
-                      <Tooltip title={attachments.map((a) => a.split("/").pop()).join(", ")}>
-                        <Chip icon={<AttachFileIcon />} label={attachments.length} size="small" variant="outlined" />
+                    const adjuntos = params.value as Array<{ archivo: string }> | undefined
+                    return adjuntos && adjuntos.length > 0 ? (
+                      <Tooltip title={adjuntos.map((a) => a.archivo.split("/").pop()).join(", ")}>
+                        <Chip icon={<AttachFileIcon />} label={adjuntos.length} size="small" variant="outlined" />
                       </Tooltip>
                     ) : null
                   },
                 },
                 {
-                  field: "tags",
-                  headerName: "Etiquetas",
-                  width: 200,
+                  field: "etiqueta",
+                  headerName: "Etiqueta",
+                  width: 150,
+                  valueGetter: (params) => {
+                    const etiquetaId = params.value as number | undefined
+                    if (!etiquetaId) return ""
+                    const etiqueta = etiquetas.find((e) => e.id === etiquetaId)
+                    return etiqueta ? etiqueta.nombre : `ID: ${etiquetaId}`
+                  },
                   renderCell: (params) => {
-                    const tags = params.value as string[] | undefined
-                    return tags && tags.length > 0 ? (
-                      <Box sx={{ display: "flex", gap: 0.5 }}>
-                        {tags.map((tag, index) => (
-                          <Chip key={index} label={tag} size="small" />
-                        ))}
-                      </Box>
-                    ) : null
+                    const etiquetaId = params.row.etiqueta as number | undefined
+                    if (!etiquetaId) return null
+                    const etiqueta = etiquetas.find((e) => e.id === etiquetaId)
+                    return etiqueta ? (
+                      <Chip label={etiqueta.nombre} size="small" />
+                    ) : (
+                      <Chip label={`ID: ${etiquetaId}`} size="small" />
+                    )
                   },
                 },
               ]}
-              pageSize={5}
-              rowsPerPageOptions={[5, 10, 20]}
-              disableSelectionOnClick
+              pageSizeOptions={[5, 10, 20]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 5 },
+                },
+              }}
+              disableRowSelectionOnClick
               autoHeight
             />
           </Paper>

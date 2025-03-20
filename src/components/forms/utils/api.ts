@@ -48,7 +48,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
       tipos_presuntos_delitos: formData.tipos_presuntos_delitos || null,
       motivo_ingreso: formData.motivo_ingreso,
       submotivo_ingreso: formData.submotivo_ingreso,
-      envio_de_respuesta: formData.envio_de_respuesta,
+      objetivo_de_demanda: formData.objetivo_de_demanda,
       localizacion: formData.localizacion,
 
       relacion_demanda: {
@@ -310,7 +310,7 @@ const transformApiDataToFormData = (apiData: any): FormData => {
     tipo_demanda: apiData.tipo_demanda || null,
     // Ensure presuntos_delitos is properly initialized as an array
     tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || null,
-    envio_de_respuesta: apiData.envio_de_respuesta || null,
+    objetivo_de_demanda: apiData.objetivo_de_demanda || null,
     motivo_ingreso: apiData.motivo_ingreso || null,
     submotivo_ingreso: apiData.submotivo_ingreso || null,
     localizacion: apiData.localizacion || null,

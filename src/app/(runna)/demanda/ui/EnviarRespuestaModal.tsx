@@ -16,14 +16,15 @@ import {
   Alert,
   Paper,
   Chip,
-  Tooltip,
   Autocomplete,
 } from "@mui/material"
 import { DataGrid } from "@mui/x-data-grid"
 import MessageIcon from "@mui/icons-material/Message"
-import AttachFileIcon from "@mui/icons-material/AttachFile"
-import { get } from "@/app/api/apiService"
-import axiosInstance from "@/app/api/utils/axiosInstance"
+import { get, create } from "@/app/api/apiService"
+import { CloudUpload } from "@mui/icons-material"
+
+// URL base para los archivos
+const BASE_URL = "https://web-production-c6370.up.railway.app"
 
 interface Respuesta {
   id: number
@@ -64,6 +65,7 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const [selectedEtiqueta, setSelectedEtiqueta] = useState<RespuestaEtiqueta | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [filterSubject, setFilterSubject] = useState("")
+  const [filterEtiqueta, setFilterEtiqueta] = useState<number | null>(null)
 
   const [error, setError] = useState<string | null>(null)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
@@ -71,6 +73,37 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     message: "",
     severity: "success",
   })
+
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isDragging) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFiles(Array.from(e.dataTransfer.files))
+      e.dataTransfer.clearData()
+    }
+  }
 
   const {
     control,
@@ -90,6 +123,8 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setSelectedFiles(Array.from(event.target.files))
+      // Reset the input value so the same file can be selected again if removed
+      event.target.value = ""
     }
   }
 
@@ -134,9 +169,9 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
         .split(",")
         .map((email) => email.trim())
         .filter((email) => email !== "")
+
+      // Add all form fields
       formData.append("to", JSON.stringify(toEmails))
-
-
       formData.append("asunto", data.asunto)
       formData.append("mensaje", data.mensaje)
       formData.append("institucion", data.institucion)
@@ -151,12 +186,8 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
         formData.append(`adjuntos[${index}]archivo`, file)
       })
 
-      // Send the request
-      await axiosInstance.post("respuesta/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+      // Use the create method from apiService instead of axios directly
+      await create<Respuesta>("respuesta", formData as any, true, "Respuesta enviada con éxito")
 
       reset()
       setSelectedFiles([])
@@ -174,6 +205,14 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Función para obtener la URL completa de un archivo
+  const getFullFileUrl = (filePath: string) => {
+    if (filePath.startsWith("http")) {
+      return filePath
+    }
+    return `${BASE_URL}${filePath}`
   }
 
   return (
@@ -253,15 +292,46 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           />
         </Box>
 
-        {/* File upload section */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        {/* File upload section with drag and drop */}
+        <Box sx={{ mb: 2 }}>
           <input type="file" multiple onChange={handleFileChange} style={{ display: "none" }} ref={fileInputRef} />
-          <Button variant="outlined" startIcon={<AttachFileIcon />} onClick={() => fileInputRef.current?.click()}>
-            Adjuntar Documentos
-          </Button>
+
+          <Paper
+            sx={{
+              p: 3,
+              border: "2px dashed",
+              borderColor: isDragging ? "primary.main" : "divider",
+              borderRadius: 2,
+              backgroundColor: isDragging ? "rgba(25, 118, 210, 0.04)" : "background.paper",
+              textAlign: "center",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                borderColor: "primary.light",
+                backgroundColor: "rgba(25, 118, 210, 0.04)",
+              },
+              mb: 2,
+            }}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <CloudUpload sx={{ fontSize: 40, color: "primary.main", mb: 1 }} />
+            <Typography variant="h6" gutterBottom>
+              Arrastra y suelta archivos aquí
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              o haz clic para seleccionar archivos
+            </Typography>
+          </Paper>
+
           {selectedFiles.length > 0 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Typography variant="body2">{selectedFiles.length} archivo(s) seleccionado(s):</Typography>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                {selectedFiles.length} archivo(s) seleccionado(s):
+              </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 {selectedFiles.map((file, index) => (
                   <Chip
@@ -291,7 +361,7 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
         </Typography>
 
         {/* Filter by subject */}
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
           <TextField
             label="Filtrar por asunto"
             variant="outlined"
@@ -300,6 +370,33 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
             onChange={(e) => setFilterSubject(e.target.value)}
             sx={{ width: 300 }}
           />
+
+          <Autocomplete
+            id="filter-etiqueta"
+            options={etiquetas}
+            getOptionLabel={(option) => option.nombre}
+            value={etiquetas.find((e) => e.id === filterEtiqueta) || null}
+            onChange={(_, newValue) => {
+              setFilterEtiqueta(newValue ? newValue.id : null)
+            }}
+            renderInput={(params) => (
+              <TextField {...params} variant="outlined" size="small" label="Filtrar por etiqueta" sx={{ width: 250 }} />
+            )}
+            sx={{ flexShrink: 0 }}
+          />
+
+          {(filterSubject || filterEtiqueta) && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                setFilterSubject("")
+                setFilterEtiqueta(null)
+              }}
+            >
+              Limpiar filtros
+            </Button>
+          )}
         </Box>
 
         {isLoading ? (
@@ -313,19 +410,47 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
         ) : (
           <Paper sx={{ height: 400, width: "100%" }}>
             <DataGrid
-              rows={respuestas.filter((r) =>
-                filterSubject ? r.asunto.toLowerCase().includes(filterSubject.toLowerCase()) : true,
-              )}
+              rows={respuestas.filter((r) => {
+                const matchesSubject = filterSubject
+                  ? r.asunto.toLowerCase().includes(filterSubject.toLowerCase())
+                  : true
+                const matchesEtiqueta = filterEtiqueta ? r.etiqueta === filterEtiqueta : true
+                return matchesSubject && matchesEtiqueta
+              })}
               columns={[
                 {
                   field: "fecha_y_hora",
                   headerName: "Fecha y Hora",
                   width: 180,
                   valueFormatter: (params) => {
+                    if (!params.value || typeof params.value !== "string") return "Fecha inválida"
+
+                    let dateString = params.value
+
+                    // Si viene con microsegundos extra, recortarlos a 3 dígitos
+                    // Esto convierte, por ejemplo, 2025-03-19T18:06:55.787656Z -> 2025-03-19T18:06:55.787Z
+                    // de modo que new Date(...) funcione en cualquier entorno.
+                    const match = dateString.match(/^(.+\.\d{3})\d*(Z)$/)
+                    if (match) {
+                      dateString = match[1] + match[2] // recorta a 3 dígitos
+                    }
+
                     try {
-                      const date = new Date(params.value)
-                      return isNaN(date.getTime()) ? "Fecha inválida" : date.toLocaleString()
+                      const date = new Date(dateString)
+                      if (isNaN(date.getTime())) {
+                        console.error("Fecha inválida:", params.value)
+                        return "Fecha inválida"
+                      }
+                      // Formatear en español
+                      return date.toLocaleString("es-ES", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
                     } catch (error) {
+                      console.error("Error al formatear fecha:", error, params.value)
                       return "Fecha inválida"
                     }
                   },
@@ -334,27 +459,82 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
                   field: "to",
                   headerName: "Para",
                   width: 200,
-                  valueFormatter: (params) => {
-                    const emails = params.value as string[] | undefined
-                    return emails ? emails.join(", ") : ""
+                  align: "center",
+                  headerAlign: "center",
+                  renderCell: (params) => {
+                    const emails = params.value
+                    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+                      return "-"
+                    }
+                    return (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          textAlign: "center",
+                          display: "flex",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        <Typography variant="body2" noWrap>
+                          {emails.join(", ")}
+                        </Typography>
+                      </Box>
+                    )
                   },
                 },
+
                 { field: "institucion", headerName: "Institución", width: 150 },
                 { field: "asunto", headerName: "Asunto", width: 150 },
                 { field: "mensaje", headerName: "Mensaje", width: 300 },
                 {
                   field: "adjuntos",
                   headerName: "Adjuntos",
-                  width: 150,
+                  width: 180,
+                  align: "center",
+                  headerAlign: "center",
                   renderCell: (params) => {
                     const adjuntos = params.value as Array<{ archivo: string }> | undefined
-                    return adjuntos && adjuntos.length > 0 ? (
-                      <Tooltip title={adjuntos.map((a) => a.archivo.split("/").pop()).join(", ")}>
-                        <Chip icon={<AttachFileIcon />} label={adjuntos.length} size="small" variant="outlined" />
-                      </Tooltip>
-                    ) : null
+                    if (!adjuntos || adjuntos.length === 0) return null
+
+                    return (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          display: "flex",
+                          justifyContent: "center", // Para centrar horizontalmente
+                          flexWrap: "wrap",
+                          gap: 1,
+                        }}
+                      >
+                        {adjuntos.map((adjunto, idx) => {
+                          const fileName = adjunto.archivo.split("/").pop() || "archivo"
+                          return (
+                            <Chip
+                              key={idx}
+                              label={fileName}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              sx={{
+                                cursor: "pointer",
+                                "&:hover": {
+                                  backgroundColor: "rgba(25, 118, 210, 0.08)",
+                                },
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.open(getFullFileUrl(adjunto.archivo), "_blank")
+                              }}
+                            />
+                          )
+                        })}
+                      </Box>
+                    )
                   },
                 },
+
                 {
                   field: "etiqueta",
                   headerName: "Etiqueta",

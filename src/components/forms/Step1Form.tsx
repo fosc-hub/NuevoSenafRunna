@@ -382,21 +382,20 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
         <Grid item xs={12}>
           <Controller
-            name="envio_de_respuesta"
-            rules={{ required: "Este campo es obligatorio" }}
+            name="objetivo_de_demanda"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={dropdownData.envio_de_respuesta_choices || []}
+                  options={dropdownData.objetivo_de_demanda_choices || []}
                   getOptionLabel={(option) => option.value || ""}
-                  value={dropdownData.envio_de_respuesta_choices?.find((item) => item.key === field.value) || null}
+                  value={dropdownData.objetivo_de_demanda_choices?.find((item) => item.key === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Envío de Respuesta"
+                      label="Objetivo de demanda"
                       error={!!error}
                       helperText={error?.message}
                       size="small"

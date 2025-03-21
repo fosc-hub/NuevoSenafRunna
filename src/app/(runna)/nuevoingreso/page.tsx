@@ -158,7 +158,7 @@ const Home: React.FC = () => {
             onSubmit={handleSubmit}
             initialData={formData || undefined}
             readOnly={false}
-            id={formId} // Pass the formId to MultiStepForm for draft saving
+            form={formId} // Pass the formId to MultiStepForm for draft saving
           />
         </Paper>
       )}

@@ -22,11 +22,12 @@ interface MultiStepFormProps {
   readOnly?: boolean
   onSubmit: (data: FormData) => void
   id?: string
+  form?: string
 }
 
-const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit, id }) => {
+const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit, id, form }) => {
   const [activeStep, setActiveStep] = useState(0)
-  const formId = id || "new"
+  const formId = form || "new"
 
   // Get draft store functions
   const { saveDraft, getDraft, clearDraft } = useDraftStore()

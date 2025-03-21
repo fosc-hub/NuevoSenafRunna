@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper, Button } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import SendIcon from "@mui/icons-material/Send"
-import OpenInNewIcon from "@mui/icons-material/OpenInNew"
+import ArticleIcon from "@mui/icons-material/Article"
 import { fetchCaseData } from "@/components/forms/utils/api"
 import { update } from "@/app/api/apiService"
 import type { FormData } from "@/components/forms/types/formTypes"
@@ -140,22 +140,6 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   return (
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-      {!isFullPage && onClose && (
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-            zIndex: 1,
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-      )}
-
       <Box sx={{ p: 3 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography
@@ -167,11 +151,25 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             Detalle de la Demanda
           </Typography>
 
-          {!isFullPage && (
-            <Button variant="outlined" startIcon={<OpenInNewIcon />} onClick={handleOpenInFullPage} sx={{ ml: 2 }}>
-              Ver en página completa
-            </Button>
-          )}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {!isFullPage && (
+              <IconButton aria-label="Ver en página completa" onClick={handleOpenInFullPage} color="primary">
+                <ArticleIcon />
+              </IconButton>
+            )}
+
+            {!isFullPage && onClose && (
+              <IconButton
+                aria-label="close"
+                onClick={onClose}
+                sx={{
+                  color: (theme) => theme.palette.grey[500],
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            )}
+          </Box>
         </Box>
 
         {formData?.unassigned && (

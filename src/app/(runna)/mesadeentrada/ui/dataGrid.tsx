@@ -16,7 +16,7 @@ import { get, update, create } from "@/app/api/apiService"
 import type { TDemanda } from "@/app/interfaces"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
-const DemandaDetail = dynamic(() => import("../../demanda/page"), { ssr: false })
+const DemandaDetail = dynamic(() => import("../../demanda/DemandaDetail"), { ssr: false })
 
 interface PaginatedResponse<T> {
   count: number

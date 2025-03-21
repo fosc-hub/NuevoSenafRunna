@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper, Button } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import SendIcon from "@mui/icons-material/Send"
+import OpenInNewIcon from "@mui/icons-material/OpenInNew"
 import { fetchCaseData } from "@/components/forms/utils/api"
 import { update } from "@/app/api/apiService"
 import type { FormData } from "@/components/forms/types/formTypes"
@@ -12,6 +13,7 @@ import MultiStepForm from "@/components/forms/MultiStepForm"
 import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
 import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
 import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
+import { useRouter } from "next/navigation"
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -46,15 +48,17 @@ interface DemandaDetailProps {
   params: {
     id: string
   }
-  onClose: () => void
+  onClose?: () => void
+  isFullPage?: boolean
 }
 
-export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
+export default function DemandaDetail({ params, onClose, isFullPage = false }: DemandaDetailProps) {
   const [formData, setFormData] = useState<FormData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tabValue, setTabValue] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const loadCaseData = async () => {
@@ -112,8 +116,8 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
     }
   }
 
-  const handleCloseSnackbar = () => {
-    //This function is no longer needed
+  const handleOpenInFullPage = () => {
+    router.push(`/demanda/${params.id}`)
   }
 
   if (isLoading) {
@@ -136,19 +140,21 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
 
   return (
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-      <IconButton
-        aria-label="close"
-        onClick={onClose}
-        sx={{
-          position: "absolute",
-          right: 8,
-          top: 8,
-          color: (theme) => theme.palette.grey[500],
-          zIndex: 1,
-        }}
-      >
-        <CloseIcon />
-      </IconButton>
+      {!isFullPage && onClose && (
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+            zIndex: 1,
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      )}
 
       <Box sx={{ p: 3 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
@@ -160,6 +166,12 @@ export default function DemandaDetail({ params, onClose }: DemandaDetailProps) {
           >
             Detalle de la Demanda
           </Typography>
+
+          {!isFullPage && (
+            <Button variant="outlined" startIcon={<OpenInNewIcon />} onClick={handleOpenInFullPage} sx={{ ml: 2 }}>
+              Ver en página completa
+            </Button>
+          )}
         </Box>
 
         {formData?.unassigned && (

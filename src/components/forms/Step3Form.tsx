@@ -1,7 +1,8 @@
 "use client"
 
+import React from "react"
+
 import { useState } from "react"
-import type React from "react"
 import { useFieldArray, useFormContext, Controller } from "react-hook-form"
 import {
   TextField,
@@ -43,6 +44,13 @@ interface Step3FormProps {
   readOnly?: boolean
   adultosConvivientes: FormData["adultosConvivientes"]
 }
+
+// Helper function to add a red asterisk to labels
+const RequiredLabel = ({ label }: { label: string }) => (
+  <React.Fragment>
+    {label} <span style={{ color: "#d32f2f" }}>*</span>
+  </React.Fragment>
+)
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
   const theme = useTheme()
@@ -195,7 +203,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
-                        label="Nombre"
+                        label={<RequiredLabel label="Nombre" />}
                         fullWidth
                         error={!!error}
                         helperText={error?.message}
@@ -213,7 +221,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
-                        label="Apellido"
+                        label={<RequiredLabel label="Apellido" />}
                         fullWidth
                         error={!!error}
                         helperText={error?.message}
@@ -233,7 +241,12 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                         onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                         disabled={readOnly}
-                        renderInput={(params) => <TextField {...params} fullWidth size="small" />}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            size: "small",
+                          },
+                        }}
                       />
                     )}
                   />
@@ -290,7 +303,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label="Situación DNI"
+                              label={<RequiredLabel label="Situación DNI" />}
                               error={!!error}
                               helperText={error?.message}
                               size="small"
@@ -321,7 +334,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label="Género"
+                              label={<RequiredLabel label="Género" />}
                               error={!!error}
                               helperText={error?.message}
                               size="small"
@@ -340,7 +353,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   <Controller
                     name={`ninosAdolescentes.${index}.nacionalidad`}
                     rules={{ required: "Este campo es obligatorio" }}
-
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
@@ -353,7 +365,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label="Nacionalidad"
+                              label={<RequiredLabel label="Nacionalidad" />}
                               error={!!error}
                               helperText={error?.message}
                               size="small"
@@ -387,28 +399,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
-                {/*
-                {index !== 0 && (
-                  <Grid item xs={12}>
-                    <Controller
-                      name={`ninosAdolescentes.${index}.vinculacion.vinculo`}
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <FormControl fullWidth error={!!error}>
-                          <InputLabel>Vínculo con NNYA principal</InputLabel>
-                          <Select {...field} label="Vínculo con NNYA principal" disabled={readOnly}>
-                            {dropdownData.vinculo_con_nnya_principal_choices?.map((vinculo) => (
-                              <MenuItem key={vinculo.id} value={vinculo.id}>
-                                {vinculo.nombre}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      )}
-                    />
-                  </Grid>
-                )}
-                */}
                 {/* Location Information */}
                 <Grid item xs={12}>
                   <FormControlLabel
@@ -470,7 +460,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Institución Educativa"
+                                  label={<RequiredLabel label="Institución Educativa" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"
@@ -494,7 +484,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           render={({ field, fieldState: { error } }) => (
                             <TextField
                               {...field}
-                              label="Nueva Institución Educativa"
+                              label={<RequiredLabel label="Nueva Institución Educativa" />}
                               fullWidth
                               multiline
                               rows={2}
@@ -525,7 +515,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Nivel Alcanzado"
+                                  label={<RequiredLabel label="Nivel Alcanzado" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"
@@ -609,7 +599,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Tipo de Escuela"
+                                  label={<RequiredLabel label="Tipo de Escuela" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"
@@ -738,7 +728,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label="Institución Sanitaria"
+                              label={<RequiredLabel label="Institución Sanitaria" />}
                               error={!!error}
                               helperText={error?.message}
                               size="small"
@@ -764,6 +754,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                       <Controller
                         name={`ninosAdolescentes.${index}.cobertura_medica.obra_social`}
             rules={{ required: "Este campo es obligatorio" }}
+            rules={{ required: "Este campo es obligatorio" }}
+                        
+                        rules={{ required: "Este campo es obligatorio" }}
                         
                         control={control}
                         render={({ field, fieldState: { error } }) => (
@@ -777,7 +770,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Obra Social"
+                                  label={<RequiredLabel label="Obra Social" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"
@@ -795,7 +788,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <Grid item xs={12} md={6}>
                       <Controller
                         name={`ninosAdolescentes.${index}.cobertura_medica.intervencion`}
-            rules={{ required: "Este campo es obligatorio" }}
+                        rules={{ required: "Este campo es obligatorio" }}
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
@@ -810,7 +803,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Intervención"
+                                  label={<RequiredLabel label="Intervención" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"
@@ -835,12 +828,15 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           <Controller
                             name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
             rules={{ required: "Este campo es obligatorio" }}
+            rules={{ required: "Este campo es obligatorio" }}
+                            
+                            rules={{ required: "Este campo es obligatorio" }}
                             
                             control={control}
                             render={({ field, fieldState }) => (
                               <TextField
                                 {...field}
-                                label="Nombre del Médico"
+                                label={<RequiredLabel label="Nombre del Médico" />}
                                 fullWidth
                                 error={!!fieldState.error}
                                 helperText={fieldState.error?.message}
@@ -984,7 +980,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Vínculo con la Demanda"
+                                  label={<RequiredLabel label="Vínculo con la Demanda" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"

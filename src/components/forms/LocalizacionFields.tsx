@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { Grid, TextField, FormControl, Paper, Autocomplete } from "@mui/material"
 import { type Control, Controller, useWatch } from "react-hook-form"
 import type { DropdownData } from "./types/formTypes"
@@ -11,6 +11,13 @@ interface LocalizacionFieldsProps {
   dropdownData: DropdownData
   readOnly?: boolean
 }
+
+// Helper function to add a red asterisk to labels
+const RequiredLabel = ({ label }: { label: string }) => (
+  <React.Fragment>
+    {label} <span style={{ color: "#d32f2f" }}>*</span>
+  </React.Fragment>
+)
 
 const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix, dropdownData, readOnly = false }) => {
   const selectedLocalidad = useWatch({
@@ -34,7 +41,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Calle"
+                label={<RequiredLabel label="Calle" />}
                 fullWidth
                 error={!!error}
                 helperText={error?.message}
@@ -84,7 +91,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Número de Casa"
+                label={<RequiredLabel label="Número de Casa" />}
                 fullWidth
                 type="number"
                 error={!!error}
@@ -158,7 +165,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Referencia Geográfica"
+                label={<RequiredLabel label="Referencia Geográfica" />}
                 fullWidth
                 multiline
                 rows={2}
@@ -204,7 +211,13 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                   value={dropdownData.localidad?.find((item) => item.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                   renderInput={(params) => (
-                    <TextField {...params} label="Localidad" error={!!error} helperText={error?.message} size="small" />
+                    <TextField
+                      {...params}
+                      label={<RequiredLabel label="Localidad" />}
+                      error={!!error}
+                      helperText={error?.message}
+                      size="small"
+                    />
                   )}
                   PopperProps={{
                     style: { width: "auto", maxWidth: "300px" },

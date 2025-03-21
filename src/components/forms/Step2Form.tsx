@@ -1,7 +1,8 @@
 "use client"
 
+import React from "react"
+
 import { useState } from "react"
-import type React from "react"
 import { useFieldArray, type Control, Controller, useWatch } from "react-hook-form"
 import {
   TextField,
@@ -13,7 +14,6 @@ import {
   Button,
   Box,
   FormControl,
-  FormHelperText,
   IconButton,
   Collapse,
   Dialog,
@@ -72,6 +72,13 @@ interface Step2FormProps {
   dropdownData: DropdownData
   readOnly?: boolean
 }
+
+// Helper function to add a red asterisk to labels
+const RequiredLabel = ({ label }: { label: string }) => (
+  <React.Fragment>
+    {label} <span style={{ color: "#d32f2f" }}>*</span>
+  </React.Fragment>
+)
 
 const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly = false }) => {
   const { fields, append, remove } = useFieldArray({
@@ -190,7 +197,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       render={({ field, fieldState: { error } }) => (
                         <TextField
                           {...field}
-                          label="Nombre"
+                          label={<RequiredLabel label="Nombre" />}
                           fullWidth
                           error={!!error}
                           helperText={error?.message}
@@ -208,7 +215,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       render={({ field, fieldState: { error } }) => (
                         <TextField
                           {...field}
-                          label="Apellido"
+                          label={<RequiredLabel label="Apellido" />}
                           fullWidth
                           error={!!error}
                           helperText={error?.message}
@@ -224,12 +231,16 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       control={control}
                       render={({ field }) => (
                         <DatePicker
-                          {...field}
                           label="Fecha de Nacimiento"
                           disabled={readOnly}
                           value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                           onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                          renderInput={(params: any) => <TextField {...params} fullWidth size="small" />}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              size: "small",
+                            },
+                          }}
                         />
                       )}
                     />
@@ -250,7 +261,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="Nacionalidad"
+                                label={<RequiredLabel label="Nacionalidad" />}
                                 error={!!error}
                                 helperText={error?.message}
                                 size="small"
@@ -320,7 +331,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                               renderInput={(params) => (
                                 <TextField
                                   {...params}
-                                  label="Situación DNI"
+                                  label={<RequiredLabel label="Situación DNI" />}
                                   error={!!error}
                                   helperText={error?.message}
                                   size="small"
@@ -352,7 +363,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="Género"
+                                label={<RequiredLabel label="Género" />}
                                 error={!!error}
                                 helperText={error?.message}
                                 size="small"
@@ -386,7 +397,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="Vinculación"
+                                label={<RequiredLabel label="Vinculación" />}
                                 error={!!error}
                                 helperText={error?.message}
                                 size="small"
@@ -397,7 +408,6 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             }}
                             size="small"
                           />
-                          {error && <FormHelperText>{error.message}</FormHelperText>}
                         </FormControl>
                       )}
                     />
@@ -432,7 +442,6 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             }}
                             size="small"
                           />
-                          {error && <FormHelperText>{error.message}</FormHelperText>}
                         </FormControl>
                       )}
                     />

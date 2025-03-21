@@ -31,6 +31,13 @@ interface Step1FormProps {
   readOnly?: boolean
 }
 
+// Helper function to add a red asterisk to labels
+const RequiredLabel = ({ label }: { label: string }) => (
+  <React.Fragment>
+    {label} <span style={{ color: "#d32f2f" }}>*</span>
+  </React.Fragment>
+)
+
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
   const {
     data: dropdownData,
@@ -84,7 +91,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             control={control}
             render={({ field, fieldState: { error } }) => (
               <DatePicker
-                label="Fecha de oficio/documento *"
+                label={<RequiredLabel label="Fecha de oficio/documento" />}
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
@@ -107,7 +114,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             control={control}
             render={({ field, fieldState: { error } }) => (
               <DatePicker
-                label="Fecha de ingreso SENAF *"
+                label={<RequiredLabel label="Fecha de ingreso SENAF" />}
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
@@ -139,7 +146,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Datos del remitente"
+                      label={<RequiredLabel label="Datos del remitente" />}
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -175,7 +182,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Tipo de Institución"
+                        label={<RequiredLabel label="Tipo de Institución" />}
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -199,7 +206,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Institución *"
+                label={<RequiredLabel label="Institución" />}
                 fullWidth
                 error={!!error}
                 helperText={error?.message}
@@ -340,7 +347,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Tipo de Demanda"
+                      label={<RequiredLabel label="Tipo de Demanda" />}
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -405,7 +412,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Objetivo de demanda"
+                      label={<RequiredLabel label="Objetivo de demanda" />}
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -435,7 +442,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Presunto motivo de Intervención *"
+                      label="Presunto motivo de Intervención"
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -509,7 +516,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Zona a la cual se le asignará la demanda"
+                      label={<RequiredLabel label="Zona a la cual se le asignará la demanda" />}
                       error={!!error}
                       helperText={error?.message}
                       size="small"

@@ -1,17 +1,19 @@
+"use client"
+
 // VulneracionesFieldArray.tsx
-import React from "react";
-import { useFieldArray, Controller, UseFormWatch, UseFormSetValue, Control } from "react-hook-form";
-import { Box, Typography, Grid, Button, IconButton, TextField, FormControl, Autocomplete, Chip } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
+import type React from "react"
+import { useFieldArray, Controller, type UseFormWatch, type UseFormSetValue, type Control } from "react-hook-form"
+import { Box, Typography, Grid, Button, IconButton, TextField, FormControl, Autocomplete, Chip } from "@mui/material"
+import DeleteIcon from "@mui/icons-material/Delete"
+import AddIcon from "@mui/icons-material/Add"
 
 interface VulneracionesFieldArrayProps {
-  nestIndex: number;
-  control: Control<any>;
-  readOnly?: boolean;
-  dropdownData: any;
-  watch: UseFormWatch<any>;
-  setValue: UseFormSetValue<any>;
+  nestIndex: number
+  control: Control<any>
+  readOnly?: boolean
+  dropdownData: any
+  watch: UseFormWatch<any>
+  setValue: UseFormSetValue<any>
 }
 
 const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
@@ -25,7 +27,7 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
   const { fields, append, remove } = useFieldArray({
     control,
     name: `ninosAdolescentes.${nestIndex}.vulneraciones`,
-  });
+  })
 
   return (
     <>
@@ -55,7 +57,17 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       value={dropdownData.categoria_motivo?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
-                        <TextField {...params} label="Categoría de Motivos" error={!!error} helperText={error?.message} size="small" />
+                        <TextField
+                          {...params}
+                          label={
+                            <>
+                              Categoría de Motivos <span style={{ color: "red" }}>*</span>
+                            </>
+                          }
+                          error={!!error}
+                          helperText={error?.message}
+                          size="small"
+                        />
                       )}
                       PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
@@ -76,19 +88,35 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={
-                        dropdownData.categoria_submotivo?.filter((sub: any) =>
-                          sub.motivo === watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`)
+                        dropdownData.categoria_submotivo?.filter(
+                          (sub: any) =>
+                            sub.motivo ===
+                            watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`),
                         ) || []
                       }
                       getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
                       value={
                         dropdownData.categoria_submotivo
-                          ?.filter((sub: any) => sub.motivo === watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`))
+                          ?.filter(
+                            (sub: any) =>
+                              sub.motivo ===
+                              watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`),
+                          )
                           .find((item: any) => item.id === field.value) || null
                       }
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
-                        <TextField {...params} label="Subcategoría" error={!!error} helperText={error?.message} size="small" />
+                        <TextField
+                          {...params}
+                          label={
+                            <>
+                              Subcategoría <span style={{ color: "red" }}>*</span>
+                            </>
+                          }
+                          error={!!error}
+                          helperText={error?.message}
+                          size="small"
+                        />
                       )}
                       PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
@@ -113,7 +141,17 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       value={dropdownData.gravedad_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
-                        <TextField {...params} label="Gravedad de la Vulneración" error={!!error} helperText={error?.message} size="small" />
+                        <TextField
+                          {...params}
+                          label={
+                            <>
+                              Gravedad de la Vulneración <span style={{ color: "red" }}>*</span>
+                            </>
+                          }
+                          error={!!error}
+                          helperText={error?.message}
+                          size="small"
+                        />
                       )}
                       PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
@@ -138,7 +176,17 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       value={dropdownData.urgencia_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
-                        <TextField {...params} label="Urgencia de la Vulneración" error={!!error} helperText={error?.message} size="small" />
+                        <TextField
+                          {...params}
+                          label={
+                            <>
+                              Urgencia de la Vulneración <span style={{ color: "red" }}>*</span>
+                            </>
+                          }
+                          error={!!error}
+                          helperText={error?.message}
+                          size="small"
+                        />
                       )}
                       PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
@@ -160,31 +208,57 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                 }}
               >
                 <Typography variant="subtitle2" color="text.secondary">
-                  Peso Total:{" "}
-                  {(() => {
-                    const categoriaMotivo = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`);
-                    const categoriaSubmotivo = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_submotivo`);
-                    const gravedadVulneracion = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.gravedad_vulneracion`);
-                    const urgenciaVulneracion = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.urgencia_vulneracion`);
-                    let total = 0;
-                    total += dropdownData.categoria_motivo?.find((item: any) => item.id === categoriaMotivo)?.peso || 0;
-                    total += dropdownData.categoria_submotivo?.find((item: any) => item.id === categoriaSubmotivo)?.peso || 0;
-                    total += dropdownData.gravedad_vulneracion?.find((item: any) => item.id === gravedadVulneracion)?.peso || 0;
-                    total += dropdownData.urgencia_vulneracion?.find((item: any) => item.id === urgenciaVulneracion)?.peso || 0;
-                    return total;
+                  Peso Total: {(() => {
+                    const categoriaMotivo = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`,
+                    )
+                    const categoriaSubmotivo = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_submotivo`,
+                    )
+                    const gravedadVulneracion = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.gravedad_vulneracion`,
+                    )
+                    const urgenciaVulneracion = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.urgencia_vulneracion`,
+                    )
+                    let total = 0
+                    total += dropdownData.categoria_motivo?.find((item: any) => item.id === categoriaMotivo)?.peso || 0
+                    total +=
+                      dropdownData.categoria_submotivo?.find((item: any) => item.id === categoriaSubmotivo)?.peso || 0
+                    total +=
+                      dropdownData.gravedad_vulneracion?.find((item: any) => item.id === gravedadVulneracion)?.peso || 0
+                    total +=
+                      dropdownData.urgencia_vulneracion?.find((item: any) => item.id === urgenciaVulneracion)?.peso || 0
+                    return total
                   })()}
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                   {(() => {
-                    const categoriaMotivo = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`);
-                    const categoriaSubmotivo = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_submotivo`);
-                    const gravedadVulneracion = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.gravedad_vulneracion`);
-                    const urgenciaVulneracion = watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.urgencia_vulneracion`);
-                    const chips = [];
-                    const catMotivoPeso = dropdownData.categoria_motivo?.find((item: any) => item.id === categoriaMotivo)?.peso;
-                    const catSubmotivoPeso = dropdownData.categoria_submotivo?.find((item: any) => item.id === categoriaSubmotivo)?.peso;
-                    const gravedadPeso = dropdownData.gravedad_vulneracion?.find((item: any) => item.id === gravedadVulneracion)?.peso;
-                    const urgenciaPeso = dropdownData.urgencia_vulneracion?.find((item: any) => item.id === urgenciaVulneracion)?.peso;
+                    const categoriaMotivo = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`,
+                    )
+                    const categoriaSubmotivo = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_submotivo`,
+                    )
+                    const gravedadVulneracion = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.gravedad_vulneracion`,
+                    )
+                    const urgenciaVulneracion = watch(
+                      `ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.urgencia_vulneracion`,
+                    )
+                    const chips = []
+                    const catMotivoPeso = dropdownData.categoria_motivo?.find(
+                      (item: any) => item.id === categoriaMotivo,
+                    )?.peso
+                    const catSubmotivoPeso = dropdownData.categoria_submotivo?.find(
+                      (item: any) => item.id === categoriaSubmotivo,
+                    )?.peso
+                    const gravedadPeso = dropdownData.gravedad_vulneracion?.find(
+                      (item: any) => item.id === gravedadVulneracion,
+                    )?.peso
+                    const urgenciaPeso = dropdownData.urgencia_vulneracion?.find(
+                      (item: any) => item.id === urgenciaVulneracion,
+                    )?.peso
                     if (catMotivoPeso)
                       chips.push(
                         <Chip
@@ -193,8 +267,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           label={`Categoría: ${catMotivoPeso}`}
                           color="primary"
                           variant="outlined"
-                        />
-                      );
+                        />,
+                      )
                     if (catSubmotivoPeso)
                       chips.push(
                         <Chip
@@ -203,8 +277,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           label={`Subcategoría: ${catSubmotivoPeso}`}
                           color="secondary"
                           variant="outlined"
-                        />
-                      );
+                        />,
+                      )
                     if (gravedadPeso)
                       chips.push(
                         <Chip
@@ -213,8 +287,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           label={`Gravedad: ${gravedadPeso}`}
                           color="error"
                           variant="outlined"
-                        />
-                      );
+                        />,
+                      )
                     if (urgenciaPeso)
                       chips.push(
                         <Chip
@@ -223,9 +297,9 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           label={`Urgencia: ${urgenciaPeso}`}
                           color="warning"
                           variant="outlined"
-                        />
-                      );
-                    return chips;
+                        />,
+                      )
+                    return chips
                   })()}
                 </Box>
               </Box>
@@ -239,7 +313,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
         </Button>
       )}
     </>
-  );
-};
+  )
+}
 
-export default VulneracionesFieldArray;
+export default VulneracionesFieldArray
+

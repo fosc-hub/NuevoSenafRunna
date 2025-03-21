@@ -339,6 +339,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                 <Grid item xs={12} md={6}>
                   <Controller
                     name={`ninosAdolescentes.${index}.nacionalidad`}
+                    rules={{ required: "Este campo es obligatorio" }}
+
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
@@ -561,7 +563,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                       <Controller
                         name={`ninosAdolescentes.${index}.educacion.ultimo_cursado`}
                         control={control}
-                        rules={{ required: "Este campo es obligatorio" }}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
                             <Autocomplete
@@ -762,6 +763,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <Grid item xs={12} md={6}>
                       <Controller
                         name={`ninosAdolescentes.${index}.cobertura_medica.obra_social`}
+            rules={{ required: "Este campo es obligatorio" }}
+                        
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
@@ -792,6 +795,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <Grid item xs={12} md={6}>
                       <Controller
                         name={`ninosAdolescentes.${index}.cobertura_medica.intervencion`}
+            rules={{ required: "Este campo es obligatorio" }}
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>
@@ -830,6 +834,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         <Grid item xs={12} md={4}>
                           <Controller
                             name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
+            rules={{ required: "Este campo es obligatorio" }}
+                            
                             control={control}
                             render={({ field, fieldState }) => (
                               <TextField
@@ -963,6 +969,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     <Grid item xs={12} md={6}>
                       <Controller
                         name={`ninosAdolescentes.${index}.demanda_persona.vinculo_demanda`}
+                        rules={{ required: "Este campo es obligatorio" }}
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                           <FormControl fullWidth error={!!error}>

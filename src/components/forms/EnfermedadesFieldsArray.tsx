@@ -67,6 +67,7 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
             <Grid item xs={12} md={6}>
               <Controller
                 name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.situacion_salud`}
+                rules={{ required: "Este campo es obligatorio" }}
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <FormControl fullWidth error={!!error}>
@@ -103,6 +104,9 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
             <Grid item xs={12} md={6}>
               <Controller
                 name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.enfermedad.nombre`}
+                        
+                rules={{ required: "Este campo es obligatorio" }}
+
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
@@ -250,6 +254,7 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                 <Grid item xs={12} md={4}>
                   <Controller
                     name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.medico_tratamiento.nombre`}
+                    rules={{ required: "Este campo es obligatorio" }}
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <TextField

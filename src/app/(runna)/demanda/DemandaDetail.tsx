@@ -13,7 +13,7 @@ import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
 import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
 import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
 import { useRouter } from "next/navigation"
-import { fetchCaseData } from "@/components/forms/utils/fetchFormCase"
+import { fetchCaseData } from "@/components/forms/utils/apiToFormData"
 
 interface TabPanelProps {
   children?: React.ReactNode

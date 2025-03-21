@@ -1,3 +1,4 @@
+import { get } from "@/app/api/apiService"
 
 const transformApiDataToFormData = (apiData: any): FormData => {
   return {
@@ -139,3 +140,13 @@ const transformApiDataToFormData = (apiData: any): FormData => {
   }
 }
 
+export const fetchCaseData = async (id: string): Promise<FormData> => {
+  try {
+    const response = await get<FormData>(`registro-demanda-form/${id}/`)
+    console.log("Fetched case data:", response)
+    return transformApiDataToFormData(response)
+  } catch (error) {
+    console.error("Error fetching case data:", error)
+    throw error
+  }
+}

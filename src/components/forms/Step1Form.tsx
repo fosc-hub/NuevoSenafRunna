@@ -80,18 +80,22 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12} md={6}>
           <Controller
             name="fecha_oficio_documento"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <DatePicker
-                {...field}
                 label="Fecha de oficio/documento *"
-                rules={{ required: "Este campo es obligatorio" }}
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                renderInput={(params: any) => (
-                  <TextField {...params} fullWidth error={!!error} helperText={error?.message} size="small" />
-                )}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!error,
+                    helperText: error?.message,
+                    size: "small",
+                  },
+                }}
               />
             )}
           />
@@ -99,18 +103,22 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12} md={6}>
           <Controller
             name="fecha_ingreso_senaf"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <DatePicker
-                {...field}
                 label="Fecha de ingreso SENAF *"
-                rules={{ required: "Este campo es obligatorio" }}
                 disabled={readOnly}
                 value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
                 onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                renderInput={(params: any) => (
-                  <TextField {...params} fullWidth error={!!error} helperText={error?.message} size="small" />
-                )}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!error,
+                    helperText: error?.message,
+                    size: "small",
+                  },
+                }}
               />
             )}
           />
@@ -149,6 +157,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12} md={6}>
           <Controller
             name="tipo_institucion"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => {
               const filteredSubOrigins = dropdownData.tipo_institucion_demanda?.filter(
@@ -177,7 +186,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     }}
                     size="small"
                   />
-                  {error && <FormHelperText>{error.message}</FormHelperText>}
                 </FormControl>
               )
             }}
@@ -187,6 +195,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="institucion"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
@@ -384,6 +393,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Controller
             name="objetivo_de_demanda"
             control={control}
+            rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
                 <Autocomplete
@@ -486,6 +496,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         <Grid item xs={12}>
           <Controller
             name="zona"
+            rules={{ required: "Este campo es obligatorio" }}
             control={control}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error}>
@@ -509,7 +520,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                   }}
                   size="small"
                 />
-                {error && <FormHelperText>{error.message}</FormHelperText>}
               </FormControl>
             )}
           />

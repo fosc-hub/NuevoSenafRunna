@@ -371,6 +371,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                   <Grid item xs={12} md={6}>
                     <Controller
                       name={`adultosConvivientes.${index}.vinculacion`}
+                      rules={{ required: "Este campo es obligatorio" }}
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <FormControl fullWidth error={!!error}>

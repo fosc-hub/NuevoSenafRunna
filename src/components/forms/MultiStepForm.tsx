@@ -11,9 +11,10 @@ import "react-toastify/dist/ReactToastify.css"
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
-import { fetchDropdownData, submitFormData } from "./utils/api"
+import { submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useDraftStore } from "./utils/userDraftStore"
+import { fetchDropdownData } from "./utils/fetchFormCase"
 
 const steps = ["Información General", "Adultos Convivientes", "Niños y Adolescentes"]
 

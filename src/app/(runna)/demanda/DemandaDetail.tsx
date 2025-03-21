@@ -6,7 +6,6 @@ import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper,
 import CloseIcon from "@mui/icons-material/Close"
 import SendIcon from "@mui/icons-material/Send"
 import ArticleIcon from "@mui/icons-material/Article"
-import { fetchCaseData } from "@/components/forms/utils/api"
 import { update } from "@/app/api/apiService"
 import type { FormData } from "@/components/forms/types/formTypes"
 import MultiStepForm from "@/components/forms/MultiStepForm"
@@ -14,6 +13,7 @@ import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
 import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
 import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
 import { useRouter } from "next/navigation"
+import { fetchCaseData } from "@/components/forms/utils/fetchFormCase"
 
 interface TabPanelProps {
   children?: React.ReactNode

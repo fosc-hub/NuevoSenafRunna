@@ -6,6 +6,8 @@ import { useFieldArray, Controller, type UseFormWatch, type UseFormSetValue, typ
 import { Box, Typography, Grid, Button, IconButton, TextField, FormControl, Autocomplete } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
 import AddIcon from "@mui/icons-material/Add"
+import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import AttachFileIcon from "@mui/icons-material/AttachFile"
 
 interface EnfermedadesFieldArrayProps {
   nestIndex: number
@@ -188,6 +190,65 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                       size="small"
                     />
                   </FormControl>
+                )}
+              />
+            </Grid>
+
+            {/* Certificado Adjunto */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.certificado_adjunto`}
+                control={control}
+                render={({ field: { value, onChange, ...field }, fieldState: { error } }) => (
+                  <Box>
+                    <Typography variant="body2" gutterBottom>
+                      Certificado Adjunto
+                    </Typography>
+                    <Box
+                      sx={{
+                        border: "1px dashed #ccc",
+                        borderRadius: "4px",
+                        p: 2,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        "&:hover": { backgroundColor: "#f5f5f5" },
+                      }}
+                      component="label"
+                    >
+<input
+  {...field}
+  type="file"
+  multiple
+  hidden
+  disabled={readOnly}
+  onChange={(e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    onChange(files);
+  }}
+/>
+
+{value && value.length > 0 ? (
+  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+    <AttachFileIcon color="primary" fontSize="small" />
+    <Typography variant="body2">
+      {Array.isArray(value)
+        ? value.map((f: File) => f.name).join(", ")
+        : value.name}
+    </Typography>
+  </Box>
+) : (
+                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                          <CloudUploadIcon color="action" />
+                          <Typography variant="body2">Arrastrar archivo o hacer clic para seleccionar</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    {error && (
+                      <Typography variant="caption" color="error">
+                        {error.message}
+                      </Typography>
+                    )}
+                  </Box>
                 )}
               />
             </Grid>

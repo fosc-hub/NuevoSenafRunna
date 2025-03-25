@@ -1,5 +1,5 @@
-import type { DropdownData, FormData } from "../types/formTypes"
-import { create, get, update } from "@/app/api/apiService"
+import type { FormData } from "../types/formTypes"
+import { create, update } from "@/app/api/apiService"
 
 // Track if a submission is in progress to prevent duplicates
 let isSubmissionInProgress = false
@@ -7,7 +7,6 @@ let isSubmissionInProgress = false
 /**
  * Fetch dropdown data for the form
  */
-
 
 /**
  * Create or update the Demanda (form data)
@@ -126,6 +125,7 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
               telefono: null,
             },
             certificacion: enfermedad.certificacion || null,
+            // No incluimos certificado_adjunto aquí porque se enviará como archivo separado
             beneficios_gestionados: enfermedad.beneficios_gestionados || null,
             recibe_tratamiento: enfermedad.recibe_tratamiento || false,
             informacion_tratamiento: enfermedad.informacion_tratamiento || null,
@@ -244,13 +244,38 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
     if (formData.adjuntos && formData.adjuntos.length > 0) {
       formData.adjuntos.forEach((file: File, index: number) => {
         dataToSend.append(`adjuntos[${index}][archivo]`, file)
-
       })
     }
-    for (let [key, value] of dataToSend.entries()) {
-      console.log(key, value);
+
+    // Adjuntar archivos de certificados médicos
+// Adjuntar archivos de certificados médicos en el mismo formato que Postman
+(formData.ninosAdolescentes || []).forEach((nnya: any, nnyaIndex: number) => {
+  (nnya.persona_enfermedades || []).forEach((enfermedad: any, enfIndex: number) => {
+    if (enfermedad.certificado_adjunto) {
+      if (Array.isArray(enfermedad.certificado_adjunto)) {
+        enfermedad.certificado_adjunto.forEach((file: string | Blob, fileIndex: number) => {
+          dataToSend.append(
+            `personas[${nnyaIndex}]persona_enfermedades[${enfIndex}]certificado_adjunto[${fileIndex}]archivo`,
+            file
+          );
+        });
+      } else if (enfermedad.certificado_adjunto instanceof File) {
+        dataToSend.append(
+          `personas[${nnyaIndex}]persona_enfermedades[${enfIndex}]certificado_adjunto[0]archivo`,
+          enfermedad.certificado_adjunto,
+        );
+      }
     }
+  });
+});
+
     
+    
+
+    for (const [key, value] of dataToSend.entries()) {
+      console.log(key, value)
+    }
+
     let response: any
     if (id) {
       // Actualizar (PATCH) la Demanda existente
@@ -282,5 +307,4 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
  * Fetch data for a specific case/demanda by ID,
  * then transform it to our front-end FormData structure.
  */
-
 

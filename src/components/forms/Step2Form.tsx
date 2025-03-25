@@ -552,7 +552,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             disabled={readOnly}
                             multiple
                             options={
-                              dropdownData.condiciones_vulnerabilidad.filter((cv) => cv.adulto && !cv.nnya) || []
+                              dropdownData.condiciones_vulnerabilida?.filter((cv) => cv.adulto && !cv.nnya) || []
                             }
                             getOptionLabel={(option) =>
                               option.nombre ? `${option.nombre} (Peso: ${option.peso})` : ""

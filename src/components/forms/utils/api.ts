@@ -235,21 +235,29 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
 
     console.log("Transformed data:", JSON.stringify(transformedData, null, 2))
 
-    // Decide whether to PATCH (update) or POST (create)
-    let response: any
+    // Crear un objeto FormData para enviar la data y los archivos
+    const dataToSend = new FormData()
+    // Incluimos la data transformada como un campo JSON
+    dataToSend.append("data", JSON.stringify(transformedData))
 
+    // Verificamos y adjuntamos los archivos, si existen
+    if (formData.adjuntos && formData.adjuntos.length > 0) {
+      formData.adjuntos.forEach((file: File, index: number) => {
+        dataToSend.append(`adjuntos[${index}][archivo]`, file)
+
+      })
+    }
+    for (let [key, value] of dataToSend.entries()) {
+      console.log(key, value);
+    }
+    
+    let response: any
     if (id) {
-      // PATCH (update) existing Demanda
-      response = await update(
-        "registro-demanda-form",
-        Number(id),
-        transformedData,
-        true,
-        "Demanda actualizada con éxito",
-      )
+      // Actualizar (PATCH) la Demanda existente
+      response = await update("registro-demanda-form", Number(id), dataToSend, true, "Demanda actualizada con éxito")
     } else {
-      // POST (create) new Demanda
-      response = await create("registro-demanda-form", transformedData, true, "Demanda creada con éxito")
+      // Crear (POST) una nueva Demanda
+      response = await create("registro-demanda-form", dataToSend, true, "Demanda creada con éxito")
     }
 
     console.log("Server response:", response)
@@ -260,7 +268,6 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
     if (error.response) {
       console.error("Server error response:", error.response.data)
     }
-    // If the server responds with 201, treat it as a success
     if (error.response && error.response.status === 201) {
       console.log("Form submitted successfully with status 201")
       isSubmissionInProgress = false

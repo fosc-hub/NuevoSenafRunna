@@ -648,7 +648,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                         <Autocomplete
                           disabled={readOnly}
                           multiple
-                          options={dropdownData.condiciones_vulnerabilidad.filter((cv) => cv.nnya && !cv.adulto) || []}
+                          options={dropdownData.condiciones_vulnerabilidad?.filter((cv) => cv.nnya && !cv.adulto) || []}
                           getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
                           value={(field.value || [])
                             .map((id) => dropdownData.condiciones_vulnerabilidad.find((cv) => cv.id === id))

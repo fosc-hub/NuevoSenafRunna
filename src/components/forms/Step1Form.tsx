@@ -543,7 +543,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           </Typography>
           <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
             <Controller
-              name="archivosAdjuntos"
+              name="adjuntos"
               control={control}
               defaultValue={[]}
               render={({ field }) => (

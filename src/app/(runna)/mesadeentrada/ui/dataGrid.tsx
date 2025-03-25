@@ -253,6 +253,14 @@ const DemandaTable: React.FC = () => {
         return "#9e9e9e" // dark gray
       case "ADMITIDA":
         return "#673ab7" // purple
+      case "RESPUESTA_SIN_ENVIAR":
+        return "#f44336" // red
+      case "INFORME_SIN_ENVIAR":
+        return "#ecff0c" // Amarillo
+      case "REPUESTA_ENVIADA":
+        return "#8bc34a" // light green
+      case "INFORME_ENVIADO":
+        return "#00bcd4" // cyan
       default:
         return "transparent"
     }
@@ -515,6 +523,22 @@ const DemandaTable: React.FC = () => {
                 backgroundColor: "#673ab7",
                 width: "7px", // Increased by approximately 30%
               },
+              "& .row-respuesta-sin-enviar::before": {
+                backgroundColor: "#f44336",
+                width: "7px", // Increased by approximately 30%
+              },
+              "& .row-informe-sin-enviar::before": {
+                backgroundColor: "#ecff0c",
+                width: "7px", // Increased by approximately 30%
+              },
+              "& .row-repuesta-enviada::before": {
+                backgroundColor: "#8bc34a",
+                width: "7px", // Increased by approximately 30%
+              },
+              "& .row-informe-enviado::before": {
+                backgroundColor: "#00bcd4",
+                width: "7px", // Increased by approximately 30%
+              },
               // Add style for non-received rows
               "& .row-not-received": {
                 color: "#333333", // Lighter black color
@@ -528,7 +552,7 @@ const DemandaTable: React.FC = () => {
             getRowClassName={(params) => {
               const estado = params.row.estado_demanda?.toLowerCase() || ""
               const recibido = params.row.recibido
-              return `row-${estado.replace("_", "-")}${recibido ? " row-received" : " row-not-received"}`
+              return `row-${estado.replace(/_/g, "-")}${recibido ? " row-received" : " row-not-received"}`
             }}
           />
         </div>

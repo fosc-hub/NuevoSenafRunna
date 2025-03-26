@@ -754,9 +754,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                       <Controller
                         name={`ninosAdolescentes.${index}.cobertura_medica.obra_social`}
             rules={{ required: "Este campo es obligatorio" }}
-            rules={{ required: "Este campo es obligatorio" }}
                         
-                        rules={{ required: "Este campo es obligatorio" }}
                         
                         control={control}
                         render={({ field, fieldState: { error } }) => (
@@ -828,9 +826,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                           <Controller
                             name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
             rules={{ required: "Este campo es obligatorio" }}
-            rules={{ required: "Este campo es obligatorio" }}
                             
-                            rules={{ required: "Este campo es obligatorio" }}
                             
                             control={control}
                             render={({ field, fieldState }) => (

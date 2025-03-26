@@ -8,6 +8,7 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import AddIcon from "@mui/icons-material/Add"
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
+import { useState, useRef, useCallback } from "react"
 
 interface EnfermedadesFieldArrayProps {
   nestIndex: number
@@ -199,57 +200,170 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
               <Controller
                 name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.certificado_adjunto`}
                 control={control}
-                render={({ field: { value, onChange, ...field }, fieldState: { error } }) => (
-                  <Box>
-                    <Typography variant="body2" gutterBottom>
-                      Certificado Adjunto
-                    </Typography>
-                    <Box
-                      sx={{
-                        border: "1px dashed #ccc",
-                        borderRadius: "4px",
-                        p: 2,
-                        textAlign: "center",
-                        cursor: "pointer",
-                        "&:hover": { backgroundColor: "#f5f5f5" },
-                      }}
-                      component="label"
-                    >
-<input
-  {...field}
-  type="file"
-  multiple
-  hidden
-  disabled={readOnly}
-  onChange={(e) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    onChange(files);
-  }}
-/>
+                render={({ field: { value, onChange, ...field }, fieldState: { error } }) => {
+                  const [isDragging, setIsDragging] = useState(false)
+                  const fileInputRef = useRef<HTMLInputElement>(null)
+                  const dropAreaRef = useRef<HTMLDivElement>(null)
 
-{value && value.length > 0 ? (
-  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
-    <AttachFileIcon color="primary" fontSize="small" />
-    <Typography variant="body2">
-      {Array.isArray(value)
-        ? value.map((f: File) => f.name).join(", ")
-        : value.name}
-    </Typography>
-  </Box>
-) : (
-                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                          <CloudUploadIcon color="action" />
-                          <Typography variant="body2">Arrastrar archivo o hacer clic para seleccionar</Typography>
-                        </Box>
+                  const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsDragging(true)
+                  }, [])
+
+                  const handleDragOver = useCallback(
+                    (e: React.DragEvent<HTMLDivElement>) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (!isDragging) {
+                        setIsDragging(true)
+                      }
+                    },
+                    [isDragging],
+                  )
+
+                  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+
+                    // Only set isDragging to false if we're leaving the drop area (not a child element)
+                    if (dropAreaRef.current && !dropAreaRef.current.contains(e.relatedTarget as Node)) {
+                      setIsDragging(false)
+                    }
+                  }, [])
+
+                  const handleDrop = useCallback(
+                    (e: React.DragEvent<HTMLDivElement>) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDragging(false)
+
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        const newFiles = Array.from(e.dataTransfer.files)
+                        const existingFiles = Array.isArray(value) ? value : []
+                        onChange([...existingFiles, ...newFiles])
+                      }
+                    },
+                    [onChange, value],
+                  )
+
+                  const handleFileChange = useCallback(
+                    (e: React.ChangeEvent<HTMLInputElement>) => {
+                      if (e.target.files) {
+                        const newFiles = Array.from(e.target.files)
+                        const existingFiles = Array.isArray(value) ? value : []
+                        onChange([...existingFiles, ...newFiles])
+                      }
+                    },
+                    [onChange, value],
+                  )
+
+                  const removeFile = useCallback(
+                    (index: number) => {
+                      if (Array.isArray(value)) {
+                        const newFiles = [...value]
+                        newFiles.splice(index, 1)
+                        onChange(newFiles)
+                      }
+                    },
+                    [onChange, value],
+                  )
+
+                  return (
+                    <Box>
+                      <Typography variant="body2" gutterBottom>
+                        Certificado Adjunto
+                      </Typography>
+                      <Box
+                        ref={dropAreaRef}
+                        onDragEnter={handleDragEnter}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        sx={{
+                          border: "2px dashed",
+                          borderColor: isDragging ? "primary.main" : "#ccc",
+                          borderRadius: "4px",
+                          p: 2,
+                          textAlign: "center",
+                          cursor: "pointer",
+                          backgroundColor: isDragging ? "rgba(25, 118, 210, 0.04)" : "transparent",
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            borderColor: "primary.light",
+                            backgroundColor: "rgba(25, 118, 210, 0.04)",
+                          },
+                        }}
+                      >
+                        <input
+                          {...field}
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          hidden
+                          disabled={readOnly}
+                          onChange={handleFileChange}
+                        />
+
+                        {value && Array.isArray(value) && value.length > 0 ? (
+                          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+                            {value.map((file: File, idx: number) => (
+                              <Box
+                                key={idx}
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  width: "100%",
+                                  py: 0.5,
+                                  "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
+                                }}
+                              >
+                                <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
+                                  <AttachFileIcon
+                                    sx={{ mr: 1, color: "text.secondary", flexShrink: 0 }}
+                                    fontSize="small"
+                                  />
+                                  <Typography variant="body2" noWrap title={file.name}>
+                                    {file.name}
+                                  </Typography>
+                                </Box>
+                                {!readOnly && (
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      removeFile(idx)
+                                    }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                )}
+                              </Box>
+                            ))}
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                            <CloudUploadIcon color="action" sx={{ fontSize: 40, mb: 1 }} />
+                            <Typography variant="body2" gutterBottom>
+                              Arrastra y suelta archivos aquí
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              o haz clic para seleccionar archivos
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                      {error && (
+                        <Typography variant="caption" color="error">
+                          {error.message}
+                        </Typography>
                       )}
                     </Box>
-                    {error && (
-                      <Typography variant="caption" color="error">
-                        {error.message}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
+                  )
+                }}
               />
             </Grid>
 

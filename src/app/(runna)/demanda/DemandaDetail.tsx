@@ -90,18 +90,23 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   const handleEnviarEvaluacion = async () => {
     if (!params.id) return
-
+  
     setIsSubmitting(true)
     try {
+      // Se crea un nuevo FormData y se agrega la clave "data"
+      // con el objeto JSON que contiene el estado de la demanda
+      const formDataToSend = new FormData()
+      formDataToSend.append("data", JSON.stringify({ estado_demanda: "EVALUACION" }))
+  
       const updatedData = await update(
         "registro-demanda-form",
         Number.parseInt(params.id),
-        { estado_demanda: "EVALUACION" },
+        formDataToSend,
         true,
         "Demanda enviada a evaluación exitosamente",
       )
-
-      // Update local state to reflect the change
+  
+      // Actualiza el estado local para reflejar el cambio
       if (formData) {
         setFormData({
           ...formData,
@@ -110,12 +115,12 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
       }
     } catch (err) {
       console.error("Error updating case status:", err)
-      // Error toast is handled by the API service
+      // El manejo del error se realiza en el servicio API
     } finally {
       setIsSubmitting(false)
     }
   }
-
+  
   const handleOpenInFullPage = () => {
     router.push(`/demanda/${params.id}`)
   }

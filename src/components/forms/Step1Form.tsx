@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useWatch } from "react-hook-form"
-import { type Control, Controller, useFieldArray } from "react-hook-form"
+import { type Control, Controller, useFieldArray, useController } from "react-hook-form"
 import {
   TextField,
   Grid,
@@ -24,7 +24,171 @@ import { useQuery } from "@tanstack/react-query"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { Typography } from "@mui/material"
-import { Add, Remove, CloudUpload } from "@mui/icons-material"
+import { Add, Remove, CloudUpload, AttachFile, OpenInNew } from "@mui/icons-material"
+
+// Componente para la sección de archivos adjuntos
+const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; readOnly?: boolean }) => {
+  const { field } = useController({ name: "adjuntos", control, defaultValue: [] })
+  const { value, onChange } = field
+
+  // Separar archivos existentes (objetos con propiedad 'archivo') y nuevos archivos (objetos File)
+  const existingFiles = Array.isArray(value)
+    ? value.filter((file) => typeof file === "object" && "archivo" in file)
+    : []
+
+  const newFiles = Array.isArray(value) ? value.filter((file) => !(typeof file === "object" && "archivo" in file)) : []
+
+  // Función para extraer el nombre del archivo de la ruta
+  const getFileName = (filePath: string) => {
+    return filePath.split("/").pop() || filePath
+  }
+
+  // Función para abrir el archivo en una nueva pestaña
+  const openFile = (filePath: string) => {
+    window.open(`https://web-production-c6370.up.railway.app${filePath}`, "_blank")
+  }
+
+  // Función para eliminar un archivo nuevo
+  const removeNewFile = (index: number) => {
+    const updatedFiles = [...value]
+    // Encontrar el índice real considerando los archivos existentes
+    const realIndex = existingFiles.length + index
+    updatedFiles.splice(realIndex, 1)
+    onChange(updatedFiles)
+  }
+
+  return (
+    <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
+      <Grid container spacing={2} justifyContent="center">
+        {/* Sección para agregar nuevos archivos */}
+        <Grid item xs={12} md={6}>
+          <Box
+            sx={{
+              border: "2px dashed #ccc",
+              borderRadius: "4px",
+              p: 2,
+              minHeight: "150px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+            }}
+          >
+            <input
+              type="file"
+              id="file-upload"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || [])
+                onChange([...value, ...files])
+              }}
+              style={{ display: "none" }}
+              disabled={readOnly}
+            />
+            <label htmlFor="file-upload">
+              <CloudUpload color="action" sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="body2" gutterBottom display="block">
+                Arrastra y suelta archivos aquí
+              </Typography>
+              <Button component="span" variant="outlined" disabled={readOnly} size="small" sx={{ mt: 1 }}>
+                SELECCIONAR ARCHIVOS
+              </Button>
+            </label>
+
+            {newFiles.length > 0 && (
+              <Box sx={{ mt: 2, width: "100%" }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Archivos nuevos:
+                </Typography>
+                {newFiles.map((file: File, index: number) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      py: 0.5,
+                      "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
+                      <AttachFile sx={{ mr: 1, color: "text.secondary", flexShrink: 0 }} fontSize="small" />
+                      <Typography variant="body2" noWrap title={file.name}>
+                        {file.name}
+                      </Typography>
+                    </Box>
+                    <IconButton onClick={() => removeNewFile(index)} disabled={readOnly} size="small" color="error">
+                      <Remove fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        </Grid>
+
+        {/* Sección para mostrar archivos existentes */}
+        <Grid item xs={12} md={6}>
+          <Box
+            sx={{
+              border: "1px solid #eee",
+              borderRadius: "4px",
+              p: 1,
+              height: "100%",
+              minHeight: "150px",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Typography variant="subtitle2" gutterBottom>
+              Archivos existentes:
+            </Typography>
+            <Box
+              sx={{
+                flexGrow: 1,
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {existingFiles.length > 0 ? (
+                existingFiles.map((file: any, idx: number) => (
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      py: 0.5,
+                      "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", flexGrow: 1 }}>
+                      <AttachFile sx={{ mr: 1, color: "text.secondary", flexShrink: 0 }} fontSize="small" />
+                      <Typography variant="body2" noWrap title={getFileName(file.archivo)}>
+                        {getFileName(file.archivo)}
+                      </Typography>
+                    </Box>
+                    <IconButton size="small" color="primary" onClick={() => openFile(file.archivo)}>
+                      <OpenInNew fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 2 }}>
+                  No hay archivos existentes
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
+    </Box>
+  )
+}
 
 interface Step1FormProps {
   dropdownData: DropdownData
@@ -541,72 +705,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
             Archivos Adjuntos
           </Typography>
-          <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
-            <Controller
-              name="adjuntos"
-              control={control}
-              defaultValue={[]}
-              render={({ field }) => (
-                <>
-                  <input
-                    type="file"
-                    id="file-upload"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || [])
-                      field.onChange([...field.value, ...files])
-                    }}
-                    style={{ display: "none" }}
-                    disabled={readOnly}
-                  />
-                  <label htmlFor="file-upload">
-                    <Button
-                      component="span"
-                      startIcon={<CloudUpload />}
-                      variant="outlined"
-                      disabled={readOnly}
-                      sx={{
-                        mb: 2,
-                        color: "primary.main",
-                        "&:hover": {
-                          backgroundColor: "primary.lighter",
-                        },
-                      }}
-                      size="small"
-                    >
-                      AGREGAR ARCHIVOS
-                    </Button>
-                  </label>
-
-                  {field.value.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Archivos seleccionados:
-                      </Typography>
-                      {field.value.map((file: File, index: number) => (
-                        <Box key={index} sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                          <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                            {file.name}
-                          </Typography>
-                          <IconButton
-                            onClick={() => {
-                              const newFiles = [...field.value]
-                              newFiles.splice(index, 1)
-                              field.onChange(newFiles)
-                            }}
-                            disabled={readOnly}
-                            size="small"
-                          >
-                            <Remove fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
-                </>
-              )}
-            />
-          </Box>
+          <FileUploadSection control={control} readOnly={readOnly} />
         </Grid>
         <Grid item xs={12}>
           <Typography color="primary" sx={{ mt: 2, mb: 1 }}>

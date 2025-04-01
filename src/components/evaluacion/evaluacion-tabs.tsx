@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Box, Tabs, Tab } from "@mui/material"
 import { toast } from "react-toastify"
+import { useSearchParams } from "next/navigation"
 import TabPanel from "./tab-panel"
 import InformacionGeneral from "./tabs/informacion-general"
 import DatosLocalizacion from "./tabs/datos-localizacion"
@@ -36,6 +37,8 @@ interface EvaluacionTabsProps {
 }
 
 export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
+  const searchParams = useSearchParams()
+  const [demandaId, setDemandaId] = useState<number | null>(null)
   const [tabValue, setTabValue] = useState(0)
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
     data.IndicadoresEvaluacion.map((indicator: any, index: number) => ({
@@ -46,6 +49,14 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       selected: false,
     })),
   )
+
+  // Get demandaId from URL query parameter
+  useEffect(() => {
+    const id = searchParams.get("id")
+    if (id) {
+      setDemandaId(Number.parseInt(id))
+    }
+  }, [searchParams])
 
   // State for editable data
   const [actividades, setActividades] = useState(data.Actividades || [])
@@ -76,11 +87,11 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     )
   }
 
-  const generatePDF = async (data: any) => {
+  const generatePDF = async (originalData: any) => {
     try {
       // Combine all updated data
       const updatedData = {
-        ...data,
+        ...originalData,
         Actividades: actividades,
         NNYAConvivientes: nnyaConvivientes,
         NNYANoConvivientes: nnyaNoConvivientes,
@@ -108,12 +119,15 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         position: "top-center",
         autoClose: 3000,
       })
+
+      return updatedData
     } catch (error) {
       console.error("Error generating PDF:", error)
       toast.error("Error al generar el PDF", {
         position: "top-center",
         autoClose: 3000,
       })
+      throw error
     }
   }
 
@@ -193,9 +207,38 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} />
       </Box>
 
-      <DecisionBox vulnerabilityIndicators={vulnerabilityIndicators} handleIndicatorChange={handleIndicatorChange} />
+      <DecisionBox
+        vulnerabilityIndicators={vulnerabilityIndicators}
+        handleIndicatorChange={handleIndicatorChange}
+        demandaId={demandaId}
+      />
 
-      <ActionButtons generatePDF={generatePDF} data={data} />
+      <ActionButtons
+        generatePDF={generatePDF}
+        data={{
+          ...data,
+          Actividades: actividades,
+          NNYAConvivientes: nnyaConvivientes,
+          NNYANoConvivientes: nnyaNoConvivientes,
+          AdultosConvivientes: adultosConvivientes,
+          AdultosNoConvivientes: adultosNoConvivientes,
+          AntecedentesDemanda: antecedentes,
+          MotivosActuacion: motivos,
+          DescripcionSituacion: descripcionSituacion,
+          IndicadoresEvaluacion: vulnerabilityIndicators.map((indicator) => ({
+            NombreIndicador: indicator.nombre,
+            Descripcion: indicator.descripcion,
+            Peso:
+              typeof indicator.peso === "number"
+                ? indicator.peso >= 5
+                  ? "Alto"
+                  : indicator.peso >= 3
+                    ? "Medio"
+                    : "Bajo"
+                : indicator.peso,
+          })),
+        }}
+      />
     </Box>
   )
 }

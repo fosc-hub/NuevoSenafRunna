@@ -2,6 +2,17 @@
 
 import { Box, Button } from "@mui/material"
 import { toast } from "react-toastify"
+import dynamic from "next/dynamic"
+
+// Dynamic import para evitar errores SSR con Next.js
+const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
+  ssr: false,
+  loading: () => (
+    <Button variant="contained" color="primary" disabled>
+      Cargando PDF...
+    </Button>
+  ),
+})
 
 interface ActionButtonsProps {
   generatePDF: (data: any) => Promise<void>
@@ -16,15 +27,17 @@ export default function ActionButtons({ generatePDF, data }: ActionButtonsProps)
     })
   }
 
-  const handleGeneratePDF = () => {
-    generatePDF(data)
+  // Preparar los datos combinados para el PDF
+  const combinedData = {
+    ...data,
+    // Asegurarse de que todos los datos necesarios estén disponibles
+    // Esto se puede expandir según sea necesario
   }
 
   return (
     <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2, flexWrap: "wrap" }}>
-      <Button variant="contained" color="primary" onClick={handleGeneratePDF}>
-        Generar PDF
-      </Button>
+      <DownloadPDFButton data={combinedData} />
+
       <Button variant="contained" color="secondary" onClick={() => handleAuthorizationAction("autorizar archivar")}>
         Autorizar archivar
       </Button>

@@ -16,8 +16,7 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material"
-import { Person, PersonOutline, Delete } from "@mui/icons-material"
-import { get, create, update } from "@/app/api/apiService"
+import { get, create } from "@/app/api/apiService"
 import { toast } from "react-toastify"
 
 // Function to get the current user's ID
@@ -56,6 +55,7 @@ interface DemandaZona {
   recibido_por: User | null
   esta_activo: boolean
   comentarios: string
+  objetivo?: string
 }
 
 const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId }) => {
@@ -73,6 +73,31 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       timestamp: string
     }>
   >([])
+  const [objetivo, setObjetivo] = useState<string>("peticion_informe")
+  const [selectedUser, setSelectedUser] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Obtener la última demanda zona activa
+  const lastActiveDemandaZona = useMemo(() => {
+    // Filtrar las demandas activas y ordenarlas por ID (asumiendo que IDs más altos son más recientes)
+    const activeDemandas = demandaZonas.filter((dz) => dz.esta_activo).sort((a, b) => b.id - a.id)
+
+    return activeDemandas.length > 0 ? activeDemandas[0] : null
+  }, [demandaZonas])
+
+  // Actualizar los campos del formulario cuando cambia la última demanda activa
+  useEffect(() => {
+    if (lastActiveDemandaZona) {
+      setSelectedZona(lastActiveDemandaZona.zona.id)
+      setSelectedUser(lastActiveDemandaZona.user_responsable?.id || null)
+      setObjetivo(lastActiveDemandaZona.objetivo || "peticion_informe")
+    } else {
+      // Si no hay demanda activa, resetear los campos
+      setSelectedZona(null)
+      setSelectedUser(null)
+      setObjetivo("peticion_informe")
+    }
+  }, [lastActiveDemandaZona])
 
   useEffect(() => {
     if (open && demandaId) {
@@ -82,24 +107,30 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   }, [open, demandaId])
 
   useEffect(() => {
-    if (value === 2 && demandaId) {
+    if (value === 1 && demandaId) {
       fetchAuditHistory()
     }
   }, [value, demandaId])
 
   const fetchData = async () => {
+    if (!demandaId) return
+
+    setIsLoading(true)
     try {
       const response = await get<{
         zonas: Zona[]
         demanda_zonas: DemandaZona[]
         users: User[]
       }>(`gestion-demanda-zona/${demandaId}/`)
+
       setZonas(response.zonas)
       setDemandaZonas(response.demanda_zonas)
       setUsers(response.users)
     } catch (error) {
       console.error("Error fetching data:", error)
       toast.error("Error al cargar los datos")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -129,6 +160,19 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       return
     }
 
+    // Verificar si hay cambios comparando con la demanda activa actual
+    const hasChanges =
+      !lastActiveDemandaZona ||
+      lastActiveDemandaZona.zona.id !== selectedZona ||
+      (lastActiveDemandaZona.user_responsable?.id || null) !== selectedUser ||
+      (lastActiveDemandaZona.objetivo || "peticion_informe") !== objetivo
+
+    if (!hasChanges && comentarios.trim() === "") {
+      toast.info("No se detectaron cambios para asignar")
+      return
+    }
+
+    setIsLoading(true)
     try {
       await create(
         "demanda-zona",
@@ -140,51 +184,24 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           enviado_por: getCurrentUserId(),
           recibido_por: null,
           zona: selectedZona,
-          user_responsable: null,
+          user_responsable: selectedUser,
           demanda: demandaId,
+          objetivo: objetivo,
         },
         true,
         "Demanda asignada exitosamente",
       )
 
-      fetchData()
-      setSelectedZona(null)
+      // Recargar los datos para obtener la última asignación
+      await fetchData()
       setComentarios("")
     } catch (error) {
       console.error("Error assigning demanda:", error)
       toast.error("Error al asignar la demanda")
+    } finally {
+      setIsLoading(false)
     }
   }
-
-  const handleChangeResponsable = async (demandaZonaId: number, userId: number | null) => {
-    try {
-      await update("demanda-zona", demandaZonaId, {
-        user_responsable: userId,
-      })
-      toast.success("Usuario responsable actualizado exitosamente")
-      fetchData()
-    } catch (error) {
-      console.error("Error updating user responsable:", error)
-      toast.error("Error al actualizar el usuario responsable")
-    }
-  }
-
-  const handleDeleteDemandaZona = async (demandaZonaId: number) => {
-    if (window.confirm("¿Está seguro que desea eliminar esta asignación?")) {
-      try {
-        await update("demanda-zona", demandaZonaId, {
-          esta_activo: false,
-        })
-        toast.success("Asignación eliminada exitosamente")
-        fetchData()
-      } catch (error) {
-        console.error("Error deleting demanda zona:", error)
-        toast.error("Error al eliminar la asignación")
-      }
-    }
-  }
-
-  const activeDemandaZonas = useMemo(() => demandaZonas.filter((dz) => dz.esta_activo), [demandaZonas])
 
   const filteredUsersByZona = useMemo(() => {
     return (zonaId: number) => {
@@ -254,8 +271,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
             size="small"
           >
             <Tab label="Asignar" {...a11yProps(0)} />
-            <Tab label="Ver asignados" {...a11yProps(1)} />
-            <Tab label="Historia" {...a11yProps(2)} />
+            <Tab label="Historia" {...a11yProps(1)} />
           </Tabs>
         </Box>
         <TabPanel value={value} index={0}>
@@ -267,14 +283,58 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
               options={zonas}
               getOptionLabel={(option) => option.nombre}
               value={zonas.find((zona) => zona.id === selectedZona) || null}
-              onChange={(_, newValue) => setSelectedZona(newValue ? newValue.id : null)}
+              onChange={(_, newValue) => {
+                setSelectedZona(newValue ? newValue.id : null)
+                setSelectedUser(null) // Reset user selection when zone changes
+              }}
               renderInput={(params) => <TextField {...params} label="Zona" size="small" />}
               PopperProps={{
                 style: { width: "auto", maxWidth: "300px" },
               }}
               size="small"
+              disabled={isLoading}
             />
           </FormControl>
+
+          {selectedZona && (
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <Autocomplete
+                options={filteredUsersByZona(selectedZona)}
+                getOptionLabel={(option) => option.username}
+                value={users.find((user) => user.id === selectedUser) || null}
+                onChange={(_, newValue) => setSelectedUser(newValue ? newValue.id : null)}
+                renderInput={(params) => <TextField {...params} label="Usuario responsable" size="small" />}
+                PopperProps={{
+                  style: { width: "auto", maxWidth: "300px" },
+                }}
+                size="small"
+                disabled={isLoading}
+              />
+            </FormControl>
+          )}
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <Autocomplete
+              options={[
+                { value: "peticion_informe", label: "Petición de informe" },
+                { value: "proteccion", label: "Protección" },
+              ]}
+              getOptionLabel={(option) => option.label}
+              value={
+                objetivo === "peticion_informe"
+                  ? { value: "peticion_informe", label: "Petición de informe" }
+                  : { value: "proteccion", label: "Protección" }
+              }
+              onChange={(_, newValue) => setObjetivo(newValue ? newValue.value : "peticion_informe")}
+              renderInput={(params) => <TextField {...params} label="Objetivo de la demanda" size="small" />}
+              PopperProps={{
+                style: { width: "auto", maxWidth: "300px" },
+              }}
+              size="small"
+              disabled={isLoading}
+            />
+          </FormControl>
+
           <TextField
             fullWidth
             multiline
@@ -285,102 +345,21 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
             onChange={handleComentariosChange}
             sx={{ mb: 2 }}
             size="small"
+            disabled={isLoading}
           />
-          <Button variant="contained" color="primary" onClick={handleAsignar} size="small">
-            Asignar
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAsignar}
+            size="small"
+            sx={{ mt: 2 }}
+            disabled={isLoading}
+          >
+            {isLoading ? "Asignando..." : "Asignar"}
           </Button>
         </TabPanel>
         <TabPanel value={value} index={1}>
-          <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-            Usuarios asignados a esta demanda (Derivaciones activas)
-          </Typography>
-          {activeDemandaZonas.length > 0 ? (
-            <List>
-              {activeDemandaZonas.map((demandaZona) => (
-                <ListItem
-                  key={demandaZona.id}
-                  sx={{
-                    display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    py: 2,
-                    "& .MuiListItemSecondaryAction-root": {
-                      position: "static",
-                      transform: "none",
-                      marginTop: { xs: 2, sm: 0 },
-                    },
-                  }}
-                >
-                  <ListItemText
-                    primary={`Zona: ${demandaZona.zona.nombre}`}
-                    secondary={
-                      <>
-                        <Typography component="span" variant="body2" sx={{ color: "text.primary", fontWeight: 500 }}>
-                          Enviado por: {demandaZona.enviado_por?.username || "No especificado"}
-                        </Typography>
-                        <br />
-                        <Typography component="span" variant="body2" sx={{ color: "text.primary", fontWeight: 500 }}>
-                          Recibido por: {demandaZona.recibido_por?.username || "No recibido"}
-                        </Typography>
-                      </>
-                    }
-                    primaryTypographyProps={{
-                      sx: { color: "text.primary", fontWeight: 600 },
-                    }}
-                    sx={{ flex: 1, mr: { xs: 0, sm: 2 } }}
-                  />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: { xs: "100%", sm: "auto" },
-                    }}
-                  >
-                    <Autocomplete
-                      options={[{ id: "", username: "Ninguno" }, ...filteredUsersByZona(demandaZona.zona.id)]}
-                      getOptionLabel={(option) => option.username}
-                      value={
-                        demandaZona.user_responsable
-                          ? users.find((user) => user.id === demandaZona.user_responsable?.id) || null
-                          : { id: "", username: "Ninguno" }
-                      }
-                      onChange={(_, newValue) =>
-                        handleChangeResponsable(
-                          demandaZona.id,
-                          newValue && newValue.id !== "" ? Number(newValue.id) : null,
-                        )
-                      }
-                      renderOption={(props, option) => (
-                        <li {...props}>
-                          {option.id === demandaZona.user_responsable?.id ? (
-                            <Person sx={{ mr: 1, color: "primary.main" }} />
-                          ) : (
-                            <PersonOutline sx={{ mr: 1 }} />
-                          )}
-                          {option.username}
-                        </li>
-                      )}
-                      sx={{ mr: 1, minWidth: 200 }}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
-                      size="small"
-                      renderInput={(params) => <TextField {...params} label="Usuario responsable" size="small" />}
-                    />
-                    <Button onClick={() => handleDeleteDemandaZona(demandaZona.id)} color="error" size="small">
-                      <Delete />
-                    </Button>
-                  </Box>
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Typography variant="body1" color="text.secondary">
-              No hay derivaciones activas para esta demanda.
-            </Typography>
-          )}
-        </TabPanel>
-        <TabPanel value={value} index={2}>
           <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
             Historial de derivaciones para esta demanda
           </Typography>
@@ -421,6 +400,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
               fontWeight: 500,
               px: 4,
             }}
+            disabled={isLoading}
           >
             Cerrar
           </Button>

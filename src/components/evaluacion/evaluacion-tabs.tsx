@@ -1,8 +1,20 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { Box, Tabs, Tab } from "@mui/material"
+import { useState, useEffect, useRef } from "react"
+import {
+  Box,
+  Tabs,
+  Tab,
+  Paper,
+  Typography,
+  TextField,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Divider,
+} from "@mui/material"
+import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import { useSearchParams } from "next/navigation"
 import TabPanel from "./tab-panel"
@@ -18,6 +30,7 @@ import AntecedentesDemanda from "./tabs/antecedentes-demanda"
 import MotivosActuacion from "./tabs/motivos-actuacion"
 import DecisionBox from "./decision-box"
 import ActionButtons from "./action-buttons"
+import FileManagement, { type FileManagementHandle } from "./file-management"
 
 // Define tab structure for dynamic rendering
 const TABS = [
@@ -50,20 +63,19 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     })),
   )
 
-  // Get demandaId from URL query parameter
-  useEffect(() => {
-    const id = searchParams.get("id")
-    if (id) {
-      setDemandaId(Number.parseInt(id))
-    }
-  }, [searchParams])
-
   // State for editable data
   const [actividades, setActividades] = useState(data.Actividades || [])
   const [nnyaConvivientes, setNnyaConvivientes] = useState(data.NNYAConvivientes || [])
   const [nnyaNoConvivientes, setNnyaNoConvivientes] = useState(data.NNYANoConvivientes || [])
   const [adultosConvivientes, setAdultosConvivientes] = useState(data.AdultosConvivientes || [])
   const [adultosNoConvivientes, setAdultosNoConvivientes] = useState(data.AdultosNoConvivientes || [])
+  const [valoracionProfesional, setValoracionProfesional] = useState("")
+  const [justificacionTecnico, setJustificacionTecnico] = useState("")
+  const [justificacionDirector, setJustificacionDirector] = useState("")
+  const [expandedJustificaciones, setExpandedJustificaciones] = useState(true)
+
+  // Reference to the file management component
+  const fileManagementRef = useRef<FileManagementHandle>(null)
 
   // Convert antecedentes to array if it's not already
   const initialAntecedentes = Array.isArray(data.AntecedentesDemanda)
@@ -77,6 +89,14 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
 
   const [descripcionSituacion, setDescripcionSituacion] = useState(data.DescripcionSituacion || "")
 
+  // Get demandaId from URL query parameter
+  useEffect(() => {
+    const id = searchParams.get("id")
+    if (id) {
+      setDemandaId(Number.parseInt(id))
+    }
+  }, [searchParams])
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
   }
@@ -87,47 +107,69 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     )
   }
 
-  const generatePDF = async (originalData: any) => {
+  // Function to collect all updated data
+  const collectUpdatedData = () => {
+    return {
+      ...data,
+      Actividades: actividades,
+      NNYAConvivientes: nnyaConvivientes,
+      NNYANoConvivientes: nnyaNoConvivientes,
+      AdultosConvivientes: adultosConvivientes,
+      AdultosNoConvivientes: adultosNoConvivientes,
+      AntecedentesDemanda: antecedentes,
+      MotivosActuacion: motivos,
+      DescripcionSituacion: descripcionSituacion,
+      ValoracionProfesional: valoracionProfesional,
+      // Note: justificacionTecnico and justificacionDirector are intentionally not included in the PDF
+      IndicadoresEvaluacion: vulnerabilityIndicators.map((indicator) => ({
+        NombreIndicador: indicator.nombre,
+        Descripcion: indicator.descripcion,
+        Peso:
+          typeof indicator.peso === "number"
+            ? indicator.peso >= 5
+              ? "Alto"
+              : indicator.peso >= 3
+                ? "Medio"
+                : "Bajo"
+            : indicator.peso,
+      })),
+    }
+  }
+
+  const handleSaveData = async () => {
     try {
-      // Combine all updated data
-      const updatedData = {
-        ...originalData,
-        Actividades: actividades,
-        NNYAConvivientes: nnyaConvivientes,
-        NNYANoConvivientes: nnyaNoConvivientes,
-        AdultosConvivientes: adultosConvivientes,
-        AdultosNoConvivientes: adultosNoConvivientes,
-        AntecedentesDemanda: antecedentes,
-        MotivosActuacion: motivos,
-        DescripcionSituacion: descripcionSituacion,
-        IndicadoresEvaluacion: vulnerabilityIndicators.map((indicator) => ({
-          NombreIndicador: indicator.nombre,
-          Descripcion: indicator.descripcion,
-          Peso:
-            typeof indicator.peso === "number"
-              ? indicator.peso >= 5
-                ? "Alto"
-                : indicator.peso >= 3
-                  ? "Medio"
-                  : "Bajo"
-              : indicator.peso,
-        })),
-      }
+      const updatedData = collectUpdatedData()
 
-      console.log("Generating PDF with data:", updatedData)
-      toast.success("Generando PDF...", {
+      // In a real application, you would make an API call here to save the data
+      // For example:
+      // await apiService.updateDemanda(demandaId, updatedData);
+
+      console.log("Saving data:", {
+        ...updatedData,
+        JustificacionTecnico: justificacionTecnico,
+        JustificacionDirector: justificacionDirector,
+      })
+
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      toast.success("Datos guardados exitosamente", {
         position: "top-center",
         autoClose: 3000,
       })
-
-      return updatedData
     } catch (error) {
-      console.error("Error generating PDF:", error)
-      toast.error("Error al generar el PDF", {
+      console.error("Error saving data:", error)
+      toast.error("Error al guardar los datos", {
         position: "top-center",
         autoClose: 3000,
       })
-      throw error
+    }
+  }
+
+  const handlePDFGenerated = (blob: Blob, fileName: string) => {
+    // Add the generated PDF to the file management component
+    if (fileManagementRef.current) {
+      fileManagementRef.current.addGeneratedPDF(blob, fileName)
     }
   }
 
@@ -213,31 +255,93 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         demandaId={demandaId}
       />
 
+      {/* Valoración Profesional Final */}
+      <Box sx={{ mt: 4, mb: 2 }}>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+            VALORACIÓN PROFESIONAL FINAL
+          </Typography>
+          <TextField
+            value={valoracionProfesional}
+            onChange={(e) => setValoracionProfesional(e.target.value)}
+            multiline
+            rows={4}
+            fullWidth
+            variant="outlined"
+            placeholder="Ingrese su valoración profesional final"
+          />
+        </Paper>
+      </Box>
+
+      {/* Justificaciones - Accordion for better UX */}
+      <Accordion
+        expanded={expandedJustificaciones}
+        onChange={() => setExpandedJustificaciones(!expandedJustificaciones)}
+        sx={{ mt: 4, mb: 2, boxShadow: "none", border: "1px solid rgba(0, 0, 0, 0.12)" }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="justificaciones-content"
+          id="justificaciones-header"
+          sx={{
+            backgroundColor: "rgba(14, 165, 233, 0.08)",
+            "&:hover": {
+              backgroundColor: "rgba(14, 165, 233, 0.12)",
+            },
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+            JUSTIFICACIONES INTERNAS
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ p: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Justificación del Técnico
+            </Typography>
+            <TextField
+              value={justificacionTecnico}
+              onChange={(e) => setJustificacionTecnico(e.target.value)}
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+              placeholder="Ingrese la justificación técnica (no aparecerá en el informe)"
+              sx={{ mb: 3 }}
+            />
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Justificación del Director
+            </Typography>
+            <TextField
+              value={justificacionDirector}
+              onChange={(e) => setJustificacionDirector(e.target.value)}
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+              placeholder="Ingrese la justificación del director (no aparecerá en el informe)"
+            />
+
+            <Box sx={{ mt: 2, display: "flex", alignItems: "center" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                Nota: Estas justificaciones son para uso interno y no se incluirán en el informe PDF.
+              </Typography>
+            </Box>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* File Management Section */}
+      <FileManagement ref={fileManagementRef} demandaId={demandaId} />
+
       <ActionButtons
-        generatePDF={generatePDF}
-        data={{
-          ...data,
-          Actividades: actividades,
-          NNYAConvivientes: nnyaConvivientes,
-          NNYANoConvivientes: nnyaNoConvivientes,
-          AdultosConvivientes: adultosConvivientes,
-          AdultosNoConvivientes: adultosNoConvivientes,
-          AntecedentesDemanda: antecedentes,
-          MotivosActuacion: motivos,
-          DescripcionSituacion: descripcionSituacion,
-          IndicadoresEvaluacion: vulnerabilityIndicators.map((indicator) => ({
-            NombreIndicador: indicator.nombre,
-            Descripcion: indicator.descripcion,
-            Peso:
-              typeof indicator.peso === "number"
-                ? indicator.peso >= 5
-                  ? "Alto"
-                  : indicator.peso >= 3
-                    ? "Medio"
-                    : "Bajo"
-                : indicator.peso,
-          })),
-        }}
+        generatePDF={() => Promise.resolve(collectUpdatedData())}
+        data={collectUpdatedData()}
+        onSave={handleSaveData}
+        onPDFGenerated={handlePDFGenerated}
       />
     </Box>
   )

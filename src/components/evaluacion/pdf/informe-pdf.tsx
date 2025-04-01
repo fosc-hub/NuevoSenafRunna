@@ -259,9 +259,8 @@ const InformePDF = ({ data }: InformePDFProps) => (
       <View style={styles.section}>
         <Text style={styles.subtitle}>F. Valoración Profesional/ Conclusiones.</Text>
         <Text style={styles.text}>
-          Dado el análisis de la situación y los indicadores de vulneración identificados, se recomienda APERTURA DE
-          LEGAJO para realizar un seguimiento adecuado del caso y garantizar la protección de los derechos de los NNyA
-          involucrados.
+          {data.ValoracionProfesional ||
+            null}
         </Text>
       </View>
 

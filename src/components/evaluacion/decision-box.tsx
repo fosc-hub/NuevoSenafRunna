@@ -26,6 +26,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
   const [indicators, setIndicators] = useState<Indicador[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [showDecision, setShowDecision] = useState(false)
 
   // Fetch indicators from API
   useEffect(() => {
@@ -73,6 +74,9 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
 
       // Submit evaluations - toast will be shown by the service
       await createEvaluaciones(demandaId, indicadoresData)
+
+      // Show decision after successful submission
+      setShowDecision(true)
     } catch (error) {
       console.error("Error submitting evaluations:", error)
       toast.error("Error al enviar la valoración")
@@ -82,36 +86,15 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
   }
 
   return (
-    <Box sx={{ mt: 4, mb: 2 }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-          DECISIÓN SUGERIDA
-        </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", minWidth: 120 }}>
-              Decisión:
-            </Typography>
-            <Typography variant="body1" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-              APERTURA DE LEGAJO
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              Motivo:
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 1 }}>
-              Dado el alto score del nnya (433.0), y el alto score de la demanda (73.0), la decision sugerida es
-              APERTURA DE LEGAJO.
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mt: 2 }}>
+    <>
+      <Box sx={{ mt: 4, mb: 2 }}>
+        <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {/* Vulnerability Indicators - Left Side */}
             <Box sx={{ flex: "1 1 55%", minWidth: 400 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                  Indicadores de Vulneración:
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+                  INDICADORES DE VULNERACIÓN
                 </Typography>
                 <Button
                   variant="contained"
@@ -180,77 +163,67 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
               </Paper>
             </Box>
 
-            {/* Scores - Right Side */}
+            {/* NNyA Scores - Right Side */}
             <Box sx={{ flex: "1 1 40%", minWidth: 300 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2 }}>
-                Scores:
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9", mb: 2 }}>
+                SCORES NNyA
               </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
-                    Demanda Scores:
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
-                          <TableCell align="right">73</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
-                          <TableCell align="right">0</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
-                          <TableCell align="right">67</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
-                          <TableCell align="right">0</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score indicadores valoración</TableCell>
-                          <TableCell align="right">6</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
-                    NNyA Scores:
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
-                          <TableCell align="right">433</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
-                          <TableCell align="right">0</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
-                          <TableCell align="right">433</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
-                          <TableCell align="right">-</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-              </Box>
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableBody>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
+                      <TableCell align="right">433</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
+                      <TableCell align="right">0</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
+                      <TableCell align="right">433</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
+                      <TableCell align="right">-</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
           </Box>
+        </Paper>
+      </Box>
+
+      {/* Decisión Sugerida - Only shown after clicking "Valorar" */}
+      {showDecision && (
+        <Box sx={{ mt: 4, mb: 2 }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+              DECISIÓN SUGERIDA
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold", minWidth: 120 }}>
+                  Decisión:
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+                  APERTURA DE LEGAJO
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                  Motivo:
+                </Typography>
+                <Typography variant="body1" sx={{ mt: 1 }}>
+                  Dado el alto score del nnya (433.0), la decision sugerida es APERTURA DE LEGAJO.
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
         </Box>
-      </Paper>
-    </Box>
+      )}
+    </>
   )
 }
 

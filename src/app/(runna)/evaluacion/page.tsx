@@ -1,10 +1,14 @@
-import { Suspense } from "react"
-import EvaluacionContent from "./evaluacion-content"
+"use client"
+import { evaluacionData } from "@/components/evaluacion/data/evaluacion-data"
+import EvaluacionTabs from "@/components/evaluacion/evaluacion-tabs"
+import Header from "../mesadeentrada/ui/Header"
 
 export default function EvaluacionPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <EvaluacionContent />
-    </Suspense>
+    <><Header /><main className="max-w-[1200px] mx-auto p-5">
+
+      <EvaluacionTabs data={evaluacionData} />
+    </main></>
   )
 }
+

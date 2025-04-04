@@ -5,7 +5,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
-import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive, Scale, Shield } from "lucide-react"
+import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
 
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
@@ -17,7 +17,7 @@ interface FilterState {
     | "ARCHIVADA"
     | "ADMITIDA"
     | null
-  tipo_demanda: "DE_PROTECCION" | "PENAL_JUVENIL" | null
+  objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null
 }
 
 interface ButtonsProps {
@@ -31,7 +31,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
   const [filterState, setFilterState] = useState<FilterState>({
     envio_de_respuesta: null,
     estado_demanda: null,
-    tipo_demanda: null,
+    objetivo_de_demanda: null,
   })
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -56,7 +56,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
     const newState = {
       envio_de_respuesta: null,
       estado_demanda: null,
-      tipo_demanda: null,
+      objetivo_demanda: null,
     }
     setFilterState(newState)
     onFilterChange(newState)
@@ -255,35 +255,35 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                   {filterState.estado_demanda === "ADMITIDA" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
-                {/* Tipo Demanda Section */}
+                {/* Objetivo Demanda Section */}
                 <ListItem sx={{ py: 1.5, px: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Tipo Demanda
+                    Objetivo Demanda
                   </Typography>
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("tipo_demanda", "DE_PROTECCION")}
+                  onClick={() => handleFilterChange("objetivo_de_demanda", "CONSTATACION")}
                   sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <Shield className="h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="De Protección" />
-                  {filterState.tipo_demanda === "DE_PROTECCION" && <Check className="h-4 w-4 text-primary" />}
+                  <ListItemText primary="Constatación" />
+                  {filterState.objetivo_demanda === "CONSTATACION" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
                 <ListItem
                   button
-                  onClick={() => handleFilterChange("tipo_demanda", "PENAL_JUVENIL")}
+                  onClick={() => handleFilterChange("objetivo_de_demanda", "PETICION_DE_INFORME")}
                   sx={{ py: 1, px: 2 }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <Scale className="h-4 w-4" />
+                    <Mail className="h-4 w-4" />
                   </ListItemIcon>
-                  <ListItemText primary="Penal Juvenil" />
-                  {filterState.tipo_demanda === "PENAL_JUVENIL" && <Check className="h-4 w-4 text-primary" />}
+                  <ListItemText primary="Petición de Informe" />
+                  {filterState.objetivo_de_demanda === "PETICION_DE_INFORME" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
               </List>
             </Box>

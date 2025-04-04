@@ -55,7 +55,7 @@ const DemandaTable: React.FC = () => {
   const [apiFilters, setApiFilters] = useState({
     envio_de_respuesta: null,
     estado_demanda: null,
-    tipo_demanda: null,
+    objetivo_de_demanda: null,
   })
 
   const fetchDemandas = async (pageNumber: number, pageSize: number) => {
@@ -74,8 +74,8 @@ const DemandaTable: React.FC = () => {
       if (apiFilters.estado_demanda) {
         params.append("estado_demanda", apiFilters.estado_demanda)
       }
-      if (apiFilters.tipo_demanda) {
-        params.append("tipo_demanda", apiFilters.tipo_demanda)
+      if (apiFilters.objetivo_de_demanda) {
+        params.append("objetivo_de_demanda", apiFilters.objetivo_de_demanda)
       }
 
       const response = await get<TDemandaPaginated>(`mesa-de-entrada/?${params.toString()}`)

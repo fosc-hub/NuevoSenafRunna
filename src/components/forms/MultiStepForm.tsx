@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
-import { Box, Button, Stepper, Step, StepLabel, CircularProgress, Alert } from "@mui/material"
+import { Box, Button, Stepper, Step, StepLabel, CircularProgress, Alert, Skeleton } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -24,6 +24,22 @@ interface MultiStepFormProps {
   onSubmit: (data: FormData) => void
   id?: string
   form?: string
+}
+
+const FormSkeleton = () => {
+  return (
+    <Box sx={{ width: "100%" }}>
+      <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
+        <Skeleton variant="rectangular" width={100} height={40} />
+        <Skeleton variant="rectangular" width={100} height={40} />
+      </Box>
+    </Box>
+  )
 }
 
 const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit, id, form }) => {
@@ -145,14 +161,43 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
       // Add a style tag to the document head
       const style = document.createElement("style")
       style.innerHTML = `
-      .read-only-form input, 
-      .read-only-form select, 
-      .read-only-form textarea {
-        color: gray !important;
-        font-weight: normal !important;
-        opacity: 0.8 !important;
-      }
-    `
+        .read-only-form input, 
+        .read-only-form select, 
+        .read-only-form textarea {
+          color: gray !important;
+          font-weight: normal !important;
+          opacity: 0.8 !important;
+        }
+        
+        /* Fix for checkboxes and switches */
+        .read-only-form .MuiCheckbox-root,
+        .read-only-form .MuiSwitch-root {
+          background-color: transparent !important;
+        }
+        
+        .read-only-form .MuiCheckbox-root .MuiSvgIcon-root,
+        .read-only-form .MuiSwitch-thumb {
+          opacity: 0.7 !important;
+        }
+        
+        .read-only-form .MuiSwitch-track {
+          opacity: 0.3 !important;
+        }
+        
+        /* Remove the gray box around checkboxes */
+        .read-only-form .MuiCheckbox-root {
+          padding: 9px;
+        }
+        
+        .read-only-form .MuiFormControlLabel-root {
+          background-color: transparent !important;
+        }
+        
+        /* Fix for the checkbox container */
+        .read-only-form .MuiFormControlLabel-root .MuiBox-root {
+          background-color: transparent !important;
+        }
+      `
       document.head.appendChild(style)
 
       // Clean up when component unmounts
@@ -163,25 +208,11 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
   }, [isReadOnly])
 
   if (isDropdownLoading) return <CircularProgress />
-  if (isDropdownError) return <div>Error al cargar los datos del formulario</div>
+  if (isDropdownError) return <FormSkeleton />
 
   return (
     <FormProvider {...methods}>
-      <form
-        onSubmit={handleFormSubmit}
-        className={isReadOnly ? "read-only-form" : ""}
-        style={
-          isReadOnly
-            ? {
-                "& input, & select, & textarea": {
-                  color: "gray !important",
-                  fontWeight: "normal !important",
-                  opacity: "0.8 !important",
-                },
-              }
-            : {}
-        }
-      >
+      <form onSubmit={handleFormSubmit} className={isReadOnly ? "read-only-form" : ""}>
         <Stepper activeStep={activeStep} alternativeLabel>
           {steps.map((label) => (
             <Step key={label}>

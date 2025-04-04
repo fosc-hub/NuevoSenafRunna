@@ -94,7 +94,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
             <Box sx={{ flex: "1 1 55%", minWidth: 400 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-                  INDICADORES DE VULNERACIÓN
+                  INDICADORES DE VALORACIÓN
                 </Typography>
                 <Button
                   variant="contained"

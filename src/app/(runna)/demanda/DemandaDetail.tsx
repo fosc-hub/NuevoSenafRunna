@@ -19,10 +19,11 @@ interface TabPanelProps {
   children?: React.ReactNode
   index: number
   value: number
+  disabled?: boolean
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props
+  const { children, value, index, disabled = false, ...other } = props
 
   return (
     <div
@@ -32,7 +33,9 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`demanda-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: 3, opacity: disabled ? 0.7 : 1, pointerEvents: disabled ? "none" : "auto" }}>{children}</Box>
+      )}
     </div>
   )
 }
@@ -79,7 +82,29 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
     loadCaseData()
   }, [params.id])
 
+  const isEvaluacionDisabled = formData?.estado_demanda === "EVALUACION"
+
+  const isPeticionDeInforme = formData?.objetivo_de_demanda === "PETICION_DE_INFORME"
+
+  // If it's a petition for report, force tab value to be 1 (Enviar Respuesta)
+  // Remove this useEffect that forces the tab value to be 1
+  // useEffect(() => {
+  //   if (isPeticionDeInforme && tabValue !== 1) {
+  //     setTabValue(1)
+  //   }
+  // }, [isPeticionDeInforme, tabValue])
+
+  // Replace with this useEffect that only sets the initial tab value
+  useEffect(() => {
+    // Only set the initial tab value when the component first loads
+    if (isPeticionDeInforme && !isLoading && formData) {
+      setTabValue(1)
+    }
+  }, [isPeticionDeInforme, isLoading, formData])
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    // Allow changing to any tab, but the form in the Details tab will be read-only
+    // if it's a petition for report
     setTabValue(newValue)
   }
 
@@ -90,14 +115,14 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   const handleEnviarEvaluacion = async () => {
     if (!params.id) return
-  
+
     setIsSubmitting(true)
     try {
       // Se crea un nuevo FormData y se agrega la clave "data"
       // con el objeto JSON que contiene el estado de la demanda
       const formDataToSend = new FormData()
       formDataToSend.append("data", JSON.stringify({ estado_demanda: "EVALUACION" }))
-  
+
       const updatedData = await update(
         "registro-demanda-form",
         Number.parseInt(params.id),
@@ -105,7 +130,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
         true,
         "Demanda enviada a evaluación exitosamente",
       )
-  
+
       // Actualiza el estado local para reflejar el cambio
       if (formData) {
         setFormData({
@@ -120,7 +145,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
       setIsSubmitting(false)
     }
   }
-  
+
   const handleOpenInFullPage = () => {
     router.push(`/demanda/${params.id}`)
   }
@@ -140,8 +165,6 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
       </Alert>
     )
   }
-
-  const isEvaluacionDisabled = formData?.estado_demanda === "EVALUACION"
 
   return (
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
@@ -182,7 +205,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             severity="warning"
             sx={{
               mb: 3,
-              backgroundColor: "warning.lighter",
+              backgroundColor: "warning.light",
               "& .MuiAlert-message": {
                 color: "warning.dark",
               },
@@ -212,32 +235,49 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             <Tabs value={tabValue} onChange={handleTabChange} aria-label="demanda tabs" variant="fullWidth">
               <Tab label="Detalles" {...a11yProps(0)} />
               <Tab label="Enviar Respuesta" {...a11yProps(1)} />
-              <Tab label="Registrar Actividad" {...a11yProps(2)} />
-              <Tab label="Conexiones" {...a11yProps(3)} />
+              <Tab
+                label="Registrar Actividad"
+                {...a11yProps(2)}
+                disabled={isPeticionDeInforme}
+                sx={{ opacity: isPeticionDeInforme ? 0.7 : 1 }}
+              />
+              <Tab
+                label="Conexiones"
+                {...a11yProps(3)}
+                disabled={isPeticionDeInforme}
+                sx={{ opacity: isPeticionDeInforme ? 0.7 : 1 }}
+              />
             </Tabs>
           </Box>
 
           <TabPanel value={tabValue} index={0}>
             {formData && (
               <>
-                <MultiStepForm initialData={formData} onSubmit={handleSubmit} readOnly={false} id={params.id} />
-                <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<SendIcon />}
-                    onClick={handleEnviarEvaluacion}
-                    disabled={isSubmitting || isEvaluacionDisabled}
-                    sx={{
-                      backgroundColor: "primary.main",
-                      "&:hover": {
-                        backgroundColor: "primary.dark",
-                      },
-                    }}
-                  >
-                    {isSubmitting ? "Enviando..." : "Enviar a Evaluación"}
-                  </Button>
-                </Box>
+                <MultiStepForm
+                  initialData={formData}
+                  onSubmit={handleSubmit}
+                  readOnly={isPeticionDeInforme}
+                  id={params.id}
+                />
+                {!isPeticionDeInforme && (
+                  <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<SendIcon />}
+                      onClick={handleEnviarEvaluacion}
+                      disabled={isSubmitting || isEvaluacionDisabled}
+                      sx={{
+                        backgroundColor: "primary.main",
+                        "&:hover": {
+                          backgroundColor: "primary.dark",
+                        },
+                      }}
+                    >
+                      {isSubmitting ? "Enviando..." : "Enviar a Evaluación"}
+                    </Button>
+                  </Box>
+                )}
               </>
             )}
           </TabPanel>
@@ -246,11 +286,11 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             <EnviarRespuestaForm demandaId={Number.parseInt(params.id)} />
           </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
+          <TabPanel value={tabValue} index={2} disabled={isPeticionDeInforme}>
             <RegistrarActividadForm demandaId={Number.parseInt(params.id)} />
           </TabPanel>
 
-          <TabPanel value={tabValue} index={3}>
+          <TabPanel value={tabValue} index={3} disabled={isPeticionDeInforme}>
             <ConexionesDemandaTab demandaId={Number.parseInt(params.id)} />
           </TabPanel>
         </Paper>

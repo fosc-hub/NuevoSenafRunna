@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
-import { Box, Button, Stepper, Step, StepLabel, CircularProgress } from "@mui/material"
+import { Box, Button, Stepper, Step, StepLabel, CircularProgress, Alert } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -36,6 +36,12 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
   // Get saved draft if it exists
   const savedDraft = getDraft(formId)
 
+  // Check if this is a petition for report
+  const isPeticionDeInforme = initialData?.objetivo_de_demanda === "PETICION_DE_INFORME"
+
+  // If it's a petition for report, enforce readOnly
+  const isReadOnly = readOnly || isPeticionDeInforme
+
   const methods = useForm<FormData>({
     mode: "onChange",
     defaultValues: {
@@ -52,14 +58,14 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 
   // Save draft when form values change
   useEffect(() => {
-    if (!readOnly) {
+    if (!isReadOnly) {
       const timeoutId = setTimeout(() => {
         saveDraft(formId, formValues)
       }, 1000) // Debounce to avoid saving on every keystroke
 
       return () => clearTimeout(timeoutId)
     }
-  }, [formValues, formId, saveDraft, readOnly])
+  }, [formValues, formId, saveDraft, isReadOnly])
 
   useEffect(() => {
     if (initialData) {
@@ -91,6 +97,12 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
   })
 
   const handleNext = async () => {
+    // If in read-only mode, just navigate without validation
+    if (isReadOnly) {
+      setActiveStep((prevActiveStep) => prevActiveStep + 1)
+      return
+    }
+
     const isValid = await methods.trigger()
     if (isValid) {
       // Save current step data to draft before moving to next step
@@ -101,7 +113,9 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 
   const handleBack = () => {
     // Save current step data to draft before moving to previous step
-    saveDraft(formId, methods.getValues())
+    if (!isReadOnly) {
+      saveDraft(formId, methods.getValues())
+    }
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
@@ -113,7 +127,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
       ninosAdolescentes: data.ninosAdolescentes || [],
       adultosConvivientes: data.adultosConvivientes || [],
     }
-    if (!readOnly) {
+    if (!isReadOnly) {
       mutation.mutate(formDataWithArrays)
     } else {
       onSubmit(formDataWithArrays)
@@ -126,12 +140,48 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
     handleFormSubmit() // Call the form submission handler
   }
 
+  useEffect(() => {
+    if (isReadOnly) {
+      // Add a style tag to the document head
+      const style = document.createElement("style")
+      style.innerHTML = `
+      .read-only-form input, 
+      .read-only-form select, 
+      .read-only-form textarea {
+        color: gray !important;
+        font-weight: normal !important;
+        opacity: 0.8 !important;
+      }
+    `
+      document.head.appendChild(style)
+
+      // Clean up when component unmounts
+      return () => {
+        document.head.removeChild(style)
+      }
+    }
+  }, [isReadOnly])
+
   if (isDropdownLoading) return <CircularProgress />
   if (isDropdownError) return <div>Error al cargar los datos del formulario</div>
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleFormSubmit}>
+      <form
+        onSubmit={handleFormSubmit}
+        className={isReadOnly ? "read-only-form" : ""}
+        style={
+          isReadOnly
+            ? {
+                "& input, & select, & textarea": {
+                  color: "gray !important",
+                  fontWeight: "normal !important",
+                  opacity: "0.8 !important",
+                },
+              }
+            : {}
+        }
+      >
         <Stepper activeStep={activeStep} alternativeLabel>
           {steps.map((label) => (
             <Step key={label}>
@@ -139,31 +189,61 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
             </Step>
           ))}
         </Stepper>
+
+        {isPeticionDeInforme && (
+          <Alert
+            severity="info"
+            sx={{
+              mt: 2,
+              mb: 2,
+              backgroundColor: "info.lighter",
+              "& .MuiAlert-message": {
+                color: "info.dark",
+              },
+            }}
+          >
+            Esta es una petición de informe. La información solo puede ser visualizada, no modificada.
+          </Alert>
+        )}
+
         <Box sx={{ mt: 4, mb: 4 }}>
           {dropdownData && (
             <>
-              {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={readOnly} />}
-              {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={readOnly} />}
+              {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} />}
+              {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} />}
               {activeStep === 2 && (
                 <Step3Form
                   dropdownData={dropdownData}
                   adultosConvivientes={methods.watch("adultosConvivientes") || []}
-                  readOnly={readOnly}
+                  readOnly={isReadOnly}
                 />
               )}
             </>
           )}
         </Box>
-        {!readOnly && (
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-            <Button disabled={activeStep === 0} onClick={handleBack} type="button">
-              Atrás
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+          <Button disabled={activeStep === 0} onClick={handleBack} type="button">
+            Atrás
+          </Button>
+
+          {!isReadOnly && savedDraft && (
+            <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary", fontSize: "0.875rem" }}>
+              Borrador guardado automáticamente
+            </Box>
+          )}
+
+          {isReadOnly ? (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={activeStep === steps.length - 1 ? () => {} : handleNext}
+              type="button"
+              disabled={activeStep === steps.length - 1}
+            >
+              {activeStep === steps.length - 1 ? "Finalizar" : "Siguiente"}
             </Button>
-            {savedDraft && (
-              <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary", fontSize: "0.875rem" }}>
-                Borrador guardado automáticamente
-              </Box>
-            )}
+          ) : (
             <Button
               variant="contained"
               color="primary"
@@ -173,8 +253,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
             >
               {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
             </Button>
-          </Box>
-        )}
+          )}
+        </Box>
       </form>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </FormProvider>

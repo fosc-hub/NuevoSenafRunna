@@ -421,6 +421,42 @@ const DemandaTable: React.FC = () => {
         return <Typography color={color}>{displayText}</Typography>
       },
     },
+    {
+      field: "objetivoDemanda",
+      headerName: "Objetivo de Demanda",
+      width: 180,
+      renderCell: (params) => {
+        const value = params.value as string
+        if (!value || value === "N/A") return <Typography>N/A</Typography>
+
+        // Format the text: replace underscores with spaces and capitalize first letter of each word
+        const formattedText = value
+          .split("_")
+          .join(" ")
+          .toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase())
+
+        return <Typography>{formattedText}</Typography>
+      },
+    },
+    {
+      field: "etiqueta",
+      headerName: "Etiqueta",
+      width: 150,
+      renderCell: (params) => {
+        const value = params.value as string
+        if (!value || value === "N/A") return <Typography>N/A</Typography>
+
+        // Format the text: replace underscores with spaces and capitalize first letter of each word
+        const formattedText = value
+          .split("_")
+          .join(" ")
+          .toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase())
+
+        return <Typography>{formattedText}</Typography>
+      },
+    },
   ]
 
   const rows =
@@ -448,6 +484,8 @@ const DemandaTable: React.FC = () => {
       recibido: demanda.demanda_zona?.recibido || false,
       demanda_zona_id: demanda.demanda_zona_id,
       envioRespuesta: demanda.envio_de_respuesta || "N/A",
+      objetivoDemanda: demanda.objetivo_de_demanda || "N/A",
+      etiqueta: demanda.etiqueta || "N/A",
     })) || []
 
   if (isError) return <Typography color="error">Error al cargar la data</Typography>

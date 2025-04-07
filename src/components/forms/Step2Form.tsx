@@ -42,16 +42,19 @@ interface FormData {
     nombre: string
     apellido: string
     fechaNacimiento: Date | null
+    fechaDefuncion: Date | null // Nueva fecha de defunción
     edadAproximada: string
     dni: string
     situacionDni: string
     genero: string
     conviviente: boolean
+    legalmenteResponsable: boolean // Nuevo campo de legalmente responsable
+    ocupacion: string // Nuevo campo de ocupación
     supuesto_autordv: string
     garantiza_proteccion: boolean
     observaciones: string
     useDefaultLocalizacion: boolean
-    telefono: string // Added phone number field
+    telefono: string
     localizacion?: {
       // Add localizacion fields here
     }
@@ -60,7 +63,6 @@ interface FormData {
     vinculo_demanda: string
     condicionesVulnerabilidad: string[]
     nacionalidad: string
-    vinculo_demanda: string
   }[]
   street: string
   city: string
@@ -90,21 +92,39 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
 
+  // Lista de ocupaciones (ejemplo - ajustar según necesidades reales)
+  const ocupacionesOptions = [
+    { key: "profesional", value: "Profesional" },
+    { key: "tecnico", value: "Técnico" },
+    { key: "administrativo", value: "Administrativo" },
+    { key: "comerciante", value: "Comerciante" },
+    { key: "operario", value: "Operario" },
+    { key: "independiente", value: "Trabajador Independiente" },
+    { key: "jubilado", value: "Jubilado/Pensionado" },
+    { key: "desempleado", value: "Desempleado" },
+    { key: "estudiante", value: "Estudiante" },
+    { key: "ama_casa", value: "Ama/o de Casa" },
+    { key: "otro", value: "Otro" },
+  ]
+
   const addAdultoConviviente = () => {
     append({
       nombre: "",
       apellido: "",
       fechaNacimiento: null,
+      fechaDefuncion: null, // Inicializar fecha de defunción
       edadAproximada: "",
       dni: "",
       situacionDni: "",
       genero: "",
       conviviente: false,
+      legalmenteResponsable: false, // Inicializar legalmente responsable
+      ocupacion: "", // Inicializar ocupación
       supuesto_autordv: "",
       garantiza_proteccion: false,
       observaciones: "",
       useDefaultLocalizacion: true,
-      telefono: "", // Initialize phone number field
+      telefono: "",
       vinculacion: "",
       vinculo_con_nnya_principal: 0,
       vinculo_demanda: "",
@@ -189,6 +209,13 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
               </Box>
               <Collapse in={expandedSections[index]}>
                 <Grid container spacing={2}>
+                  {/* Sección de Información Personal - Reordenada para mejor UX */}
+                  <Grid item xs={12}>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 1, mb: 1 }}>
+                      Información Personal
+                    </Typography>
+                  </Grid>
+
                   <Grid item xs={12} md={6}>
                     <Controller
                       name={`adultosConvivientes.${index}.nombre`}
@@ -225,75 +252,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       )}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Controller
-                      name={`adultosConvivientes.${index}.fechaNacimiento`}
-                      control={control}
-                      render={({ field }) => (
-                        <DatePicker
-                          label="Fecha de Nacimiento"
-                          disabled={readOnly}
-                          value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                          onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              size: "small",
-                            },
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Controller
-                      name={`adultosConvivientes.${index}.nacionalidad`}
-                      control={control}
-                      rules={{ required: "Este campo es obligatorio" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <FormControl fullWidth error={!!error}>
-                          <Autocomplete
-                            disabled={readOnly}
-                            options={dropdownData.nacionalidad_choices || []}
-                            getOptionLabel={(option) => option.value || ""}
-                            value={dropdownData.nacionalidad_choices?.find((item) => item.key === field.value) || null}
-                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label={<RequiredLabel label="Nacionalidad" />}
-                                error={!!error}
-                                helperText={error?.message}
-                                size="small"
-                              />
-                            )}
-                            PopperProps={{
-                              style: { width: "auto", maxWidth: "300px" },
-                            }}
-                            size="small"
-                          />
-                        </FormControl>
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Controller
-                      name={`adultosConvivientes.${index}.edadAproximada`}
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <TextField
-                          {...field}
-                          label="Edad Aproximada"
-                          fullWidth
-                          type="number"
-                          error={!!error}
-                          helperText={error?.message}
-                          InputProps={{ readOnly }}
-                          size="small"
-                        />
-                      )}
-                    />
-                  </Grid>
+
                   <Grid item xs={12} md={6}>
                     <Controller
                       name={`adultosConvivientes.${index}.dni`}
@@ -312,6 +271,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       )}
                     />
                   </Grid>
+
                   {dropdownData && dropdownData.situacion_dni_choices ? (
                     <Grid item xs={12} md={6}>
                       <Controller
@@ -347,6 +307,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       />
                     </Grid>
                   ) : null}
+
                   <Grid item xs={12} md={6}>
                     <Controller
                       name={`adultosConvivientes.${index}.genero`}
@@ -377,6 +338,191 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         </FormControl>
                       )}
                     />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.nacionalidad`}
+                      control={control}
+                      rules={{ required: "Este campo es obligatorio" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <FormControl fullWidth error={!!error}>
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={dropdownData.nacionalidad_choices || []}
+                            getOptionLabel={(option) => option.value || ""}
+                            value={dropdownData.nacionalidad_choices?.find((item) => item.key === field.value) || null}
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label={<RequiredLabel label="Nacionalidad" />}
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
+                        </FormControl>
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Nueva sección de Fechas */}
+                  <Grid item xs={12}>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                      Fechas
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.fechaNacimiento`}
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          label="Fecha de Nacimiento"
+                          disabled={readOnly}
+                          value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                          onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              size: "small",
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.fechaDefuncion`}
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          label="Fecha de Defunción"
+                          disabled={readOnly}
+                          value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                          onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              size: "small",
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.edadAproximada`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <TextField
+                          {...field}
+                          label="Edad Aproximada"
+                          fullWidth
+                          type="number"
+                          error={!!error}
+                          helperText={error?.message}
+                          InputProps={{ readOnly }}
+                          size="small"
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Sección de Ocupación y Responsabilidad */}
+                  <Grid item xs={12}>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                      Ocupación y Responsabilidad
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.ocupacion`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <FormControl fullWidth error={!!error}>
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={ocupacionesOptions || []}
+                            getOptionLabel={(option) => option.value || ""}
+                            value={ocupacionesOptions.find((item) => item.key === field.value) || null}
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Ocupación"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
+                        </FormControl>
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center" }}>
+                      <FormControlLabel
+                        control={
+                          <Controller
+                            name={`adultosConvivientes.${index}.legalmenteResponsable`}
+                            control={control}
+                            render={({ field: { onChange, value } }) => (
+                              <Checkbox
+                                checked={value}
+                                onChange={(e) => onChange(e.target.checked)}
+                                disabled={readOnly}
+                                size="small"
+                              />
+                            )}
+                          />
+                        }
+                        label="Legalmente Responsable"
+                      />
+
+                      <FormControlLabel
+                        control={
+                          <Controller
+                            name={`adultosConvivientes.${index}.conviviente`}
+                            control={control}
+                            render={({ field: { onChange, value } }) => (
+                              <Checkbox
+                                checked={value}
+                                onChange={(e) => onChange(e.target.checked)}
+                                disabled={readOnly}
+                                size="small"
+                              />
+                            )}
+                          />
+                        }
+                        label="Conviviente con el NNYA"
+                      />
+                    </Box>
+                  </Grid>
+
+                  {/* Sección de Vínculos */}
+                  <Grid item xs={12}>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                      Vínculos
+                    </Typography>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
@@ -412,6 +558,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       )}
                     />
                   </Grid>
+
                   <Grid item xs={12} md={6}>
                     <Controller
                       name={`adultosConvivientes.${index}.vinculo_con_nnya_principal`}
@@ -445,81 +592,15 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                         </FormControl>
                       )}
                     />
-                    <FormControlLabel
-                      control={
-                        <Controller
-                          name={`adultosConvivientes.${index}.conviviente`}
-                          control={control}
-                          render={({ field: { onChange, value } }) => (
-                            <Checkbox
-                              checked={value}
-                              onChange={(e) => onChange(e.target.checked)}
-                              disabled={readOnly}
-                              size="small"
-                            />
-                          )}
-                        />
-                      }
-                      label="Conviviente con el NNYA"
-                    />
                   </Grid>
-                  <Grid item xs={12}>
-                    <Controller
-                      name={`adultosConvivientes.${index}.observaciones`}
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <TextField
-                          {...field}
-                          label="Observaciones"
-                          fullWidth
-                          multiline
-                          rows={4}
-                          error={!!error}
-                          helperText={error?.message}
-                          InputProps={{ readOnly }}
-                          size="small"
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControlLabel
-                      control={
-                        <Controller
-                          name={`adultosConvivientes.${index}.useDefaultLocalizacion`}
-                          control={control}
-                          render={({ field: { onChange, value } }) => (
-                            <Switch
-                              checked={value}
-                              onChange={(e) => onChange(e.target.checked)}
-                              disabled={readOnly}
-                              size="small"
-                            />
-                          )}
-                        />
-                      }
-                      label="Usar localización de la demanda"
-                    />
-                  </Grid>
-                  {!watchedField.useDefaultLocalizacion && (
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Localización específica
-                      </Typography>
-                      <LocalizacionFields
-                        control={control}
-                        prefix={`adultosConvivientes.${index}.localizacion`}
-                        dropdownData={dropdownData}
-                        readOnly={readOnly}
-                      />
-                    </Grid>
-                  )}
 
+                  {/* Sección de Contacto */}
                   <Grid item xs={12}>
                     <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                      Datos de Contacto del Adulto
+                      Datos de Contacto
                     </Typography>
                   </Grid>
+
                   <Grid item xs={12} md={6}>
                     <Controller
                       name={`adultosConvivientes.${index}.telefono`}
@@ -539,10 +620,49 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                       )}
                     />
                   </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Controller
+                          name={`adultosConvivientes.${index}.useDefaultLocalizacion`}
+                          control={control}
+                          render={({ field: { onChange, value } }) => (
+                            <Switch
+                              checked={value}
+                              onChange={(e) => onChange(e.target.checked)}
+                              disabled={readOnly}
+                              size="small"
+                            />
+                          )}
+                        />
+                      }
+                      label="Usar localización de la demanda"
+                    />
+                  </Grid>
+
+                  {!watchedField.useDefaultLocalizacion && (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Localización específica
+                      </Typography>
+                      <LocalizacionFields
+                        control={control}
+                        prefix={`adultosConvivientes.${index}.localizacion`}
+                        dropdownData={dropdownData}
+                        readOnly={readOnly}
+                      />
+                    </Grid>
+                  )}
+
+                  {/* Sección de Vulnerabilidad */}
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" gutterBottom>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
                       Condiciones de Vulnerabilidad
                     </Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
                     <Controller
                       name={`adultosConvivientes.${index}.condicionesVulnerabilidad`}
                       control={control}
@@ -603,6 +723,33 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                             )}
                           </Box>
                         </FormControl>
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Sección de Observaciones */}
+                  <Grid item xs={12}>
+                    <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                      Observaciones
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Controller
+                      name={`adultosConvivientes.${index}.observaciones`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <TextField
+                          {...field}
+                          label="Observaciones"
+                          fullWidth
+                          multiline
+                          rows={4}
+                          error={!!error}
+                          helperText={error?.message}
+                          InputProps={{ readOnly }}
+                          size="small"
+                        />
                       )}
                     />
                   </Grid>

@@ -233,6 +233,16 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     queryKey: ["zonas"],
   })
 
+  // Lista de etiquetas (ejemplo - ajustar según necesidades reales)
+  const etiquetasOptions = [
+    { id: "urgente", nombre: "Urgente" },
+    { id: "prioritario", nombre: "Prioritario" },
+    { id: "seguimiento", nombre: "Seguimiento" },
+    { id: "pendiente", nombre: "Pendiente" },
+    { id: "completado", nombre: "Completado" },
+    { id: "revision", nombre: "En Revisión" },
+  ]
+
   if (isLoading) {
     return <CircularProgress />
   }
@@ -248,6 +258,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
       <Grid container spacing={2}>
+        {/* Sección de Información Básica */}
+        <Grid item xs={12}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 1, mb: 1 }}>
+            Información Básica
+          </Typography>
+        </Grid>
+
         <Grid item xs={12} md={6}>
           <Controller
             name="fecha_oficio_documento"
@@ -294,6 +311,82 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
+
+        {/* Sección de Etiqueta y Envío de Respuesta */}
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="etiqueta"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={etiquetasOptions || []}
+                  getOptionLabel={(option) => option.nombre || ""}
+                  value={etiquetasOptions.find((item) => item.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Etiqueta" error={!!error} helperText={error?.message} size="small" />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="envio_de_respuesta"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={[
+                    { id: "si", nombre: "Sí" },
+                    { id: "no", nombre: "No" },
+                    { id: "pendiente", nombre: "Pendiente" },
+                  ]}
+                  getOptionLabel={(option) => option.nombre || ""}
+                  value={
+                    field.value
+                      ? {
+                          id: field.value,
+                          nombre: field.value === "si" ? "Sí" : field.value === "no" ? "No" : "Pendiente",
+                        }
+                      : null
+                  }
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Envío de respuesta"
+                      error={!!error}
+                      helperText={error?.message}
+                      size="small"
+                    />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        {/* Sección de Datos del Remitente */}
+        <Grid item xs={12}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+            Datos del Remitente
+          </Typography>
+        </Grid>
+
         <Grid item xs={12} md={6}>
           <Controller
             name="bloque_datos_remitente"
@@ -381,6 +474,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           />
         </Grid>
 
+        {/* Sección de Códigos de Demanda */}
+        <Grid item xs={12}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+            Códigos de Demanda
+          </Typography>
+        </Grid>
+
         <Grid item xs={12}>
           <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mb: 2 }}>
             {fields.map((field, index) => (
@@ -465,37 +565,15 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             </Button>
           </Box>
         </Grid>
+
+        {/* Sección de Clasificación de la Demanda */}
         <Grid item xs={12}>
-          <Controller
-            name="ambito_vulneracion"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <Autocomplete
-                  disabled={readOnly}
-                  options={dropdownData.ambito_vulneracion || []}
-                  getOptionLabel={(option) => option.nombre || ""}
-                  value={dropdownData.ambito_vulneracion?.find((item) => item.id === field.value) || null}
-                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Ámbito de Vulneración"
-                      error={!!error}
-                      helperText={error?.message}
-                      size="small"
-                    />
-                  )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
-                  size="small"
-                />
-              </FormControl>
-            )}
-          />
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+            Clasificación de la Demanda
+          </Typography>
         </Grid>
-        <Grid item xs={12}>
+
+        <Grid item xs={12} md={6}>
           <Controller
             name="tipo_demanda"
             rules={{ required: "Este campo es obligatorio" }}
@@ -526,7 +604,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
-        <Grid item xs={12}>
+
+        <Grid item xs={12} md={6}>
           <Controller
             name="tipos_presuntos_delitos"
             control={control}
@@ -560,6 +639,38 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
+
+        <Grid item xs={12}>
+          <Controller
+            name="ambito_vulneracion"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={dropdownData.ambito_vulneracion || []}
+                  getOptionLabel={(option) => option.nombre || ""}
+                  value={dropdownData.ambito_vulneracion?.find((item) => item.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Ámbito de Vulneración"
+                      error={!!error}
+                      helperText={error?.message}
+                      size="small"
+                    />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
+              </FormControl>
+            )}
+          />
+        </Grid>
+
         <Grid item xs={12}>
           <Controller
             name="objetivo_de_demanda"
@@ -591,6 +702,14 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
+
+        {/* Sección de Motivos de Intervención */}
+        <Grid item xs={12}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+            Motivos de Intervención
+          </Typography>
+        </Grid>
+
         <Grid item xs={12}>
           <Controller
             name="motivo_ingreso"
@@ -659,11 +778,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           />
         </Grid>
 
+        {/* Sección de Zona de Asignación */}
         <Grid item xs={12}>
-          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Zona de asignación de la demanda
           </Typography>
         </Grid>
+
         <Grid item xs={12}>
           <Controller
             name="zona"
@@ -695,23 +816,30 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             )}
           />
         </Grid>
+
+        {/* Sección de Localización */}
         <Grid item xs={12}>
-          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Datos de Localización del grupo familiar
           </Typography>
           <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </Grid>
+
+        {/* Sección de Archivos Adjuntos */}
         <Grid item xs={12}>
-          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Archivos Adjuntos
           </Typography>
           <FileUploadSection control={control} readOnly={readOnly} />
         </Grid>
+
+        {/* Sección de Observaciones */}
         <Grid item xs={12}>
-          <Typography color="primary" sx={{ mt: 2, mb: 1 }}>
+          <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Observaciones
           </Typography>
         </Grid>
+
         <Grid item xs={12}>
           <Controller
             name="observaciones"

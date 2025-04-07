@@ -32,7 +32,7 @@ import { es } from "date-fns/locale"
 import AddIcon from "@mui/icons-material/Add"
 import DeleteIcon from "@mui/icons-material/Delete"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import ExpandLessIcon from "@mui/icons-material/ExpandMore"
+import ExpandLessIcon from "@mui/icons-material/ExpandLess"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { format, parse } from "date-fns"
 import LocalizacionFields from "./LocalizacionFields" // Import the LocalizacionFields component
@@ -72,6 +72,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       nombre: "",
       apellido: "",
       fechaNacimiento: null,
+      fechaDefuncion: null, // Inicializar fecha de defunción
       edadAproximada: "",
       dni: "",
       situacionDni: "",
@@ -194,7 +195,13 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
             </Box>
             <Collapse in={expandedSections[index]}>
               <Grid container spacing={2}>
-                {/* Personal Information */}
+                {/* Sección de Información Personal */}
+                <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 1, mb: 1 }}>
+                    Información Personal
+                  </Typography>
+                </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Controller
                     name={`ninosAdolescentes.${index}.nombre`}
@@ -231,44 +238,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name={`ninosAdolescentes.${index}.fechaNacimiento`}
-                    control={control}
-                    render={({ field }) => (
-                      <DatePicker
-                        label="Fecha de Nacimiento"
-                        value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                        onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                        disabled={readOnly}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            size: "small",
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name={`ninosAdolescentes.${index}.edadAproximada`}
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label="Edad Aproximada"
-                        fullWidth
-                        type="number"
-                        error={!!error}
-                        helperText={error?.message}
-                        InputProps={{ readOnly }}
-                        size="small"
-                      />
-                    )}
-                  />
-                </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Controller
                     name={`ninosAdolescentes.${index}.dni`}
@@ -287,6 +257,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Controller
                     name={`ninosAdolescentes.${index}.situacionDni`}
@@ -318,6 +289,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Controller
                     name={`ninosAdolescentes.${index}.genero`}
@@ -349,6 +321,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Controller
                     name={`ninosAdolescentes.${index}.nacionalidad`}
@@ -380,17 +353,66 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
+
+                {/* Sección de Fechas */}
                 <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Fechas
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
                   <Controller
-                    name={`ninosAdolescentes.${index}.observaciones`}
+                    name={`ninosAdolescentes.${index}.fechaNacimiento`}
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        label="Fecha de Nacimiento"
+                        value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                        onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                        disabled={readOnly}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            size: "small",
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.fechaDefuncion`}
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        label="Fecha de Defunción"
+                        value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                        onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                        disabled={readOnly}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            size: "small",
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.edadAproximada`}
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
-                        label="Observaciones"
+                        label="Edad Aproximada"
                         fullWidth
-                        multiline
-                        rows={4}
+                        type="number"
                         error={!!error}
                         helperText={error?.message}
                         InputProps={{ readOnly }}
@@ -399,7 +421,14 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
-                {/* Location Information */}
+
+                {/* Sección de Localización */}
+                <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Localización
+                  </Typography>
+                </Grid>
+
                 <Grid item xs={12}>
                   <FormControlLabel
                     control={
@@ -419,6 +448,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     label="Usar localización de la demanda"
                   />
                 </Grid>
+
                 {!watchedFields?.[index]?.useDefaultLocalizacion && (
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
@@ -433,200 +463,485 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   </Grid>
                 )}
 
-                {/* Education Information */}
+                {/* Sección de Información de la Demanda */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Información Educativa
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Información de la Demanda
                   </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <FormControlLabel
+                    control={
                       <Controller
-                        name={`ninosAdolescentes.${index}.educacion.institucion_educativa.nombre`}
+                        name={`ninosAdolescentes.${index}.demanda_persona.conviviente`}
                         control={control}
-                        rules={{ required: "Este campo es obligatorio" }}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={[...(dropdownData.institucion_educativa || []), { id: "other", nombre: "Otra" }]}
-                              getOptionLabel={(option) => option.nombre || ""}
-                              value={
-                                field.value === "other"
-                                  ? { id: "other", nombre: "Otra" }
-                                  : dropdownData.institucion_educativa?.find((item) => item.nombre === field.value) ||
-                                    null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.nombre : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label={<RequiredLabel label="Institución Educativa" />}
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
+                        render={({ field: { onChange, value } }) => (
+                          <Checkbox
+                            checked={value}
+                            onChange={(e) => onChange(e.target.checked)}
+                            disabled={readOnly}
+                            size="small"
+                          />
                         )}
                       />
-                    </Grid>
-                    {watchedFields?.[index]?.educacion?.institucion_educativa?.nombre === "other" && (
-                      <Grid item xs={12}>
-                        <Controller
-                          name={`ninosAdolescentes.${index}.educacion.institucion_educativa.nombre`}
-                          control={control}
-                          rules={{ required: "Este campo es obligatorio" }}
-                          render={({ field, fieldState: { error } }) => (
+                    }
+                    label="Conviviente"
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.demanda_persona.vinculo_demanda`}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.vinculo_demanda_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.vinculo_demanda_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
                             <TextField
-                              {...field}
-                              label={<RequiredLabel label="Nueva Institución Educativa" />}
-                              fullWidth
-                              multiline
-                              rows={2}
+                              {...params}
+                              label={<RequiredLabel label="Vínculo con la Demanda" />}
                               error={!!error}
                               helperText={error?.message}
-                              InputProps={{ readOnly }}
                               size="small"
                             />
                           )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
                         />
-                      </Grid>
+                      </FormControl>
                     )}
-                    <Grid item xs={12} md={6}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.educacion.nivel_alcanzado`}
-                        control={control}
-                        rules={{ required: "Este campo es obligatorio" }}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.nivel_alcanzado_choices || []}
-                              getOptionLabel={(option) => option.value || ""}
-                              value={
-                                dropdownData.nivel_alcanzado_choices?.find((item) => item.key === field.value) || null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label={<RequiredLabel label="Nivel Alcanzado" />}
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.demanda_persona.vinculo_con_nnya_principal`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.vinculo_con_nnya_principal_choices || []}
+                          getOptionLabel={(option) => option.nombre || ""}
+                          value={
+                            dropdownData.vinculo_con_nnya_principal_choices?.find((item) => item.id === field.value) ||
+                            null
+                          }
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Vínculo con NNYA Principal"
+                              error={!!error}
+                              helperText={error?.message}
                               size="small"
                             />
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <FormControlLabel
-                        control={
-                          <Controller
-                            name={`ninosAdolescentes.${index}.educacion.esta_escolarizado`}
-                            control={control}
-                            render={({ field: { onChange, value } }) => (
-                              <Checkbox
-                                checked={value}
-                                onChange={(e) => onChange(e.target.checked)}
-                                disabled={readOnly}
-                                size="small"
-                              />
-                            )}
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                {/* Sección de Educación */}
+                <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Información Educativa
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.educacion.institucion_educativa.nombre`}
+                    control={control}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={[...(dropdownData.institucion_educativa || []), { id: "other", nombre: "Otra" }]}
+                          getOptionLabel={(option) => option.nombre || ""}
+                          value={
+                            field.value === "other"
+                              ? { id: "other", nombre: "Otra" }
+                              : dropdownData.institucion_educativa?.find((item) => item.nombre === field.value) || null
+                          }
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.nombre : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Institución Educativa" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                {watchedFields?.[index]?.educacion?.institucion_educativa?.nombre === "other" && (
+                  <Grid item xs={12}>
+                    <Controller
+                      name={`ninosAdolescentes.${index}.educacion.institucion_educativa.nombre`}
+                      control={control}
+                      rules={{ required: "Este campo es obligatorio" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <TextField
+                          {...field}
+                          label={<RequiredLabel label="Nueva Institución Educativa" />}
+                          fullWidth
+                          multiline
+                          rows={2}
+                          error={!!error}
+                          helperText={error?.message}
+                          InputProps={{ readOnly }}
+                          size="small"
+                        />
+                      )}
+                    />
+                  </Grid>
+                )}
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.educacion.nivel_alcanzado`}
+                    control={control}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.nivel_alcanzado_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.nivel_alcanzado_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Nivel Alcanzado" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <FormControlLabel
+                    control={
+                      <Controller
+                        name={`ninosAdolescentes.${index}.educacion.esta_escolarizado`}
+                        control={control}
+                        render={({ field: { onChange, value } }) => (
+                          <Checkbox
+                            checked={value}
+                            onChange={(e) => onChange(e.target.checked)}
+                            disabled={readOnly}
+                            size="small"
                           />
-                        }
-                        label="Está Escolarizado"
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.educacion.ultimo_cursado`}
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.ultimo_cursado_choices || []}
-                              getOptionLabel={(option) => option.value || ""}
-                              value={
-                                dropdownData.ultimo_cursado_choices?.find((item) => item.key === field.value) || null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Último Cursado"
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
                         )}
                       />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
+                    }
+                    label="Está Escolarizado"
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.educacion.ultimo_cursado`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.ultimo_cursado_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.ultimo_cursado_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Último Cursado"
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.educacion.tipo_escuela`}
+                    control={control}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.tipo_escuela_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.tipo_escuela_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Tipo de Escuela" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.educacion.comentarios_educativos`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Comentarios Educativos"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="small"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                {/* Sección de Salud */}
+                <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Información de Salud
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria`}
+                    control={control}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.institucion_sanitaria || []}
+                          getOptionLabel={(option) => option.nombre || ""}
+                          value={dropdownData.institucion_sanitaria?.find((item) => item.id === field.value) || null}
+                          onChange={(_, newValue) => {
+                            field.onChange(newValue ? newValue.id : null)
+                            // Also store the name for reference
+                            if (newValue) {
+                              setValue(
+                                `ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria_nombre`,
+                                newValue.nombre,
+                              )
+                            }
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Institución Sanitaria" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.cobertura_medica.obra_social`}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.obra_social_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.obra_social_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Obra Social" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.cobertura_medica.intervencion`}
+                    rules={{ required: "Este campo es obligatorio" }}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={dropdownData.intervencion_choices || []}
+                          getOptionLabel={(option) => option.value || ""}
+                          value={dropdownData.intervencion_choices?.find((item) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Intervención" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="small"
+                            />
+                          )}
+                          PopperProps={{
+                            style: { width: "auto", maxWidth: "300px" },
+                          }}
+                          size="small"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
                       <Controller
-                        name={`ninosAdolescentes.${index}.educacion.tipo_escuela`}
+                        name={`ninosAdolescentes.${index}.cobertura_medica.auh`}
                         control={control}
+                        render={({ field: { onChange, value } }) => (
+                          <Checkbox
+                            checked={value}
+                            onChange={(e) => onChange(e.target.checked)}
+                            disabled={readOnly}
+                            size="small"
+                          />
+                        )}
+                      />
+                    }
+                    label="AUH"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Médico Cabecera
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <Controller
+                        name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
                         rules={{ required: "Este campo es obligatorio" }}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.tipo_escuela_choices || []}
-                              getOptionLabel={(option) => option.value || ""}
-                              value={
-                                dropdownData.tipo_escuela_choices?.find((item) => item.key === field.value) || null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label={<RequiredLabel label="Tipo de Escuela" />}
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.educacion.comentarios_educativos`}
                         control={control}
-                        render={({ field, fieldState: { error } }) => (
+                        render={({ field, fieldState }) => (
                           <TextField
                             {...field}
-                            label="Comentarios Educativos"
+                            label={<RequiredLabel label="Nombre del Médico" />}
                             fullWidth
-                            multiline
-                            rows={2}
-                            error={!!error}
-                            helperText={error?.message}
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                            InputProps={{ readOnly }}
+                            size="small"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Controller
+                        name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.mail`}
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <TextField
+                            {...field}
+                            label="Email del Médico"
+                            fullWidth
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                            InputProps={{ readOnly }}
+                            type="email"
+                            size="small"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Controller
+                        name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.telefono`}
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <TextField
+                            {...field}
+                            label="Teléfono del Médico"
+                            fullWidth
+                            type="number"
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
                             InputProps={{ readOnly }}
                             size="small"
                           />
@@ -635,11 +950,53 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     </Grid>
                   </Grid>
                 </Grid>
-                {/* Vulnerability Conditions */}
+
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.cobertura_medica.observaciones`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Observaciones"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="small"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                {/* Sección de Enfermedades */}
+                <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Enfermedades
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <EnfermedadesFieldArray
+                    nestIndex={index}
+                    control={control}
+                    readOnly={readOnly}
+                    dropdownData={dropdownData}
+                    watch={watch}
+                    setValue={setValue}
+                  />
+                </Grid>
+
+                {/* Sección de Vulnerabilidad */}
+                <Grid item xs={12}>
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
                     Condiciones de Vulnerabilidad
                   </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
                   <Controller
                     name={`ninosAdolescentes.${index}.condicionesVulnerabilidad.condicion_vulnerabilidad`}
                     control={control}
@@ -699,350 +1056,51 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     )}
                   />
                 </Grid>
-                {/* Health Information */}
+
+                {/* Sección de Vulneraciones */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Información de Salud
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Presunta Vulneración de Derechos informada
                   </Typography>
-                  <Controller
-                    name={`ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria`}
+                </Grid>
+
+                <Grid item xs={12}>
+                  <VulneracionesFieldArray
+                    nestIndex={index}
                     control={control}
-                    rules={{ required: "Este campo es obligatorio" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <FormControl fullWidth error={!!error}>
-                        <Autocomplete
-                          disabled={readOnly}
-                          options={dropdownData.institucion_sanitaria || []}
-                          getOptionLabel={(option) => option.nombre || ""}
-                          value={dropdownData.institucion_sanitaria?.find((item) => item.id === field.value) || null}
-                          onChange={(_, newValue) => {
-                            field.onChange(newValue ? newValue.id : null)
-                            // Also store the name for reference
-                            if (newValue) {
-                              setValue(
-                                `ninosAdolescentes.${index}.cobertura_medica.institucion_sanitaria_nombre`,
-                                newValue.nombre,
-                              )
-                            }
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label={<RequiredLabel label="Institución Sanitaria" />}
-                              error={!!error}
-                              helperText={error?.message}
-                              size="small"
-                            />
-                          )}
-                          PopperProps={{
-                            style: { width: "auto", maxWidth: "300px" },
-                          }}
-                          size="small"
-                        />
-                      </FormControl>
-                    )}
+                    readOnly={readOnly}
+                    dropdownData={dropdownData}
+                    watch={watch}
+                    setValue={setValue}
                   />
                 </Grid>
 
-                {/* Medical Coverage */}
+                {/* Sección de Observaciones */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Cobertura Médica
+                  <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Observaciones
                   </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.cobertura_medica.obra_social`}
-            rules={{ required: "Este campo es obligatorio" }}
-                        
-                        
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.obra_social_choices || []}
-                              getOptionLabel={(option) => option.value || ""}
-                              value={dropdownData.obra_social_choices?.find((item) => item.key === field.value) || null}
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label={<RequiredLabel label="Obra Social" />}
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.cobertura_medica.intervencion`}
-                        rules={{ required: "Este campo es obligatorio" }}
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.intervencion_choices || []}
-                              getOptionLabel={(option) => option.value || ""}
-                              value={
-                                dropdownData.intervencion_choices?.find((item) => item.key === field.value) || null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label={<RequiredLabel label="Intervención" />}
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Médico Cabecera
-                      </Typography>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={4}>
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
-            rules={{ required: "Este campo es obligatorio" }}
-                            
-                            
-                            control={control}
-                            render={({ field, fieldState }) => (
-                              <TextField
-                                {...field}
-                                label={<RequiredLabel label="Nombre del Médico" />}
-                                fullWidth
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                InputProps={{ readOnly }}
-                                size="small"
-                              />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.mail`}
-                            control={control}
-                            render={({ field, fieldState }) => (
-                              <TextField
-                                {...field}
-                                label="Email del Médico"
-                                fullWidth
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                InputProps={{ readOnly }}
-                                type="email"
-                                size="small"
-                              />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.telefono`}
-                            control={control}
-                            render={({ field, fieldState }) => (
-                              <TextField
-                                {...field}
-                                label="Teléfono del Médico"
-                                fullWidth
-                                type="number"
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                InputProps={{ readOnly }}
-                                size="small"
-                              />
-                            )}
-                          />
-                        </Grid>
-                      </Grid>
-                      <FormControlLabel
-                        control={
-                          <Controller
-                            name={`ninosAdolescentes.${index}.cobertura_medica.auh`}
-                            control={control}
-                            render={({ field: { onChange, value } }) => (
-                              <Checkbox
-                                checked={value}
-                                onChange={(e) => onChange(e.target.checked)}
-                                disabled={readOnly}
-                                size="small"
-                              />
-                            )}
-                          />
-                        }
-                        label="AUH"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.cobertura_medica.observaciones`}
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <TextField
-                            {...field}
-                            label="Observaciones"
-                            fullWidth
-                            multiline
-                            rows={2}
-                            error={!!error}
-                            helperText={error?.message}
-                            InputProps={{ readOnly }}
-                            size="small"
-                          />
-                        )}
-                      />
-                    </Grid>
-                  </Grid>
                 </Grid>
 
-     <Grid item xs={12}>
-      <Typography variant="subtitle2" gutterBottom>
-        Enfermedades
-      </Typography>
-      <EnfermedadesFieldArray
-        nestIndex={index}
-        control={control}
-        readOnly={readOnly}
-        dropdownData={dropdownData}
-        watch={watch}
-        setValue={setValue}
-      />
-    </Grid>
-
-                {/* Demand Information */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Información de la Demanda
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <FormControlLabel
-                        control={
-                          <Controller
-                            name={`ninosAdolescentes.${index}.demanda_persona.conviviente`}
-                            control={control}
-                            render={({ field: { onChange, value } }) => (
-                              <Checkbox
-                                checked={value}
-                                onChange={(e) => onChange(e.target.checked)}
-                                disabled={readOnly}
-                                size="small"
-                              />
-                            )}
-                          />
-                        }
-                        label="Conviviente"
+                  <Controller
+                    name={`ninosAdolescentes.${index}.observaciones`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Observaciones"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="small"
                       />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.demanda_persona.vinculo_demanda`}
-                        rules={{ required: "Este campo es obligatorio" }}
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.vinculo_demanda_choices || []}
-                              getOptionLabel={(option) => option.value || ""}
-                              value={
-                                dropdownData.vinculo_demanda_choices?.find((item) => item.key === field.value) || null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label={<RequiredLabel label="Vínculo con la Demanda" />}
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Controller
-                        name={`ninosAdolescentes.${index}.demanda_persona.vinculo_con_nnya_principal`}
-                        control={control}
-                        render={({ field, fieldState: { error } }) => (
-                          <FormControl fullWidth error={!!error}>
-                            <Autocomplete
-                              disabled={readOnly}
-                              options={dropdownData.vinculo_con_nnya_principal_choices || []}
-                              getOptionLabel={(option) => option.nombre || ""}
-                              value={
-                                dropdownData.vinculo_con_nnya_principal_choices?.find(
-                                  (item) => item.id === field.value,
-                                ) || null
-                              }
-                              onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Vínculo con NNYA Principal"
-                                  error={!!error}
-                                  helperText={error?.message}
-                                  size="small"
-                                />
-                              )}
-                              PopperProps={{
-                                style: { width: "auto", maxWidth: "300px" },
-                              }}
-                              size="small"
-                            />
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                  </Grid>
+                    )}
+                  />
                 </Grid>
-
-                {/* Rights Violations */}
-{/* Sección Vulneraciones */}
-<Grid item xs={12}>
-      <Typography variant="subtitle2" gutterBottom>
-        Presunta Vulneración de Derechos informada
-      </Typography>
-      <VulneracionesFieldArray
-        nestIndex={index}
-        control={control}
-        readOnly={readOnly}
-        dropdownData={dropdownData}
-        watch={watch}
-        setValue={setValue}
-      />
-    </Grid>
               </Grid>
             </Collapse>
           </Box>

@@ -11,10 +11,8 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     tipo_institucion: apiData.tipo_institucion || null,
     institucion: apiData.institucion?.nombre || null,
     ambito_vulneracion: apiData.ambito_vulneracion || null,
-    tipo_demanda: apiData.tipo_demanda || null,
-    // Ensure presuntos_delitos is properly initialized as an array
-    tipos_presuntos_delitos: apiData.tipos_presuntos_delitos || null,
-    objetivo_de_demanda: apiData.objetivo_de_demanda || null,
+    envio_de_respuesta: apiData.envio_de_respuesta || null,
+    etiqueta: apiData.etiqueta || null,
     motivo_ingreso: apiData.motivo_ingreso || null,
     submotivo_ingreso: apiData.submotivo_ingreso || null,
     localizacion: apiData.localizacion || null,

@@ -34,8 +34,8 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
         tipo_institucion: formData.tipo_institucion,
       },
       ambito_vulneracion: formData.ambito_vulneracion,
-      tipo_demanda: formData.tipo_demanda,
-      tipos_presuntos_delitos: formData.tipos_presuntos_delitos || null,
+      etiqueta: formData.etiqueta,
+      envio_de_respuesta: formData.envio_de_respuesta,
       motivo_ingreso: formData.motivo_ingreso,
       submotivo_ingreso: formData.submotivo_ingreso,
       objetivo_de_demanda: formData.objetivo_de_demanda,
@@ -307,4 +307,3 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
  * Fetch data for a specific case/demanda by ID,
  * then transform it to our front-end FormData structure.
  */
-

@@ -86,6 +86,8 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   const isPeticionDeInforme = formData?.objetivo_de_demanda === "PETICION_DE_INFORME"
 
+  const isEditingBlocked = ["ARCHIVADA", "ADMITIDA", "PENDIENTE_AUTORIZACION"].includes(formData?.estado_demanda || "")
+
   // If it's a petition for report, force tab value to be 1 (Enviar Respuesta)
   // Remove this useEffect that forces the tab value to be 1
   // useEffect(() => {
@@ -230,6 +232,21 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
           </Alert>
         )}
 
+        {isEditingBlocked && (
+          <Alert
+            severity="info"
+            sx={{
+              mb: 3,
+              backgroundColor: "info.lighter",
+              "& .MuiAlert-message": {
+                color: "info.dark",
+              },
+            }}
+          >
+            Esta demanda no puede ser editada debido a su estado actual.
+          </Alert>
+        )}
+
         <Paper sx={{ width: "100%", mb: 2 }}>
           <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
             <Tabs value={tabValue} onChange={handleTabChange} aria-label="demanda tabs" variant="fullWidth">
@@ -256,8 +273,9 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
                 <MultiStepForm
                   initialData={formData}
                   onSubmit={handleSubmit}
-                  readOnly={isPeticionDeInforme}
+                  readOnly={isPeticionDeInforme || isEditingBlocked}
                   id={params.id}
+                  isPeticionDeInforme={isPeticionDeInforme || isEditingBlocked}
                 />
                 {!isPeticionDeInforme && (
                   <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
@@ -266,7 +284,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
                       color="primary"
                       startIcon={<SendIcon />}
                       onClick={handleEnviarEvaluacion}
-                      disabled={isSubmitting || isEvaluacionDisabled}
+                      disabled={isSubmitting || isEvaluacionDisabled || isEditingBlocked}
                       sx={{
                         backgroundColor: "primary.main",
                         "&:hover": {
@@ -283,19 +301,34 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <EnviarRespuestaForm demandaId={Number.parseInt(params.id)} />
+            <Box sx={{ opacity: isEditingBlocked ? 0.7 : 1, pointerEvents: isEditingBlocked ? "none" : "auto" }}>
+              <EnviarRespuestaForm demandaId={Number.parseInt(params.id)} />
+            </Box>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={2} disabled={isPeticionDeInforme}>
-            <RegistrarActividadForm demandaId={Number.parseInt(params.id)} />
+          <TabPanel value={tabValue} index={2}>
+            <Box
+              sx={{
+                opacity: isPeticionDeInforme || isEditingBlocked ? 0.7 : 1,
+                pointerEvents: isPeticionDeInforme || isEditingBlocked ? "none" : "auto",
+              }}
+            >
+              <RegistrarActividadForm demandaId={Number.parseInt(params.id)} />
+            </Box>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={3} disabled={isPeticionDeInforme}>
-            <ConexionesDemandaTab demandaId={Number.parseInt(params.id)} />
+          <TabPanel value={tabValue} index={3}>
+            <Box
+              sx={{
+                opacity: isPeticionDeInforme || isEditingBlocked ? 0.7 : 1,
+                pointerEvents: isPeticionDeInforme || isEditingBlocked ? "none" : "auto",
+              }}
+            >
+              <ConexionesDemandaTab demandaId={Number.parseInt(params.id)} />
+            </Box>
           </TabPanel>
         </Paper>
       </Box>
     </Box>
   )
 }
-

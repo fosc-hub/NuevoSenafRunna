@@ -1,7 +1,10 @@
 import { get } from "@/app/api/apiService"
 
-const transformApiDataToFormData = (apiData: any): FormData => {
+export const transformApiDataToFormData = (apiData: any): FormData => {
   return {
+    // Include estado_demanda in the transformed data
+    estado_demanda: apiData.estado_demanda || null,
+
     fecha_oficio_documento: apiData.fecha_oficio_documento || null,
     fecha_ingreso_senaf: apiData.fecha_ingreso_senaf || null,
     bloque_datos_remitente: apiData.bloque_datos_remitente || null,

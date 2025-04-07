@@ -24,6 +24,7 @@ interface MultiStepFormProps {
   onSubmit: (data: FormData) => void
   id?: string
   form?: string
+  isPeticionDeInforme?: boolean
 }
 
 const FormSkeleton = () => {
@@ -42,7 +43,14 @@ const FormSkeleton = () => {
   )
 }
 
-const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = false, onSubmit, id, form }) => {
+const MultiStepForm: React.FC<MultiStepFormProps> = ({
+  initialData,
+  readOnly = false,
+  onSubmit,
+  id,
+  form,
+  isPeticionDeInforme: propIsPeticionDeInforme,
+}) => {
   const [activeStep, setActiveStep] = useState(0)
   const formId = form || "new"
 
@@ -52,10 +60,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
   // Get saved draft if it exists
   const savedDraft = getDraft(formId)
 
-  // Check if this is a petition for report
-  const isPeticionDeInforme = initialData?.objetivo_de_demanda === "PETICION_DE_INFORME"
+  // Check if this is a petition for report from initialData or from prop
+  const isPeticionDeInforme = propIsPeticionDeInforme || initialData?.objetivo_de_demanda === "PETICION_DE_INFORME"
 
-  // If it's a petition for report, enforce readOnly
+  // If it's a petition for report or other blocked state, enforce readOnly
   const isReadOnly = readOnly || isPeticionDeInforme
 
   const methods = useForm<FormData>({
@@ -221,7 +229,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
           ))}
         </Stepper>
 
-        {isPeticionDeInforme && (
+        {isPeticionDeInforme && initialData?.objetivo_de_demanda === "PETICION_DE_INFORME" && (
           <Alert
             severity="info"
             sx={{
@@ -264,27 +272,21 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
             </Box>
           )}
 
-          {isReadOnly ? (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={activeStep === steps.length - 1 ? () => {} : handleNext}
-              type="button"
-              disabled={activeStep === steps.length - 1}
-            >
-              {activeStep === steps.length - 1 ? "Finalizar" : "Siguiente"}
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={activeStep === steps.length - 1 ? handleFinalSubmit : handleNext}
-              type="button"
-              disabled={mutation.isPending}
-            >
-              {activeStep === steps.length - 1 ? (mutation.isPending ? "Enviando..." : "Enviar") : "Siguiente"}
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={activeStep === steps.length - 1 ? (isReadOnly ? () => {} : handleFinalSubmit) : handleNext}
+            type="button"
+            disabled={(activeStep === steps.length - 1 && isReadOnly) || (!isReadOnly && mutation.isPending)}
+          >
+            {activeStep === steps.length - 1
+              ? isReadOnly
+                ? "Finalizar"
+                : mutation.isPending
+                  ? "Enviando..."
+                  : "Enviar"
+              : "Siguiente"}
+          </Button>
         </Box>
       </form>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
@@ -293,4 +295,3 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ initialData, readOnly = f
 }
 
 export default MultiStepForm
-

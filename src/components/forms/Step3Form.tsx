@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useFieldArray, useFormContext, Controller, useWatch } from "react-hook-form"
 import {
   TextField,
@@ -75,34 +75,78 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
   const [openSnackbar, setOpenSnackbar] = useState(false)
 
   // Use the hook from conexionesApi
-  const { buscarPorNombreApellido, buscarPorDni, buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
+  const { buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
-  // Handle the results from the vinculacion search
-  const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
+  // Memoizar la función handleVinculacionResults para evitar recreaciones innecesarias
+  const handleVinculacionResults = useCallback((results: { demanda_ids: number[]; match_descriptions: string[] }) => {
     if (results.demanda_ids.length > 0) {
       setVinculacionResults(results)
       setOpenSnackbar(true)
     }
-  }
+  }, [])
 
-  // Monitorear cambios en los campos específicos en lugar de todo el objeto
+  // Observar SOLO los campos específicos que necesitamos para la búsqueda
+  const watchedNombres = useWatch({
+    control,
+    name: fields.map((field, index) => `ninosAdolescentes.${index}.nombre`),
+  })
+
+  const watchedApellidos = useWatch({
+    control,
+    name: fields.map((field, index) => `ninosAdolescentes.${index}.apellido`),
+  })
+
+  const watchedDnis = useWatch({
+    control,
+    name: fields.map((field, index) => `ninosAdolescentes.${index}.dni`),
+  })
+
+  const watchedUseDefaultLocalizacion = useWatch({
+    control,
+    name: fields.map((field, index) => `ninosAdolescentes.${index}.useDefaultLocalizacion`),
+  })
+
+  // Effect para manejar cambios SOLO en los campos relevantes para la búsqueda
   useEffect(() => {
-    if (!watchedFields) return
+    if (!fields.length) return
 
     // Procesar cada niño/adolescente
-    watchedFields.forEach((nino, index) => {
-      if (!nino) return
+    fields.forEach((field, index) => {
+      // Obtener los valores actuales
+      const nombre = watchedNombres[index] || ""
+      const apellido = watchedApellidos[index] || ""
+      const dni = watchedDnis[index] || ""
+      const useDefaultLocalizacion = watchedUseDefaultLocalizacion[index]
 
-      const nombreCompleto = nino.nombre && nino.apellido ? `${nino.nombre} ${nino.apellido}`.trim() : ""
-      const dniValue = nino.dni ? Number.parseInt(nino.dni) : 0
+      // Construir nombre completo
+      const nombreCompleto = nombre && apellido ? `${nombre} ${apellido}`.trim() : ""
+      const dniValue = dni ? Number.parseInt(dni) : 0
 
-      // Solo buscar si hay al menos un criterio válido
-      if ((nombreCompleto && nombreCompleto.length >= 3) || (dniValue && !isNaN(dniValue))) {
-        console.log(`Buscando por nombre/apellido: ${nombreCompleto} y DNI: ${dniValue}`)
-        buscarCompleto(nombreCompleto, dniValue, "", undefined, handleVinculacionResults)
+      // Verificar si tiene localización específica
+      let localizacionData = undefined
+      if (!useDefaultLocalizacion && watchedFields?.[index]?.localizacion) {
+        const localizacion = watchedFields[index].localizacion
+        if (localizacion) {
+          localizacionData = {
+            calle: localizacion.calle || "",
+            localidad: Number(localizacion.localidad) || 0,
+          }
+        }
       }
+
+      // La función buscarCompleto ahora se encarga de validar los datos y aplicar el debounce
+      buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults)
     })
-  }, [watchedFields, buscarCompleto])
+  }, [
+    fields,
+    watchedNombres,
+    watchedApellidos,
+    watchedDnis,
+    watchedUseDefaultLocalizacion,
+    watchedFields,
+    buscarCompleto,
+    handleVinculacionResults,
+  ])
 
   // Close the snackbar
   const handleCloseSnackbar = () => {
@@ -1182,7 +1226,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         </DialogActions>
       </Dialog>
 
-      {/* Use the modular VinculacionNotification component */}
       <VinculacionNotification
         open={openSnackbar}
         onClose={handleCloseSnackbar}

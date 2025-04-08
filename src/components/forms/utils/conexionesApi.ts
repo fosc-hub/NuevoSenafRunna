@@ -1,7 +1,7 @@
 "use client"
 
 import { create } from "@/app/api/apiService"
-import { useCallback } from "react"
+import { useCallback, useRef, useEffect } from "react"
 import { debounce } from "lodash"
 
 // Types for the API request and response
@@ -38,15 +38,52 @@ export const buscarVinculacion = async (data: BusquedaVinculacionRequest): Promi
 }
 
 /**
+ * Verifica si un valor de búsqueda es válido
+ * @param value Valor a verificar
+ * @returns Booleano indicando si el valor es válido
+ */
+const isValidSearchValue = (value: any): boolean => {
+  if (value === null || value === undefined) return false
+
+  if (typeof value === "string") return value.trim().length >= 3
+  if (typeof value === "number") return !isNaN(value) && value > 0
+
+  return false
+}
+
+/**
+ * Verifica si una localización es válida para búsqueda
+ * @param localizacion Datos de localización
+ * @returns Booleano indicando si la localización es válida
+ */
+const isValidLocalizacion = (localizacion?: LocalizacionData): boolean => {
+  if (!localizacion) return false
+
+  const calleValida = localizacion.calle && localizacion.calle.trim().length > 0
+  const localidadValida = localizacion.localidad && !isNaN(Number(localizacion.localidad))
+
+  return calleValida && localidadValida
+}
+
+/**
  * Custom hook that provides debounced functions for searching vinculaciones
  * @param delay Debounce delay in milliseconds
  * @returns Object with debounced search functions
  */
 export const useBusquedaVinculacion = (delay = 500) => {
+  // Refs para almacenar los valores previos y evitar búsquedas duplicadas
+  const prevNombreRef = useRef<string>("")
+  const prevDniRef = useRef<number>(0)
+  const prevCodigoRef = useRef<string>("")
+  const prevLocalizacionRef = useRef<LocalizacionData | undefined>(undefined)
+
   // Debounced function for searching by name and surname
   const buscarPorNombreApellido = useCallback(
     debounce(async (nombreYApellido: string, callback: (result: BusquedaVinculacionResponse) => void) => {
-      if (!nombreYApellido || nombreYApellido.trim().length < 3) return
+      // Solo buscar si el nombre es válido y diferente al anterior
+      if (!isValidSearchValue(nombreYApellido) || nombreYApellido === prevNombreRef.current) return
+
+      prevNombreRef.current = nombreYApellido
 
       try {
         const result = await buscarVinculacion({
@@ -64,7 +101,10 @@ export const useBusquedaVinculacion = (delay = 500) => {
   // Debounced function for searching by DNI
   const buscarPorDni = useCallback(
     debounce(async (dni: number, callback: (result: BusquedaVinculacionResponse) => void) => {
-      if (!dni || isNaN(dni)) return
+      // Solo buscar si el DNI es válido y diferente al anterior
+      if (!isValidSearchValue(dni) || dni === prevDniRef.current) return
+
+      prevDniRef.current = dni
 
       try {
         const result = await buscarVinculacion({
@@ -79,56 +119,92 @@ export const useBusquedaVinculacion = (delay = 500) => {
     [delay],
   )
 
-  // Function for searching by both name/surname and DNI
+  // Función para buscar por ambos criterios (nombre/apellido y DNI)
   const buscarCompleto = useCallback(
-    async (
-      nombreYApellido: string,
-      dni: number,
-      codigo?: string,
-      localizacion?: LocalizacionData,
-      callback?: (result: BusquedaVinculacionResponse) => void,
-    ) => {
-      try {
-        const data: BusquedaVinculacionRequest = {};
+    debounce(
+      async (
+        nombreYApellido: string,
+        dni: number,
+        codigo?: string,
+        localizacion?: LocalizacionData,
+        callback?: (result: BusquedaVinculacionResponse) => void,
+      ) => {
+        try {
+          const data: BusquedaVinculacionRequest = {}
+          let shouldSearch = false
 
-        // Solo agregar los campos que tengan valores válidos
-        if (nombreYApellido && nombreYApellido.trim().length > 0) {
-          data.nombre_y_apellido = nombreYApellido;
-        }
+          // Verificar si hay cambios en los valores que justifiquen una nueva búsqueda
+          const nombreCambio = isValidSearchValue(nombreYApellido) && nombreYApellido !== prevNombreRef.current
+          const dniCambio = isValidSearchValue(dni) && dni !== prevDniRef.current
+          const codigoCambio = isValidSearchValue(codigo) && codigo !== prevCodigoRef.current
 
-        if (dni && !isNaN(dni)) {
-          data.dni = dni;
-        }
+          // Comparar localización
+          const localizacionValida = isValidLocalizacion(localizacion)
+          const localizacionCambio =
+            localizacionValida && JSON.stringify(localizacion) !== JSON.stringify(prevLocalizacionRef.current)
 
-        if (codigo) {
-          data.codigo = codigo;
-        }
+          // Solo agregar los campos que tengan valores válidos
+          if (isValidSearchValue(nombreYApellido)) {
+            data.nombre_y_apellido = nombreYApellido
+            prevNombreRef.current = nombreYApellido
+            shouldSearch = true
+          }
 
-        if (localizacion) {
-          data.localizacion = localizacion;
-        }
+          if (isValidSearchValue(dni)) {
+            data.dni = dni
+            prevDniRef.current = dni
+            shouldSearch = true
+          }
 
-        // Solo realizar la búsqueda si hay al menos un criterio válido
-        if (Object.keys(data).length > 0) {
-          console.log("Realizando búsqueda con datos:", data);
-          const result = await buscarVinculacion(data);
-          if (callback) callback(result);
-          return result;
-        } else {
-          console.log("No hay criterios de búsqueda válidos");
-          const emptyResult = { demanda_ids: [], match_descriptions: [] };
-          if (callback) callback(emptyResult);
-          return emptyResult;
+          if (isValidSearchValue(codigo)) {
+            data.codigo = codigo
+            prevCodigoRef.current = codigo
+            shouldSearch = true
+          }
+
+          if (localizacionValida) {
+            data.localizacion = localizacion
+            prevLocalizacionRef.current = localizacion
+            shouldSearch = true
+          }
+
+          // Solo realizar la búsqueda si hay al menos un criterio válido Y ha habido cambios
+          if (shouldSearch && (nombreCambio || dniCambio || codigoCambio || localizacionCambio)) {
+            console.log("Realizando búsqueda con datos:", data)
+            const result = await buscarVinculacion(data)
+            if (callback) callback(result)
+            return result
+          } else {
+            if (shouldSearch) {
+              console.log("Criterios de búsqueda sin cambios, omitiendo búsqueda")
+            } else {
+              console.log("No hay criterios de búsqueda válidos")
+            }
+            const emptyResult = { demanda_ids: [], match_descriptions: [] }
+            if (callback) callback(emptyResult)
+            return emptyResult
+          }
+        } catch (error) {
+          console.error("Error en búsqueda completa:", error)
+          const emptyResult = { demanda_ids: [], match_descriptions: [] }
+          if (callback) callback(emptyResult)
+          return emptyResult
         }
-      } catch (error) {
-        console.error("Error en búsqueda completa:", error);
-        const emptyResult = { demanda_ids: [], match_descriptions: [] };
-        if (callback) callback(emptyResult);
-        return emptyResult;
-      }
-    },
-    [],
-  );
+      },
+      delay,
+    ),
+    [delay],
+  )
+
+  // Limpiar referencias al desmontar el componente
+  useEffect(() => {
+    return () => {
+      prevNombreRef.current = ""
+      prevDniRef.current = 0
+      prevCodigoRef.current = ""
+      prevLocalizacionRef.current = undefined
+    }
+  }, [])
 
   return {
     buscarPorNombreApellido,

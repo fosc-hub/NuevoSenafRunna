@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useFieldArray, type Control, Controller, useWatch } from "react-hook-form"
 import {
   TextField,
@@ -57,7 +57,9 @@ interface FormData {
     useDefaultLocalizacion: boolean
     telefono: string
     localizacion?: {
-      // Add localizacion fields here
+      calle: string
+      localidad: number
+      // otros campos de localización
     }
     vinculacion: string
     vinculo_con_nnya_principal: number
@@ -101,39 +103,78 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
   const [openSnackbar, setOpenSnackbar] = useState(false)
 
   // Use the hook from conexionesApi
-  const { buscarPorNombreApellido, buscarPorDni, buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
+  const { buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
-  // Handle the results from the vinculacion search
-  const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
+  // Memoizar la función handleVinculacionResults para evitar recreaciones innecesarias
+  const handleVinculacionResults = useCallback((results: { demanda_ids: number[]; match_descriptions: string[] }) => {
     if (results.demanda_ids.length > 0) {
       setVinculacionResults(results)
       setOpenSnackbar(true)
     }
-  }
+  }, [])
 
-  // Watch for changes in the form data using useWatch
-  const adultosConvivientes = useWatch({
+  // Observar SOLO los campos específicos que necesitamos para la búsqueda
+  const watchedNombres = useWatch({
     control,
-    name: "adultosConvivientes",
+    name: fields.map((field, index) => `adultosConvivientes.${index}.nombre`),
   })
 
-  // Effect to handle changes in adultosConvivientes
+  const watchedApellidos = useWatch({
+    control,
+    name: fields.map((field, index) => `adultosConvivientes.${index}.apellido`),
+  })
+
+  const watchedDnis = useWatch({
+    control,
+    name: fields.map((field, index) => `adultosConvivientes.${index}.dni`),
+  })
+
+  const watchedUseDefaultLocalizacion = useWatch({
+    control,
+    name: fields.map((field, index) => `adultosConvivientes.${index}.useDefaultLocalizacion`),
+  })
+
+  // Effect para manejar cambios SOLO en los campos relevantes para la búsqueda
   useEffect(() => {
-    if (!adultosConvivientes) return
+    if (!fields.length) return
 
-    // Process each adult's data
-    adultosConvivientes.forEach((adult, index) => {
-      if (!adult) return
+    // Procesar cada adulto
+    fields.forEach((field, index) => {
+      // Obtener los valores actuales
+      const nombre = watchedNombres[index] || ""
+      const apellido = watchedApellidos[index] || ""
+      const dni = watchedDnis[index] || ""
+      const useDefaultLocalizacion = watchedUseDefaultLocalizacion[index]
 
-      const nombreCompleto = adult.nombre && adult.apellido ? `${adult.nombre} ${adult.apellido}`.trim() : ""
-      const dniValue = adult.dni ? Number.parseInt(adult.dni) : 0
+      // Construir nombre completo
+      const nombreCompleto = nombre && apellido ? `${nombre} ${apellido}`.trim() : ""
+      const dniValue = dni ? Number.parseInt(dni) : 0
 
-      // Solo buscar si hay al menos un criterio válido
-      if ((nombreCompleto && nombreCompleto.length >= 3) || (dniValue && !isNaN(dniValue))) {
-        buscarCompleto(nombreCompleto, dniValue, "", undefined, handleVinculacionResults)
+      // Verificar si tiene localización específica
+      let localizacionData = undefined
+      if (!useDefaultLocalizacion && watchedFields?.[index]?.localizacion) {
+        const localizacion = watchedFields[index].localizacion
+        if (localizacion) {
+          localizacionData = {
+            calle: localizacion.calle || "",
+            localidad: Number(localizacion.localidad) || 0,
+          }
+        }
       }
+
+      // La función buscarCompleto ahora se encarga de validar los datos y aplicar el debounce
+      buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults)
     })
-  }, [adultosConvivientes, buscarCompleto])
+  }, [
+    fields,
+    watchedNombres,
+    watchedApellidos,
+    watchedDnis,
+    watchedUseDefaultLocalizacion,
+    watchedFields,
+    buscarCompleto,
+    handleVinculacionResults,
+  ])
 
   // Close the snackbar
   const handleCloseSnackbar = () => {

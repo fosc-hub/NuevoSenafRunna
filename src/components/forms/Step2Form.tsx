@@ -448,35 +448,35 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <Controller
-                      name={`adultosConvivientes.${index}.ocupacion`}
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <FormControl fullWidth error={!!error}>
-                          <Autocomplete
-                            disabled={readOnly}
-                            options={ocupacionesOptions || []}
-                            getOptionLabel={(option) => option.value || ""}
-                            value={ocupacionesOptions.find((item) => item.key === field.value) || null}
-                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Ocupación"
-                                error={!!error}
-                                helperText={error?.message}
-                                size="small"
-                              />
-                            )}
-                            PopperProps={{
-                              style: { width: "auto", maxWidth: "300px" },
-                            }}
-                            size="small"
-                          />
-                        </FormControl>
+              <Controller
+                name={`adultosConvivientes.${index}.ocupacion`}
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <FormControl fullWidth error={!!error}>
+                    <Autocomplete
+                      disabled={readOnly}
+                      options={dropdownData.ocupacion_choices || []}
+                      getOptionLabel={(option) => option.value || ""}
+                      value={dropdownData.ocupacion_choices?.find((item) => item.key === field.value) || null}
+                      onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Ocupación"
+                          error={!!error}
+                          helperText={error?.message}
+                          size="small"
+                        />
                       )}
+                      PopperProps={{
+                        style: { width: "auto", maxWidth: "300px" },
+                      }}
+                      size="small"
                     />
-                  </Grid>
+                  </FormControl>
+                )}
+              />
+            </Grid>
 
                   <Grid item xs={12} md={6}>
                     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center" }}>

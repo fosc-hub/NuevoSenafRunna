@@ -313,72 +313,61 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         </Grid>
 
         {/* Sección de Etiqueta y Envío de Respuesta */}
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="etiqueta"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <Autocomplete
-                  disabled={readOnly}
-                  options={etiquetasOptions || []}
-                  getOptionLabel={(option) => option.nombre || ""}
-                  value={etiquetasOptions.find((item) => item.id === field.value) || null}
-                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Etiqueta" error={!!error} helperText={error?.message} size="small" />
-                  )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
-                  size="small"
-                />
-              </FormControl>
-            )}
-          />
-        </Grid>
+        <Grid item xs={12} sm={6}>
+        <Controller
+          name="etiqueta"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <FormControl fullWidth error={!!error}>
+              <Autocomplete
+                disabled={readOnly}
+                options={dropdownData.etiqueta || []}
+                getOptionLabel={(option) => option.nombre || ""}
+                value={dropdownData.etiqueta?.find((item) => item.id === field.value) || null}
+                onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Etiqueta" error={!!error} helperText={error?.message} size="small" />
+                )}
+                PopperProps={{
+                  style: { width: "auto", maxWidth: "300px" },
+                }}
+                size="small"
+              />
+            </FormControl>
+          )}
+        />
+      </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="envio_de_respuesta"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <Autocomplete
-                  disabled={readOnly}
-                  options={[
-                    { id: "si", nombre: "Sí" },
-                    { id: "no", nombre: "No" },
-                    { id: "pendiente", nombre: "Pendiente" },
-                  ]}
-                  getOptionLabel={(option) => option.nombre || ""}
-                  value={
-                    field.value
-                      ? {
-                          id: field.value,
-                          nombre: field.value === "si" ? "Sí" : field.value === "no" ? "No" : "Pendiente",
-                        }
-                      : null
-                  }
-                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Envío de respuesta"
-                      error={!!error}
-                      helperText={error?.message}
-                      size="small"
-                    />
-                  )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
-                  size="small"
-                />
-              </FormControl>
-            )}
-          />
-        </Grid>
+        <Grid item xs={12} sm={6}>
+        <Controller
+          name="envio_de_respuesta"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <FormControl fullWidth error={!!error}>
+              <Autocomplete
+                disabled={readOnly}
+                options={dropdownData.envio_de_respuesta_choices || []}
+                getOptionLabel={(option) => option.value || ""}
+                value={dropdownData.envio_de_respuesta_choices?.find((item) => item.key === field.value) || null}
+                onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Envío de respuesta"
+                    error={!!error}
+                    helperText={error?.message}
+                    size="small"
+                  />
+                )}
+                PopperProps={{
+                  style: { width: "auto", maxWidth: "300px" },
+                }}
+                size="small"
+              />
+            </FormControl>
+          )}
+        />
+      </Grid>
 
         {/* Sección de Datos del Remitente */}
         <Grid item xs={12}>
@@ -573,72 +562,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           </Typography>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="tipo_demanda"
-            rules={{ required: "Este campo es obligatorio" }}
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <Autocomplete
-                  disabled={readOnly}
-                  options={dropdownData.tipo_demanda_choices || []}
-                  getOptionLabel={(option) => option.value || ""}
-                  value={dropdownData.tipo_demanda_choices?.find((item) => item.key === field.value) || null}
-                  onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={<RequiredLabel label="Tipo de Demanda" />}
-                      error={!!error}
-                      helperText={error?.message}
-                      size="small"
-                    />
-                  )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
-                  size="small"
-                />
-              </FormControl>
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="tipos_presuntos_delitos"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <FormControl fullWidth error={!!error}>
-                <Autocomplete
-                  disabled={readOnly}
-                  options={dropdownData.tipo_presunto_delito || []}
-                  getOptionLabel={(option) => option.nombre || ""}
-                  value={dropdownData.tipo_presunto_delito?.find((item) => item.id === field.value) || null}
-                  onChange={(_, newValue) => {
-                    console.log("Selected presunto_delito:", newValue ? newValue.id : null)
-                    field.onChange(newValue ? newValue.id : null)
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Presunto Delito"
-                      error={!!error}
-                      helperText={error?.message}
-                      size="small"
-                    />
-                  )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
-                  size="small"
-                />
-                {error && <FormHelperText>{error.message}</FormHelperText>}
-              </FormControl>
-            )}
-          />
-        </Grid>
 
         <Grid item xs={12}>
           <Controller

@@ -4,7 +4,7 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
   return {
     // Include estado_demanda in the transformed data
     estado_demanda: apiData.estado_demanda || null,
-
+    objetivo_de_demanda: apiData.objetivo_de_demanda || null,
     fecha_oficio_documento: apiData.fecha_oficio_documento || null,
     fecha_ingreso_senaf: apiData.fecha_ingreso_senaf || null,
     bloque_datos_remitente: apiData.bloque_datos_remitente || null,
@@ -40,6 +40,7 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
         nombre: nnya.persona.nombre,
         apellido: nnya.persona.apellido,
         fechaNacimiento: nnya.persona.fecha_nacimiento,
+        fechaDefuncion: nnya.persona.fecha_defuncion || null,
         edadAproximada: nnya.persona.edad_aproximada,
         nacionalidad: nnya.persona.nacionalidad,
         dni: nnya.persona.dni,
@@ -121,6 +122,9 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
         nombre: adulto.persona.nombre,
         apellido: adulto.persona.apellido,
         fechaNacimiento: adulto.persona.fecha_nacimiento,
+        fechaDefuncion: adulto.persona.fecha_defuncion || null,
+        legalmenteResponsable: adulto.demanda_persona.legalmente_responsable,
+        ocupacion: adulto.demanda_persona.ocupacion,
         edadAproximada: adulto.persona.edad_aproximada,
         nacionalidad: adulto.persona.nacionalidad,
         dni: adulto.persona.dni,

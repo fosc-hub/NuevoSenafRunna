@@ -1,8 +1,6 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useFieldArray, type Control, Controller, useWatch } from "react-hook-form"
 import {
   TextField,
@@ -36,20 +34,22 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData } from "./types/formTypes"
 import { format, parse } from "date-fns"
+import { useBusquedaVinculacion } from "./utils/conexionesApi"
+import VinculacionNotification from "./VinculacionNotificacion"
 
 interface FormData {
   adultosConvivientes: {
     nombre: string
     apellido: string
     fechaNacimiento: Date | null
-    fechaDefuncion: Date | null // Nueva fecha de defunción
+    fechaDefuncion: Date | null
     edadAproximada: string
     dni: string
     situacionDni: string
     genero: string
     conviviente: boolean
-    legalmenteResponsable: boolean // Nuevo campo de legalmente responsable
-    ocupacion: string // Nuevo campo de ocupación
+    legalmenteResponsable: boolean
+    ocupacion: string
     supuesto_autordv: string
     garantiza_proteccion: boolean
     observaciones: string
@@ -91,6 +91,57 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
   const [expandedSections, setExpandedSections] = useState<boolean[]>(fields.map(() => true))
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
+
+  // Vinculacion state
+  const [vinculacionResults, setVinculacionResults] = useState<{
+    demanda_ids: number[]
+    match_descriptions: string[]
+  } | null>(null)
+  const [openSnackbar, setOpenSnackbar] = useState(false)
+
+  // Use the hook from conexionesApi
+  const { buscarPorNombreApellido, buscarPorDni } = useBusquedaVinculacion(1600) // 800ms debounce
+
+  // Handle the results from the vinculacion search
+  const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
+    if (results.demanda_ids.length > 0) {
+      setVinculacionResults(results)
+      setOpenSnackbar(true)
+    }
+  }
+
+  // Watch for changes in the form data using useWatch
+  const adultosConvivientes = useWatch({
+    control,
+    name: "adultosConvivientes",
+  })
+
+  // Effect to handle changes in adultosConvivientes
+  useEffect(() => {
+    if (!adultosConvivientes) return
+
+    // Process each adult's data
+    adultosConvivientes.forEach((adult, index) => {
+      if (adult.nombre && adult.apellido) {
+        const nombreCompleto = `${adult.nombre} ${adult.apellido}`.trim()
+        if (nombreCompleto.length >= 3) {
+          buscarPorNombreApellido(nombreCompleto, handleVinculacionResults)
+        }
+      }
+
+      if (adult.dni) {
+        const dniValue = Number.parseInt(adult.dni)
+        if (!isNaN(dniValue)) {
+          buscarPorDni(dniValue, handleVinculacionResults)
+        }
+      }
+    })
+  }, [adultosConvivientes, buscarPorNombreApellido, buscarPorDni])
+
+  // Close the snackbar
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false)
+  }
 
   // Lista de ocupaciones (ejemplo - ajustar según necesidades reales)
   const ocupacionesOptions = [
@@ -448,35 +499,35 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-              <Controller
-                name={`adultosConvivientes.${index}.ocupacion`}
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <Autocomplete
-                      disabled={readOnly}
-                      options={dropdownData.ocupacion_choices || []}
-                      getOptionLabel={(option) => option.value || ""}
-                      value={dropdownData.ocupacion_choices?.find((item) => item.key === field.value) || null}
-                      onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Ocupación"
-                          error={!!error}
-                          helperText={error?.message}
-                          size="small"
-                        />
+                    <Controller
+                      name={`adultosConvivientes.${index}.ocupacion`}
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <FormControl fullWidth error={!!error}>
+                          <Autocomplete
+                            disabled={readOnly}
+                            options={dropdownData.ocupacion_choices || []}
+                            getOptionLabel={(option) => option.value || ""}
+                            value={dropdownData.ocupacion_choices?.find((item) => item.key === field.value) || null}
+                            onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Ocupación"
+                                error={!!error}
+                                helperText={error?.message}
+                                size="small"
+                              />
+                            )}
+                            PopperProps={{
+                              style: { width: "auto", maxWidth: "300px" },
+                            }}
+                            size="small"
+                          />
+                        </FormControl>
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
-                      size="small"
                     />
-                  </FormControl>
-                )}
-              />
-            </Grid>
+                  </Grid>
 
                   <Grid item xs={12} md={6}>
                     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center" }}>
@@ -786,9 +837,15 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Use the modular VinculacionNotification component */}
+      <VinculacionNotification
+        open={openSnackbar}
+        onClose={handleCloseSnackbar}
+        vinculacionResults={vinculacionResults}
+      />
     </LocalizationProvider>
   )
 }
 
 export default Step2Form
-

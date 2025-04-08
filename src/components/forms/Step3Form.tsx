@@ -1,9 +1,7 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
-import { useFieldArray, useFormContext, Controller } from "react-hook-form"
+import React, { useState, useEffect } from "react"
+import { useFieldArray, useFormContext, Controller, useWatch } from "react-hook-form"
 import {
   TextField,
   Grid,
@@ -35,9 +33,11 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import ExpandLessIcon from "@mui/icons-material/ExpandLess"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { format, parse } from "date-fns"
-import LocalizacionFields from "./LocalizacionFields" // Import the LocalizacionFields component
+import LocalizacionFields from "./LocalizacionFields"
 import VulneracionesFieldArray from "./VulneracionesFieldsArray"
 import EnfermedadesFieldArray from "./EnfermedadesFieldsArray"
+import { useBusquedaVinculacion } from "./utils/conexionesApi"
+import VinculacionNotification from "./VinculacionNotificacion"
 
 interface Step3FormProps {
   dropdownData: DropdownData
@@ -54,13 +54,68 @@ const RequiredLabel = ({ label }: { label: string }) => (
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
   const theme = useTheme()
-  const { control, watch, getValues, setValue } = useFormContext<FormData>()
+  const { control, getValues, setValue } = useFormContext<FormData>()
   const { fields, append, remove } = useFieldArray({
     control,
     name: "ninosAdolescentes",
   })
 
-  const watchedFields = watch("ninosAdolescentes")
+  // Importante: Usar useWatch en lugar de watch para detectar cambios en tiempo real
+  const watchedFields = useWatch({
+    control,
+    name: "ninosAdolescentes",
+  })
+
+  // Vinculacion state
+  const [vinculacionResults, setVinculacionResults] = useState<{
+    demanda_ids: number[]
+    match_descriptions: string[]
+  } | null>(null)
+  const [openSnackbar, setOpenSnackbar] = useState(false)
+
+  // Use the hook from conexionesApi
+  const { buscarPorNombreApellido, buscarPorDni } = useBusquedaVinculacion(1600) // 800ms debounce
+
+  // Handle the results from the vinculacion search
+  const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
+    if (results.demanda_ids.length > 0) {
+      setVinculacionResults(results)
+      setOpenSnackbar(true)
+    }
+  }
+
+  // Monitorear cambios en los campos específicos en lugar de todo el objeto
+  useEffect(() => {
+    if (!watchedFields) return
+
+    // Procesar cada niño/adolescente
+    watchedFields.forEach((nino, index) => {
+      if (!nino) return
+
+      // Verificar cambios en nombre y apellido
+      if (nino.nombre && nino.apellido) {
+        const nombreCompleto = `${nino.nombre} ${nino.apellido}`.trim()
+        if (nombreCompleto.length >= 3) {
+          console.log(`Buscando por nombre y apellido: ${nombreCompleto}`)
+          buscarPorNombreApellido(nombreCompleto, handleVinculacionResults)
+        }
+      }
+
+      // Verificar cambios en DNI
+      if (nino.dni) {
+        const dniValue = Number.parseInt(nino.dni)
+        if (!isNaN(dniValue)) {
+          console.log(`Buscando por DNI: ${dniValue}`)
+          buscarPorDni(dniValue, handleVinculacionResults)
+        }
+      }
+    })
+  }, [watchedFields, buscarPorNombreApellido, buscarPorDni])
+
+  // Close the snackbar
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false)
+  }
 
   const [selectedSituacionSalud, setSelectedSituacionSalud] = useState<number[]>([])
   const [expandedSections, setExpandedSections] = useState<boolean[]>(fields.map(() => true))
@@ -72,7 +127,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       nombre: "",
       apellido: "",
       fechaNacimiento: null,
-      fechaDefuncion: null, // Inicializar fecha de defunción
+      fechaDefuncion: null,
       edadAproximada: "",
       dni: "",
       situacionDni: "",
@@ -149,8 +204,6 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       closeDeleteDialog()
     }
   }
-
-  // ... rest of the component logic remains the same
 
   const ITEM_HEIGHT = 48
   const ITEM_PADDING_TOP = 8
@@ -354,6 +407,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                   />
                 </Grid>
 
+                {/* Resto del formulario... */}
                 {/* Sección de Fechas */}
                 <Grid item xs={12}>
                   <Typography color="primary" variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
@@ -984,7 +1038,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     control={control}
                     readOnly={readOnly}
                     dropdownData={dropdownData}
-                    watch={watch}
+                    watch={useWatch}
                     setValue={setValue}
                   />
                 </Grid>
@@ -1070,7 +1124,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     control={control}
                     readOnly={readOnly}
                     dropdownData={dropdownData}
-                    watch={watch}
+                    watch={useWatch}
                     setValue={setValue}
                   />
                 </Grid>
@@ -1133,9 +1187,15 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Use the modular VinculacionNotification component */}
+      <VinculacionNotification
+        open={openSnackbar}
+        onClose={handleCloseSnackbar}
+        vinculacionResults={vinculacionResults}
+      />
     </LocalizationProvider>
   )
 }
 
 export default Step3Form
-

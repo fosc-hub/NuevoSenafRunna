@@ -25,6 +25,9 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { Typography } from "@mui/material"
 import { Add, Remove, CloudUpload, AttachFile, OpenInNew } from "@mui/icons-material"
+import { useBusquedaVinculacion } from "./utils/conexionesApi"
+import VinculacionNotification from "./VinculacionNotificacion"
+import { useState, useEffect } from "react"
 
 // Componente para la sección de archivos adjuntos
 const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; readOnly?: boolean }) => {
@@ -210,6 +213,91 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
   } = useQuery<DropdownData>({
     queryKey: ["dropdowns"],
   })
+
+  // Vinculacion state
+  const [vinculacionResults, setVinculacionResults] = useState<{
+    demanda_ids: number[]
+    match_descriptions: string[]
+  } | null>(null)
+  const [openSnackbar, setOpenSnackbar] = useState(false)
+
+  // Use the hook from conexionesApi
+  const { buscarPorNombreApellido, buscarPorDni, buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
+
+  // Handle the results from the vinculacion search
+  const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
+    if (results.demanda_ids.length > 0) {
+      setVinculacionResults(results)
+      setOpenSnackbar(true)
+    }
+  }
+
+  // Close the snackbar
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false)
+  }
+
+  // Watch for changes in the relevant fields
+  const watchedCodigos = useWatch({
+    control,
+    name: "codigosDemanda",
+  })
+
+  const watchedLocalizacion = useWatch({
+    control,
+    name: "localizacion",
+  })
+
+  // Effect to handle changes in codigo and localizacion
+  useEffect(() => {
+    if (!watchedCodigos || !watchedLocalizacion) return
+
+    // Check if we have a valid codigo
+    const codigoValido = watchedCodigos.find((codigo) => codigo.codigo && codigo.codigo.trim().length > 0)
+
+    // Check if we have valid localizacion data
+    const calleValida = watchedLocalizacion?.calle && watchedLocalizacion.calle.trim().length > 0
+    const localidadValida = watchedLocalizacion?.localidad && !isNaN(Number(watchedLocalizacion.localidad))
+
+    // If we have valid data, search for vinculaciones
+    if (codigoValido || (calleValida && localidadValida)) {
+      console.log(
+        "Buscando vinculaciones con:",
+        codigoValido ? `Código: ${codigoValido.codigo}` : "",
+        calleValida ? `Calle: ${watchedLocalizacion.calle}` : "",
+        localidadValida ? `Localidad: ${watchedLocalizacion.localidad}` : "",
+      )
+
+      // Prepare search data
+      const searchData: any = {}
+
+      if (codigoValido) {
+        searchData.codigo = codigoValido.codigo
+      }
+
+      if (calleValida && localidadValida) {
+        searchData.localizacion = {
+          calle: watchedLocalizacion.calle,
+          localidad: Number(watchedLocalizacion.localidad),
+        }
+      }
+
+      // Perform the search
+      buscarCompleto(
+        "", // nombre y apellido vacío
+        0, // dni vacío
+        codigoValido?.codigo || "",
+        calleValida && localidadValida
+          ? {
+              calle: watchedLocalizacion.calle,
+              localidad: Number(watchedLocalizacion.localidad),
+            }
+          : undefined,
+        handleVinculacionResults,
+      )
+    }
+  }, [watchedCodigos, watchedLocalizacion, buscarCompleto])
+
   const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
   const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
 
@@ -314,60 +402,60 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
 
         {/* Sección de Etiqueta y Envío de Respuesta */}
         <Grid item xs={12} sm={6}>
-        <Controller
-          name="etiqueta"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <FormControl fullWidth error={!!error}>
-              <Autocomplete
-                disabled={readOnly}
-                options={dropdownData.etiqueta || []}
-                getOptionLabel={(option) => option.nombre || ""}
-                value={dropdownData.etiqueta?.find((item) => item.id === field.value) || null}
-                onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Etiqueta" error={!!error} helperText={error?.message} size="small" />
-                )}
-                PopperProps={{
-                  style: { width: "auto", maxWidth: "300px" },
-                }}
-                size="small"
-              />
-            </FormControl>
-          )}
-        />
-      </Grid>
+          <Controller
+            name="etiqueta"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={dropdownData.etiqueta || []}
+                  getOptionLabel={(option) => option.nombre || ""}
+                  value={dropdownData.etiqueta?.find((item) => item.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Etiqueta" error={!!error} helperText={error?.message} size="small" />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
+              </FormControl>
+            )}
+          />
+        </Grid>
 
         <Grid item xs={12} sm={6}>
-        <Controller
-          name="envio_de_respuesta"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <FormControl fullWidth error={!!error}>
-              <Autocomplete
-                disabled={readOnly}
-                options={dropdownData.envio_de_respuesta_choices || []}
-                getOptionLabel={(option) => option.value || ""}
-                value={dropdownData.envio_de_respuesta_choices?.find((item) => item.key === field.value) || null}
-                onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Envío de respuesta"
-                    error={!!error}
-                    helperText={error?.message}
-                    size="small"
-                  />
-                )}
-                PopperProps={{
-                  style: { width: "auto", maxWidth: "300px" },
-                }}
-                size="small"
-              />
-            </FormControl>
-          )}
-        />
-      </Grid>
+          <Controller
+            name="envio_de_respuesta"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <FormControl fullWidth error={!!error}>
+                <Autocomplete
+                  disabled={readOnly}
+                  options={dropdownData.envio_de_respuesta_choices || []}
+                  getOptionLabel={(option) => option.value || ""}
+                  value={dropdownData.envio_de_respuesta_choices?.find((item) => item.key === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Envío de respuesta"
+                      error={!!error}
+                      helperText={error?.message}
+                      size="small"
+                    />
+                  )}
+                  PopperProps={{
+                    style: { width: "auto", maxWidth: "300px" },
+                  }}
+                  size="small"
+                />
+              </FormControl>
+            )}
+          />
+        </Grid>
 
         {/* Sección de Datos del Remitente */}
         <Grid item xs={12}>
@@ -561,7 +649,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             Clasificación de la Demanda
           </Typography>
         </Grid>
-
 
         <Grid item xs={12}>
           <Controller
@@ -783,9 +870,14 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
           />
         </Grid>
       </Grid>
+      {/* Notification for vinculacion results */}
+      <VinculacionNotification
+        open={openSnackbar}
+        onClose={handleCloseSnackbar}
+        vinculacionResults={vinculacionResults}
+      />
     </LocalizationProvider>
   )
 }
 
 export default Step1Form
-

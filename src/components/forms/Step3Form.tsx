@@ -38,6 +38,7 @@ import VulneracionesFieldArray from "./VulneracionesFieldsArray"
 import EnfermedadesFieldArray from "./EnfermedadesFieldsArray"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
+import { useParams } from "next/navigation"
 
 interface Step3FormProps {
   dropdownData: DropdownData
@@ -74,7 +75,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
   const [openSnackbar, setOpenSnackbar] = useState(false)
 
   // Use the hook from conexionesApi
-  const { buscarPorNombreApellido, buscarPorDni } = useBusquedaVinculacion(1600) // 800ms debounce
+  const { buscarPorNombreApellido, buscarPorDni, buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
   // Handle the results from the vinculacion search
   const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
@@ -92,25 +93,16 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
     watchedFields.forEach((nino, index) => {
       if (!nino) return
 
-      // Verificar cambios en nombre y apellido
-      if (nino.nombre && nino.apellido) {
-        const nombreCompleto = `${nino.nombre} ${nino.apellido}`.trim()
-        if (nombreCompleto.length >= 3) {
-          console.log(`Buscando por nombre y apellido: ${nombreCompleto}`)
-          buscarPorNombreApellido(nombreCompleto, handleVinculacionResults)
-        }
-      }
+      const nombreCompleto = nino.nombre && nino.apellido ? `${nino.nombre} ${nino.apellido}`.trim() : ""
+      const dniValue = nino.dni ? Number.parseInt(nino.dni) : 0
 
-      // Verificar cambios en DNI
-      if (nino.dni) {
-        const dniValue = Number.parseInt(nino.dni)
-        if (!isNaN(dniValue)) {
-          console.log(`Buscando por DNI: ${dniValue}`)
-          buscarPorDni(dniValue, handleVinculacionResults)
-        }
+      // Solo buscar si hay al menos un criterio válido
+      if ((nombreCompleto && nombreCompleto.length >= 3) || (dniValue && !isNaN(dniValue))) {
+        console.log(`Buscando por nombre/apellido: ${nombreCompleto} y DNI: ${dniValue}`)
+        buscarCompleto(nombreCompleto, dniValue, "", undefined, handleVinculacionResults)
       }
     })
-  }, [watchedFields, buscarPorNombreApellido, buscarPorDni])
+  }, [watchedFields, buscarCompleto])
 
   // Close the snackbar
   const handleCloseSnackbar = () => {
@@ -222,6 +214,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         selectedItems.indexOf(name) === -1 ? theme.typography.fontWeightRegular : theme.typography.fontWeightMedium,
     }
   }
+
+  const params = useParams()
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
@@ -1193,6 +1187,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
+        currentDemandaId={params?.id}
       />
     </LocalizationProvider>
   )

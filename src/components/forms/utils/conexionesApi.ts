@@ -89,36 +89,46 @@ export const useBusquedaVinculacion = (delay = 500) => {
       callback?: (result: BusquedaVinculacionResponse) => void,
     ) => {
       try {
-        const data: BusquedaVinculacionRequest = {}
+        const data: BusquedaVinculacionRequest = {};
 
+        // Solo agregar los campos que tengan valores válidos
         if (nombreYApellido && nombreYApellido.trim().length > 0) {
-          data.nombre_y_apellido = nombreYApellido
+          data.nombre_y_apellido = nombreYApellido;
         }
 
         if (dni && !isNaN(dni)) {
-          data.dni = dni
+          data.dni = dni;
         }
 
         if (codigo) {
-          data.codigo = codigo
+          data.codigo = codigo;
         }
 
         if (localizacion) {
-          data.localizacion = localizacion
+          data.localizacion = localizacion;
         }
 
-        const result = await buscarVinculacion(data)
-        if (callback) callback(result)
-        return result
+        // Solo realizar la búsqueda si hay al menos un criterio válido
+        if (Object.keys(data).length > 0) {
+          console.log("Realizando búsqueda con datos:", data);
+          const result = await buscarVinculacion(data);
+          if (callback) callback(result);
+          return result;
+        } else {
+          console.log("No hay criterios de búsqueda válidos");
+          const emptyResult = { demanda_ids: [], match_descriptions: [] };
+          if (callback) callback(emptyResult);
+          return emptyResult;
+        }
       } catch (error) {
-        console.error("Error en búsqueda completa:", error)
-        const emptyResult = { demanda_ids: [], match_descriptions: [] }
-        if (callback) callback(emptyResult)
-        return emptyResult
+        console.error("Error en búsqueda completa:", error);
+        const emptyResult = { demanda_ids: [], match_descriptions: [] };
+        if (callback) callback(emptyResult);
+        return emptyResult;
       }
     },
     [],
-  )
+  );
 
   return {
     buscarPorNombreApellido,
@@ -126,37 +136,3 @@ export const useBusquedaVinculacion = (delay = 500) => {
     buscarCompleto,
   }
 }
-
-/**
- * Example of how to use the hook in a component:
- *
- * import { useBusquedaVinculacion } from './conexionesApi';
- *
- * function MyComponent() {
- *   const [resultados, setResultados] = useState<BusquedaVinculacionResponse | null>(null);
- *   const { buscarPorNombreApellido, buscarPorDni } = useBusquedaVinculacion();
- *
- *   // For name and surname field
- *   const handleNombreApellidoChange = (e) => {
- *     const value = e.target.value;
- *     buscarPorNombreApellido(value, setResultados);
- *   };
- *
- *   // For DNI field
- *   const handleDniChange = (e) => {
- *     const value = parseInt(e.target.value);
- *     buscarPorDni(value, setResultados);
- *   };
- *
- *   return (
- *     <div>
- *       <input onChange={handleNombreApellidoChange} placeholder="Nombre y Apellido" />
- *       <input onChange={handleDniChange} placeholder="DNI" type="number" />
- *
- *       {resultados && resultados.match_descriptions.map((desc, i) => (
- *         <div key={i}>{desc}</div>
- *       ))}
- *     </div>
- *   );
- * }
- */

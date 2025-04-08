@@ -36,6 +36,7 @@ import type { DropdownData } from "./types/formTypes"
 import { format, parse } from "date-fns"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
+import { useParams } from "next/navigation"
 
 interface FormData {
   adultosConvivientes: {
@@ -100,7 +101,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
   const [openSnackbar, setOpenSnackbar] = useState(false)
 
   // Use the hook from conexionesApi
-  const { buscarPorNombreApellido, buscarPorDni } = useBusquedaVinculacion(1600) // 800ms debounce
+  const { buscarPorNombreApellido, buscarPorDni, buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
   // Handle the results from the vinculacion search
   const handleVinculacionResults = (results: { demanda_ids: number[]; match_descriptions: string[] }) => {
@@ -122,21 +123,17 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
 
     // Process each adult's data
     adultosConvivientes.forEach((adult, index) => {
-      if (adult.nombre && adult.apellido) {
-        const nombreCompleto = `${adult.nombre} ${adult.apellido}`.trim()
-        if (nombreCompleto.length >= 3) {
-          buscarPorNombreApellido(nombreCompleto, handleVinculacionResults)
-        }
-      }
+      if (!adult) return
 
-      if (adult.dni) {
-        const dniValue = Number.parseInt(adult.dni)
-        if (!isNaN(dniValue)) {
-          buscarPorDni(dniValue, handleVinculacionResults)
-        }
+      const nombreCompleto = adult.nombre && adult.apellido ? `${adult.nombre} ${adult.apellido}`.trim() : ""
+      const dniValue = adult.dni ? Number.parseInt(adult.dni) : 0
+
+      // Solo buscar si hay al menos un criterio válido
+      if ((nombreCompleto && nombreCompleto.length >= 3) || (dniValue && !isNaN(dniValue))) {
+        buscarCompleto(nombreCompleto, dniValue, "", undefined, handleVinculacionResults)
       }
     })
-  }, [adultosConvivientes, buscarPorNombreApellido, buscarPorDni])
+  }, [adultosConvivientes, buscarCompleto])
 
   // Close the snackbar
   const handleCloseSnackbar = () => {
@@ -234,6 +231,8 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         selectedItems.indexOf(name) === -1 ? theme.typography.fontWeightRegular : theme.typography.fontWeightMedium,
     }
   }
+
+  const params = useParams()
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
@@ -843,6 +842,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
+        currentDemandaId={params?.id}
       />
     </LocalizationProvider>
   )

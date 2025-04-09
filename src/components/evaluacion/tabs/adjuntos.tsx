@@ -9,13 +9,15 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material"
 
+// Modificar la interfaz Adjunto para que coincida con la estructura de datos real
 interface Adjunto {
-  id: string
-  name: string
-  type: string
-  size: number
-  date: string
-  url: string
+  archivo: string
+  id?: string
+  name?: string
+  type?: string
+  size?: number
+  date?: string
+  url?: string
 }
 
 interface AdjuntosTabProps {
@@ -23,17 +25,26 @@ interface AdjuntosTabProps {
   setAdjuntos: React.Dispatch<React.SetStateAction<Adjunto[]>>
 }
 
+// Actualizar la función AdjuntosTab para manejar la nueva estructura de datos
 export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps) {
-  const handleDeleteAdjunto = (id: string) => {
-    setAdjuntos((prev) => prev.filter((file) => file.id !== id))
+  const baseUrl = "https://web-production-c6370.up.railway.app"
+
+  const handleDeleteAdjunto = (archivo: string) => {
+    setAdjuntos((prev) => prev.filter((file) => file.archivo !== archivo))
   }
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  // Función para extraer el nombre del archivo de la ruta
+  const getFileName = (filePath: string): string => {
+    const parts = filePath.split("/")
+    return parts[parts.length - 1]
+  }
+
+  // Función para determinar el tipo de archivo basado en la extensión
+  const getFileType = (fileName: string): string => {
+    const extension = fileName.split(".").pop()?.toLowerCase() || ""
+    if (extension === "pdf") return "application/pdf"
+    if (["jpg", "jpeg", "png", "gif"].includes(extension)) return "image/" + extension
+    return "application/octet-stream"
   }
 
   return (
@@ -47,28 +58,53 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
         </Typography>
       ) : (
         <List sx={{ maxHeight: 300, overflow: "auto" }}>
-          {adjuntos.map((file) => (
-            <Box key={file.id}>
-              <ListItem
-                secondaryAction={
-                  <Box>
-                    <IconButton edge="end" aria-label="download" href={file.url} download={file.name}>
-                      <DownloadIcon />
-                    </IconButton>
-                    <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteAdjunto(file.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                }
-              >
-                <ListItemIcon>
-                  {file.type === "application/pdf" ? <PdfIcon color="error" /> : <FileIcon color="primary" />}
-                </ListItemIcon>
-                <ListItemText primary={file.name} secondary={`${formatFileSize(file.size)} • ${file.date}`} />
-              </ListItem>
-              <Divider component="li" />
-            </Box>
-          ))}
+          {adjuntos.map((file, index) => {
+            const fileName = getFileName(file.archivo)
+            const fileType = getFileType(fileName)
+            const fileUrl = `${baseUrl}${file.archivo}`
+
+            return (
+              <Box key={index}>
+                <ListItem
+                  secondaryAction={
+                    <Box>
+                      <IconButton
+                        edge="end"
+                        aria-label="download"
+                        component="a"
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <DownloadIcon />
+                      </IconButton>
+                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteAdjunto(file.archivo)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  }
+                >
+                  <ListItemIcon>
+                    {fileType === "application/pdf" ? <PdfIcon color="error" /> : <FileIcon color="primary" />}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={fileName}
+                    secondary={
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "none", color: "inherit" }}
+                      >
+                        Ver archivo
+                      </a>
+                    }
+                  />
+                </ListItem>
+                <Divider component="li" />
+              </Box>
+            )
+          })}
         </List>
       )}
     </Paper>

@@ -282,8 +282,12 @@ export const evaluacionData = {
     "La situación involucra un conflicto familiar prolongado que afecta la convivencia y el desarrollo de la NNYA, requiriendo intervención institucional.",
   
   // Datos adicionales para completar la estructura con los tres steps
-  adjuntos: [
-    { archivo: "/documentos/oficio_judicial_456.pdf" },
-    { archivo: "/documentos/informe_social.docx" }
-  ]
+"adjuntos": [
+    {
+        "archivo": "/media/TDemandaAdjunto/archivo_1/Pra-Clase004.pdf"
+    },
+    {
+        "archivo": "/media/TDemandaAdjunto/archivo_2/Teo-Clase004.pdf"
+    }
+],
 }

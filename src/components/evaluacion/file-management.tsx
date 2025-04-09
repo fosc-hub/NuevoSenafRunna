@@ -31,6 +31,7 @@ interface FileInfo {
   size: number
   date: string
   url: string
+  archivo?: string
 }
 
 interface FileManagementProps {
@@ -50,16 +51,28 @@ const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ 
   // Expose methods to parent components via ref
   useImperativeHandle(ref, () => ({
     addGeneratedPDF: (pdfBlob: Blob, fileName = "informe_valoracion.pdf") => {
+      // Crear un objeto URL para el blob
+      const blobUrl = URL.createObjectURL(pdfBlob)
+
+      // Crear un nuevo archivo en el formato esperado por la API
       const newFile = {
         id: Math.random().toString(36).substring(2, 9),
         name: fileName,
         type: "application/pdf",
         size: pdfBlob.size,
         date: new Date().toLocaleString(),
-        url: URL.createObjectURL(pdfBlob),
+        url: blobUrl,
+        archivo: `/media/TDemandaAdjunto/archivo_${Math.floor(Math.random() * 1000)}/${fileName}`,
       }
 
       setFiles((prev) => [...prev, newFile])
+
+      // Añadir el archivo a los adjuntos si existe la función setAdjuntos
+      if (typeof window !== "undefined" && window.dispatchEvent) {
+        // Crear un evento personalizado para notificar que se ha generado un nuevo archivo
+        const event = new CustomEvent("newFileGenerated", { detail: { file: newFile } })
+        window.dispatchEvent(event)
+      }
 
       toast.success("Informe generado y guardado exitosamente", {
         position: "top-center",
@@ -233,4 +246,3 @@ const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ 
 FileManagement.displayName = "FileManagement"
 
 export default FileManagement
-

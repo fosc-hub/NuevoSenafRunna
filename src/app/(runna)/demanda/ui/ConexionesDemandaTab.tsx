@@ -1,11 +1,9 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState } from "react"
 import {
   Box,
   Typography,
-  TextField,
-  Button,
   List,
   ListItem,
   ListItemText,
@@ -13,13 +11,15 @@ import {
   CircularProgress,
   Alert,
   IconButton,
-  Autocomplete,
+  Paper,
+  useTheme,
+  alpha,
 } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
-import LinkIcon from "@mui/icons-material/Link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import { get, create, update } from "@/app/api/apiService"
+import SearchModal from "@/components/searchModal/searchModal"
 
 interface Demanda {
   id: number
@@ -40,12 +40,11 @@ interface ConexionesDemandaTabProps {
 }
 
 export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
-  const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
   const queryClient = useQueryClient()
+  const theme = useTheme()
+
+  // States for existing connections
+  const [error, setError] = useState<string | null>(null)
 
   // Fetch all demandas
   const { data: allDemandas = [], isLoading: isLoadingDemandas } = useQuery({
@@ -78,37 +77,12 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     enabled: !isLoadingDemandas, // Only run this query after allDemandas is loaded
   })
 
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
-    }, 500) // 500ms delay
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Filtered search results
-  const searchResults = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return []
-
-    const lowerQuery = debouncedSearchQuery.toLowerCase()
-    return allDemandas.filter(
-      (demanda) =>
-        (demanda.id.toString().includes(lowerQuery) ||
-          (demanda.descripcion && demanda.descripcion.toLowerCase().includes(lowerQuery))) &&
-        demanda.id !== demandaId &&
-        !conexiones.some((c) => c.id === demanda.id),
-    )
-  }, [debouncedSearchQuery, allDemandas, demandaId, conexiones])
-
   // Create connection mutation
   const createConnectionMutation = useMutation({
     mutationFn: (newConnection: Partial<DemandaVinculada>) =>
       create<DemandaVinculada>("demanda-vinculada", newConnection, true, "Demandas conectadas exitosamente"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["demandaConexiones", demandaId] })
-      setSelectedDemanda(null)
-      setSearchQuery("")
     },
     onError: (err) => {
       console.error("Error connecting demandas:", err)
@@ -152,14 +126,28 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     },
   })
 
-  const handleConnect = () => {
-    if (!selectedDemanda) return
+  const handleConnect = (demandaId2: number) => {
+    // Find the demanda in allDemandas
+    const demandaToConnect = allDemandas.find((d) => d.id === demandaId2)
 
-    createConnectionMutation.mutate({
-      demanda_1: demandaId,
-      demanda_2: selectedDemanda.id,
-      deleted: false,
-    })
+    if (demandaToConnect) {
+      // Check if already connected
+      const isAlreadyConnected = conexiones.some((c) => c.id === demandaId2)
+
+      if (isAlreadyConnected) {
+        toast.info("Esta demanda ya está conectada")
+        return
+      }
+
+      // Create connection
+      createConnectionMutation.mutate({
+        demanda_1: demandaId,
+        demanda_2: demandaId2,
+        deleted: false,
+      })
+    } else {
+      toast.error("No se encontró la demanda a conectar")
+    }
   }
 
   const handleDeleteConnection = (connectedDemandaId: number) => {
@@ -180,93 +168,86 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
         </Alert>
       )}
 
-      <Box sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Buscar demandas para conectar
-        </Typography>
+      {/* Search Section - Using the refactored SearchModal component in embedded mode */}
+      <Paper
+        elevation={1}
+        sx={{
+          p: 3,
+          mb: 4,
+          borderRadius: 2,
+          bgcolor: "white",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        }}
+      >
+        <SearchModal
+          isModal={false}
+          mode="connect"
+          onConnect={handleConnect}
+          title="Buscar demandas para conectar"
+          compact={true}
+        />
+      </Paper>
 
-        <Box sx={{ display: "flex", mb: 2 }}>
-          <Autocomplete
-            fullWidth
-            freeSolo
-            options={searchResults}
-            getOptionLabel={(option) =>
-              typeof option === "string" ? option : `${option.id} - ${option.descripcion || "Sin descripción"}`
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Buscar por ID o descripción"
-                variant="outlined"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                value={searchQuery}
-              />
-            )}
-            onChange={(_, newValue) => {
-              if (newValue && typeof newValue !== "string") {
-                setSelectedDemanda(newValue)
-              }
-            }}
-            loading={isLoading}
-            sx={{ mr: 1 }}
-          />
-          <Button variant="contained" disabled={isLoading || !searchQuery.trim()}>
-            Buscar
-          </Button>
-        </Box>
-
-        {selectedDemanda && (
-          <Box sx={{ mt: 2, p: 2, border: 1, borderColor: "divider", borderRadius: 1 }}>
-            <Typography variant="subtitle2">Demanda seleccionada:</Typography>
-            <Typography>
-              ID: {selectedDemanda.id} - {selectedDemanda.descripcion || "Sin descripción"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Estado: {selectedDemanda.estado_demanda} | Fecha:{" "}
-              {new Date(selectedDemanda.fecha_ingreso_senaf).toLocaleDateString()}
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{ mt: 1 }}
-              onClick={handleConnect}
-              startIcon={<LinkIcon />}
-              disabled={createConnectionMutation.isPending}
-            >
-              {createConnectionMutation.isPending ? "Conectando..." : "Conectar Demandas"}
-            </Button>
-          </Box>
-        )}
-      </Box>
-
-      <Box sx={{ p: 2 }}>
-        <Typography variant="subtitle1" gutterBottom>
+      {/* Connected Demands Section */}
+      <Paper
+        elevation={1}
+        sx={{
+          p: 3,
+          borderRadius: 2,
+          bgcolor: "white",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        }}
+      >
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
           Demandas Conectadas
         </Typography>
 
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-            <CircularProgress />
+            <CircularProgress size={24} />
           </Box>
         ) : conexiones.length > 0 ? (
-          <List>
+          <List sx={{ mt: 2 }}>
             {conexiones.map((demanda) => (
               <React.Fragment key={demanda.id}>
                 <ListItem
+                  sx={{
+                    borderRadius: 2,
+                    mb: 1,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    },
+                  }}
                   secondaryAction={
                     <IconButton
                       edge="end"
                       aria-label="delete"
                       onClick={() => handleDeleteConnection(demanda.id)}
                       disabled={deleteConnectionMutation.isPending}
+                      sx={{
+                        color: theme.palette.error.main,
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.error.main, 0.1),
+                        },
+                      }}
                     >
                       <DeleteIcon />
                     </IconButton>
                   }
                 >
                   <ListItemText
-                    primary={`ID: ${demanda.id} - ${demanda.descripcion || "Sin descripción"}`}
-                    secondary={`Estado: ${demanda.estado_demanda} | Fecha: ${new Date(demanda.fecha_ingreso_senaf).toLocaleDateString()}`}
+                    primary={
+                      <Typography variant="subtitle2">
+                        ID: {demanda.id} - {demanda.descripcion || "Sin descripción"}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" color="text.secondary">
+                        Estado: {demanda.estado_demanda} | Fecha:{" "}
+                        {new Date(demanda.fecha_ingreso_senaf).toLocaleDateString()}
+                      </Typography>
+                    }
                   />
                 </ListItem>
                 <Divider component="li" />
@@ -274,12 +255,25 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
             ))}
           </List>
         ) : (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-            No hay demandas conectadas
-          </Typography>
+          <Box
+            sx={{
+              p: 3,
+              textAlign: "center",
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.background.paper, 0.7),
+              border: `1px dashed ${theme.palette.divider}`,
+              mt: 2,
+            }}
+          >
+            <Typography variant="body1" color="text.secondary">
+              No hay demandas conectadas
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Utilice la búsqueda para encontrar y conectar demandas relacionadas.
+            </Typography>
+          </Box>
         )}
-      </Box>
+      </Paper>
     </Box>
   )
 }
-

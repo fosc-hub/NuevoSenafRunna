@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
+import SearchButton from "./search-button"
 
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
@@ -68,6 +69,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
         <>
           <Skeleton variant="rectangular" width={150} height={40} />
           <Skeleton variant="rectangular" width={100} height={40} />
+          <Skeleton variant="rectangular" width={100} height={40} />
         </>
       ) : (
         <>
@@ -99,6 +101,9 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
             <FilterList className="h-4 w-4" />
             <span>Filtros</span>
           </Button>
+
+          {/* Add the Search Button component */}
+          <SearchButton />
 
           <Popover
             id="filter-menu"
@@ -271,7 +276,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                     <FileText className="h-4 w-4" />
                   </ListItemIcon>
                   <ListItemText primary="Constatación" />
-                  {filterState.objetivo_demanda === "CONSTATACION" && <Check className="h-4 w-4 text-primary" />}
+                  {filterState.objetivo_de_demanda === "CONSTATACION" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
                 <ListItem
@@ -283,7 +288,9 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                     <Mail className="h-4 w-4" />
                   </ListItemIcon>
                   <ListItemText primary="Petición de Informe" />
-                  {filterState.objetivo_de_demanda === "PETICION_DE_INFORME" && <Check className="h-4 w-4 text-primary" />}
+                  {filterState.objetivo_de_demanda === "PETICION_DE_INFORME" && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
                 </ListItem>
               </List>
             </Box>
@@ -295,4 +302,3 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
 }
 
 export default Buttons
-

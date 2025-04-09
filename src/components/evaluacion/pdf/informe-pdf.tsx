@@ -116,6 +116,11 @@ const styles = StyleSheet.create({
     borderColor: "#bfbfbf",
     backgroundColor: "#f9f9f9",
   },
+  subDetail: {
+    marginLeft: 30,
+    marginBottom: 3,
+    fontSize: 10,
+  },
 })
 
 interface InformePDFProps {
@@ -167,6 +172,15 @@ const InformePDF = ({ data }: InformePDFProps) => (
         {data.InformacionGeneral.objetivo_de_demanda && (
           <Text style={styles.listItem}>- Objetivo de Demanda: {data.InformacionGeneral.objetivo_de_demanda}</Text>
         )}
+        {data.InformacionGeneral.motivo_ingreso && (
+          <Text style={styles.listItem}>- Motivo de Ingreso: {data.InformacionGeneral.motivo_ingreso}</Text>
+        )}
+        {data.InformacionGeneral.submotivo_ingreso && (
+          <Text style={styles.listItem}>- Submotivo de Ingreso: {data.InformacionGeneral.submotivo_ingreso}</Text>
+        )}
+        {data.InformacionGeneral.observaciones && (
+          <Text style={styles.listItem}>- Observaciones: {data.InformacionGeneral.observaciones}</Text>
+        )}
       </View>
 
       {/* Domicilio */}
@@ -196,6 +210,13 @@ const InformePDF = ({ data }: InformePDFProps) => (
           {data.DatosLocalizacion.geolocalizacion && (
             <Text style={styles.text}>- Geolocalización: {data.DatosLocalizacion.geolocalizacion}</Text>
           )}
+          {data.DatosLocalizacion.barrio_id && (
+            <Text style={styles.text}>- Barrio ID: {data.DatosLocalizacion.barrio_id}</Text>
+          )}
+          {data.DatosLocalizacion.localidad_id && (
+            <Text style={styles.text}>- Localidad ID: {data.DatosLocalizacion.localidad_id}</Text>
+          )}
+          {data.DatosLocalizacion.cpc_id && <Text style={styles.text}>- CPC ID: {data.DatosLocalizacion.cpc_id}</Text>}
         </View>
       </View>
 
@@ -244,23 +265,80 @@ const InformePDF = ({ data }: InformePDFProps) => (
               {/* Información adicional si está disponible */}
               {nnya.genero && <Text style={styles.personDetail}>Género: {nnya.genero}</Text>}
               {nnya.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {nnya.nacionalidad}</Text>}
-              {nnya.educacion && nnya.educacion.institucion_educativa && (
-                <Text style={styles.personDetail}>
-                  Educación: {nnya.educacion.institucion_educativa.nombre || ""}, Nivel: {nnya.educacion.nivel || ""},
-                  Curso: {nnya.educacion.curso || ""}
-                </Text>
+              {nnya.situacionDni && <Text style={styles.personDetail}>Situación DNI: {nnya.situacionDni}</Text>}
+              {nnya.edadAproximada && <Text style={styles.personDetail}>Edad aproximada: {nnya.edadAproximada}</Text>}
+
+              {/* Educación */}
+              {nnya.educacion && (
+                <View>
+                  <Text style={styles.personDetail}>Educación:</Text>
+                  {nnya.educacion.institucion_educativa && (
+                    <Text style={styles.subDetail}>
+                      Institución: {nnya.educacion.institucion_educativa.nombre || ""}
+                    </Text>
+                  )}
+                  {nnya.educacion.nivel && <Text style={styles.subDetail}>Nivel: {nnya.educacion.nivel}</Text>}
+                  {nnya.educacion.curso && <Text style={styles.subDetail}>Curso: {nnya.educacion.curso}</Text>}
+                  {nnya.educacion.turno && <Text style={styles.subDetail}>Turno: {nnya.educacion.turno}</Text>}
+                  <Text style={styles.subDetail}>Escolarizado: {nnya.educacion.esta_escolarizado ? "Sí" : "No"}</Text>
+                  {nnya.educacion.tipo_escuela && (
+                    <Text style={styles.subDetail}>Tipo de escuela: {nnya.educacion.tipo_escuela}</Text>
+                  )}
+                </View>
               )}
+
+              {/* Cobertura médica */}
               {nnya.cobertura_medica && (
-                <Text style={styles.personDetail}>
-                  Cobertura médica: {nnya.cobertura_medica.obra_social || "No especificada"}, AUH:{" "}
-                  {nnya.cobertura_medica.auh ? "Sí" : "No"}
-                </Text>
+                <View>
+                  <Text style={styles.personDetail}>Cobertura médica:</Text>
+                  {nnya.cobertura_medica.obra_social && (
+                    <Text style={styles.subDetail}>Obra social: {nnya.cobertura_medica.obra_social}</Text>
+                  )}
+                  {nnya.cobertura_medica.institucion_sanitaria_nombre && (
+                    <Text style={styles.subDetail}>
+                      Institución sanitaria: {nnya.cobertura_medica.institucion_sanitaria_nombre}
+                    </Text>
+                  )}
+                  {nnya.cobertura_medica.intervencion && (
+                    <Text style={styles.subDetail}>Intervención: {nnya.cobertura_medica.intervencion}</Text>
+                  )}
+                  <Text style={styles.subDetail}>AUH: {nnya.cobertura_medica.auh ? "Sí" : "No"}</Text>
+                  {nnya.cobertura_medica.medico_cabecera && (
+                    <Text style={styles.subDetail}>
+                      Médico de cabecera: {nnya.cobertura_medica.medico_cabecera.nombre || ""}
+                    </Text>
+                  )}
+                </View>
               )}
+
+              {/* Enfermedades */}
               {nnya.persona_enfermedades && nnya.persona_enfermedades.length > 0 && (
-                <Text style={styles.personDetail}>
-                  Enfermedades: {nnya.persona_enfermedades.map((e: any) => e.enfermedad_nombre).join(", ")}
-                </Text>
+                <View>
+                  <Text style={styles.personDetail}>Enfermedades:</Text>
+                  {nnya.persona_enfermedades.map((enfermedad: any, idx: number) => (
+                    <Text key={idx} style={styles.subDetail}>
+                      - {enfermedad.enfermedad_nombre}: {enfermedad.diagnostico || "Sin diagnóstico"}, Tratamiento:{" "}
+                      {enfermedad.tratamiento || "Sin tratamiento"}
+                    </Text>
+                  ))}
+                </View>
               )}
+
+              {/* Vulneraciones */}
+              {nnya.vulneraciones && nnya.vulneraciones.length > 0 && (
+                <View>
+                  <Text style={styles.personDetail}>Vulneraciones:</Text>
+                  {nnya.vulneraciones.map((vulneracion: any, idx: number) => (
+                    <Text key={idx} style={styles.subDetail}>
+                      - {vulneracion.tipo_vulneracion_nombre}, Fecha:{" "}
+                      {vulneracion.fecha_vulneracion || "No especificada"}, Ámbito:{" "}
+                      {vulneracion.ambito_vulneracion_nombre || "No especificado"}
+                      {vulneracion.observaciones ? `, Obs: ${vulneracion.observaciones}` : ""}
+                    </Text>
+                  ))}
+                </View>
+              )}
+
               {nnya.observaciones && <Text style={styles.personDetail}>Observaciones: {nnya.observaciones}</Text>}
             </View>
           ))
@@ -269,110 +347,250 @@ const InformePDF = ({ data }: InformePDFProps) => (
             <Text style={styles.text}>No hay NNyA convivientes registrados</Text>
           </View>
         )}
-
-        {/* NNyA no convivientes */}
-        <Text style={styles.sectionTitle}>NNyA no convivientes</Text>
-        {data.NNYANoConvivientes && data.NNYANoConvivientes.length > 0 ? (
-          data.NNYANoConvivientes.map((nnya: any, index: number) => (
-            <View key={index} style={styles.personItem}>
-              <Text style={styles.text}>
-                {index + 1}. {nnya.ApellidoNombre}, DNI: {nnya.DNI}, Vínculo: {nnya.VinculoConNNYAPrincipal}
-                {nnya.LegajoRUNNA ? `, Legajo RUNNA: ${nnya.LegajoRUNNA}` : ""}
-              </Text>
-              <Text style={styles.personDetail}>
-                Domicilio: {nnya.Calle} {nnya.NumeroCasa}, {nnya.Barrio}
-              </Text>
-
-              {/* Información adicional si está disponible */}
-              {nnya.genero && <Text style={styles.personDetail}>Género: {nnya.genero}</Text>}
-              {nnya.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {nnya.nacionalidad}</Text>}
-              {nnya.educacion && nnya.educacion.institucion_educativa && (
-                <Text style={styles.personDetail}>
-                  Educación: {nnya.educacion.institucion_educativa.nombre || ""}, Nivel: {nnya.educacion.nivel || ""},
-                  Curso: {nnya.educacion.curso || ""}
-                </Text>
-              )}
-              {nnya.observaciones && <Text style={styles.personDetail}>Observaciones: {nnya.observaciones}</Text>}
-            </View>
-          ))
-        ) : (
-          <View style={styles.personItem}>
-            <Text style={styles.text}>No hay NNyA no convivientes registrados</Text>
-          </View>
-        )}
-
-        {/* Adultos convivientes */}
-        <Text style={styles.sectionTitle}>Adultos convivientes</Text>
-        {data.AdultosConvivientes && data.AdultosConvivientes.length > 0 ? (
-          data.AdultosConvivientes.map((adulto: any, index: number) => (
-            <View key={index} style={styles.personItem}>
-              <Text style={styles.text}>
-                {index + 1}. {adulto.ApellidoNombre}, DNI: {adulto.DNI}, Vínculo: {adulto.VinculoConNNYAPrincipal}
-              </Text>
-
-              {/* Información adicional si está disponible */}
-              {adulto.genero && <Text style={styles.personDetail}>Género: {adulto.genero}</Text>}
-              {adulto.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {adulto.nacionalidad}</Text>}
-              {adulto.ocupacion && <Text style={styles.personDetail}>Ocupación: {adulto.ocupacion}</Text>}
-              {adulto.telefono && <Text style={styles.personDetail}>Teléfono: {adulto.telefono}</Text>}
-              {adulto.legalmenteResponsable !== undefined && (
-                <Text style={styles.personDetail}>
-                  Legalmente responsable: {adulto.legalmenteResponsable ? "Sí" : "No"}
-                </Text>
-              )}
-              {adulto.garantiza_proteccion !== undefined && (
-                <Text style={styles.personDetail}>
-                  Garantiza protección: {adulto.garantiza_proteccion ? "Sí" : "No"}
-                </Text>
-              )}
-              {adulto.observaciones && <Text style={styles.personDetail}>Observaciones: {adulto.observaciones}</Text>}
-            </View>
-          ))
-        ) : (
-          <View style={styles.personItem}>
-            <Text style={styles.text}>No hay adultos convivientes registrados</Text>
-          </View>
-        )}
-
-        {/* Adultos no convivientes */}
-        <Text style={styles.sectionTitle}>Adultos no convivientes</Text>
-        {data.AdultosNoConvivientes && data.AdultosNoConvivientes.length > 0 ? (
-          data.AdultosNoConvivientes.map((adulto: any, index: number) => (
-            <View key={index} style={styles.personItem}>
-              <Text style={styles.text}>
-                {index + 1}. {adulto.ApellidoNombre}, DNI: {adulto.DNI}, Vínculo: {adulto.VinculoConNNYAPrincipal}
-              </Text>
-              <Text style={styles.personDetail}>
-                Domicilio: {adulto.Calle} {adulto.NumeroCasa}, {adulto.Barrio}
-              </Text>
-
-              {/* Información adicional si está disponible */}
-              {adulto.genero && <Text style={styles.personDetail}>Género: {adulto.genero}</Text>}
-              {adulto.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {adulto.nacionalidad}</Text>}
-              {adulto.ocupacion && <Text style={styles.personDetail}>Ocupación: {adulto.ocupacion}</Text>}
-              {adulto.telefono && <Text style={styles.personDetail}>Teléfono: {adulto.telefono}</Text>}
-              {adulto.legalmenteResponsable !== undefined && (
-                <Text style={styles.personDetail}>
-                  Legalmente responsable: {adulto.legalmenteResponsable ? "Sí" : "No"}
-                </Text>
-              )}
-              {adulto.garantiza_proteccion !== undefined && (
-                <Text style={styles.personDetail}>
-                  Garantiza protección: {adulto.garantiza_proteccion ? "Sí" : "No"}
-                </Text>
-              )}
-              {adulto.observaciones && <Text style={styles.personDetail}>Observaciones: {adulto.observaciones}</Text>}
-            </View>
-          ))
-        ) : (
-          <View style={styles.personItem}>
-            <Text style={styles.text}>No hay adultos no convivientes registrados</Text>
-          </View>
-        )}
       </View>
     </Page>
 
     <Page style={styles.page}>
+      {/* NNyA no convivientes */}
+      <Text style={styles.subtitle}>NNyA no convivientes</Text>
+      {data.NNYANoConvivientes && data.NNYANoConvivientes.length > 0 ? (
+        data.NNYANoConvivientes.map((nnya: any, index: number) => (
+          <View key={index} style={styles.personItem}>
+            <Text style={styles.text}>
+              {index + 1}. {nnya.ApellidoNombre}, DNI: {nnya.DNI}, Vínculo: {nnya.VinculoConNNYAPrincipal}
+              {nnya.LegajoRUNNA ? `, Legajo RUNNA: ${nnya.LegajoRUNNA}` : ""}
+            </Text>
+            <Text style={styles.personDetail}>
+              Domicilio: {nnya.Calle} {nnya.NumeroCasa}, {nnya.Barrio}
+            </Text>
+
+            {/* Información adicional si está disponible */}
+            {nnya.genero && <Text style={styles.personDetail}>Género: {nnya.genero}</Text>}
+            {nnya.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {nnya.nacionalidad}</Text>}
+            {nnya.situacionDni && <Text style={styles.personDetail}>Situación DNI: {nnya.situacionDni}</Text>}
+            {nnya.edadAproximada && <Text style={styles.personDetail}>Edad aproximada: {nnya.edadAproximada}</Text>}
+
+            {/* Localización detallada */}
+            {nnya.localizacion && (
+              <View>
+                <Text style={styles.personDetail}>Localización detallada:</Text>
+                {nnya.localizacion.tipo_calle && (
+                  <Text style={styles.subDetail}>Tipo de calle: {nnya.localizacion.tipo_calle}</Text>
+                )}
+                {nnya.localizacion.piso_depto && (
+                  <Text style={styles.subDetail}>Piso/Depto: {nnya.localizacion.piso_depto}</Text>
+                )}
+                {nnya.localizacion.referencia_geo && (
+                  <Text style={styles.subDetail}>Referencia geográfica: {nnya.localizacion.referencia_geo}</Text>
+                )}
+                {nnya.localizacion.geolocalizacion && (
+                  <Text style={styles.subDetail}>Geolocalización: {nnya.localizacion.geolocalizacion}</Text>
+                )}
+              </View>
+            )}
+
+            {/* Educación */}
+            {nnya.educacion && (
+              <View>
+                <Text style={styles.personDetail}>Educación:</Text>
+                {nnya.educacion.institucion_educativa && (
+                  <Text style={styles.subDetail}>Institución: {nnya.educacion.institucion_educativa.nombre || ""}</Text>
+                )}
+                {nnya.educacion.nivel && <Text style={styles.subDetail}>Nivel: {nnya.educacion.nivel}</Text>}
+                {nnya.educacion.curso && <Text style={styles.subDetail}>Curso: {nnya.educacion.curso}</Text>}
+                {nnya.educacion.turno && <Text style={styles.subDetail}>Turno: {nnya.educacion.turno}</Text>}
+                <Text style={styles.subDetail}>Escolarizado: {nnya.educacion.esta_escolarizado ? "Sí" : "No"}</Text>
+                {nnya.educacion.tipo_escuela && (
+                  <Text style={styles.subDetail}>Tipo de escuela: {nnya.educacion.tipo_escuela}</Text>
+                )}
+              </View>
+            )}
+
+            {/* Cobertura médica */}
+            {nnya.cobertura_medica && (
+              <View>
+                <Text style={styles.personDetail}>Cobertura médica:</Text>
+                {nnya.cobertura_medica.obra_social && (
+                  <Text style={styles.subDetail}>Obra social: {nnya.cobertura_medica.obra_social}</Text>
+                )}
+                {nnya.cobertura_medica.institucion_sanitaria_nombre && (
+                  <Text style={styles.subDetail}>
+                    Institución sanitaria: {nnya.cobertura_medica.institucion_sanitaria_nombre}
+                  </Text>
+                )}
+                <Text style={styles.subDetail}>AUH: {nnya.cobertura_medica.auh ? "Sí" : "No"}</Text>
+              </View>
+            )}
+
+            {/* Enfermedades */}
+            {nnya.persona_enfermedades && nnya.persona_enfermedades.length > 0 && (
+              <View>
+                <Text style={styles.personDetail}>Enfermedades:</Text>
+                {nnya.persona_enfermedades.map((enfermedad: any, idx: number) => (
+                  <Text key={idx} style={styles.subDetail}>
+                    - {enfermedad.enfermedad_nombre}: {enfermedad.diagnostico || "Sin diagnóstico"}, Tratamiento:{" "}
+                    {enfermedad.tratamiento || "Sin tratamiento"}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {/* Vulneraciones */}
+            {nnya.vulneraciones && nnya.vulneraciones.length > 0 && (
+              <View>
+                <Text style={styles.personDetail}>Vulneraciones:</Text>
+                {nnya.vulneraciones.map((vulneracion: any, idx: number) => (
+                  <Text key={idx} style={styles.subDetail}>
+                    - {vulneracion.tipo_vulneracion_nombre}, Fecha: {vulneracion.fecha_vulneracion || "No especificada"}
+                    , Ámbito: {vulneracion.ambito_vulneracion_nombre || "No especificado"}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {nnya.observaciones && <Text style={styles.personDetail}>Observaciones: {nnya.observaciones}</Text>}
+          </View>
+        ))
+      ) : (
+        <View style={styles.personItem}>
+          <Text style={styles.text}>No hay NNyA no convivientes registrados</Text>
+        </View>
+      )}
+
+      {/* Adultos convivientes */}
+      <Text style={styles.subtitle}>Adultos convivientes</Text>
+      {data.AdultosConvivientes && data.AdultosConvivientes.length > 0 ? (
+        data.AdultosConvivientes.map((adulto: any, index: number) => (
+          <View key={index} style={styles.personItem}>
+            <Text style={styles.text}>
+              {index + 1}. {adulto.ApellidoNombre}, DNI: {adulto.DNI}, Vínculo: {adulto.VinculoConNNYAPrincipal}
+            </Text>
+
+            {/* Información adicional si está disponible */}
+            {adulto.genero && <Text style={styles.personDetail}>Género: {adulto.genero}</Text>}
+            {adulto.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {adulto.nacionalidad}</Text>}
+            {adulto.situacionDni && <Text style={styles.personDetail}>Situación DNI: {adulto.situacionDni}</Text>}
+            {adulto.edadAproximada && <Text style={styles.personDetail}>Edad aproximada: {adulto.edadAproximada}</Text>}
+            {adulto.ocupacion && <Text style={styles.personDetail}>Ocupación: {adulto.ocupacion}</Text>}
+            {adulto.telefono && <Text style={styles.personDetail}>Teléfono: {adulto.telefono}</Text>}
+
+            {/* Información adicional */}
+            {adulto.vinculacion && <Text style={styles.personDetail}>Vinculación: {adulto.vinculacion}</Text>}
+            {adulto.vinculo_demanda && (
+              <Text style={styles.personDetail}>Vínculo con demanda: {adulto.vinculo_demanda}</Text>
+            )}
+            {adulto.legalmenteResponsable !== undefined && (
+              <Text style={styles.personDetail}>
+                Legalmente responsable: {adulto.legalmenteResponsable ? "Sí" : "No"}
+              </Text>
+            )}
+            {adulto.supuesto_autordv && (
+              <Text style={styles.personDetail}>Supuesto autor DV: {adulto.supuesto_autordv}</Text>
+            )}
+            {adulto.garantiza_proteccion !== undefined && (
+              <Text style={styles.personDetail}>Garantiza protección: {adulto.garantiza_proteccion ? "Sí" : "No"}</Text>
+            )}
+
+            {/* Condiciones de vulnerabilidad */}
+            {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 && (
+              <View>
+                <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
+                {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => (
+                  <Text key={idx} style={styles.subDetail}>
+                    - Condición {condicion}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {adulto.observaciones && <Text style={styles.personDetail}>Observaciones: {adulto.observaciones}</Text>}
+          </View>
+        ))
+      ) : (
+        <View style={styles.personItem}>
+          <Text style={styles.text}>No hay adultos convivientes registrados</Text>
+        </View>
+      )}
+    </Page>
+
+    <Page style={styles.page}>
+      {/* Adultos no convivientes */}
+      <Text style={styles.subtitle}>Adultos no convivientes</Text>
+      {data.AdultosNoConvivientes && data.AdultosNoConvivientes.length > 0 ? (
+        data.AdultosNoConvivientes.map((adulto: any, index: number) => (
+          <View key={index} style={styles.personItem}>
+            <Text style={styles.text}>
+              {index + 1}. {adulto.ApellidoNombre}, DNI: {adulto.DNI}, Vínculo: {adulto.VinculoConNNYAPrincipal}
+            </Text>
+            <Text style={styles.personDetail}>
+              Domicilio: {adulto.Calle} {adulto.NumeroCasa}, {adulto.Barrio}
+            </Text>
+
+            {/* Información adicional si está disponible */}
+            {adulto.genero && <Text style={styles.personDetail}>Género: {adulto.genero}</Text>}
+            {adulto.nacionalidad && <Text style={styles.personDetail}>Nacionalidad: {adulto.nacionalidad}</Text>}
+            {adulto.situacionDni && <Text style={styles.personDetail}>Situación DNI: {adulto.situacionDni}</Text>}
+            {adulto.edadAproximada && <Text style={styles.personDetail}>Edad aproximada: {adulto.edadAproximada}</Text>}
+            {adulto.ocupacion && <Text style={styles.personDetail}>Ocupación: {adulto.ocupacion}</Text>}
+            {adulto.telefono && <Text style={styles.personDetail}>Teléfono: {adulto.telefono}</Text>}
+
+            {/* Localización detallada */}
+            {adulto.localizacion && (
+              <View>
+                <Text style={styles.personDetail}>Localización detallada:</Text>
+                {adulto.localizacion.tipo_calle && (
+                  <Text style={styles.subDetail}>Tipo de calle: {adulto.localizacion.tipo_calle}</Text>
+                )}
+                {adulto.localizacion.piso_depto && (
+                  <Text style={styles.subDetail}>Piso/Depto: {adulto.localizacion.piso_depto}</Text>
+                )}
+                {adulto.localizacion.referencia_geo && (
+                  <Text style={styles.subDetail}>Referencia geográfica: {adulto.localizacion.referencia_geo}</Text>
+                )}
+                {adulto.localizacion.geolocalizacion && (
+                  <Text style={styles.subDetail}>Geolocalización: {adulto.localizacion.geolocalizacion}</Text>
+                )}
+              </View>
+            )}
+
+            {/* Información adicional */}
+            {adulto.vinculacion && <Text style={styles.personDetail}>Vinculación: {adulto.vinculacion}</Text>}
+            {adulto.vinculo_demanda && (
+              <Text style={styles.personDetail}>Vínculo con demanda: {adulto.vinculo_demanda}</Text>
+            )}
+            {adulto.legalmenteResponsable !== undefined && (
+              <Text style={styles.personDetail}>
+                Legalmente responsable: {adulto.legalmenteResponsable ? "Sí" : "No"}
+              </Text>
+            )}
+            {adulto.supuesto_autordv && (
+              <Text style={styles.personDetail}>Supuesto autor DV: {adulto.supuesto_autordv}</Text>
+            )}
+            {adulto.garantiza_proteccion !== undefined && (
+              <Text style={styles.personDetail}>Garantiza protección: {adulto.garantiza_proteccion ? "Sí" : "No"}</Text>
+            )}
+
+            {/* Condiciones de vulnerabilidad */}
+            {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 && (
+              <View>
+                <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
+                {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => (
+                  <Text key={idx} style={styles.subDetail}>
+                    - Condición {condicion}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {adulto.observaciones && <Text style={styles.personDetail}>Observaciones: {adulto.observaciones}</Text>}
+          </View>
+        ))
+      ) : (
+        <View style={styles.personItem}>
+          <Text style={styles.text}>No hay adultos no convivientes registrados</Text>
+        </View>
+      )}
+
       {/* Antecedentes */}
       <View style={styles.section}>
         <Text style={styles.subtitle}>Antecedentes de actuación</Text>
@@ -437,17 +655,6 @@ const InformePDF = ({ data }: InformePDFProps) => (
         </View>
       </View>
 
-      {/* Adjuntos */}
-      {data.adjuntos && data.adjuntos.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Documentación adjunta</Text>
-          {data.adjuntos.map((adjunto: any, index: number) => (
-            <Text key={index} style={styles.text}>
-              - {adjunto.name} ({new Date(adjunto.date).toLocaleDateString()})
-            </Text>
-          ))}
-        </View>
-      )}
 
       {/* Firma */}
       <View style={styles.signature}>

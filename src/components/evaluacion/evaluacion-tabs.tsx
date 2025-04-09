@@ -31,8 +31,9 @@ import MotivosActuacion from "./tabs/motivos-actuacion"
 import DecisionBox from "./decision-box"
 import ActionButtons from "./action-buttons"
 import FileManagement, { type FileManagementHandle } from "./file-management"
+import AdjuntosTab from "./tabs/adjuntos"
 
-// Define tab structure for dynamic rendering
+// Update the TABS array to include all necessary tabs for the expanded data
 const TABS = [
   { label: "INFORMACIÓN GENERAL", id: "info-general" },
   { label: "DATOS DE LOCALIZACIÓN", id: "datos-localizacion" },
@@ -43,12 +44,14 @@ const TABS = [
   { label: "ADULTOS NO CONVIVIENTES", id: "adultos-no-convivientes" },
   { label: "ANTECEDENTES DEMANDA", id: "antecedentes-demanda" },
   { label: "MOTIVOS ACTUACIÓN", id: "motivos-actuacion" },
+  { label: "ADJUNTOS", id: "adjuntos" },
 ]
 
 interface EvaluacionTabsProps {
   data: any
 }
 
+// Update the EvaluacionTabs component to handle the expanded data structure
 export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const searchParams = useSearchParams()
   const [demandaId, setDemandaId] = useState<number | null>(null)
@@ -73,6 +76,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const [justificacionTecnico, setJustificacionTecnico] = useState("")
   const [justificacionDirector, setJustificacionDirector] = useState("")
   const [expandedJustificaciones, setExpandedJustificaciones] = useState(true)
+  const [adjuntos, setAdjuntos] = useState(data.adjuntos || [])
 
   // Reference to the file management component
   const fileManagementRef = useRef<FileManagementHandle>(null)
@@ -120,6 +124,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       MotivosActuacion: motivos,
       DescripcionSituacion: descripcionSituacion,
       ValoracionProfesional: valoracionProfesional,
+      adjuntos: adjuntos,
       // Note: justificacionTecnico and justificacionDirector are intentionally not included in the PDF
       IndicadoresEvaluacion: vulnerabilityIndicators.map((indicator) => ({
         NombreIndicador: indicator.nombre,
@@ -243,6 +248,10 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         <TabPanel value={tabValue} index={8}>
           <MotivosActuacion motivos={motivos} setMotivos={setMotivos} />
         </TabPanel>
+
+        <TabPanel value={tabValue} index={9}>
+          <AdjuntosTab adjuntos={adjuntos} setAdjuntos={setAdjuntos} />
+        </TabPanel>
       </Box>
 
       <Box sx={{ mt: 4 }}>
@@ -355,4 +364,3 @@ export interface VulnerabilityIndicator {
   peso: number | string
   selected?: boolean
 }
-

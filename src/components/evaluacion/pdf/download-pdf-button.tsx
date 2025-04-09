@@ -37,10 +37,27 @@ export default function DownloadPDFButton({ data, label = "Generar PDF", onGener
     }
   }
 
+  // Preparar los datos para el PDF
+  const prepareDataForPDF = () => {
+    // Asegurarse de que todos los arrays existan para evitar errores
+    const preparedData = {
+      ...data,
+      NNYAConvivientes: data.NNYAConvivientes || [],
+      NNYANoConvivientes: data.NNYANoConvivientes || [],
+      AdultosConvivientes: data.AdultosConvivientes || [],
+      AdultosNoConvivientes: data.AdultosNoConvivientes || [],
+      Actividades: data.Actividades || [],
+      IndicadoresEvaluacion: data.IndicadoresEvaluacion || [],
+      adjuntos: data.adjuntos || [],
+    }
+
+    return preparedData
+  }
+
   return (
     <>
       {/* This is the visible button that both downloads and saves to the file system */}
-      <PDFDownloadLink document={<InformePDF data={data} />} fileName={fileName}>
+      <PDFDownloadLink document={<InformePDF data={prepareDataForPDF()} />} fileName={fileName}>
         {({ loading, error }) => (
           <Button
             variant="contained"
@@ -61,4 +78,3 @@ export default function DownloadPDFButton({ data, label = "Generar PDF", onGener
     </>
   )
 }
-

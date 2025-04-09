@@ -23,6 +23,7 @@ import {
   Tooltip,
   useTheme,
   alpha,
+  Autocomplete,
 } from "@mui/material"
 import PersonIcon from "@mui/icons-material/Person"
 import BadgeIcon from "@mui/icons-material/Badge"
@@ -32,7 +33,7 @@ import HomeIcon from "@mui/icons-material/Home"
 import CloseIcon from "@mui/icons-material/Close"
 import SearchIcon from "@mui/icons-material/Search"
 import LinkIcon from "@mui/icons-material/Link"
-import { create } from "@/app/api/apiService"
+import { create, get } from "@/app/api/apiService"
 import { debounce } from "lodash"
 import { ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -40,6 +41,11 @@ import { useRouter } from "next/navigation"
 interface SearchResult {
   demanda_ids: number[]
   match_descriptions: string[]
+}
+
+interface Localidad {
+  id: number
+  nombre: string
 }
 
 interface SearchModalProps {
@@ -83,6 +89,28 @@ export default function SearchModal({
   const [searchError, setSearchError] = useState<string | null>(null)
   const [activeSearchFields, setActiveSearchFields] = useState<string[]>([])
 
+  // Localidades state
+  const [localidades, setLocalidades] = useState<Localidad[]>([])
+  const [loadingLocalidades, setLoadingLocalidades] = useState(false)
+  const [selectedLocalidad, setSelectedLocalidad] = useState<Localidad | null>(null)
+
+  // Fetch localidades
+  useEffect(() => {
+    const fetchLocalidades = async () => {
+      setLoadingLocalidades(true)
+      try {
+        const data = await get<Localidad>("localidad/")
+        setLocalidades(data)
+      } catch (error) {
+        console.error("Error fetching localidades:", error)
+      } finally {
+        setLoadingLocalidades(false)
+      }
+    }
+
+    fetchLocalidades()
+  }, [])
+
   // Reset state when modal closes (only for modal mode)
   useEffect(() => {
     if (isModal && !open) {
@@ -95,6 +123,7 @@ export default function SearchModal({
       })
       setSearchResults(null)
       setSearchError(null)
+      setSelectedLocalidad(null)
     }
   }, [isModal, open])
 
@@ -196,6 +225,9 @@ export default function SearchModal({
       ...prev,
       [field]: "",
     }))
+    if (field === "localidad") {
+      setSelectedLocalidad(null)
+    }
   }
 
   const handleClearAllFields = () => {
@@ -207,6 +239,7 @@ export default function SearchModal({
       localidad: "",
     })
     setSearchResults(null)
+    setSelectedLocalidad(null)
   }
 
   const handleOpenInFullPage = (id: number) => {
@@ -220,6 +253,14 @@ export default function SearchModal({
     if (onConnect) {
       onConnect(demandaId)
     }
+  }
+
+  const handleLocalidadChange = (event: React.SyntheticEvent, value: Localidad | null) => {
+    setSelectedLocalidad(value)
+    setSearchParams((prev) => ({
+      ...prev,
+      localidad: value ? value.id.toString() : "",
+    }))
   }
 
   // Get icon for search field
@@ -252,10 +293,18 @@ export default function SearchModal({
       case "calle":
         return "Calle"
       case "localidad":
-        return "Localidad (ID)"
+        return "Localidad"
       default:
         return field
     }
+  }
+
+  // Get display value for search field in chips
+  const getFieldDisplayValue = (field: string, value: string) => {
+    if (field === "localidad" && selectedLocalidad) {
+      return selectedLocalidad.nombre
+    }
+    return value
   }
 
   // The actual search content
@@ -268,7 +317,7 @@ export default function SearchModal({
             {activeSearchFields.map((field) => (
               <Chip
                 key={field}
-                label={`${getFieldLabel(field)}: ${searchParams[field]}`}
+                label={`${getFieldLabel(field)}: ${getFieldDisplayValue(field, searchParams[field])}`}
                 onDelete={() => handleClearField(field)}
                 color="primary"
                 variant="outlined"
@@ -421,33 +470,45 @@ export default function SearchModal({
             }}
           />
 
-          <TextField
-            label="Localidad (ID)"
-            fullWidth
-            value={searchParams.localidad}
-            onChange={handleInputChange("localidad")}
-            type="number"
-            variant="outlined"
-            size={compact ? "small" : "medium"}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <HomeIcon color="action" fontSize={compact ? "small" : "medium"} />
-                </InputAdornment>
-              ),
-              endAdornment: searchParams.localidad ? (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => handleClearField("localidad")}>
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ) : null,
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: compact ? 1.5 : 2,
-              },
-            }}
+          <Autocomplete
+            options={localidades}
+            getOptionLabel={(option) => option.nombre}
+            value={selectedLocalidad}
+            onChange={handleLocalidadChange}
+            loading={loadingLocalidades}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Localidad"
+                variant="outlined"
+                size={compact ? "small" : "medium"}
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <InputAdornment position="start">
+                        <HomeIcon color="action" fontSize={compact ? "small" : "medium"} />
+                      </InputAdornment>
+                      {params.InputProps.startAdornment}
+                    </>
+                  ),
+                  endAdornment: (
+                    <>
+                      {loadingLocalidades ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: compact ? 1.5 : 2,
+                  },
+                }}
+              />
+            )}
+            noOptionsText="No se encontraron localidades"
+            loadingText="Cargando localidades..."
+            sx={{ width: "100%" }}
           />
         </Box>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef, Suspense } from "react"
 import {
   Box,
   Tabs,
@@ -13,10 +13,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Divider,
+  CircularProgress,
 } from "@mui/material"
 import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
 import { toast } from "react-toastify"
-import { useSearchParams } from "next/navigation"
 import TabPanel from "./tab-panel"
 import InformacionGeneral from "./tabs/informacion-general"
 import DatosLocalizacion from "./tabs/datos-localizacion"
@@ -32,6 +32,7 @@ import DecisionBox from "./decision-box"
 import ActionButtons from "./action-buttons"
 import FileManagement, { type FileManagementHandle } from "./file-management"
 import AdjuntosTab from "./tabs/adjuntos"
+import SearchParamsHandler from "./search-params-handler"
 
 // Update the TABS array to include all necessary tabs for the expanded data
 const TABS = [
@@ -53,7 +54,6 @@ interface EvaluacionTabsProps {
 
 // Update the EvaluacionTabs component to handle the expanded data structure
 export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
-  const searchParams = useSearchParams()
   const [demandaId, setDemandaId] = useState<number | null>(null)
   const [tabValue, setTabValue] = useState(0)
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
@@ -92,14 +92,6 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const [motivos, setMotivos] = useState(initialMotivos)
 
   const [descripcionSituacion, setDescripcionSituacion] = useState(data.DescripcionSituacion || "")
-
-  // Get demandaId from URL query parameter
-  useEffect(() => {
-    const id = searchParams.get("id")
-    if (id) {
-      setDemandaId(Number.parseInt(id))
-    }
-  }, [searchParams])
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
@@ -178,8 +170,24 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     }
   }
 
+  // Handler for demandaId from SearchParamsHandler
+  const handleDemandaIdChange = (id: number | null) => {
+    setDemandaId(id)
+  }
+
   return (
     <Box>
+      {/* Wrap the SearchParams usage in a Suspense boundary */}
+      <Suspense
+        fallback={
+          <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+            <CircularProgress />
+          </Box>
+        }
+      >
+        <SearchParamsHandler onDemandaIdChange={handleDemandaIdChange} />
+      </Suspense>
+
       <Box>
         <Tabs
           value={tabValue}

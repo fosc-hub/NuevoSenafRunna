@@ -2,7 +2,7 @@
 
 // VulneracionesFieldArray.tsx
 import type React from "react"
-import { useFieldArray, Controller, type UseFormWatch, type UseFormSetValue, type Control } from "react-hook-form"
+import { useFieldArray, Controller, type UseFormSetValue, type Control, useFormContext } from "react-hook-form"
 import { Box, Typography, Grid, Button, IconButton, TextField, FormControl, Autocomplete, Chip } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
 import AddIcon from "@mui/icons-material/Add"
@@ -12,7 +12,7 @@ interface VulneracionesFieldArrayProps {
   control: Control<any>
   readOnly?: boolean
   dropdownData: any
-  watch: UseFormWatch<any>
+  watchedValues: any // Changed from watch to watchedValues
   setValue: UseFormSetValue<any>
 }
 
@@ -21,13 +21,16 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
   control,
   readOnly = false,
   dropdownData,
-  watch,
+  watchedValues, // Changed from watch to watchedValues
   setValue,
 }) => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: `ninosAdolescentes.${nestIndex}.vulneraciones`,
   })
+
+  // Use useFormContext to get the watch function
+  const { watch } = useFormContext()
 
   return (
     <>
@@ -317,4 +320,3 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
 }
 
 export default VulneracionesFieldArray
-

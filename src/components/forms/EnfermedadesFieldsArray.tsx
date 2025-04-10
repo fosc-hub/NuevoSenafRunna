@@ -6,9 +6,9 @@ import {
   useFieldArray,
   Controller,
   useController,
-  type UseFormWatch,
-  type UseFormSetValue,
   type Control,
+  type UseFormSetValue,
+  useFormContext,
 } from "react-hook-form"
 import { Box, Typography, Grid, Button, IconButton, TextField, FormControl, Autocomplete } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
@@ -299,7 +299,7 @@ interface EnfermedadesFieldArrayProps {
   control: Control<any>
   readOnly?: boolean
   dropdownData: any
-  watch: UseFormWatch<any>
+  watchedValues: any // Changed from watch to watchedValues
   setValue: UseFormSetValue<any>
 }
 
@@ -308,13 +308,16 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
   control,
   readOnly = false,
   dropdownData,
-  watch,
+  watchedValues, // Changed from watch to watchedValues
   setValue,
 }) => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: `ninosAdolescentes.${nestIndex}.persona_enfermedades`,
   })
+
+  // Use useFormContext to get the watch function
+  const { watch } = useFormContext()
 
   // Function to extract filename from path
   const getFileName = (filePath: string) => {
@@ -437,9 +440,9 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
             </Grid>
 
             {/* Campo condicional para "other" */}
-            {watch(
-              `ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente`,
-            ) === "other" && (
+            {watchedValues?.[
+              `ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente`
+            ] === "other" && (
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente_nombre`}
@@ -600,4 +603,3 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
 }
 
 export default EnfermedadesFieldArray
-

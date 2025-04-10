@@ -30,7 +30,7 @@ import { es } from "date-fns/locale"
 import AddIcon from "@mui/icons-material/Add"
 import DeleteIcon from "@mui/icons-material/Delete"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import ExpandLessIcon from "@mui/icons-material/ExpandLess"
+import ExpandLessIcon from "@mui/icons-material/ExpandMore"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { format, parse } from "date-fns"
 import LocalizacionFields from "./LocalizacionFields"
@@ -1077,7 +1077,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     control={control}
                     readOnly={readOnly}
                     dropdownData={dropdownData}
-                    watch={useWatch}
+                    watchedValues={watchedFields} // Pass watchedFields instead of useWatch
                     setValue={setValue}
                   />
                 </Grid>
@@ -1163,7 +1163,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
                     control={control}
                     readOnly={readOnly}
                     dropdownData={dropdownData}
-                    watch={useWatch}
+                    watchedValues={watchedFields} // Pass watchedFields instead of useWatch
                     setValue={setValue}
                   />
                 </Grid>

@@ -26,7 +26,7 @@ export const evaluacionData = {
     motivo_ingreso: 2,
     submotivo_ingreso: 8,
     zona: 3,
-    observaciones: "Caso derivado con carácter de urgente debido a la situación de riesgo detectada. Se requiere evaluación inmediata y plan de intervención."
+    observaciones: "La situación involucra un conflicto familiar prolongado que afecta la convivencia y el desarrollo de la NNYA, requiriendo intervención institucional."
   },
   DatosLocalizacion: {
     Calle: "Av. Principal",

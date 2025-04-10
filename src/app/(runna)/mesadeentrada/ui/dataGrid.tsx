@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { Paper, Button, Modal, Box, Typography, CircularProgress } from "@mui/material"
+import { useState, useEffect } from "react"
+import { Paper, Button, Modal, Box, Typography, CircularProgress, Link, Popover } from "@mui/material"
 import { DataGrid, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { PersonAdd, Edit, Warning } from "@mui/icons-material"
+import { PersonAdd, Edit, Warning, AttachFile } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "./Buttons"
@@ -26,6 +26,139 @@ interface PaginatedResponse<T> {
 }
 
 type TDemandaPaginated = PaginatedResponse<TDemanda>
+
+// Define a type for adjuntos to help with debugging
+interface Adjunto {
+  archivo: string
+}
+
+// Helper function to get file name from URL
+const getFileNameFromUrl = (url: string): string => {
+  const parts = url.split("/")
+  return parts[parts.length - 1]
+}
+
+// Custom component for rendering adjuntos
+const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
+  const { adjuntos } = props
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+
+  if (!adjuntos || !Array.isArray(adjuntos) || adjuntos.length === 0) {
+    return <Typography>Sin adjuntos</Typography>
+  }
+
+  // Debug log
+  console.log("Rendering adjuntos:", JSON.stringify(adjuntos))
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation()
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = (event?: React.MouseEvent<HTMLElement>) => {
+    if (event) {
+      event.stopPropagation()
+    }
+    setAnchorEl(null)
+  }
+
+  const open = Boolean(anchorEl)
+
+  // Show a summary in the cell
+  return (
+    <div style={{ width: "100%" }}>
+      <div
+        onClick={handleClick}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          cursor: "pointer",
+          padding: "4px",
+          borderRadius: "4px",
+          backgroundColor: "#f5f5f5",
+          width: "fit-content",
+        }}
+      >
+        <AttachFile style={{ fontSize: "1rem", marginRight: "4px", flexShrink: 0 }} />
+        <Typography variant="body2">
+          {adjuntos.length} {adjuntos.length === 1 ? "adjunto" : "adjuntos"}
+        </Typography>
+      </div>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        onClick={(e) => e.stopPropagation()}
+        sx={{ zIndex: 9999 }}
+      >
+        <Box
+          sx={{
+            width: 300,
+            p: 2,
+            maxHeight: 300,
+            overflowY: "auto",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+              Adjuntos ({adjuntos.length})
+            </Typography>
+            <Button size="small" variant="outlined" onClick={handleClose} sx={{ minWidth: "auto", padding: "2px 8px" }}>
+              Cerrar
+            </Button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {adjuntos.map((adjunto, index) => {
+              if (!adjunto || !adjunto.archivo) {
+                console.log("Invalid adjunto at index", index, adjunto)
+                return null
+              }
+
+              const fileName = getFileNameFromUrl(adjunto.archivo)
+
+              return (
+                <Link
+                  key={index}
+                  href={adjunto.archivo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#1976d2",
+                    textDecoration: "none",
+                    fontSize: "0.875rem",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    transition: "background-color 0.2s",
+                  }}
+                  sx={{
+                    "&:hover": {
+                      backgroundColor: "#f0f7ff",
+                    },
+                  }}
+                >
+                  <AttachFile style={{ fontSize: "1rem", marginRight: "8px", flexShrink: 0 }} />
+                  <span style={{ wordBreak: "break-word" }}>{fileName}</span>
+                </Link>
+              )
+            })}
+          </div>
+        </Box>
+      </Popover>
+    </div>
+  )
+}
 
 const DemandaTable: React.FC = () => {
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -266,6 +399,19 @@ const DemandaTable: React.FC = () => {
     }
   }
 
+  // Helper function to format text with underscores
+  const formatUnderscoreText = (text: any): string => {
+    if (!text || typeof text !== "string" || text === "N/A") {
+      return "N/A"
+    }
+
+    return text
+      .split("_")
+      .join(" ")
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+  }
+
   const columns: GridColDef[] = [
     {
       field: "id",
@@ -426,17 +572,7 @@ const DemandaTable: React.FC = () => {
       headerName: "Objetivo de Demanda",
       width: 180,
       renderCell: (params) => {
-        const value = params.value as string
-        if (!value || value === "N/A") return <Typography>N/A</Typography>
-
-        // Format the text: replace underscores with spaces and capitalize first letter of each word
-        const formattedText = value
-          .split("_")
-          .join(" ")
-          .toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())
-
-        return <Typography>{formattedText}</Typography>
+        return <Typography>{formatUnderscoreText(params.value)}</Typography>
       },
     },
     {
@@ -444,49 +580,63 @@ const DemandaTable: React.FC = () => {
       headerName: "Etiqueta",
       width: 150,
       renderCell: (params) => {
-        const value = params.value as string
-        if (!value || value === "N/A") return <Typography>N/A</Typography>
-
-        // Format the text: replace underscores with spaces and capitalize first letter of each word
-        const formattedText = value
-          .split("_")
-          .join(" ")
-          .toLowerCase()
-          .replace(/\b\w/g, (char) => char.toUpperCase())
-
-        return <Typography>{formattedText}</Typography>
+        return <Typography>{formatUnderscoreText(params.value)}</Typography>
+      },
+    },
+    {
+      field: "adjuntos",
+      headerName: "Adjuntos",
+      width: 180,
+      renderCell: (params) => {
+        return <AdjuntosCell adjuntos={params.value} />
       },
     },
   ]
 
   const rows =
-    demandasData?.results.map((demanda: TDemanda) => ({
-      id: demanda.id,
-      score: demanda.demanda_score?.score || "N/A",
-      origen: demanda.bloque_datos_remitente?.nombre || "N/A",
-      nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
-      dni: demanda.nnya_principal?.dni || "N/A",
-      calificacion: demanda.calificacion?.estado_calificacion || null,
-      ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      codigosDemanda: demanda.codigos_demanda || [],
-      localidad: demanda.localidad?.nombre || "N/A",
-      cpc: demanda.cpc.nombre || "N/A",
-      zonaEquipo: demanda.demanda_zona?.zona?.nombre || demanda.registrado_por_user_zona?.nombre || "N/A",
-      usuario: demanda.registrado_por_user?.username || "N/A",
-      areaSenaf: demanda.area_senaf || "N/A",
-      estado_demanda: demanda.estado_demanda,
-      recibido: demanda.demanda_zona?.recibido || false,
-      demanda_zona_id: demanda.demanda_zona_id,
-      envioRespuesta: demanda.envio_de_respuesta || "N/A",
-      objetivoDemanda: demanda.objetivo_de_demanda || "N/A",
-      etiqueta: demanda.etiqueta || "N/A",
-    })) || []
+    demandasData?.results.map((demanda: TDemanda) => {
+      // Debug log for adjuntos
+      console.log(`Demanda ${demanda.id} adjuntos:`, demanda.adjuntos)
+      if (demanda.adjuntos && Array.isArray(demanda.adjuntos)) {
+        console.log(`Demanda ${demanda.id} has ${demanda.adjuntos.length} adjuntos`)
+      }
+
+      return {
+        id: demanda.id,
+        score: demanda.demanda_score?.score || "N/A",
+        origen: demanda.bloque_datos_remitente?.nombre || "N/A",
+        nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
+        dni: demanda.nnya_principal?.dni || "N/A",
+        calificacion: demanda.calificacion?.estado_calificacion || null,
+        ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        codigosDemanda: demanda.codigos_demanda || [],
+        localidad: demanda.localidad?.nombre || "N/A",
+        cpc: demanda.cpc.nombre || "N/A",
+        zonaEquipo: demanda.demanda_zona?.zona?.nombre || demanda.registrado_por_user_zona?.nombre || "N/A",
+        usuario: demanda.registrado_por_user?.username || "N/A",
+        areaSenaf: demanda.area_senaf || "N/A",
+        estado_demanda: demanda.estado_demanda,
+        recibido: demanda.demanda_zona?.recibido || false,
+        demanda_zona_id: demanda.demanda_zona_id,
+        envioRespuesta: demanda.envio_de_respuesta || "N/A",
+        objetivoDemanda: demanda.objetivo_de_demanda || "N/A",
+        etiqueta: demanda.etiqueta?.nombre || "N/A",
+        adjuntos: demanda.adjuntos || [],
+      }
+    }) || []
+
+  // Debug effect to log rows data
+  useEffect(() => {
+    if (rows.length > 0) {
+      console.log("First row adjuntos:", rows[0].adjuntos)
+    }
+  }, [rows])
 
   if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
@@ -515,7 +665,11 @@ const DemandaTable: React.FC = () => {
             loading={isLoading || updateCalificacion.isLoading || updateDemandaZona.isLoading}
             onRowClick={(params, event) => {
               const cellElement = event.target as HTMLElement
-              if (!cellElement.closest('.MuiDataGrid-cell[data-field="calificacion"]')) {
+              if (
+                !cellElement.closest('.MuiDataGrid-cell[data-field="calificacion"]') &&
+                !cellElement.closest("a") &&
+                !cellElement.closest("button")
+              ) {
                 if (!params.row.recibido && params.row.demanda_zona_id) {
                   updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
                 } else {
@@ -637,4 +791,3 @@ const DemandaTable: React.FC = () => {
 }
 
 export default DemandaTable
-

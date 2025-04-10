@@ -44,6 +44,7 @@ interface Step3FormProps {
   dropdownData: DropdownData
   readOnly?: boolean
   adultosConvivientes: FormData["adultosConvivientes"]
+  id?: string
 }
 
 // Helper function to add a red asterisk to labels
@@ -53,7 +54,7 @@ const RequiredLabel = ({ label }: { label: string }) => (
   </React.Fragment>
 )
 
-const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes }) => {
+const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes, id }) => {
   const theme = useTheme()
   const { control, getValues, setValue } = useFormContext<FormData>()
   const { fields, append, remove } = useFieldArray({
@@ -1230,7 +1231,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
-        currentDemandaId={params?.id}
+        currentDemandaId={id}
       />
     </LocalizationProvider>
   )

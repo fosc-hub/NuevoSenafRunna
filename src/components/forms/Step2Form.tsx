@@ -76,6 +76,7 @@ interface Step2FormProps {
   control: Control<FormData>
   dropdownData: DropdownData
   readOnly?: boolean
+  id?: string
 }
 
 // Helper function to add a red asterisk to labels
@@ -85,7 +86,7 @@ const RequiredLabel = ({ label }: { label: string }) => (
   </React.Fragment>
 )
 
-const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly = false }) => {
+const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly = false, id}) => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "adultosConvivientes",
@@ -883,7 +884,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
-        currentDemandaId={params?.id}
+        currentDemandaId={id}
       />
     </LocalizationProvider>
   )

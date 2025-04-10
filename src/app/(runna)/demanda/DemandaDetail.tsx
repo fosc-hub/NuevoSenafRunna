@@ -276,6 +276,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
                   readOnly={isPeticionDeInforme || isEditingBlocked}
                   id={params.id}
                   isPeticionDeInforme={isPeticionDeInforme || isEditingBlocked}
+                  demandaId={Number.parseInt(params.id)}
                 />
                 {!isPeticionDeInforme && (
                   <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>

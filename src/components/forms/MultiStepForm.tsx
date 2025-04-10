@@ -25,6 +25,7 @@ interface MultiStepFormProps {
   id?: string
   form?: string
   isPeticionDeInforme?: boolean
+  demandaId?: number // Add this line
 }
 
 const FormSkeleton = () => {
@@ -50,6 +51,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   id,
   form,
   isPeticionDeInforme: propIsPeticionDeInforme,
+  demandaId,
 }) => {
   const [activeStep, setActiveStep] = useState(0)
   const formId = form || "new"
@@ -248,13 +250,14 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
         <Box sx={{ mt: 4, mb: 4 }}>
           {dropdownData && (
             <>
-              {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} />}
-              {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} />}
+              {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
+              {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
               {activeStep === 2 && (
                 <Step3Form
                   dropdownData={dropdownData}
                   adultosConvivientes={methods.watch("adultosConvivientes") || []}
                   readOnly={isReadOnly}
+                  id={demandaId}
                 />
               )}
             </>

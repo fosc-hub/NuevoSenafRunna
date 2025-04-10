@@ -205,7 +205,7 @@ const RequiredLabel = ({ label }: { label: string }) => (
   </React.Fragment>
 )
 
-const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false }) => {
+const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false, id }) => {
   const {
     data: dropdownData,
     isLoading,
@@ -875,6 +875,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
+        currentDemandaId={id}
       />
     </LocalizationProvider>
   )

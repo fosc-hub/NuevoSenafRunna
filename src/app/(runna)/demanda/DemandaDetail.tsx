@@ -169,8 +169,26 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
   }
 
   return (
-    <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-      <Box sx={{ p: 3 }}>
+    <Box
+      sx={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        ...(isFullPage && {
+          display: "flex",
+          justifyContent: "center",
+        }),
+      }}
+    >
+      <Box
+        sx={{
+          p: 3,
+          ...(isFullPage && {
+            maxWidth: "1200px",
+            width: "100%",
+          }),
+        }}
+      >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography
             variant="h4"

@@ -14,6 +14,7 @@ import {
   AccordionDetails,
   Divider,
   CircularProgress,
+  Button,
 } from "@mui/material"
 import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
 import { toast } from "react-toastify"
@@ -189,6 +190,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       </Suspense>
 
       <Box>
+        {/* Update the Tabs component to make it more user-friendly with better visual indicators */}
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -198,20 +200,91 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
           sx={{
             "& .MuiTab-root": {
               color: "rgba(255, 255, 255, 0.7)",
+              minHeight: "56px",
+              padding: "12px 16px",
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              fontWeight: "medium",
+              transition: "all 0.2s ease-in-out",
               "&.Mui-selected": {
                 color: "white",
+                fontWeight: "bold",
+              },
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
               },
             },
             "& .MuiTabs-indicator": {
               backgroundColor: "white",
+              height: "3px",
             },
             bgcolor: "#0EA5E9",
+            borderRadius: "4px 4px 0 0",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
           {TABS.map((tab, index) => (
-            <Tab key={tab.id} label={tab.label} id={`tab-${index}`} aria-controls={`tabpanel-${index}`} />
+            <Tab
+              key={tab.id}
+              label={tab.label}
+              id={`tab-${index}`}
+              aria-controls={`tabpanel-${index}`}
+              sx={{
+                position: "relative",
+                "&::after":
+                  tabValue === index
+                    ? {
+                        content: '""',
+                        position: "absolute",
+                        bottom: 0,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "8px",
+                        height: "8px",
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        display: { xs: "none", md: "block" },
+                      }
+                    : {},
+              }}
+            />
           ))}
         </Tabs>
+      </Box>
+
+      {/* Add a tab navigation helper to show current position and allow quick jumps */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 2,
+          bgcolor: "#f5f5f5",
+          borderBottom: "1px solid #e0e0e0",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          {tabValue + 1} de {TABS.length}: <strong>{TABS[tabValue].label}</strong>
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={tabValue === 0}
+            onClick={() => setTabValue(tabValue - 1)}
+            sx={{ minWidth: "40px", p: "4px 8px" }}
+          >
+            Anterior
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            disabled={tabValue === TABS.length - 1}
+            onClick={() => setTabValue(tabValue + 1)}
+            sx={{ minWidth: "40px", p: "4px 8px", bgcolor: "#0EA5E9", "&:hover": { bgcolor: "#0284c7" } }}
+          >
+            Siguiente
+          </Button>
+        </Box>
       </Box>
 
       <Box>
@@ -266,35 +339,89 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} />
       </Box>
 
+      {/* Update the DecisionBox styling for better visual hierarchy */}
       <DecisionBox
         vulnerabilityIndicators={vulnerabilityIndicators}
         handleIndicatorChange={handleIndicatorChange}
         demandaId={demandaId}
+        sx={{
+          mt: 4,
+          p: 3,
+          border: "1px solid rgba(14, 165, 233, 0.3)",
+          borderRadius: "8px",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
+        }}
       />
 
-      {/* Valoración Profesional Final */}
+      {/* Improve the Valoración Profesional Final section */}
       <Box sx={{ mt: 4, mb: 2 }}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+        <Paper
+          sx={{
+            p: 3,
+            borderRadius: "8px",
+            border: "1px solid rgba(14, 165, 233, 0.3)",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+          }}
+        >
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{
+              fontWeight: "bold",
+              color: "#0EA5E9",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              pb: 1,
+              borderBottom: "1px solid rgba(14, 165, 233, 0.2)",
+            }}
+          >
             VALORACIÓN PROFESIONAL FINAL
           </Typography>
-          <TextField
-            value={valoracionProfesional}
-            onChange={(e) => setValoracionProfesional(e.target.value)}
-            multiline
-            rows={4}
-            fullWidth
-            variant="outlined"
-            placeholder="Ingrese su valoración profesional final"
-          />
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              value={valoracionProfesional}
+              onChange={(e) => setValoracionProfesional(e.target.value)}
+              multiline
+              rows={4}
+              fullWidth
+              variant="outlined"
+              placeholder="Ingrese su valoración profesional final"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "&:hover fieldset": {
+                    borderColor: "rgba(14, 165, 233, 0.5)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#0EA5E9",
+                  },
+                },
+              }}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+              Esta valoración se incluirá en el informe final.
+            </Typography>
+          </Box>
         </Paper>
       </Box>
 
-      {/* Justificaciones - Accordion for better UX */}
+      {/* Improve the Justificaciones accordion */}
       <Accordion
         expanded={expandedJustificaciones}
         onChange={() => setExpandedJustificaciones(!expandedJustificaciones)}
-        sx={{ mt: 4, mb: 2, boxShadow: "none", border: "1px solid rgba(0, 0, 0, 0.12)" }}
+        sx={{
+          mt: 4,
+          mb: 2,
+          boxShadow: "none",
+          border: "1px solid rgba(0, 0, 0, 0.12)",
+          borderRadius: "8px",
+          "&::before": {
+            display: "none",
+          },
+          "& .MuiAccordionSummary-root": {
+            borderRadius: expandedJustificaciones ? "8px 8px 0 0" : "8px",
+          },
+        }}
       >
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
@@ -311,9 +438,18 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
             JUSTIFICACIONES INTERNAS
           </Typography>
         </AccordionSummary>
-        <AccordionDetails>
-          <Box sx={{ p: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+        <AccordionDetails sx={{ p: 3 }}>
+          <Box>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: "bold",
+                mb: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
               Justificación del Técnico
             </Typography>
             <TextField
@@ -324,12 +460,31 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
               fullWidth
               variant="outlined"
               placeholder="Ingrese la justificación técnica (no aparecerá en el informe)"
-              sx={{ mb: 3 }}
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  "&:hover fieldset": {
+                    borderColor: "rgba(14, 165, 233, 0.5)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#0EA5E9",
+                  },
+                },
+              }}
             />
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: "bold",
+                mb: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
               Justificación del Director
             </Typography>
             <TextField
@@ -340,10 +495,30 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
               fullWidth
               variant="outlined"
               placeholder="Ingrese la justificación del director (no aparecerá en el informe)"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "&:hover fieldset": {
+                    borderColor: "rgba(14, 165, 233, 0.5)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#0EA5E9",
+                  },
+                },
+              }}
             />
 
-            <Box sx={{ mt: 2, display: "flex", alignItems: "center" }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                alignItems: "center",
+                p: 2,
+                bgcolor: "rgba(245, 158, 11, 0.1)",
+                borderRadius: "4px",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
+              }}
+            >
+              <Typography variant="caption" color="warning.dark" sx={{ fontStyle: "italic" }}>
                 Nota: Estas justificaciones son para uso interno y no se incluirán en el informe PDF.
               </Typography>
             </Box>
@@ -354,12 +529,30 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       {/* File Management Section */}
       <FileManagement ref={fileManagementRef} demandaId={demandaId} />
 
-      <ActionButtons
-        generatePDF={() => Promise.resolve(collectUpdatedData())}
-        data={collectUpdatedData()}
-        onSave={handleSaveData}
-        onPDFGenerated={handlePDFGenerated}
-      />
+      {/* Improve the ActionButtons styling and positioning */}
+      <Box
+        sx={{
+          position: "sticky",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          bgcolor: "white",
+          p: 2,
+          borderTop: "1px solid rgba(0, 0, 0, 0.12)",
+          zIndex: 10,
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 2,
+          boxShadow: "0 -2px 10px rgba(0,0,0,0.05)",
+        }}
+      >
+        <ActionButtons
+          generatePDF={() => Promise.resolve(collectUpdatedData())}
+          data={collectUpdatedData()}
+          onSave={handleSaveData}
+          onPDFGenerated={handlePDFGenerated}
+        />
+      </Box>
     </Box>
   )
 }

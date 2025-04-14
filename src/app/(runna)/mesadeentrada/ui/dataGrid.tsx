@@ -1,11 +1,33 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { Paper, Button, Modal, Box, Typography, CircularProgress, Link, Popover } from "@mui/material"
-import { DataGrid, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid"
+import { useState, useMemo } from "react"
+import {
+  Paper,
+  Button,
+  Modal,
+  Box,
+  Typography,
+  CircularProgress,
+  Link,
+  Popover,
+  Chip,
+  Tooltip,
+  IconButton,
+  Badge,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material"
+import {
+  DataGrid,
+  type GridColDef,
+  type GridPaginationModel,
+  GridToolbarContainer,
+  GridToolbarFilterButton,
+  GridToolbarExport,
+} from "@mui/x-data-grid"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { PersonAdd, Edit, Warning, AttachFile } from "@mui/icons-material"
+import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "./Buttons"
@@ -38,17 +60,119 @@ const getFileNameFromUrl = (url: string): string => {
   return parts[parts.length - 1]
 }
 
+// Custom toolbar component
+const CustomToolbar = () => {
+  return (
+    <GridToolbarContainer sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
+      <GridToolbarFilterButton
+        sx={{
+          mr: 1,
+          "&:hover": {
+            backgroundColor: "rgba(25, 118, 210, 0.04)",
+          },
+        }}
+      />
+      <GridToolbarExport
+        sx={{
+          mr: 1,
+          "&:hover": {
+            backgroundColor: "rgba(25, 118, 210, 0.04)",
+          },
+        }}
+      />
+      <IconButton
+        size="small"
+        sx={{
+          ml: "auto",
+          "&:hover": {
+            backgroundColor: "rgba(25, 118, 210, 0.04)",
+          },
+        }}
+      >
+        <Refresh fontSize="small" />
+      </IconButton>
+    </GridToolbarContainer>
+  )
+}
+
+// Status chip component for better visual representation
+const StatusChip = ({ status }: { status: string }) => {
+  let color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default"
+  let label = status
+
+  switch (status) {
+    case "SIN_ASIGNAR":
+      color = "default"
+      label = "Sin Asignar"
+      break
+    case "CONSTATACION":
+      color = "success"
+      label = "Constatación"
+      break
+    case "EVALUACION":
+      color = "info"
+      label = "Evaluación"
+      break
+    case "PENDIENTE_AUTORIZACION":
+      color = "warning"
+      label = "Pendiente Autorización"
+      break
+    case "ARCHIVADA":
+      color = "default"
+      label = "Archivada"
+      break
+    case "ADMITIDA":
+      color = "secondary"
+      label = "Admitida"
+      break
+    case "RESPUESTA_SIN_ENVIAR":
+      color = "error"
+      label = "Respuesta Sin Enviar"
+      break
+    case "INFORME_SIN_ENVIAR":
+      color = "warning"
+      label = "Informe Sin Enviar"
+      break
+    case "REPUESTA_ENVIADA":
+      color = "success"
+      label = "Respuesta Enviada"
+      break
+    case "INFORME_ENVIADO":
+      color = "info"
+      label = "Informe Enviado"
+      break
+    default:
+      label = "Desconocido"
+  }
+
+  return (
+    <Chip
+      label={label}
+      color={color}
+      size="small"
+      variant="outlined"
+      sx={{
+        fontWeight: 500,
+        "& .MuiChip-label": {
+          px: 1,
+        },
+      }}
+    />
+  )
+}
+
 // Custom component for rendering adjuntos
 const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
   const { adjuntos } = props
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
 
   if (!adjuntos || !Array.isArray(adjuntos) || adjuntos.length === 0) {
-    return <Typography>Sin adjuntos</Typography>
+    return (
+      <Typography variant="body2" color="text.secondary">
+        Sin adjuntos
+      </Typography>
+    )
   }
-
-  // Debug log
-  console.log("Rendering adjuntos:", JSON.stringify(adjuntos))
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation()
@@ -67,23 +191,22 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
   // Show a summary in the cell
   return (
     <div style={{ width: "100%" }}>
-      <div
-        onClick={handleClick}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          cursor: "pointer",
-          padding: "4px",
-          borderRadius: "4px",
-          backgroundColor: "#f5f5f5",
-          width: "fit-content",
-        }}
-      >
-        <AttachFile style={{ fontSize: "1rem", marginRight: "4px", flexShrink: 0 }} />
-        <Typography variant="body2">
-          {adjuntos.length} {adjuntos.length === 1 ? "adjunto" : "adjuntos"}
-        </Typography>
-      </div>
+      <Tooltip title={`Ver ${adjuntos.length} ${adjuntos.length === 1 ? "adjunto" : "adjuntos"}`}>
+        <Badge badgeContent={adjuntos.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "0.65rem" } }}>
+          <IconButton
+            size="small"
+            onClick={handleClick}
+            sx={{
+              color: "primary.main",
+              "&:hover": {
+                backgroundColor: "rgba(25, 118, 210, 0.04)",
+              },
+            }}
+          >
+            <AttachFile fontSize="small" />
+          </IconButton>
+        </Badge>
+      </Tooltip>
 
       <Popover
         open={open}
@@ -119,7 +242,6 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {adjuntos.map((adjunto, index) => {
               if (!adjunto || !adjunto.archivo) {
-                console.log("Invalid adjunto at index", index, adjunto)
                 return null
               }
 
@@ -138,7 +260,7 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
                     color: "#1976d2",
                     textDecoration: "none",
                     fontSize: "0.875rem",
-                    padding: "4px 8px",
+                    padding: "8px 12px",
                     borderRadius: "4px",
                     transition: "background-color 0.2s",
                   }}
@@ -161,9 +283,11 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
 }
 
 const DemandaTable: React.FC = () => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: 5,
+    pageSize: 10,
   })
   const [totalCount, setTotalCount] = useState(0)
   const queryClient = useQueryClient()
@@ -234,7 +358,7 @@ const DemandaTable: React.FC = () => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState, apiFilters],
     queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
     onSuccess: (data) => setDemandasData(data),
@@ -412,195 +536,254 @@ const DemandaTable: React.FC = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase())
   }
 
-  const columns: GridColDef[] = [
-    {
-      field: "id",
-      headerName: "ID",
-      width: 100,
-      renderCell: (params) => (
-        <div style={{ display: "flex", alignItems: "center" }}>
-          {params.value}
-          {params.row.calificacion === "URGENTE" && <Warning color="error" style={{ marginLeft: "8px" }} />}
-        </div>
-      ),
-    },
-    { field: "score", headerName: "Score", width: 100 },
-    { field: "origen", headerName: "Bloque de Datos del Remitente", width: 150 },
-    { field: "nombre", headerName: "Nombre", width: 200 },
-    { field: "dni", headerName: "DNI", width: 100 },
-    {
-      field: "calificacion",
-      headerName: "Calificación",
-      width: 200,
-      renderCell: (params) => (
-        <select
-          value={formatCalificacionValue(params.value)}
-          onChange={(e) => {
-            e.stopPropagation()
-            handleCalificacionChange(params.row.id, e.target.value)
-          }}
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            width: "100%",
-            padding: "8px",
-            border: "1px solid #e0e0e0",
-            borderRadius: "4px",
-            backgroundColor: "#fff",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            cursor: "pointer",
-            outline: "none",
-            fontSize: "0.875rem",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              borderColor: "#bdbdbd",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            },
-            "&:focus": {
-              borderColor: "#2196f3",
-              boxShadow: "0 0 0 2px rgba(33,150,243,0.2)",
-            },
-          }}
-        >
-          {params.value === null && <option value="">Seleccionar</option>}
-          <option value="URGENTE">Urgente</option>
-          <option value="NO_URGENTE">No Urgente</option>
-          <option value="COMPLETAR">Completar</option>
-          <option value="NO_PERTINENTE_SIPPDD">No Pertinente (SIPPDD)</option>
-          <option value="NO_PERTINENTE_OTRAS_PROVINCIAS">No Pertinente (Otras Provincias)</option>
-          <option value="NO_PERTINENTE_OFICIOS_INCOMPLETOS">No Pertinente (Oficios Incompletos)</option>
-          <option value="NO_PERTINENTE_LEY_9944">No Pertinente (Ley 9944)</option>
-          <option value="PASA_A_LEGAJO">Pasa a Legajo</option>
-        </select>
-      ),
-    },
-    { field: "ultimaActualizacion", headerName: "Última Actualización", width: 200 },
-    {
-      field: "asignar",
-      headerName: "Asignar",
-      width: 145,
-      renderCell: (params) => (
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<PersonAdd />}
-          onClick={(e) => {
-            e.stopPropagation()
-            handleOpenAsignarModal(params.row.id)
-          }}
-        >
-          ASIGNAR
-        </Button>
-      ),
-    },
-    {
-      field: "evaluar",
-      headerName: "Evaluar",
-      width: 135,
-      renderCell: (params) => (
-        <Button
-          variant="contained"
-          color={params.row.estado_demanda === "EVALUACION" ? "primary" : "inherit"}
-          startIcon={<Edit />}
-          disabled={params.row.estado_demanda !== "EVALUACION"}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (params.row.estado_demanda === "EVALUACION") {
-              // Navigate to the evaluation page without ID in the URL
-              window.location.href = `/evaluacion?id=${params.row.id}`
-            }
-          }}
-        >
-          Evaluar
-        </Button>
-      ),
-    },
-    {
-      field: "codigosDemanda",
-      headerName: "Números Demanda",
-      width: 200,
-      renderCell: (params) => {
-        if (!params.value || params.value.length === 0) return "N/A"
-        return (
-          <div>
-            {params.value.map((codigo: any, index: number) => (
-              <div key={index}>
-                <Typography variant="body2">
-                  Número: {codigo.codigo} - Tipo: {codigo.tipo_codigo_nombre}
-                </Typography>
-              </div>
-            ))}
+  // Define responsive columns based on screen size
+  const getColumns = (): GridColDef[] => {
+    const baseColumns: GridColDef[] = [
+      {
+        field: "id",
+        headerName: "ID",
+        width: 80,
+        renderCell: (params) => (
+          <div style={{ display: "flex", alignItems: "center" }}>
+            {params.value}
+            {params.row.calificacion === "URGENTE" && (
+              <Tooltip title="Urgente">
+                <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
+              </Tooltip>
+            )}
           </div>
-        )
+        ),
       },
-    },
-    { field: "localidad", headerName: "Localidad", width: 150 },
-    { field: "cpc", headerName: "CPC", width: 100 },
-    { field: "zonaEquipo", headerName: "Zona/Equipo", width: 150 },
-    { field: "usuario", headerName: "Usuario", width: 150 },
-    {
-      field: "envioRespuesta",
-      headerName: "Envío Respuesta",
-      width: 150,
-      renderCell: (params) => {
-        const value = params.value as string
-        let displayText = value
-        let color = "inherit"
+      {
+        field: "score",
+        headerName: "Score",
+        width: 80,
+        renderCell: (params) => (
+          <Chip
+            label={params.value}
+            size="small"
+            variant="outlined"
+            color={Number(params.value) > 70 ? "error" : Number(params.value) > 40 ? "warning" : "default"}
+            sx={{ minWidth: 40, justifyContent: "center" }}
+          />
+        ),
+      },
+      {
+        field: "nombre",
+        headerName: "Nombre",
+        width: 180,
+        renderCell: (params) => (
+          <Tooltip title={`DNI: ${params.row.dni}`}>
+            <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
+              {params.value}
+            </Typography>
+          </Tooltip>
+        ),
+      },
+      {
+        field: "calificacion",
+        headerName: "Calificación",
+        width: 180,
+        renderCell: (params) => (
+          <Box
+            sx={{
+              width: "100%",
+              "& select": {
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #e0e0e0",
+                borderRadius: "4px",
+                backgroundColor: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+                outline: "none",
+                fontSize: "0.875rem",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  borderColor: "#bdbdbd",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                },
+                "&:focus": {
+                  borderColor: "#2196f3",
+                  boxShadow: "0 0 0 2px rgba(33,150,243,0.2)",
+                },
+              },
+            }}
+          >
+            <select
+              value={formatCalificacionValue(params.value)}
+              onChange={(e) => {
+                e.stopPropagation()
+                handleCalificacionChange(params.row.id, e.target.value)
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {params.value === null && <option value="">Seleccionar</option>}
+              <option value="URGENTE">Urgente</option>
+              <option value="NO_URGENTE">No Urgente</option>
+              <option value="COMPLETAR">Completar</option>
+              <option value="NO_PERTINENTE_SIPPDD">No Pertinente (SIPPDD)</option>
+              <option value="NO_PERTINENTE_OTRAS_PROVINCIAS">No Pertinente (Otras Provincias)</option>
+              <option value="NO_PERTINENTE_OFICIOS_INCOMPLETOS">No Pertinente (Oficios Incompletos)</option>
+              <option value="NO_PERTINENTE_LEY_9944">No Pertinente (Ley 9944)</option>
+              <option value="PASA_A_LEGAJO">Pasa a Legajo</option>
+            </select>
+          </Box>
+        ),
+      },
+      {
+        field: "ultimaActualizacion",
+        headerName: "Actualización",
+        width: 150,
+        renderCell: (params) => (
+          <Typography variant="body2" color="text.secondary">
+            {params.value}
+          </Typography>
+        ),
+      },
+      {
+        field: "actions",
+        headerName: "Acciones",
+        width: 160,
+        sortable: false,
+        filterable: false,
+        renderCell: (params) => (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Tooltip title="Ver detalles">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (!params.row.recibido && params.row.demanda_zona_id) {
+                    updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
+                  } else {
+                    handleOpenModal(params.row.id)
+                  }
+                }}
+                sx={{ color: "primary.main" }}
+              >
+                <Visibility fontSize="small" />
+              </IconButton>
+            </Tooltip>
 
-        switch (value) {
-          case "NO_NECESARIO":
-            displayText = "No Necesario"
-            color = "text.secondary"
-            break
-          case "PENDIENTE":
-            displayText = "Pendiente"
-            color = "warning.main"
-            break
-          case "ENVIADO":
-            displayText = "Enviado"
-            color = "success.main"
-            break
-          default:
-            displayText = "N/A"
-            break
-        }
+            <Tooltip title="Asignar">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleOpenAsignarModal(params.row.id)
+                }}
+                sx={{ color: "secondary.main" }}
+              >
+                <PersonAdd fontSize="small" />
+              </IconButton>
+            </Tooltip>
 
-        return <Typography color={color}>{displayText}</Typography>
+            <Tooltip title={params.row.estado_demanda === "EVALUACION" ? "Evaluar" : "No disponible para evaluación"}>
+              <span>
+                <IconButton
+                  size="small"
+                  disabled={params.row.estado_demanda !== "EVALUACION"}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (params.row.estado_demanda === "EVALUACION") {
+                      window.location.href = `/evaluacion?id=${params.row.id}`
+                    }
+                  }}
+                  sx={{
+                    color: params.row.estado_demanda === "EVALUACION" ? "success.main" : "action.disabled",
+                  }}
+                >
+                  <Edit fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+        ),
       },
-    },
-    {
-      field: "objetivoDemanda",
-      headerName: "Objetivo de Demanda",
-      width: 180,
-      renderCell: (params) => {
-        return <Typography>{formatUnderscoreText(params.value)}</Typography>
+      {
+        field: "estado_demanda",
+        headerName: "Estado",
+        width: 160,
+        renderCell: (params) => <StatusChip status={params.value} />,
       },
-    },
-    {
-      field: "etiqueta",
-      headerName: "Etiqueta",
-      width: 150,
-      renderCell: (params) => {
-        return <Typography>{formatUnderscoreText(params.value)}</Typography>
+      {
+        field: "adjuntos",
+        headerName: "Adjuntos",
+        width: 100,
+        renderCell: (params) => <AdjuntosCell adjuntos={params.value} />,
       },
-    },
-    {
-      field: "adjuntos",
-      headerName: "Adjuntos",
-      width: 180,
-      renderCell: (params) => {
-        return <AdjuntosCell adjuntos={params.value} />
-      },
-    },
-  ]
+    ]
+
+    // Add more columns for larger screens
+    if (!isMobile) {
+      baseColumns.push(
+        {
+          field: "origen",
+          headerName: "Remitente",
+          width: 150,
+          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+        },
+        {
+          field: "localidad",
+          headerName: "Localidad",
+          width: 130,
+          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+        },
+        {
+          field: "zonaEquipo",
+          headerName: "Zona/Equipo",
+          width: 130,
+          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+        },
+        {
+          field: "envioRespuesta",
+          headerName: "Envío Respuesta",
+          width: 150,
+          renderCell: (params) => {
+            const value = params.value as string
+            let displayText = value
+            let color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default"
+
+            switch (value) {
+              case "NO_NECESARIO":
+                displayText = "No Necesario"
+                color = "default"
+                break
+              case "PENDIENTE":
+                displayText = "Pendiente"
+                color = "warning"
+                break
+              case "ENVIADO":
+                displayText = "Enviado"
+                color = "success"
+                break
+              default:
+                displayText = "N/A"
+                break
+            }
+
+            return <Chip label={displayText} size="small" color={color} variant="outlined" />
+          },
+        },
+        {
+          field: "objetivoDemanda",
+          headerName: "Objetivo",
+          width: 150,
+          renderCell: (params) => {
+            return <Typography variant="body2">{formatUnderscoreText(params.value)}</Typography>
+          },
+        },
+      )
+    }
+
+    return baseColumns
+  }
+
+  const columns = useMemo(() => getColumns(), [isMobile])
 
   const rows =
     demandasData?.results.map((demanda: TDemanda) => {
-      // Debug log for adjuntos
-      console.log(`Demanda ${demanda.id} adjuntos:`, demanda.adjuntos)
-      if (demanda.adjuntos && Array.isArray(demanda.adjuntos)) {
-        console.log(`Demanda ${demanda.id} has ${demanda.adjuntos.length} adjuntos`)
-      }
-
       return {
         id: demanda.id,
         score: demanda.demanda_score?.score || "N/A",
@@ -631,35 +814,40 @@ const DemandaTable: React.FC = () => {
       }
     }) || []
 
-  // Debug effect to log rows data
-  useEffect(() => {
-    if (rows.length > 0) {
-      console.log("First row adjuntos:", rows[0].adjuntos)
-    }
-  }, [rows])
-
   if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
   return (
     <>
-      <Paper sx={{ width: "100%", overflow: "hidden" }}>
-        <div className="flex gap-4 relative z-10">
-          <Buttons
-            isLoading={isLoading}
-            handleNuevoRegistro={handleNuevoRegistro}
-            filterState={filterState}
-            setFilterState={setFilterState}
-            user={user}
-            onFilterChange={handleFilterChange}
-          />
-        </div>
-        <div style={{ height: 400, width: "100%" }}>
+      <Paper
+        sx={{
+          width: "100%",
+          overflow: "hidden",
+          borderRadius: 2,
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: "1px solid #e0e0e0", bgcolor: "#f9f9f9" }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>
+            Gestión de Demandas
+          </Typography>
+          <div className="flex gap-4 relative z-10">
+            <Buttons
+              isLoading={isLoading}
+              handleNuevoRegistro={handleNuevoRegistro}
+              filterState={filterState}
+              setFilterState={setFilterState}
+              user={user}
+              onFilterChange={handleFilterChange}
+            />
+          </div>
+        </Box>
+        <div style={{ height: 600, width: "100%" }}>
           <DataGrid
             rows={rows}
             columns={columns}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
-            pageSizeOptions={[5, 10, 25]}
+            pageSizeOptions={[5, 10, 25, 50]}
             rowCount={totalCount}
             paginationMode="server"
             loading={isLoading || updateCalificacion.isLoading || updateDemandaZona.isLoading}
@@ -668,7 +856,8 @@ const DemandaTable: React.FC = () => {
               if (
                 !cellElement.closest('.MuiDataGrid-cell[data-field="calificacion"]') &&
                 !cellElement.closest("a") &&
-                !cellElement.closest("button")
+                !cellElement.closest("button") &&
+                !cellElement.closest("select")
               ) {
                 if (!params.row.recibido && params.row.demanda_zona_id) {
                   updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
@@ -677,68 +866,71 @@ const DemandaTable: React.FC = () => {
                 }
               }
             }}
+            slots={{
+              toolbar: CustomToolbar,
+            }}
             sx={{
               cursor: "pointer",
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: "#f5f5f5",
+                borderBottom: "2px solid #e0e0e0",
+              },
+              "& .MuiDataGrid-cell": {
+                padding: "8px 16px",
+              },
               "& .MuiDataGrid-row": {
                 position: "relative",
+                transition: "background-color 0.2s",
+                "&:hover": {
+                  backgroundColor: "rgba(25, 118, 210, 0.04)",
+                },
                 "&::before": {
                   content: '""',
                   position: "absolute",
                   left: 0,
                   top: 0,
                   bottom: 0,
-                  width: "5px", // Increased from 4px to 5px (25% increase)
+                  width: "7px",
                 },
               },
               // Add specific styles for each estado_demanda
               "& .row-sin-asignar::before": {
                 backgroundColor: "#e0e0e0",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-constatacion::before": {
                 backgroundColor: "#4caf50",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-evaluacion::before": {
                 backgroundColor: "#2196f3",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-pendiente-autorizacion::before": {
                 backgroundColor: "#ff9800",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-archivada::before": {
                 backgroundColor: "#9e9e9e",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-admitida::before": {
                 backgroundColor: "#673ab7",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-respuesta-sin-enviar::before": {
                 backgroundColor: "#f44336",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-informe-sin-enviar::before": {
                 backgroundColor: "#ecff0c",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-repuesta-enviada::before": {
                 backgroundColor: "#8bc34a",
-                width: "7px", // Increased by approximately 30%
               },
               "& .row-informe-enviado::before": {
                 backgroundColor: "#00bcd4",
-                width: "7px", // Increased by approximately 30%
               },
               // Add style for non-received rows
               "& .row-not-received": {
-                color: "#333333", // Lighter black color
-                fontWeight: "bold",
+                fontWeight: "500",
               },
               // Add a new style for received rows
               "& .row-received": {
-                color: "#666666", // Slightly darker gray
+                color: "#666666",
               },
             }}
             getRowClassName={(params) => {
@@ -765,19 +957,22 @@ const DemandaTable: React.FC = () => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: "80%",
-            maxWidth: 800,
+            width: { xs: "95%", sm: "90%", md: "80%" },
+            maxWidth: 900,
             bgcolor: "background.paper",
             boxShadow: 24,
-            p: 4,
+            p: { xs: 2, sm: 4 },
             maxHeight: "90vh",
             overflowY: "auto",
+            borderRadius: 2,
           }}
         >
           {selectedDemandaId ? (
             <DemandaDetail params={{ id: selectedDemandaId.toString() }} onClose={handleCloseModal} />
           ) : (
-            <CircularProgress />
+            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+              <CircularProgress />
+            </Box>
           )}
         </Box>
       </Modal>

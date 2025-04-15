@@ -1,0 +1,541 @@
+{
+    "legajos": [
+      {
+        "id": 1,
+        "numero_legajo": "123456",
+        "fecha_apertura": "09/09/23",
+        "estado_legajo": "ABIERTO",
+        "tipo_legajo": "PROTECCION_DERECHOS",
+        "prioridad": "ALTA",
+        "ultima_actualizacion": "2024-07-05T14:30:00",
+        "persona_principal": {
+          "nombre": "Juan",
+          "apellido": "Pérez",
+          "alias": "Juanito",
+          "edad": 8,
+          "dni": "33.333.333"
+        },
+        "ubicacion": "Institución Nro. 1",
+        "localidad": {
+          "id": 1,
+          "nombre": "Córdoba"
+        },
+        "equipo_interviniente": "Equipo Legales",
+        "profesional_asignado": {
+          "id": 1,
+          "nombre": "Verónica Fernandez Wagner"
+        },
+        "legajo_zona": {
+          "id": 1,
+          "zona": {
+            "id": 1,
+            "nombre": "Zona Centro"
+          },
+          "recibido": true,
+          "fecha_recibido": "2023-09-09T10:00:00"
+        },
+        "medida_activa": {
+          "tipo": "Medida de Protección Integral - MPI",
+          "estado": "ACTIVA",
+          "fecha_apertura": "09/09/23",
+          "grupo_actuante": "Grupo 1",
+          "juzgado": "Juzgado de Familia 2",
+          "nro_sac": "009988",
+          "respuesta_enviada": true
+        },
+        "intervenciones": [
+          {
+            "fecha": "2 JUL 24",
+            "descripcion": "Se registra denuncia anónima",
+            "hora": "11:45 am"
+          },
+          {
+            "fecha": "3 JUL 24",
+            "descripcion": "Envío de respuesta",
+            "hora": "12:40 am"
+          },
+          {
+            "fecha": "4 JUL 24",
+            "descripcion": "Se adjunta FotoDNI.pdf",
+            "hora": "10:34 am"
+          },
+          {
+            "fecha": "4 JUL 24",
+            "descripcion": "Se adjunta PartidaNacimiento.pdf",
+            "hora": "12:45 am"
+          }
+        ],
+        "situaciones_criticas": {
+          "BP": false,
+          "RSA": true,
+          "DCS": false,
+          "SCP": false
+        },
+        "adjuntos": [
+          {
+            "archivo": "https://example.com/files/FotoDNI.pdf"
+          },
+          {
+            "archivo": "https://example.com/files/PartidaNacimiento.pdf"
+          }
+        ],
+        "historial_medidas": {
+          "MPI": [
+            {
+              "medida": "MPI",
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato 2",
+              "equipo": "Dato3",
+              "juzgado": "Dato4",
+              "dispositivo": "Dato4",
+              "fecha_cierre": "2/07/21"
+            },
+            {
+              "medida": "MPI",
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato2",
+              "equipo": "Dato3",
+              "juzgado": "Dato4",
+              "dispositivo": "Dato4",
+              "fecha_cierre": "2/07/21"
+            },
+            {
+              "medida": "MPI",
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato2",
+              "equipo": "Dato3",
+              "juzgado": "Dato3",
+              "dispositivo": "Dato3",
+              "fecha_cierre": "2/07/21"
+            }
+          ],
+          "MPE": [
+            {
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato 2",
+              "equipo": "Dato3",
+              "juzgado": "Dato4",
+              "dispositivo": "Dato4",
+              "fecha_cierre": "2/07/21",
+              "legajos_afectado": "(0)"
+            },
+            {
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato2",
+              "equipo": "Dato3",
+              "juzgado": "Dato4",
+              "dispositivo": "Dato4",
+              "fecha_cierre": "2/07/21",
+              "legajos_afectado": "(1)"
+            },
+            {
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato2",
+              "equipo": "Dato3",
+              "juzgado": "Dato3",
+              "dispositivo": "Dato3",
+              "fecha_cierre": "2/07/21",
+              "legajos_afectado": "(2)"
+            }
+          ],
+          "MPJ": [
+            {
+              "medida": "MPJ",
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato 2",
+              "equipo": "Dato3",
+              "juzgado": "Dato4",
+              "dispositivo": "Dato4",
+              "fecha_cierre": "2/07/21"
+            },
+            {
+              "medida": "MPJ",
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato2",
+              "equipo": "Dato3",
+              "juzgado": "Dato4",
+              "dispositivo": "Dato4",
+              "fecha_cierre": "2/07/21"
+            },
+            {
+              "medida": "MPJ",
+              "fecha_alta": "12/05/21",
+              "duracion": "Dato2",
+              "equipo": "Dato3",
+              "juzgado": "Dato3",
+              "dispositivo": "Dato3",
+              "fecha_cierre": "2/07/21"
+            }
+          ]
+        },
+        "unassigned": false
+      },
+      {
+        "id": 2,
+        "numero_legajo": "234567",
+        "fecha_apertura": "15/10/23",
+        "estado_legajo": "EN_PROCESO",
+        "tipo_legajo": "SEGUIMIENTO_JUDICIAL",
+        "prioridad": "MEDIA",
+        "ultima_actualizacion": "2024-07-03T09:15:00",
+        "persona_principal": {
+          "nombre": "María",
+          "apellido": "González",
+          "alias": "Mari",
+          "edad": 12,
+          "dni": "44.444.444"
+        },
+        "ubicacion": "Escuela Primaria Nro. 5",
+        "localidad": {
+          "id": 1,
+          "nombre": "Córdoba"
+        },
+        "equipo_interviniente": "Equipo Psicosocial",
+        "profesional_asignado": {
+          "id": 2,
+          "nombre": "Carlos Rodríguez"
+        },
+        "legajo_zona": {
+          "id": 2,
+          "zona": {
+            "id": 2,
+            "nombre": "Zona Norte"
+          },
+          "recibido": true,
+          "fecha_recibido": "2023-10-16T11:30:00"
+        },
+        "medida_activa": {
+          "tipo": "Medida de Abrigo - MA",
+          "estado": "ACTIVA",
+          "fecha_apertura": "16/10/23",
+          "grupo_actuante": "Grupo 3",
+          "juzgado": "Juzgado de Familia 1",
+          "nro_sac": "010234",
+          "respuesta_enviada": true
+        },
+        "intervenciones": [
+          {
+            "fecha": "20 OCT 23",
+            "descripcion": "Entrevista inicial",
+            "hora": "09:30 am"
+          },
+          {
+            "fecha": "5 NOV 23",
+            "descripcion": "Visita domiciliaria",
+            "hora": "14:20 pm"
+          },
+          {
+            "fecha": "10 DIC 23",
+            "descripcion": "Se adjunta InformePsicologico.pdf",
+            "hora": "11:15 am"
+          }
+        ],
+        "situaciones_criticas": {
+          "BP": true,
+          "RSA": false,
+          "DCS": true,
+          "SCP": false
+        },
+        "adjuntos": [
+          {
+            "archivo": "https://example.com/files/InformePsicologico.pdf"
+          }
+        ],
+        "historial_medidas": {
+          "MPI": [
+            {
+              "medida": "MPI",
+              "fecha_alta": "15/10/23",
+              "duracion": "30 días",
+              "equipo": "Equipo 2",
+              "juzgado": "Juzgado 1",
+              "dispositivo": "Dispositivo 1",
+              "fecha_cierre": "15/11/23"
+            }
+          ],
+          "MPE": [
+            {
+              "fecha_alta": "16/11/23",
+              "duracion": "60 días",
+              "equipo": "Equipo 3",
+              "juzgado": "Juzgado 2",
+              "dispositivo": "Dispositivo 2",
+              "fecha_cierre": "16/01/24",
+              "legajos_afectado": "(1)"
+            }
+          ],
+          "MPJ": []
+        },
+        "unassigned": false
+      },
+      {
+        "id": 3,
+        "numero_legajo": "345678",
+        "fecha_apertura": "22/11/23",
+        "estado_legajo": "PENDIENTE_REVISION",
+        "tipo_legajo": "PROTECCION_DERECHOS",
+        "prioridad": "BAJA",
+        "ultima_actualizacion": "2024-06-28T16:45:00",
+        "persona_principal": {
+          "nombre": "Pedro",
+          "apellido": "Sánchez",
+          "alias": "",
+          "edad": 15,
+          "dni": "55.555.555"
+        },
+        "ubicacion": "Domicilio Familiar",
+        "localidad": {
+          "id": 2,
+          "nombre": "Villa María"
+        },
+        "equipo_interviniente": "Equipo Territorial",
+        "profesional_asignado": null,
+        "legajo_zona": {
+          "id": 3,
+          "zona": {
+            "id": 3,
+            "nombre": "Zona Sur"
+          },
+          "recibido": false,
+          "fecha_recibido": null
+        },
+        "medida_activa": {
+          "tipo": "Medida Excepcional - ME",
+          "estado": "PENDIENTE",
+          "fecha_apertura": "23/11/23",
+          "grupo_actuante": "Grupo 2",
+          "juzgado": "Juzgado de Familia 3",
+          "nro_sac": "011567",
+          "respuesta_enviada": false
+        },
+        "intervenciones": [
+          {
+            "fecha": "25 NOV 23",
+            "descripcion": "Recepción de denuncia",
+            "hora": "10:00 am"
+          },
+          {
+            "fecha": "30 NOV 23",
+            "descripcion": "Entrevista con familia",
+            "hora": "15:30 pm"
+          }
+        ],
+        "situaciones_criticas": {
+          "BP": false,
+          "RSA": false,
+          "DCS": false,
+          "SCP": true
+        },
+        "adjuntos": [],
+        "historial_medidas": {
+          "MPI": [],
+          "MPE": [],
+          "MPJ": [
+            {
+              "medida": "MPJ",
+              "fecha_alta": "23/11/23",
+              "duracion": "45 días",
+              "equipo": "Equipo 4",
+              "juzgado": "Juzgado 3",
+              "dispositivo": "Dispositivo 3",
+              "fecha_cierre": "07/01/24"
+            }
+          ]
+        },
+        "unassigned": true
+      },
+      {
+        "id": 4,
+        "numero_legajo": "456789",
+        "fecha_apertura": "05/01/24",
+        "estado_legajo": "CERRADO",
+        "tipo_legajo": "PROTECCION_DERECHOS",
+        "prioridad": "BAJA",
+        "ultima_actualizacion": "2024-05-15T11:20:00",
+        "persona_principal": {
+          "nombre": "Ana",
+          "apellido": "Martínez",
+          "alias": "Anita",
+          "edad": 10,
+          "dni": "66.666.666"
+        },
+        "ubicacion": "Centro Comunitario",
+        "localidad": {
+          "id": 3,
+          "nombre": "Río Cuarto"
+        },
+        "equipo_interviniente": "Equipo Legales",
+        "profesional_asignado": {
+          "id": 3,
+          "nombre": "Laura Gómez"
+        },
+        "legajo_zona": {
+          "id": 4,
+          "zona": {
+            "id": 4,
+            "nombre": "Zona Este"
+          },
+          "recibido": true,
+          "fecha_recibido": "2024-01-06T09:45:00"
+        },
+        "medida_activa": {
+          "tipo": "Medida de Protección Integral - MPI",
+          "estado": "CERRADA",
+          "fecha_apertura": "06/01/24",
+          "grupo_actuante": "Grupo 4",
+          "juzgado": "Juzgado de Familia 2",
+          "nro_sac": "000123",
+          "respuesta_enviada": true
+        },
+        "intervenciones": [
+          {
+            "fecha": "10 ENE 24",
+            "descripcion": "Evaluación inicial",
+            "hora": "11:00 am"
+          },
+          {
+            "fecha": "25 ENE 24",
+            "descripcion": "Reunión con escuela",
+            "hora": "09:15 am"
+          },
+          {
+            "fecha": "15 FEB 24",
+            "descripcion": "Cierre de caso",
+            "hora": "14:30 pm"
+          }
+        ],
+        "situaciones_criticas": {
+          "BP": false,
+          "RSA": false,
+          "DCS": false,
+          "SCP": false
+        },
+        "adjuntos": [
+          {
+            "archivo": "https://example.com/files/InformeFinal.pdf"
+          }
+        ],
+        "historial_medidas": {
+          "MPI": [
+            {
+              "medida": "MPI",
+              "fecha_alta": "06/01/24",
+              "duracion": "40 días",
+              "equipo": "Equipo 5",
+              "juzgado": "Juzgado 2",
+              "dispositivo": "Dispositivo 1",
+              "fecha_cierre": "15/02/24"
+            }
+          ],
+          "MPE": [],
+          "MPJ": []
+        },
+        "unassigned": false
+      },
+      {
+        "id": 5,
+        "numero_legajo": "567890",
+        "fecha_apertura": "18/02/24",
+        "estado_legajo": "ARCHIVADO",
+        "tipo_legajo": "SEGUIMIENTO_JUDICIAL",
+        "prioridad": "ALTA",
+        "ultima_actualizacion": "2024-04-20T13:10:00",
+        "persona_principal": {
+          "nombre": "Lucas",
+          "apellido": "Fernández",
+          "alias": "Lucho",
+          "edad": 14,
+          "dni": "77.777.777"
+        },
+        "ubicacion": "Hogar de Acogida",
+        "localidad": {
+          "id": 1,
+          "nombre": "Córdoba"
+        },
+        "equipo_interviniente": "Equipo Psicosocial",
+        "profesional_asignado": {
+          "id": 4,
+          "nombre": "Martín López"
+        },
+        "legajo_zona": {
+          "id": 5,
+          "zona": {
+            "id": 1,
+            "nombre": "Zona Centro"
+          },
+          "recibido": true,
+          "fecha_recibido": "2024-02-19T10:30:00"
+        },
+        "medida_activa": {
+          "tipo": "Medida Excepcional - ME",
+          "estado": "ARCHIVADA",
+          "fecha_apertura": "19/02/24",
+          "grupo_actuante": "Grupo 1",
+          "juzgado": "Juzgado de Familia 4",
+          "nro_sac": "000456",
+          "respuesta_enviada": true
+        },
+        "intervenciones": [
+          {
+            "fecha": "20 FEB 24",
+            "descripcion": "Ingreso a hogar",
+            "hora": "16:00 pm"
+          },
+          {
+            "fecha": "15 MAR 24",
+            "descripcion": "Evaluación psicológica",
+            "hora": "10:30 am"
+          },
+          {
+            "fecha": "10 ABR 24",
+            "descripcion": "Archivo de caso",
+            "hora": "11:45 am"
+          }
+        ],
+        "situaciones_criticas": {
+          "BP": true,
+          "RSA": true,
+          "DCS": true,
+          "SCP": false
+        },
+        "adjuntos": [
+          {
+            "archivo": "https://example.com/files/ResolucionJudicial.pdf"
+          },
+          {
+            "archivo": "https://example.com/files/InformePsicologico.pdf"
+          }
+        ],
+        "historial_medidas": {
+          "MPI": [],
+          "MPE": [
+            {
+              "fecha_alta": "19/02/24",
+              "duracion": "60 días",
+              "equipo": "Equipo 1",
+              "juzgado": "Juzgado 4",
+              "dispositivo": "Dispositivo 4",
+              "fecha_cierre": "19/04/24",
+              "legajos_afectado": "(2)"
+            }
+          ],
+          "MPJ": [
+            {
+              "medida": "MPJ",
+              "fecha_alta": "20/02/24",
+              "duracion": "30 días",
+              "equipo": "Equipo 1",
+              "juzgado": "Juzgado 4",
+              "dispositivo": "Dispositivo 4",
+              "fecha_cierre": "20/03/24"
+            }
+          ]
+        },
+        "unassigned": false
+      }
+    ],
+    "count": 5,
+    "next": null,
+    "previous": null
+  }
+  

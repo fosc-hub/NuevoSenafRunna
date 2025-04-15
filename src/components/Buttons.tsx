@@ -6,18 +6,18 @@ import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
-import SearchButton from "./search-button"
+import SearchButton from "../app/(runna)/mesadeentrada/ui/search-button"
 
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
   estado_demanda:
-    | "SIN_ASIGNAR"
-    | "CONSTATACION"
-    | "EVALUACION"
-    | "PENDIENTE_AUTORIZACION"
-    | "ARCHIVADA"
-    | "ADMITIDA"
-    | null
+  | "SIN_ASIGNAR"
+  | "CONSTATACION"
+  | "EVALUACION"
+  | "PENDIENTE_AUTORIZACION"
+  | "ARCHIVADA"
+  | "ADMITIDA"
+  | null
   objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null
 }
 

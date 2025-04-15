@@ -1,7 +1,7 @@
 "use client"
 import { evaluacionData } from "@/components/evaluacion/data/evaluacion-data"
 import EvaluacionTabs from "@/components/evaluacion/evaluacion-tabs"
-import Header from "../mesadeentrada/ui/Header"
+import Header from "../../../components/Header"
 
 export default function EvaluacionPage() {
   return (

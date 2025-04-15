@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Paper,
   Button,
@@ -9,7 +9,6 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Link,
   Popover,
   Chip,
   Tooltip,
@@ -26,28 +25,15 @@ import {
   GridToolbarFilterButton,
   GridToolbarExport,
 } from "@mui/x-data-grid"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
+import { getLegajos, updateLegajo, type Legajo, type PaginatedResponse } from "../mock-data/legajos-service"
 
-// Assume these imports are available in your project
-import { get, update, create } from "@/app/api/apiService"
-import type { TDemanda } from "@/app/interfaces"
-
-// Dynamically import DemandaDetail with no SSR to avoid hydration issues
-const DemandaDetail = dynamic(() => import("../../demanda/DemandaDetail"), { ssr: false })
-
-interface PaginatedResponse<T> {
-  count: number
-  next: string | null
-  previous: string | null
-  results: T[]
-}
-
-type TDemandaPaginated = PaginatedResponse<TDemanda>
+// Dynamically import LegajoDetail with no SSR to avoid hydration issues
+const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
 
 // Define a type for adjuntos to help with debugging
 interface Adjunto {
@@ -101,45 +87,33 @@ const StatusChip = ({ status }: { status: string }) => {
   let label = status
 
   switch (status) {
-    case "SIN_ASIGNAR":
-      color = "default"
-      label = "Sin Asignar"
-      break
-    case "CONSTATACION":
+    case "ABIERTO":
       color = "success"
-      label = "Constatación"
+      label = "Abierto"
       break
-    case "EVALUACION":
+    case "EN_PROCESO":
       color = "info"
-      label = "Evaluación"
+      label = "En Proceso"
       break
-    case "PENDIENTE_AUTORIZACION":
+    case "PENDIENTE_REVISION":
       color = "warning"
-      label = "Pendiente Autorización"
+      label = "Pendiente Revisión"
       break
-    case "ARCHIVADA":
+    case "CERRADO":
       color = "default"
-      label = "Archivada"
+      label = "Cerrado"
       break
-    case "ADMITIDA":
+    case "ARCHIVADO":
       color = "secondary"
-      label = "Admitida"
+      label = "Archivado"
       break
-    case "RESPUESTA_SIN_ENVIAR":
+    case "DERIVADO":
+      color = "primary"
+      label = "Derivado"
+      break
+    case "SUSPENDIDO":
       color = "error"
-      label = "Respuesta Sin Enviar"
-      break
-    case "INFORME_SIN_ENVIAR":
-      color = "warning"
-      label = "Informe Sin Enviar"
-      break
-    case "REPUESTA_ENVIADA":
-      color = "success"
-      label = "Respuesta Enviada"
-      break
-    case "INFORME_ENVIADO":
-      color = "info"
-      label = "Informe Enviado"
+      label = "Suspendido"
       break
     default:
       label = "Desconocido"
@@ -247,13 +221,14 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
 
               const fileName = getFileNameFromUrl(adjunto.archivo)
 
+              // Use a div instead of Link to avoid nested <a> tags
               return (
-                <Link
+                <div
                   key={index}
-                  href={adjunto.archivo}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(adjunto.archivo, "_blank", "noopener,noreferrer")
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -263,16 +238,19 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
                     padding: "8px 12px",
                     borderRadius: "4px",
                     transition: "background-color 0.2s",
+                    cursor: "pointer",
+                    backgroundColor: "transparent",
                   }}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "#f0f7ff",
-                    },
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#f0f7ff"
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent"
                   }}
                 >
                   <AttachFile style={{ fontSize: "1rem", marginRight: "8px", flexShrink: 0 }} />
                   <span style={{ wordBreak: "break-word" }}>{fileName}</span>
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -282,7 +260,7 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
   )
 }
 
-const DemandaTable: React.FC = () => {
+const LegajoTable: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -290,65 +268,46 @@ const DemandaTable: React.FC = () => {
     pageSize: 10,
   })
   const [totalCount, setTotalCount] = useState(0)
-  const queryClient = useQueryClient()
-  const [selectedDemandaId, setSelectedDemandaId] = useState<number | null>(null)
+  const [selectedLegajoId, setSelectedLegajoId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filterState, setFilterState] = useState({
     todos: true,
-    sinAsignar: false,
-    asignados: false,
+    abiertos: false,
+    enProceso: false,
+    cerrados: false,
     archivados: false,
-    completados: false,
-    sinLeer: false,
-    leidos: false,
-    constatados: false,
-    evaluados: false,
+    derivados: false,
+    suspendidos: false,
+    pendienteRevision: false,
   })
   const [user, setUser] = useState({ id: 1, is_superuser: false, all_permissions: [] })
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
-  const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
-  const [demandasData, setDemandasData] = useState<TDemandaPaginated | null>(null)
+  const [selectedLegajoIdForAssignment, setSelectedLegajoIdForAssignment] = useState<number | null>(null)
+  const [legajosData, setLegajosData] = useState<PaginatedResponse<Legajo> | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const [apiFilters, setApiFilters] = useState({
-    envio_de_respuesta: null,
-    estado_demanda: null,
-    objetivo_de_demanda: null,
+    tipo_legajo: null,
+    estado_legajo: null,
+    prioridad: null,
   })
 
-  const fetchDemandas = async (pageNumber: number, pageSize: number) => {
+  useEffect(() => {
+    fetchLegajos()
+  }, [paginationModel.page, paginationModel.pageSize, apiFilters])
+
+  const fetchLegajos = () => {
     try {
-      // Construct query parameters
-      const params = new URLSearchParams()
-
-      // Add pagination params
-      params.append("page", (pageNumber + 1).toString())
-      params.append("page_size", pageSize.toString())
-
-      // Add filter params if they exist
-      if (apiFilters.envio_de_respuesta) {
-        params.append("envio_de_respuesta", apiFilters.envio_de_respuesta)
-      }
-      if (apiFilters.estado_demanda) {
-        params.append("estado_demanda", apiFilters.estado_demanda)
-      }
-      if (apiFilters.objetivo_de_demanda) {
-        params.append("objetivo_de_demanda", apiFilters.objetivo_de_demanda)
-      }
-
-      const response = await get<TDemandaPaginated>(`mesa-de-entrada/?${params.toString()}`)
+      setIsLoading(true)
+      const response = getLegajos(paginationModel.page, paginationModel.pageSize, apiFilters)
       setTotalCount(response.count)
-      const updatedResponse = {
-        ...response,
-        results: response.results.map((demanda) => ({
-          ...demanda,
-          demanda_zona_id: demanda.demanda_zona?.id,
-        })),
-      }
-      setDemandasData(updatedResponse)
-      return updatedResponse
+      setLegajosData(response)
     } catch (error) {
-      console.error("Error al obtener las demandas:", error)
-      throw error
+      console.error("Error al obtener los legajos:", error)
+      toast.error("Error al cargar los legajos")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -358,166 +317,76 @@ const DemandaTable: React.FC = () => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState, apiFilters],
-    queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
-    onSuccess: (data) => setDemandasData(data),
-  })
-
   const handleNuevoRegistro = () => {
     console.log("Nuevo registro clicked")
   }
 
-  const updateCalificacion = useMutation({
-    mutationFn: async ({ demandaId, newValue }: { demandaId: number; newValue: string }) => {
-      const demanda = demandasData?.results.find((d) => d.id === demandaId)
-      if (!demanda) throw new Error("Demanda not found")
+  const handlePrioridadChange = (legajoId: number, newValue: string) => {
+    console.log(`Updating prioridad for legajo ${legajoId} to ${newValue}`)
+    setIsUpdating(true)
+    try {
+      const updatedLegajo = updateLegajo(legajoId, { prioridad: newValue })
 
-      if (demanda.calificacion) {
-        return update<TDemanda>(
-          "calificacion-demanda",
-          demanda.calificacion.id,
-          {
-            estado_calificacion: newValue,
-            ultima_actualizacion: new Date().toISOString(),
-          },
-          true,
-          "¡Calificación actualizada con éxito!",
-        )
-      } else {
-        const currentDate = new Date().toISOString()
-        return create<TDemanda>(
-          `calificacion-demanda`,
-          {
-            fecha_y_hora: currentDate,
-            descripcion: `Nueva Calificación: ${newValue}`,
-            estado_calificacion: newValue,
-            demanda: demandaId,
-            justificacion: "N/A",
-          },
-          true,
-          "¡Calificación creada con éxito!",
-        )
-      }
-    },
-    onSuccess: (data, variables) => {
-      console.log("Server response:", data)
-      queryClient.invalidateQueries({ queryKey: ["demandas"] })
-      queryClient.refetchQueries({ queryKey: ["demandas", paginationModel.page, paginationModel.pageSize] })
-    },
-    onError: (error) => {
-      console.error("Error al actualizar la Calificación:", error)
-      toast.error("Error al actualizar la Calificación", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      })
-    },
-  })
-
-  const updateDemandaZona = useMutation({
-    mutationFn: async ({ id, userId }: { id: number; userId: number }) => {
-      const currentDate = new Date().toISOString()
-      const updateData = {
-        fecha_recibido: currentDate,
-        recibido: true,
-        recibido_por: userId,
-      }
-      return update<TDemanda>("demanda-zona", id, updateData, true, "Demanda marcada como recibida")
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["demandas"] })
       // Update the local state to reflect the changes
-      setDemandasData((prevData) => {
-        if (!prevData) return null
-        return {
-          ...prevData,
-          results: prevData.results.map((demanda) =>
-            demanda.demanda_zona_id === data.id
-              ? {
-                ...demanda,
-                demanda_zona: {
-                  ...demanda.demanda_zona,
-                  recibido: true,
-                  fecha_recibido: data.fecha_recibido,
-                },
-              }
-              : demanda,
-          ),
-        }
-      })
-      // Open DemandaDetalle modal after successful update
-      handleOpenModal(data.demanda)
-    },
-    onError: (error) => {
-      console.error("Error al actualizar la Demanda Zona:", error)
-      toast.error("Error al marcar la demanda como recibida", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      })
-    },
-  })
+      if (legajosData) {
+        const updatedResults = legajosData.results.map((legajo) =>
+          legajo.id === legajoId ? { ...legajo, prioridad: newValue } : legajo,
+        )
+        setLegajosData({
+          ...legajosData,
+          results: updatedResults,
+        })
+      }
 
-  const handleCalificacionChange = (demandaId: number, newValue: string) => {
-    console.log(`Updating calificacion for demanda ${demandaId} to ${newValue}`)
-    updateCalificacion.mutate({ demandaId, newValue })
+      toast.success("Prioridad actualizada con éxito")
+    } catch (error) {
+      console.error("Error al actualizar la Prioridad:", error)
+      toast.error("Error al actualizar la Prioridad")
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
-  const formatCalificacionValue = (value: string | undefined | null) => {
+  const formatPrioridadValue = (value: string | undefined | null) => {
     return value || "Seleccionar"
   }
 
-  const handleOpenModal = (demandaId: number) => {
-    setSelectedDemandaId(demandaId)
+  const handleOpenModal = (legajoId: number) => {
+    setSelectedLegajoId(legajoId)
     setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
-    setSelectedDemandaId(null)
+    setSelectedLegajoId(null)
     setIsModalOpen(false)
   }
 
-  const handleOpenAsignarModal = (demandaId: number) => {
-    setSelectedDemandaIdForAssignment(demandaId)
+  const handleOpenAsignarModal = (legajoId: number) => {
+    setSelectedLegajoIdForAssignment(legajoId)
     setIsAsignarModalOpen(true)
   }
 
   const handleCloseAsignarModal = () => {
-    setSelectedDemandaIdForAssignment(null)
+    setSelectedLegajoIdForAssignment(null)
     setIsAsignarModalOpen(false)
   }
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
-      case "SIN_ASIGNAR":
-        return "#e0e0e0" // gray
-      case "CONSTATACION":
+      case "ABIERTO":
         return "#4caf50" // green
-      case "EVALUACION":
+      case "EN_PROCESO":
         return "#2196f3" // blue
-      case "PENDIENTE_AUTORIZACION":
+      case "PENDIENTE_REVISION":
         return "#ff9800" // orange
-      case "ARCHIVADA":
+      case "CERRADO":
         return "#9e9e9e" // dark gray
-      case "ADMITIDA":
+      case "ARCHIVADO":
         return "#673ab7" // purple
-      case "RESPUESTA_SIN_ENVIAR":
-        return "#f44336" // red
-      case "INFORME_SIN_ENVIAR":
-        return "#ecff0c" // Amarillo
-      case "REPUESTA_ENVIADA":
-        return "#8bc34a" // light green
-      case "INFORME_ENVIADO":
+      case "DERIVADO":
         return "#00bcd4" // cyan
+      case "SUSPENDIDO":
+        return "#f44336" // red
       default:
         return "transparent"
     }
@@ -546,8 +415,8 @@ const DemandaTable: React.FC = () => {
         renderCell: (params) => (
           <div style={{ display: "flex", alignItems: "center" }}>
             {params.value}
-            {params.row.calificacion === "URGENTE" && (
-              <Tooltip title="Urgente">
+            {params.row.prioridad === "ALTA" && (
+              <Tooltip title="Alta Prioridad">
                 <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
               </Tooltip>
             )}
@@ -555,17 +424,13 @@ const DemandaTable: React.FC = () => {
         ),
       },
       {
-        field: "score",
-        headerName: "Score",
-        width: 80,
+        field: "numero_legajo",
+        headerName: "Nº Legajo",
+        width: 120,
         renderCell: (params) => (
-          <Chip
-            label={params.value}
-            size="small"
-            variant="outlined"
-            color={Number(params.value) > 70 ? "error" : Number(params.value) > 40 ? "warning" : "default"}
-            sx={{ minWidth: 40, justifyContent: "center" }}
-          />
+          <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
+            {params.value}
+          </Typography>
         ),
       },
       {
@@ -581,9 +446,9 @@ const DemandaTable: React.FC = () => {
         ),
       },
       {
-        field: "calificacion",
-        headerName: "Calificación",
-        width: 180,
+        field: "prioridad",
+        headerName: "Prioridad",
+        width: 150,
         renderCell: (params) => (
           <Box
             sx={{
@@ -611,22 +476,17 @@ const DemandaTable: React.FC = () => {
             }}
           >
             <select
-              value={formatCalificacionValue(params.value)}
+              value={formatPrioridadValue(params.value)}
               onChange={(e) => {
                 e.stopPropagation()
-                handleCalificacionChange(params.row.id, e.target.value)
+                handlePrioridadChange(params.row.id, e.target.value)
               }}
               onClick={(e) => e.stopPropagation()}
             >
               {params.value === null && <option value="">Seleccionar</option>}
-              <option value="URGENTE">Urgente</option>
-              <option value="NO_URGENTE">No Urgente</option>
-              <option value="COMPLETAR">Completar</option>
-              <option value="NO_PERTINENTE_SIPPDD">No Pertinente (SIPPDD)</option>
-              <option value="NO_PERTINENTE_OTRAS_PROVINCIAS">No Pertinente (Otras Provincias)</option>
-              <option value="NO_PERTINENTE_OFICIOS_INCOMPLETOS">No Pertinente (Oficios Incompletos)</option>
-              <option value="NO_PERTINENTE_LEY_9944">No Pertinente (Ley 9944)</option>
-              <option value="PASA_A_LEGAJO">Pasa a Legajo</option>
+              <option value="ALTA">Alta</option>
+              <option value="MEDIA">Media</option>
+              <option value="BAJA">Baja</option>
             </select>
           </Box>
         ),
@@ -654,11 +514,7 @@ const DemandaTable: React.FC = () => {
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (!params.row.recibido && params.row.demanda_zona_id) {
-                    updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
-                  } else {
-                    handleOpenModal(params.row.id)
-                  }
+                  handleOpenModal(params.row.id)
                 }}
                 sx={{ color: "primary.main" }}
               >
@@ -679,19 +535,19 @@ const DemandaTable: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={params.row.estado_demanda === "EVALUACION" ? "Evaluar" : "No disponible para evaluación"}>
+            <Tooltip title={params.row.estado_legajo === "EN_PROCESO" ? "Editar" : "No disponible para edición"}>
               <span>
                 <IconButton
                   size="small"
-                  disabled={params.row.estado_demanda !== "EVALUACION"}
+                  disabled={params.row.estado_legajo !== "EN_PROCESO"}
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (params.row.estado_demanda === "EVALUACION") {
-                      window.location.href = `/evaluacion?id=${params.row.id}`
+                    if (params.row.estado_legajo === "EN_PROCESO") {
+                      window.location.href = `/legajo/editar?id=${params.row.id}`
                     }
                   }}
                   sx={{
-                    color: params.row.estado_demanda === "EVALUACION" ? "success.main" : "action.disabled",
+                    color: params.row.estado_legajo === "EN_PROCESO" ? "success.main" : "action.disabled",
                   }}
                 >
                   <Edit fontSize="small" />
@@ -702,7 +558,7 @@ const DemandaTable: React.FC = () => {
         ),
       },
       {
-        field: "estado_demanda",
+        field: "estado_legajo",
         headerName: "Estado",
         width: 160,
         renderCell: (params) => <StatusChip status={params.value} />,
@@ -719,10 +575,12 @@ const DemandaTable: React.FC = () => {
     if (!isMobile) {
       baseColumns.push(
         {
-          field: "origen",
-          headerName: "Remitente",
+          field: "tipo_legajo",
+          headerName: "Tipo",
           width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+          renderCell: (params) => {
+            return <Typography variant="body2">{formatUnderscoreText(params.value)}</Typography>
+          },
         },
         {
           field: "localidad",
@@ -737,42 +595,16 @@ const DemandaTable: React.FC = () => {
           renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
         },
         {
-          field: "envioRespuesta",
-          headerName: "Envío Respuesta",
+          field: "profesional_asignado",
+          headerName: "Profesional",
           width: 150,
-          renderCell: (params) => {
-            const value = params.value as string
-            let displayText = value
-            let color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default"
-
-            switch (value) {
-              case "NO_NECESARIO":
-                displayText = "No Necesario"
-                color = "default"
-                break
-              case "PENDIENTE":
-                displayText = "Pendiente"
-                color = "warning"
-                break
-              case "ENVIADO":
-                displayText = "Enviado"
-                color = "success"
-                break
-              default:
-                displayText = "N/A"
-                break
-            }
-
-            return <Chip label={displayText} size="small" color={color} variant="outlined" />
-          },
+          renderCell: (params) => <Typography variant="body2">{params.value || "Sin asignar"}</Typography>,
         },
         {
-          field: "objetivoDemanda",
-          headerName: "Objetivo",
+          field: "fecha_apertura",
+          headerName: "Fecha Apertura",
           width: 150,
-          renderCell: (params) => {
-            return <Typography variant="body2">{formatUnderscoreText(params.value)}</Typography>
-          },
+          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
         },
       )
     }
@@ -783,38 +615,33 @@ const DemandaTable: React.FC = () => {
   const columns = useMemo(() => getColumns(), [isMobile])
 
   const rows =
-    demandasData?.results.map((demanda: TDemanda) => {
+    legajosData?.results.map((legajo: Legajo) => {
       return {
-        id: demanda.id,
-        score: demanda.demanda_score?.score || "N/A",
-        origen: demanda.bloque_datos_remitente?.nombre || "N/A",
-        nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
-        dni: demanda.nnya_principal?.dni || "N/A",
-        calificacion: demanda.calificacion?.estado_calificacion || null,
-        ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
+        id: legajo.id,
+        numero_legajo: legajo.numero_legajo || `L-${legajo.id}`,
+        nombre: legajo.persona_principal
+          ? `${legajo.persona_principal.nombre} ${legajo.persona_principal.apellido}`
+          : "N/A",
+        dni: legajo.persona_principal?.dni || "N/A",
+        prioridad: legajo.prioridad || null,
+        ultimaActualizacion: new Date(legajo.ultima_actualizacion).toLocaleString("es-AR", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         }),
-        codigosDemanda: demanda.codigos_demanda || [],
-        localidad: demanda.localidad?.nombre || "N/A",
-        cpc: demanda.cpc.nombre || "N/A",
-        zonaEquipo: demanda.demanda_zona?.zona?.nombre || demanda.registrado_por_user_zona?.nombre || "N/A",
-        usuario: demanda.registrado_por_user?.username || "N/A",
-        areaSenaf: demanda.area_senaf || "N/A",
-        estado_demanda: demanda.estado_demanda,
-        recibido: demanda.demanda_zona?.recibido || false,
-        demanda_zona_id: demanda.demanda_zona_id,
-        envioRespuesta: demanda.envio_de_respuesta || "N/A",
-        objetivoDemanda: demanda.objetivo_de_demanda || "N/A",
-        etiqueta: demanda.etiqueta?.nombre || "N/A",
-        adjuntos: demanda.adjuntos || [],
+        localidad: legajo.localidad?.nombre || "N/A",
+        zonaEquipo: legajo.legajo_zona?.zona?.nombre || "N/A",
+        estado_legajo: legajo.estado_legajo,
+        recibido: legajo.legajo_zona?.recibido || false,
+        legajo_zona_id: legajo.legajo_zona?.id,
+        tipo_legajo: legajo.tipo_legajo || "N/A",
+        profesional_asignado: legajo.profesional_asignado?.nombre || null,
+        fecha_apertura: legajo.fecha_apertura,
+        adjuntos: legajo.adjuntos || [],
       }
     }) || []
-
-  if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
   return (
     <>
@@ -828,7 +655,7 @@ const DemandaTable: React.FC = () => {
       >
         <Box sx={{ p: 2, borderBottom: "1px solid #e0e0e0", bgcolor: "#f9f9f9" }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>
-            Gestión de Demandas
+            Gestión de Legajos
           </Typography>
           <div className="flex gap-4 relative z-10">
             <Buttons
@@ -850,21 +677,9 @@ const DemandaTable: React.FC = () => {
             pageSizeOptions={[5, 10, 25, 50]}
             rowCount={totalCount}
             paginationMode="server"
-            loading={isLoading || updateCalificacion.isLoading || updateDemandaZona.isLoading}
-            onRowClick={(params, event) => {
-              const cellElement = event.target as HTMLElement
-              if (
-                !cellElement.closest('.MuiDataGrid-cell[data-field="calificacion"]') &&
-                !cellElement.closest("a") &&
-                !cellElement.closest("button") &&
-                !cellElement.closest("select")
-              ) {
-                if (!params.row.recibido && params.row.demanda_zona_id) {
-                  updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
-                } else {
-                  handleOpenModal(params.row.id)
-                }
-              }
+            loading={isLoading || isUpdating}
+            onRowClick={(params) => {
+              handleOpenModal(params.row.id)
             }}
             slots={{
               toolbar: CustomToolbar,
@@ -893,36 +708,27 @@ const DemandaTable: React.FC = () => {
                   width: "7px",
                 },
               },
-              // Add specific styles for each estado_demanda
-              "& .row-sin-asignar::before": {
-                backgroundColor: "#e0e0e0",
-              },
-              "& .row-constatacion::before": {
+              // Add specific styles for each estado_legajo
+              "& .row-abierto::before": {
                 backgroundColor: "#4caf50",
               },
-              "& .row-evaluacion::before": {
+              "& .row-en-proceso::before": {
                 backgroundColor: "#2196f3",
               },
-              "& .row-pendiente-autorizacion::before": {
+              "& .row-pendiente-revision::before": {
                 backgroundColor: "#ff9800",
               },
-              "& .row-archivada::before": {
+              "& .row-cerrado::before": {
                 backgroundColor: "#9e9e9e",
               },
-              "& .row-admitida::before": {
+              "& .row-archivado::before": {
                 backgroundColor: "#673ab7",
               },
-              "& .row-respuesta-sin-enviar::before": {
-                backgroundColor: "#f44336",
-              },
-              "& .row-informe-sin-enviar::before": {
-                backgroundColor: "#ecff0c",
-              },
-              "& .row-repuesta-enviada::before": {
-                backgroundColor: "#8bc34a",
-              },
-              "& .row-informe-enviado::before": {
+              "& .row-derivado::before": {
                 backgroundColor: "#00bcd4",
+              },
+              "& .row-suspendido::before": {
+                backgroundColor: "#f44336",
               },
               // Add style for non-received rows
               "& .row-not-received": {
@@ -934,7 +740,7 @@ const DemandaTable: React.FC = () => {
               },
             }}
             getRowClassName={(params) => {
-              const estado = params.row.estado_demanda?.toLowerCase() || ""
+              const estado = params.row.estado_legajo?.toLowerCase() || ""
               const recibido = params.row.recibido
               return `row-${estado.replace(/_/g, "-")}${recibido ? " row-received" : " row-not-received"}`
             }}
@@ -943,8 +749,8 @@ const DemandaTable: React.FC = () => {
       </Paper>
       <Modal
         open={isModalOpen}
-        aria-labelledby="demanda-detail-modal"
-        aria-describedby="demanda-detail-description"
+        aria-labelledby="legajo-detail-modal"
+        aria-describedby="legajo-detail-description"
         onClose={(_event, reason) => {
           if (reason !== "backdropClick") {
             handleCloseModal()
@@ -967,8 +773,8 @@ const DemandaTable: React.FC = () => {
             borderRadius: 2,
           }}
         >
-          {selectedDemandaId ? (
-            <DemandaDetail params={{ id: selectedDemandaId.toString() }} onClose={handleCloseModal} />
+          {selectedLegajoId ? (
+            <LegajoDetail params={{ id: selectedLegajoId.toString() }} onClose={handleCloseModal} />
           ) : (
             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
               <CircularProgress />
@@ -979,10 +785,10 @@ const DemandaTable: React.FC = () => {
       <AsignarModal
         open={isAsignarModalOpen}
         onClose={handleCloseAsignarModal}
-        demandaId={selectedDemandaIdForAssignment}
+        legajoId={selectedLegajoIdForAssignment}
       />
     </>
   )
 }
 
-export default DemandaTable
+export default LegajoTable

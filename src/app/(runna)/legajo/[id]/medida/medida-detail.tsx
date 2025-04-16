@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import type React from "react"
 import {
   CircularProgress,
   Typography,
@@ -17,8 +18,22 @@ import {
   TableRow,
   List,
   ListItem,
-  ListItemIcon,
   ListItemText,
+  Divider,
+  Chip,
+  Tooltip,
+  Breadcrumbs,
+  Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  type SelectChangeEvent,
 } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
@@ -28,6 +43,11 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked"
 import EventNoteIcon from "@mui/icons-material/EventNote"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
+import HomeIcon from "@mui/icons-material/Home"
+import NavigateNextIcon from "@mui/icons-material/NavigateNext"
+import DownloadIcon from "@mui/icons-material/Download"
+import EditIcon from "@mui/icons-material/Edit"
+import AssignmentIcon from "@mui/icons-material/Assignment"
 import { useRouter } from "next/navigation"
 import { getLegajoById, type Legajo } from "../../../legajo-mesa/mock-data/legajos-service"
 
@@ -131,6 +151,16 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const [legajoData, setLegajoData] = useState<Legajo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [openAddTaskDialog, setOpenAddTaskDialog] = useState(false)
+  const [newTask, setNewTask] = useState({
+    tarea: "",
+    objetivo: "",
+    plazo: "",
+  })
+  const [activeStep, setActiveStep] = useState(1) // 0: Apertura, 1: Plan de acción, 2: Cierre
+  const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
+  const [selectedAttachment, setSelectedAttachment] = useState("")
+
   const router = useRouter()
 
   useEffect(() => {
@@ -146,6 +176,15 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
             // Load medida data
             const medida = getMedidaData(params.id, params.medidaId)
             setMedidaData(medida)
+
+            // Determine active step based on data
+            if (medida.etapas.cierre.estado) {
+              setActiveStep(2)
+            } else if (medida.etapas.plan_accion.length > 0) {
+              setActiveStep(1)
+            } else {
+              setActiveStep(0)
+            }
           } else {
             setError(`No se encontró el legajo con ID ${params.id}`)
           }
@@ -162,8 +201,34 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   }, [params.id, params.medidaId])
 
   const handleAddTask = () => {
-    console.log("Add task clicked")
-    // Implement the action for adding a task
+    setOpenAddTaskDialog(true)
+  }
+
+  const handleCloseAddTaskDialog = () => {
+    setOpenAddTaskDialog(false)
+  }
+
+  const handleSaveTask = () => {
+    console.log("Saving new task:", newTask)
+    // In a real app, you would save the task to the database
+    // and then update the UI
+
+    // Mock implementation: add task to the local state
+    const updatedMedidaData = { ...medidaData }
+    updatedMedidaData.etapas.plan_accion.push({
+      estado: false,
+      ...newTask,
+      fecha: new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" }),
+    })
+    setMedidaData(updatedMedidaData)
+
+    // Reset form and close dialog
+    setNewTask({
+      tarea: "",
+      objetivo: "",
+      plazo: "",
+    })
+    setOpenAddTaskDialog(false)
   }
 
   const handleCloseMeasure = () => {
@@ -171,10 +236,36 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
     // Implement the action for closing the measure
   }
 
+  const handleTaskChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target
+    setNewTask((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSelectChange = (event: SelectChangeEvent<string>) => {
+    const { name, value } = event.target
+    setNewTask((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleOpenAttachment = (fileName: string) => {
+    setSelectedAttachment(fileName)
+    setOpenAttachmentDialog(true)
+  }
+
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <CircularProgress />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress size={60} thickness={4} />
+        <Typography variant="body1" sx={{ mt: 2 }}>
+          Cargando información de la medida...
+        </Typography>
       </Box>
     )
   }
@@ -216,7 +307,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           }),
         }}
       >
-        {!isFullPage && onClose && (
+        {!isFullPage && onClose ? (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
             <IconButton
               aria-label="close"
@@ -228,25 +319,88 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               <CloseIcon />
             </IconButton>
           </Box>
+        ) : (
+          <Box sx={{ mb: 3 }}>
+            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
+              <Link
+                underline="hover"
+                sx={{ display: "flex", alignItems: "center" }}
+                color="inherit"
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault()
+                  router.push("/")
+                }}
+              >
+                <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+                Inicio
+              </Link>
+              <Link
+                underline="hover"
+                sx={{ display: "flex", alignItems: "center" }}
+                color="inherit"
+                href="/legajo-mesa"
+                onClick={(e) => {
+                  e.preventDefault()
+                  router.push("/legajo-mesa")
+                }}
+              >
+                Legajos
+              </Link>
+              <Link
+                underline="hover"
+                sx={{ display: "flex", alignItems: "center" }}
+                color="inherit"
+                href={`/legajo/${params.id}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  router.push(`/legajo/${params.id}`)
+                }}
+              >
+                Legajo {params.id}
+              </Link>
+              <Typography color="text.primary">
+                Medida {medidaData.tipo} {medidaData.numero}
+              </Typography>
+            </Breadcrumbs>
+          </Box>
         )}
 
         <Paper
-          elevation={0}
+          elevation={2}
           sx={{
             width: "100%",
             mb: 4,
             p: 3,
             borderRadius: 2,
-            border: "1px solid #e0e0e0",
+            position: "relative",
+            overflow: "hidden",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: "6px",
+              backgroundColor: "#2196f3",
+            },
           }}
         >
-          <Box sx={{ display: "flex", borderLeft: "6px solid #2196f3", pl: 3, py: 1 }}>
+          <Box sx={{ pl: 2, py: 1 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {medidaData.tipo}: {medidaData.numero}
-                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {medidaData.tipo}: {medidaData.numero}
+                    </Typography>
+                    <Chip
+                      label={activeStep === 2 ? "CERRADA" : "ACTIVA"}
+                      color={activeStep === 2 ? "default" : "primary"}
+                      size="small"
+                      sx={{ ml: 2, fontWeight: 500 }}
+                    />
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     Fecha de apertura: {medidaData.fecha_apertura}
                   </Typography>
@@ -289,7 +443,16 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
               <Grid item xs={12}>
                 <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-                  <Button endIcon={<ArrowForwardIcon />} size="small" sx={{ textTransform: "none" }}>
+                  <Button
+                    endIcon={<ArrowForwardIcon />}
+                    size="small"
+                    sx={{
+                      textTransform: "none",
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.04)",
+                      },
+                    }}
+                  >
                     Ver todos los datos personales
                   </Button>
                 </Box>
@@ -306,17 +469,29 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           {/* Apertura Section */}
           <Grid item xs={12} md={4}>
             <Paper
-              elevation={0}
+              elevation={2}
               sx={{
                 p: 3,
                 borderRadius: 2,
-                border: "1px solid #e0e0e0",
                 height: "100%",
+                transition: "box-shadow 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
+                border: activeStep === 0 ? "2px solid #2196f3" : "none",
               }}
             >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                Apertura
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <AssignmentIcon color="primary" sx={{ mr: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Apertura
+                </Typography>
+                {activeStep >= 0 && (
+                  <Chip label="COMPLETADO" color="success" size="small" sx={{ ml: "auto", fontWeight: 500 }} />
+                )}
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
 
               <Typography variant="body2" sx={{ mb: 1 }}>
                 <strong>Fecha:</strong> {medidaData.etapas.apertura.fecha}
@@ -333,9 +508,12 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 color="primary"
                 startIcon={<DescriptionIcon />}
                 sx={{
-                  borderRadius: 50,
+                  borderRadius: 8,
                   textTransform: "none",
                   px: 3,
+                  "&:hover": {
+                    backgroundColor: "rgba(25, 118, 210, 0.04)",
+                  },
                 }}
               >
                 Formulario
@@ -346,35 +524,48 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           {/* Plan de acción Section */}
           <Grid item xs={12} md={8}>
             <Paper
-              elevation={0}
+              elevation={2}
               sx={{
                 p: 3,
                 borderRadius: 2,
-                border: "1px solid #e0e0e0",
                 height: "100%",
+                transition: "box-shadow 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
+                border: activeStep === 1 ? "2px solid #2196f3" : "none",
               }}
             >
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  Plan de acción
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <AssignmentIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    Plan de acción
+                  </Typography>
+                </Box>
                 <Button
                   variant="contained"
                   color="primary"
                   startIcon={<AddIcon />}
                   onClick={handleAddTask}
                   sx={{
-                    borderRadius: 50,
+                    borderRadius: 8,
                     textTransform: "none",
                     px: 2,
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+                    },
                   }}
                 >
                   Añadir tarea
                 </Button>
               </Box>
 
-              <TableContainer>
-                <Table size="small">
+              <Divider sx={{ mb: 2 }} />
+
+              <TableContainer sx={{ maxHeight: "300px" }}>
+                <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
                       <TableCell>Estado</TableCell>
@@ -382,27 +573,44 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                       <TableCell>Fecha</TableCell>
                       <TableCell>Objetivo</TableCell>
                       <TableCell>Plazo</TableCell>
-                      <TableCell></TableCell>
+                      <TableCell align="center">Acciones</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {medidaData.etapas.plan_accion.map((task: any, index: number) => (
-                      <TableRow key={index} hover>
+                      <TableRow
+                        key={index}
+                        hover
+                        sx={{
+                          backgroundColor: task.estado ? "rgba(76, 175, 80, 0.04)" : "inherit",
+                        }}
+                      >
                         <TableCell>
-                          {task.estado ? (
-                            <CheckCircleIcon color="success" fontSize="small" />
-                          ) : (
-                            <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
-                          )}
+                          <Tooltip title={task.estado ? "Completada" : "Pendiente"}>
+                            {task.estado ? (
+                              <CheckCircleIcon color="success" fontSize="small" />
+                            ) : (
+                              <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
+                            )}
+                          </Tooltip>
                         </TableCell>
                         <TableCell>{task.tarea}</TableCell>
                         <TableCell>{task.fecha}</TableCell>
                         <TableCell>{task.objetivo}</TableCell>
                         <TableCell>{task.plazo}</TableCell>
-                        <TableCell>
-                          <IconButton size="small">
-                            <DescriptionIcon fontSize="small" />
-                          </IconButton>
+                        <TableCell align="center">
+                          <Box sx={{ display: "flex", justifyContent: "center" }}>
+                            <Tooltip title="Ver detalles">
+                              <IconButton size="small" color="primary">
+                                <DescriptionIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Editar">
+                              <IconButton size="small" color="primary">
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -415,53 +623,90 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           {/* Historial de seguimiento Section */}
           <Grid item xs={12} md={4}>
             <Paper
-              elevation={0}
+              elevation={2}
               sx={{
                 p: 3,
                 borderRadius: 2,
-                border: "1px solid #e0e0e0",
                 height: "100%",
+                transition: "box-shadow 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
               }}
             >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                Historial de seguimiento
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <EventNoteIcon color="primary" sx={{ mr: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Historial de seguimiento
+                </Typography>
+              </Box>
 
-              <List sx={{ p: 0 }}>
-                {medidaData.etapas.historial_seguimiento.slice(0, 4).map((item: any, index: number) => (
-                  <ListItem key={index} alignItems="flex-start" sx={{ px: 0, py: 1 }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <EventNoteIcon color="primary" fontSize="small" />
-                    </ListItemIcon>
+              <Divider sx={{ mb: 2 }} />
+
+              <List sx={{ p: 0, maxHeight: "300px", overflow: "auto" }}>
+                {medidaData.etapas.historial_seguimiento.map((item: any, index: number) => (
+                  <ListItem
+                    key={index}
+                    alignItems="flex-start"
+                    sx={{
+                      px: 0,
+                      py: 1,
+                      borderLeft: "2px solid #2196f3",
+                      pl: 2,
+                      mb: 2,
+                      transition: "background-color 0.2s ease",
+                      "&:hover": {
+                        backgroundColor: "rgba(33, 150, 243, 0.04)",
+                      },
+                    }}
+                  >
                     <ListItemText
                       primary={
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {item.fecha}
-                        </Typography>
-                      }
-                      secondary={
-                        <>
-                          <Typography variant="body2" component="span">
-                            {item.descripcion}
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item.fecha}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ backgroundColor: "#f5f5f5", px: 1, py: 0.5, borderRadius: 1 }}
+                          >
                             {item.hora}
                           </Typography>
-                        </>
+                        </Box>
+                      }
+                      secondary={
+                        <Typography variant="body2" component="span" sx={{ mt: 1, display: "block" }}>
+                          {item.descripcion}
+                        </Typography>
                       }
                     />
                     {item.descripcion.includes("adjunta") && (
-                      <IconButton size="small" sx={{ color: "primary.main" }}>
-                        <AttachFileIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Ver adjunto">
+                        <IconButton
+                          size="small"
+                          sx={{ color: "primary.main", ml: 1 }}
+                          onClick={() => handleOpenAttachment(item.descripcion.split("adjunta ")[1])}
+                        >
+                          <AttachFileIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     )}
                   </ListItem>
                 ))}
               </List>
 
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <Button endIcon={<ArrowForwardIcon />} size="small" color="primary" sx={{ textTransform: "none" }}>
-                  Ver más
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: 8,
+                  }}
+                >
+                  Agregar seguimiento
                 </Button>
               </Box>
             </Paper>
@@ -470,17 +715,29 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           {/* Cierre Section */}
           <Grid item xs={12} md={4}>
             <Paper
-              elevation={0}
+              elevation={2}
               sx={{
                 p: 3,
                 borderRadius: 2,
-                border: "1px solid #e0e0e0",
                 height: "100%",
+                transition: "box-shadow 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
+                border: activeStep === 2 ? "2px solid #2196f3" : "none",
               }}
             >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                Cierre
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <AssignmentIcon color="primary" sx={{ mr: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Cierre
+                </Typography>
+                {activeStep === 2 && (
+                  <Chip label="COMPLETADO" color="success" size="small" sx={{ ml: "auto", fontWeight: 500 }} />
+                )}
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
 
               <Typography variant="body2" sx={{ mb: 1 }}>
                 <strong>Fecha:</strong> {medidaData.etapas.cierre.fecha}
@@ -496,13 +753,18 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 variant="contained"
                 color="error"
                 onClick={handleCloseMeasure}
+                disabled={activeStep === 2}
                 sx={{
-                  borderRadius: 50,
+                  borderRadius: 8,
                   textTransform: "none",
                   px: 3,
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  "&:hover": {
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+                  },
                 }}
               >
-                Cerrar medida
+                {activeStep === 2 ? "Medida cerrada" : "Cerrar medida"}
               </Button>
             </Paper>
           </Grid>
@@ -510,17 +772,25 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           {/* Último informe Section */}
           <Grid item xs={12} md={4}>
             <Paper
-              elevation={0}
+              elevation={2}
               sx={{
                 p: 3,
                 borderRadius: 2,
-                border: "1px solid #e0e0e0",
                 height: "100%",
+                transition: "box-shadow 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
               }}
             >
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                Último informe
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <DescriptionIcon color="primary" sx={{ mr: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Último informe
+                </Typography>
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
 
               <Typography variant="body2" sx={{ mb: 1 }}>
                 <strong>Fecha:</strong> {medidaData.ultimo_informe.fecha}
@@ -529,17 +799,143 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 <strong>Autor:</strong> {medidaData.ultimo_informe.autor}
               </Typography>
 
-              <Box sx={{ display: "flex", alignItems: "center", p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  p: 2,
+                  bgcolor: "#f5f5f5",
+                  borderRadius: 2,
+                  border: "1px dashed #ccc",
+                  transition: "background-color 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "#e3f2fd",
+                    cursor: "pointer",
+                  },
+                }}
+                onClick={() => handleOpenAttachment(medidaData.ultimo_informe.archivo)}
+              >
                 <DescriptionIcon sx={{ mr: 1 }} />
                 <Typography variant="body2">{medidaData.ultimo_informe.archivo}</Typography>
-                <IconButton size="small" sx={{ ml: "auto" }}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
+                <Box sx={{ ml: "auto", display: "flex" }}>
+                  <Tooltip title="Descargar">
+                    <IconButton size="small" color="primary">
+                      <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </Box>
             </Paper>
           </Grid>
         </Grid>
       </Box>
+
+      {/* Add Task Dialog */}
+      <Dialog open={openAddTaskDialog} onClose={handleCloseAddTaskDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Añadir nueva tarea</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="tarea"
+              name="tarea"
+              label="Tarea"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={newTask.tarea}
+              onChange={handleTaskChange}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
+              id="objetivo"
+              name="objetivo"
+              label="Objetivo"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={newTask.objetivo}
+              onChange={handleTaskChange}
+              sx={{ mb: 2 }}
+            />
+            <FormControl fullWidth variant="outlined" margin="dense">
+              <InputLabel id="plazo-label">Plazo</InputLabel>
+              <Select
+                labelId="plazo-label"
+                id="plazo"
+                name="plazo"
+                value={newTask.plazo}
+                onChange={handleSelectChange}
+                label="Plazo"
+              >
+                <MenuItem value="1 semana">1 semana</MenuItem>
+                <MenuItem value="2 semanas">2 semanas</MenuItem>
+                <MenuItem value="1 mes">1 mes</MenuItem>
+                <MenuItem value="3 meses">3 meses</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddTaskDialog} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSaveTask}
+            color="primary"
+            variant="contained"
+            sx={{
+              borderRadius: 8,
+              textTransform: "none",
+            }}
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Attachment Dialog */}
+      <Dialog open={openAttachmentDialog} onClose={() => setOpenAttachmentDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="h6">{selectedAttachment}</Typography>
+            <IconButton onClick={() => setOpenAttachmentDialog(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              height: "500px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f5f5f5",
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="body1" color="text.secondary">
+              Vista previa del documento no disponible
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            startIcon={<DownloadIcon />}
+            onClick={() => setOpenAttachmentDialog(false)}
+            color="primary"
+            sx={{
+              borderRadius: 8,
+              textTransform: "none",
+            }}
+          >
+            Descargar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

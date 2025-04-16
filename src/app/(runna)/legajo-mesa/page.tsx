@@ -1,5 +1,11 @@
-import LegajoTable from "./ui/legajos-table";
-import Header from "../../../components/Header";
+"use client"
+
+import dynamic from "next/dynamic"
+import Header from "../../../components/Header"
+
+// Dynamically import LegajoTable with no SSR to avoid hydration issues
+const LegajoTable = dynamic(() => import("./ui/legajos-table"), { ssr: false })
+
 export default function Page() {
   return (
     <>
@@ -10,4 +16,3 @@ export default function Page() {
     </>
   )
 }
-

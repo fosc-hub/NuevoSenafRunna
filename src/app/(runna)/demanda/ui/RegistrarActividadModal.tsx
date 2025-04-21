@@ -40,6 +40,7 @@ type TipoActividad = {
   id: number
   nombre: string
   modelos?: any[]
+  remitir_a_jefe: boolean
 }
 
 type Institucion = {
@@ -302,7 +303,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
               <Select {...field} label="Tipo de Actividad">
                 {actividadTipos.map((tipo) => (
                   <MenuItem key={tipo.id} value={tipo.id}>
-                    {tipo.nombre}
+                    {tipo.nombre} {tipo.remitir_a_jefe && " (Remitir a Jefe)"}
                   </MenuItem>
                 ))}
               </Select>
@@ -490,4 +491,3 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
     </Box>
   )
 }
-

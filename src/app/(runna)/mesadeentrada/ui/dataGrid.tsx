@@ -24,7 +24,6 @@ import {
   type GridPaginationModel,
   GridToolbarContainer,
   GridToolbarFilterButton,
-  GridToolbarExport,
 } from "@mui/x-data-grid"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh } from "@mui/icons-material"
@@ -32,6 +31,8 @@ import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
+import * as XLSX from "xlsx"
+import { DownloadRounded } from "@mui/icons-material"
 
 // Assume these imports are available in your project
 import { get, update, create } from "@/app/api/apiService"
@@ -61,7 +62,7 @@ const getFileNameFromUrl = (url: string): string => {
 }
 
 // Custom toolbar component
-const CustomToolbar = () => {
+const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
   return (
     <GridToolbarContainer sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
       <GridToolbarFilterButton
@@ -72,14 +73,20 @@ const CustomToolbar = () => {
           },
         }}
       />
-      <GridToolbarExport
+      <Button
+        size="small"
+        startIcon={<DownloadRounded />}
+        onClick={onExportXlsx}
         sx={{
           mr: 1,
+          textTransform: "none",
           "&:hover": {
             backgroundColor: "rgba(25, 118, 210, 0.04)",
           },
         }}
-      />
+      >
+        Exportar Excel
+      </Button>
       <IconButton
         size="small"
         sx={{
@@ -282,6 +289,7 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
   )
 }
 
+// Update the DemandaTable component to include the export function
 const DemandaTable: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -439,13 +447,13 @@ const DemandaTable: React.FC = () => {
           results: prevData.results.map((demanda) =>
             demanda.demanda_zona_id === data.id
               ? {
-                ...demanda,
-                demanda_zona: {
-                  ...demanda.demanda_zona,
-                  recibido: true,
-                  fecha_recibido: data.fecha_recibido,
-                },
-              }
+                  ...demanda,
+                  demanda_zona: {
+                    ...demanda.demanda_zona,
+                    recibido: true,
+                    fecha_recibido: data.fecha_recibido,
+                  },
+                }
               : demanda,
           ),
         }
@@ -814,6 +822,63 @@ const DemandaTable: React.FC = () => {
       }
     }) || []
 
+  // Add this function to handle Excel export
+  const handleExportXlsx = () => {
+    // Create a worksheet from the filtered rows
+    const worksheet = XLSX.utils.json_to_sheet(
+      rows.map((row) => {
+        // Create a clean object for export, formatting data as needed
+        return {
+          ID: row.id,
+          Score: row.score,
+          Nombre: row.nombre,
+          DNI: row.dni,
+          Calificación: formatUnderscoreText(row.calificacion),
+          "Última Actualización": row.ultimaActualizacion,
+          Localidad: row.localidad,
+          "Zona/Equipo": row.zonaEquipo,
+          Estado: formatUnderscoreText(row.estado_demanda),
+          "Envío Respuesta": formatUnderscoreText(row.envioRespuesta),
+          "Objetivo de Demanda": formatUnderscoreText(row.objetivoDemanda),
+          Etiqueta: row.etiqueta,
+          "Cantidad de Adjuntos": Array.isArray(row.adjuntos) ? row.adjuntos.length : 0,
+        }
+      }),
+    )
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 10 }, // ID
+      { wch: 10 }, // Score
+      { wch: 30 }, // Nombre
+      { wch: 15 }, // DNI
+      { wch: 20 }, // Calificación
+      { wch: 20 }, // Última Actualización
+      { wch: 20 }, // Localidad
+      { wch: 20 }, // Zona/Equipo
+      { wch: 20 }, // Estado
+      { wch: 20 }, // Envío Respuesta
+      { wch: 25 }, // Objetivo de Demanda
+      { wch: 20 }, // Etiqueta
+      { wch: 20 }, // Cantidad de Adjuntos
+    ]
+    worksheet["!cols"] = columnWidths
+
+    // Create a workbook
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Demandas")
+
+    // Generate Excel file and trigger download
+    const currentDate = new Date().toISOString().split("T")[0]
+    XLSX.writeFile(workbook, `Demandas_${currentDate}.xlsx`)
+
+    // Show success message
+    toast.success("Archivo Excel generado correctamente", {
+      position: "top-center",
+      autoClose: 3000,
+    })
+  }
+
   if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
   return (
@@ -867,7 +932,7 @@ const DemandaTable: React.FC = () => {
               }
             }}
             slots={{
-              toolbar: CustomToolbar,
+              toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} />,
             }}
             sx={{
               cursor: "pointer",

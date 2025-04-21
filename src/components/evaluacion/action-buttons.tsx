@@ -14,7 +14,7 @@ import {
 } from "@mui/material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
-import { Save as SaveIcon, Cancel as CancelIcon } from "@mui/icons-material"
+import { Save as SaveIcon, Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
 
 // Dynamic import para evitar errores SSR con Next.js
 const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
@@ -39,8 +39,18 @@ interface ChildOption {
   type: string
 }
 
+// Lista de firmantes disponibles
+const firmantesDisponibles = [
+  { id: 1, nombre: "María Sosa", cargo: "Trabajador Social" },
+  { id: 2, nombre: "Juan Pérez", cargo: "Psicólogo" },
+  { id: 3, nombre: "Ana García", cargo: "Abogada" },
+  { id: 4, nombre: "Carlos Rodríguez", cargo: "Director" },
+  { id: 5, nombre: "Laura Martínez", cargo: "Coordinadora" },
+]
+
 export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerated }: ActionButtonsProps) {
   const [selectedChildren, setSelectedChildren] = useState<string[]>([])
+  const [firmantes, setFirmantes] = useState<number[]>([])
 
   const handleChildChange = (event: SelectChangeEvent<typeof selectedChildren>) => {
     const {
@@ -49,6 +59,13 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
 
     // On autofill we get a stringified value.
     setSelectedChildren(typeof value === "string" ? value.split(",") : value)
+  }
+
+  const handleFirmantesChange = (event: SelectChangeEvent<typeof firmantes>) => {
+    const {
+      target: { value },
+    } = event
+    setFirmantes(typeof value === "string" ? value.split(',').map(Number) : value)
   }
 
   const handleAuthorizationAction = async (action: string) => {
@@ -115,6 +132,7 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
     ...data,
     // Asegurarse de que todos los datos necesarios estén disponibles
     // Esto se puede expandir según sea necesario
+    firmantes: firmantes.map(id => firmantesDisponibles.find(f => f.id === id)).filter(Boolean)
   }
 
   return (
@@ -124,6 +142,53 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
       </Button>
 
       <DownloadPDFButton data={combinedData} onGenerate={handlePDFGenerated} />
+
+      {/* Selector de firmantes */}
+      <FormControl sx={{ minWidth: 180 }}>
+        <InputLabel id="select-firmantes-label" size="small">Firmantes</InputLabel>
+        <Select
+          labelId="select-firmantes-label"
+          id="select-firmantes"
+          multiple
+          value={firmantes}
+          onChange={handleFirmantesChange}
+          input={<OutlinedInput id="select-multiple-firmantes" label="Firmantes" />}
+          renderValue={(selected) => (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {selected.map((value) => {
+                const firmante = firmantesDisponibles.find(f => f.id === value);
+                return (
+                  <Chip
+                    key={value}
+                    label={firmante?.nombre}
+                    size="small"
+                    icon={<PersonIcon fontSize="small" />}
+                    onDelete={() => {
+                      setFirmantes(firmantes.filter((id) => id !== value))
+                    }}
+                    deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
+                  />
+                );
+              })}
+            </Box>
+          )}
+          size="small"
+          MenuProps={{
+            PaperProps: {
+              style: {
+                maxHeight: 224,
+                width: 250,
+              },
+            },
+          }}
+        >
+          {firmantesDisponibles.map((firmante) => (
+            <MenuItem key={firmante.id} value={firmante.id}>
+              {firmante.nombre} ({firmante.cargo})
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       <Button variant="contained" color="secondary" onClick={() => handleAuthorizationAction("autorizar archivar")}>
         Autorizar archivar
@@ -197,4 +262,3 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
     </Box>
   )
 }
-

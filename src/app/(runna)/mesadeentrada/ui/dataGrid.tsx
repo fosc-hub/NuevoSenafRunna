@@ -35,7 +35,7 @@ import * as XLSX from "xlsx"
 import { DownloadRounded } from "@mui/icons-material"
 
 // Assume these imports are available in your project
-import { get, update, create } from "@/app/api/apiService"
+import { get, update, create, put } from "@/app/api/apiService"
 import type { TDemanda } from "@/app/interfaces"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
@@ -430,12 +430,12 @@ const DemandaTable: React.FC = () => {
   const updateDemandaZona = useMutation({
     mutationFn: async ({ id, userId }: { id: number; userId: number }) => {
       const currentDate = new Date().toISOString()
-      const updateData = {
-        fecha_recibido: currentDate,
-        recibido: true,
-        recibido_por: userId,
-      }
-      return update<TDemanda>("demanda-zona", id, updateData, true, "Demanda marcada como recibida")
+      // Use the new put function to mark the demand as received
+      return put<TDemanda>(
+        "demanda-zona-recibir",
+        id,
+
+      )
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["demandas"] })

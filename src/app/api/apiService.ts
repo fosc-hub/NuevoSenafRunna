@@ -109,6 +109,47 @@ export const patch = async <T>(endpoint: string, id: number, data: Partial<T>): 
   return response.data;
 };
 
+
+/**
+ * Generic function to send a PUT request to an API endpoint.
+ * @param endpoint API endpoint to send data to.
+ * @param id Resource ID.
+ * @param data Data to update the resource.
+ * @param showToast Whether to show a toast notification on success.
+ * @param toastMessage Custom toast message.
+ * @returns Updated resource of type T.
+ */
+export const put = async <T>(
+  endpoint: string, 
+  id: number, 
+  data?: Partial<T>, 
+  showToast: boolean = false, 
+  toastMessage: string = '¡Operación completada con éxito!'
+)
+: Promise<T> =>
+{
+  try {
+    const response = await axiosInstance.put<T>(`${endpoint}/${id}/`, data)
+
+    if (response.status >= 200 && response.status < 300 && showToast) {
+      toast.success(toastMessage, {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      })
+    }
+
+    return response.data;
+  } catch (error) {
+    handleApiError(error, endpoint)
+    throw error
+  }
+}
+
 /**
  * Generic function to delete a resource by ID.
  * @param endpoint API endpoint to send delete request to.

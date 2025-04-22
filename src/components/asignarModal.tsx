@@ -15,6 +15,7 @@ import {
   ListItemText,
   TextField,
   Autocomplete,
+  Chip,
 } from "@mui/material"
 import { get, create } from "@/app/api/apiService"
 import { toast } from "react-toastify"
@@ -74,7 +75,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     }>
   >([])
   const [objetivo, setObjetivo] = useState<string>("peticion_informe")
-  const [selectedUser, setSelectedUser] = useState<number | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // Obtener la última demanda zona activa
@@ -89,12 +90,13 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   useEffect(() => {
     if (lastActiveDemandaZona) {
       setSelectedZona(lastActiveDemandaZona.zona.id)
-      setSelectedUser(lastActiveDemandaZona.user_responsable?.id || null)
+      // Convert single user to array for backward compatibility
+      setSelectedUsers(lastActiveDemandaZona.user_responsable ? [lastActiveDemandaZona.user_responsable.id] : [])
       setObjetivo(lastActiveDemandaZona.objetivo || "peticion_informe")
     } else {
       // Si no hay demanda activa, resetear los campos
       setSelectedZona(null)
-      setSelectedUser(null)
+      setSelectedUsers([])
       setObjetivo("peticion_informe")
     }
   }, [lastActiveDemandaZona])
@@ -164,7 +166,11 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     const hasChanges =
       !lastActiveDemandaZona ||
       lastActiveDemandaZona.zona.id !== selectedZona ||
-      (lastActiveDemandaZona.user_responsable?.id || null) !== selectedUser ||
+      // Check if the selected users have changed
+      (lastActiveDemandaZona.user_responsable
+        ? ![lastActiveDemandaZona.user_responsable.id].every((id) => selectedUsers.includes(id)) ||
+          selectedUsers.length !== 1
+        : selectedUsers.length > 0) ||
       (lastActiveDemandaZona.objetivo || "peticion_informe") !== objetivo
 
     if (!hasChanges && comentarios.trim() === "") {
@@ -184,9 +190,10 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           enviado_por: getCurrentUserId(),
           recibido_por: null,
           zona: selectedZona,
-          user_responsable: selectedUser,
+          user_responsable: selectedUsers.length === 1 ? selectedUsers[0] : null,
           demanda: demandaId,
           objetivo: objetivo,
+          users_responsables: selectedUsers,
         },
         true,
         "Demanda asignada exitosamente",
@@ -285,7 +292,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
               value={zonas.find((zona) => zona.id === selectedZona) || null}
               onChange={(_, newValue) => {
                 setSelectedZona(newValue ? newValue.id : null)
-                setSelectedUser(null) // Reset user selection when zone changes
+                setSelectedUsers([]) // Reset user selection when zone changes
               }}
               renderInput={(params) => <TextField {...params} label="Zona" size="small" />}
               PopperProps={{
@@ -299,11 +306,17 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           {selectedZona && (
             <FormControl fullWidth sx={{ mb: 2 }}>
               <Autocomplete
+                multiple
                 options={filteredUsersByZona(selectedZona)}
                 getOptionLabel={(option) => option.username}
-                value={users.find((user) => user.id === selectedUser) || null}
-                onChange={(_, newValue) => setSelectedUser(newValue ? newValue.id : null)}
-                renderInput={(params) => <TextField {...params} label="Usuario responsable" size="small" />}
+                value={users.filter((user) => selectedUsers.includes(user.id))}
+                onChange={(_, newValue) => setSelectedUsers(newValue.map((user) => user.id))}
+                renderInput={(params) => <TextField {...params} label="Usuarios responsables" size="small" />}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip label={option.username} size="small" {...getTagProps({ index })} />
+                  ))
+                }
                 PopperProps={{
                   style: { width: "auto", maxWidth: "300px" },
                 }}
@@ -444,4 +457,3 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default AsignarModal
-

@@ -430,12 +430,47 @@ const DemandaTable: React.FC = () => {
   const updateDemandaZona = useMutation({
     mutationFn: async ({ id, userId }: { id: number; userId: number }) => {
       const currentDate = new Date().toISOString()
-      // Use the new put function to mark the demand as received
-      return put<TDemanda>(
-        "demanda-zona-recibir",
-        id,
+      try {
+        // Try to use the PUT endpoint first
+        return await put<TDemanda>(
+          "demanda-zona-recibir",
+          id,
+          {
+            fecha_recibido: currentDate,
+            recibido: true,
+            recibido_por: userId,
+          },
+          true,
+          "Demanda marcada como recibida",
+        )
+      } catch (error: any) {
+        // If we get a 404, try the fallback method using the regular update endpoint
+        if (error.response && error.response.status === 404) {
+          console.warn("Endpoint demanda-zona-recibir no encontrado. Usando método alternativo.")
+          toast.warning(
+            "No se pudo marcar como recibida usando el método principal. Intentando método alternativo...",
+            {
+              position: "top-center",
+              autoClose: 3000,
+            },
+          )
 
-      )
+          // Fallback to the regular update endpoint
+          return update<TDemanda>(
+            "demanda-zona",
+            id,
+            {
+              fecha_recibido: currentDate,
+              recibido: true,
+              recibido_por: userId,
+            },
+            true,
+            "Demanda marcada como recibida (método alternativo)",
+          )
+        }
+        // If it's not a 404 error, rethrow it
+        throw error
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["demandas"] })

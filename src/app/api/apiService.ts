@@ -144,8 +144,21 @@ export const put = async <T>(
     }
 
     return response.data;
-  } catch (error) {
-    handleApiError(error, endpoint)
+  } catch (error: any) {
+    // Check if it's a 404 error
+    if (error.response && error.response.status === 404) {
+      toast.warning(`El recurso no fue encontrado (404). Endpoint: ${endpoint}/${id}/`, {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      })
+    } else {
+      handleApiError(error, endpoint)
+    }
     throw error
   }
 }

@@ -23,15 +23,20 @@ import {
   type GridPaginationModel,
   GridToolbarContainer,
   GridToolbarFilterButton,
-  GridToolbarExport,
 } from "@mui/x-data-grid"
-import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh } from "@mui/icons-material"
+import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRounded } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
-import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
-import { getLegajos, updateLegajo, type Legajo, type PaginatedResponse } from "../mock-data/legajos-service"
+import {
+  getLegajos,
+  updateLegajo,
+  type Legajo,
+  type PaginatedResponse,
+  
+} from "../mock-data/legajos-service"
 import LegajoButtons from "./legajos-buttons"
+import { exportDemandasToExcel } from "./legajos-service"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
@@ -48,7 +53,7 @@ const getFileNameFromUrl = (url: string): string => {
 }
 
 // Custom toolbar component
-const CustomToolbar = () => {
+const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
   return (
     <GridToolbarContainer sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
       <GridToolbarFilterButton
@@ -59,14 +64,20 @@ const CustomToolbar = () => {
           },
         }}
       />
-      <GridToolbarExport
+      <Button
+        size="small"
+        startIcon={<DownloadRounded />}
+        onClick={onExportXlsx}
         sx={{
           mr: 1,
+          textTransform: "none",
           "&:hover": {
             backgroundColor: "rgba(25, 118, 210, 0.04)",
           },
         }}
-      />
+      >
+        Exportar Excel
+      </Button>
       <IconButton
         size="small"
         sx={{
@@ -644,6 +655,43 @@ const LegajoTable: React.FC = () => {
       }
     }) || []
 
+  // Add this function to handle Excel export
+  const handleExportXlsx = () => {
+    // Define field mappings (raw field name -> display name)
+    const fieldMappings = {
+      id: "ID",
+      numero_legajo: "Nº Legajo",
+      nombre: "Nombre",
+      dni: "DNI",
+      prioridad: "Prioridad",
+      ultimaActualizacion: "Última Actualización",
+      localidad: "Localidad",
+      zonaEquipo: "Zona/Equipo",
+      estado_legajo: "Estado",
+      tipo_legajo: "Tipo",
+      profesional_asignado: "Profesional",
+      fecha_apertura: "Fecha Apertura",
+      adjuntos: "Cantidad de Adjuntos",
+    }
+
+    // Define formatters for specific fields
+    const formatters = {
+      estado_legajo: (value: string) => formatUnderscoreText(value),
+      tipo_legajo: (value: string) => formatUnderscoreText(value),
+      prioridad: (value: string) => formatUnderscoreText(value),
+      adjuntos: (value: any[]) => (Array.isArray(value) ? value.length : 0),
+    }
+
+    // Export to Excel
+    exportDemandasToExcel(rows)
+
+    // Show success message
+    toast.success("Archivo Excel generado correctamente", {
+      position: "top-center",
+      autoClose: 3000,
+    })
+  }
+
   return (
     <>
       <Paper
@@ -659,11 +707,11 @@ const LegajoTable: React.FC = () => {
             Gestión de Legajos
           </Typography>
           <div className="flex gap-4 relative z-10">
-          <LegajoButtons
-          onSearch={(query) => console.log("Searching for:", query)}
-          onFilter={(filters) => console.log("Filters applied:", filters)}
-          onNewLegajo={() => console.log("Creating new legajo")}
-        />
+            <LegajoButtons
+              onSearch={(query) => console.log("Searching for:", query)}
+              onFilter={(filters) => console.log("Filters applied:", filters)}
+              onNewLegajo={() => console.log("Creating new legajo")}
+            />
           </div>
         </Box>
         <div style={{ height: 600, width: "100%" }}>
@@ -680,7 +728,7 @@ const LegajoTable: React.FC = () => {
               handleOpenModal(params.row.id)
             }}
             slots={{
-              toolbar: CustomToolbar,
+              toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} />,
             }}
             sx={{
               cursor: "pointer",

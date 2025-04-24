@@ -69,11 +69,11 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: { xs: "flex-start", md: "flex-end" } }}>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 DNI: {legajoData.persona_principal.dni}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Demanda asignada a: {legajoData.profesional_asignado?.nombre || "Sin asignar"}
               </Typography>
             </Box>
@@ -81,29 +81,49 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
 
           <Grid item xs={12} md={6}>
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Nombre: {`${legajoData.persona_principal.nombre} ${legajoData.persona_principal.apellido}`}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Alias: {legajoData.persona_principal.alias || "N/A"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Edad: {legajoData.persona_principal.edad} años
-              </Typography>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
+                  Nombre:
+                </Typography>
+                <Typography variant="body2">
+                  {`${legajoData.persona_principal.nombre} ${legajoData.persona_principal.apellido}`}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
+                  Alias:
+                </Typography>
+                <Typography variant="body2">{legajoData.persona_principal.alias || "N/A"}</Typography>
+              </Box>
+              <Box sx={{ display: "flex" }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
+                  Edad:
+                </Typography>
+                <Typography variant="body2">{legajoData.persona_principal.edad} años</Typography>
+              </Box>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={6}>
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Ubicación: {legajoData.ubicacion}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Localidad: {legajoData.localidad.nombre}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Último equipo interviniente: {legajoData.equipo_interviniente}
-              </Typography>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
+                  Ubicación:
+                </Typography>
+                <Typography variant="body2">{legajoData.ubicacion}</Typography>
+              </Box>
+              <Box sx={{ display: "flex", mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
+                  Localidad:
+                </Typography>
+                <Typography variant="body2">{legajoData.localidad.nombre}</Typography>
+              </Box>
+              <Box sx={{ display: "flex" }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
+                  Equipo:
+                </Typography>
+                <Typography variant="body2">{legajoData.equipo_interviniente}</Typography>
+              </Box>
             </Box>
           </Grid>
 

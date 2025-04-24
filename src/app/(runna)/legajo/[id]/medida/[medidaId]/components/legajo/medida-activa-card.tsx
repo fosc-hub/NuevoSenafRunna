@@ -35,6 +35,8 @@ interface MedidaActivaCardProps {
   intervenciones: Intervencion[]
   onViewLastReport: () => void
   onViewMoreInterventions: () => void
+  onSituacionCriticaChange: (key: string, checked: boolean) => void
+  onRespuestaEnviadaChange: (checked: boolean) => void
 }
 
 export const MedidaActivaCard: React.FC<MedidaActivaCardProps> = ({
@@ -44,6 +46,8 @@ export const MedidaActivaCard: React.FC<MedidaActivaCardProps> = ({
   intervenciones,
   onViewLastReport,
   onViewMoreInterventions,
+  onSituacionCriticaChange,
+  onRespuestaEnviadaChange,
 }) => {
   const router = useRouter()
 
@@ -97,7 +101,12 @@ export const MedidaActivaCard: React.FC<MedidaActivaCardProps> = ({
           </Typography>
 
           <FormControlLabel
-            control={<Checkbox checked={medidaActiva.respuesta_enviada} disabled />}
+            control={
+              <Checkbox
+                checked={medidaActiva.respuesta_enviada}
+                onChange={(e) => onRespuestaEnviadaChange(e.target.checked)}
+              />
+            }
             label="Respuesta enviada a juzgado"
           />
 
@@ -121,16 +130,48 @@ export const MedidaActivaCard: React.FC<MedidaActivaCardProps> = ({
 
           <Grid container spacing={2}>
             <Grid item xs={3}>
-              <FormControlLabel control={<Checkbox checked={situacionesCriticas.BP} disabled />} label="BP" />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={situacionesCriticas.BP}
+                    onChange={(e) => onSituacionCriticaChange("BP", e.target.checked)}
+                  />
+                }
+                label="BP"
+              />
             </Grid>
             <Grid item xs={3}>
-              <FormControlLabel control={<Checkbox checked={situacionesCriticas.RSA} disabled />} label="RSA" />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={situacionesCriticas.RSA}
+                    onChange={(e) => onSituacionCriticaChange("RSA", e.target.checked)}
+                  />
+                }
+                label="RSA"
+              />
             </Grid>
             <Grid item xs={3}>
-              <FormControlLabel control={<Checkbox checked={situacionesCriticas.DCS} disabled />} label="DCS" />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={situacionesCriticas.DCS}
+                    onChange={(e) => onSituacionCriticaChange("DCS", e.target.checked)}
+                  />
+                }
+                label="DCS"
+              />
             </Grid>
             <Grid item xs={3}>
-              <FormControlLabel control={<Checkbox checked={situacionesCriticas.SCP} disabled />} label="SCP" />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={situacionesCriticas.SCP}
+                    onChange={(e) => onSituacionCriticaChange("SCP", e.target.checked)}
+                  />
+                }
+                label="SCP"
+              />
             </Grid>
           </Grid>
 

@@ -128,7 +128,24 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
     setLegajoData(updatedLegajoData)
     setOpenAddIntervencionDialog(false)
   }
+  const handleSituacionCriticaChange = (key: string, checked: boolean) => {
+    if (!legajoData) return
 
+    const updatedLegajoData = { ...legajoData }
+    updatedLegajoData.situaciones_criticas = {
+      ...updatedLegajoData.situaciones_criticas,
+      [key]: checked,
+    }
+    setLegajoData(updatedLegajoData)
+  }
+
+  const handleRespuestaEnviadaChange = (checked: boolean) => {
+    if (!legajoData) return
+
+    const updatedLegajoData = { ...legajoData }
+    updatedLegajoData.medida_activa.respuesta_enviada = checked
+    setLegajoData(updatedLegajoData)
+  }
   if (isLoading) {
     return (
       <Box
@@ -238,7 +255,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {activeTab === 0 && (
           <>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "black" }}>
                 Medida activa (1)
               </Typography>
               <Button
@@ -266,6 +283,8 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
               intervenciones={legajoData.intervenciones.slice(0, 3)}
               onViewLastReport={handleViewLastReport}
               onViewMoreInterventions={handleViewMoreInterventions}
+              onSituacionCriticaChange={handleSituacionCriticaChange}
+              onRespuestaEnviadaChange={handleRespuestaEnviadaChange}
             />
           </>
         )}
@@ -273,7 +292,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {/* Historial de Medidas Section */}
         {activeTab === 1 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "black" }}>
               Historial de Medidas
             </Typography>
 
@@ -284,7 +303,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {/* Intervenciones Section */}
         {activeTab === 2 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 , color: "black"}}>
               Historial de Intervenciones
             </Typography>
 
@@ -299,7 +318,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {/* Datos Personales Section */}
         {activeTab === 3 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "black" }}>
               Datos Personales Completos
             </Typography>
 

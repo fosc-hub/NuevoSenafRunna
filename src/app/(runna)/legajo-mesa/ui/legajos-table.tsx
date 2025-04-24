@@ -31,6 +31,7 @@ import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
 import { getLegajos, updateLegajo, type Legajo, type PaginatedResponse } from "../mock-data/legajos-service"
+import LegajoButtons from "./legajos-buttons"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
@@ -658,14 +659,11 @@ const LegajoTable: React.FC = () => {
             Gestión de Legajos
           </Typography>
           <div className="flex gap-4 relative z-10">
-            <Buttons
-              isLoading={isLoading}
-              handleNuevoRegistro={handleNuevoRegistro}
-              filterState={filterState}
-              setFilterState={setFilterState}
-              user={user}
-              onFilterChange={handleFilterChange}
-            />
+          <LegajoButtons
+          onSearch={(query) => console.log("Searching for:", query)}
+          onFilter={(filters) => console.log("Filters applied:", filters)}
+          onNewLegajo={() => console.log("Creating new legajo")}
+        />
           </div>
         </Box>
         <div style={{ height: 600, width: "100%" }}>

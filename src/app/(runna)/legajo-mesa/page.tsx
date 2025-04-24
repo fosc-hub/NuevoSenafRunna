@@ -9,7 +9,7 @@ const LegajoTable = dynamic(() => import("./ui/legajos-table"), { ssr: false })
 export default function Page() {
   return (
     <>
-      <Header />
+      <Header type="legajos" />
       <div className="p-4 md:p-4">
         <LegajoTable />
       </div>

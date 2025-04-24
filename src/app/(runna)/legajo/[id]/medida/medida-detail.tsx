@@ -387,14 +387,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           </Grid>
 
           {/* Cierre Section */}
-          <Grid item xs={12} md={4}>
-            <CierreSection
-              data={medidaData.etapas.cierre}
-              isActive={activeStep === 2}
-              isCompleted={activeStep === 2}
-              onCloseMeasure={handleCloseMeasure}
-            />
-          </Grid>
+
 
           {/* Último informe Section */}
           <Grid item xs={12} md={4}>
@@ -402,6 +395,14 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               data={medidaData.ultimo_informe}
               onViewAttachment={handleOpenAttachment}
               onDownload={handleDownloadAttachment}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <CierreSection
+              data={medidaData.etapas.cierre}
+              isActive={activeStep === 2}
+              isCompleted={activeStep === 2}
+              onCloseMeasure={handleCloseMeasure}
             />
           </Grid>
         </Grid>

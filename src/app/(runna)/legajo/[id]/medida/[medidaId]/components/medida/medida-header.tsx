@@ -50,56 +50,99 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
       }}
     >
       <Box sx={{ pl: 2, py: 1 }}>
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {medidaData.tipo}: {medidaData.numero}
+              </Typography>
+              <Chip
+                label={isActive ? "ACTIVA" : "CERRADA"}
+                color={isActive ? "primary" : "default"}
+                size="small"
+                sx={{ ml: 2, fontWeight: 500 }}
+              />
+            </Box>
+          </Grid>
+
           <Grid item xs={12} md={6}>
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {medidaData.tipo}: {medidaData.numero}
-                </Typography>
-                <Chip
-                  label={isActive ? "ACTIVA" : "CERRADA"}
-                  color={isActive ? "primary" : "default"}
-                  size="small"
-                  sx={{ ml: 2, fontWeight: 500 }}
-                />
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                Fecha de apertura: {medidaData.fecha_apertura}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Fecha de apertura:
+                </Typography>{" "}
+                {medidaData.fecha_apertura}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Origen de la demanda: {medidaData.origen_demanda || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Origen de la demanda:
+                </Typography>{" "}
+                {medidaData.origen_demanda || "No especificado"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Motivo: {medidaData.motivo || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Motivo:
+                </Typography>{" "}
+                {medidaData.motivo || "No especificado"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Actores intervinientes: {medidaData.actores_intervinientes || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Actores intervinientes:
+                </Typography>{" "}
+                {medidaData.actores_intervinientes || "No especificado"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Equipos: {medidaData.equipos || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Equipos:
+                </Typography>{" "}
+                {medidaData.equipos || "No especificado"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Articulación: {medidaData.articulacion || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Articulación:
+                </Typography>{" "}
+                {medidaData.articulacion || "No especificado"}
               </Typography>
             </Box>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <Box sx={{ textAlign: { md: "right" } }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                 {medidaData.persona.nombre} | DNI {medidaData.persona.dni}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Ubicación del NNyA: {medidaData.ubicacion}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Ubicación del NNyA:
+                </Typography>{" "}
+                {medidaData.ubicacion}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Dirección: {medidaData.direccion || "No especificada"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Dirección:
+                </Typography>{" "}
+                {medidaData.direccion || "No especificada"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Juzgado: {medidaData.juzgado || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Juzgado:
+                </Typography>{" "}
+                {medidaData.juzgado || "No especificado"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Nro. SAC: {medidaData.nro_sac || "No especificado"}
+
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography component="span" sx={{ fontWeight: "bold" }}>
+                  Nro. SAC:
+                </Typography>{" "}
+                {medidaData.nro_sac || "No especificado"}
               </Typography>
             </Box>
           </Grid>
@@ -112,6 +155,7 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
                 onClick={onViewPersonalData}
                 sx={{
                   textTransform: "none",
+                  color: "primary.main",
                   "&:hover": {
                     backgroundColor: "rgba(25, 118, 210, 0.04)",
                   },

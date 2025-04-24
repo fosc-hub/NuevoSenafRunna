@@ -163,6 +163,8 @@ const StatusChip = ({ status }: { status: string }) => {
         "& .MuiChip-label": {
           px: 1,
         },
+        margin: "0 auto",
+        display: "flex",
       }}
     />
   )
@@ -197,7 +199,7 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
 
   // Show a summary in the cell
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
       <Tooltip title={`Ver ${adjuntos.length} ${adjuntos.length === 1 ? "adjunto" : "adjuntos"}`}>
         <Badge badgeContent={adjuntos.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "0.65rem" } }}>
           <IconButton
@@ -587,7 +589,7 @@ const DemandaTable: React.FC = () => {
         headerName: "ID",
         width: 80,
         renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
             {params.value}
             {params.row.calificacion === "URGENTE" && (
               <Tooltip title="Urgente">
@@ -602,13 +604,15 @@ const DemandaTable: React.FC = () => {
         headerName: "Score",
         width: 80,
         renderCell: (params) => (
-          <Chip
-            label={params.value}
-            size="small"
-            variant="outlined"
-            color={Number(params.value) > 70 ? "error" : Number(params.value) > 40 ? "warning" : "default"}
-            sx={{ minWidth: 40, justifyContent: "center" }}
-          />
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <Chip
+              label={params.value}
+              size="small"
+              variant="outlined"
+              color={Number(params.value) > 70 ? "error" : Number(params.value) > 40 ? "warning" : "default"}
+              sx={{ minWidth: 40, justifyContent: "center" }}
+            />
+          </div>
         ),
       },
       {
@@ -616,11 +620,13 @@ const DemandaTable: React.FC = () => {
         headerName: "Nombre",
         width: 180,
         renderCell: (params) => (
-          <Tooltip title={`DNI: ${params.row.dni}`}>
-            <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
-              {params.value}
-            </Typography>
-          </Tooltip>
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <Tooltip title={`DNI: ${params.row.dni}`}>
+              <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
+                {params.value}
+              </Typography>
+            </Tooltip>
+          </div>
         ),
       },
       {
@@ -631,6 +637,8 @@ const DemandaTable: React.FC = () => {
           <Box
             sx={{
               width: "100%",
+              display: "flex",
+              justifyContent: "center",
               "& select": {
                 width: "100%",
                 padding: "8px",
@@ -679,9 +687,11 @@ const DemandaTable: React.FC = () => {
         headerName: "Actualización",
         width: 150,
         renderCell: (params) => (
-          <Typography variant="body2" color="text.secondary">
-            {params.value}
-          </Typography>
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <Typography variant="body2" color="text.secondary">
+              {params.value}
+            </Typography>
+          </div>
         ),
       },
       {
@@ -691,7 +701,7 @@ const DemandaTable: React.FC = () => {
         sortable: false,
         filterable: false,
         renderCell: (params) => (
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", width: "100%" }}>
             <Tooltip title="Ver detalles">
               <IconButton
                 size="small"
@@ -765,19 +775,31 @@ const DemandaTable: React.FC = () => {
           field: "origen",
           headerName: "Remitente",
           width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+          renderCell: (params) => (
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+              <Typography variant="body2">{params.value}</Typography>
+            </div>
+          ),
         },
         {
           field: "localidad",
           headerName: "Localidad",
           width: 130,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+          renderCell: (params) => (
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+              <Typography variant="body2">{params.value}</Typography>
+            </div>
+          ),
         },
         {
           field: "zonaEquipo",
           headerName: "Zona/Equipo",
           width: 130,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+          renderCell: (params) => (
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+              <Typography variant="body2">{params.value}</Typography>
+            </div>
+          ),
         },
         {
           field: "envioRespuesta",
@@ -806,7 +828,11 @@ const DemandaTable: React.FC = () => {
                 break
             }
 
-            return <Chip label={displayText} size="small" color={color} variant="outlined" />
+            return (
+              <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+                <Chip label={displayText} size="small" color={color} variant="outlined" />
+              </div>
+            )
           },
         },
         {
@@ -814,7 +840,11 @@ const DemandaTable: React.FC = () => {
           headerName: "Objetivo",
           width: 150,
           renderCell: (params) => {
-            return <Typography variant="body2">{formatUnderscoreText(params.value)}</Typography>
+            return (
+              <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+                <Typography variant="body2">{formatUnderscoreText(params.value)}</Typography>
+              </div>
+            )
           },
         },
       )
@@ -977,6 +1007,9 @@ const DemandaTable: React.FC = () => {
               },
               "& .MuiDataGrid-cell": {
                 padding: "8px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               },
               "& .MuiDataGrid-row": {
                 position: "relative",

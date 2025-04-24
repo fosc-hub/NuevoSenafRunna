@@ -28,13 +28,7 @@ import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRoun
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import AsignarModal from "../../../../components/asignarModal"
-import {
-  getLegajos,
-  updateLegajo,
-  type Legajo,
-  type PaginatedResponse,
-  
-} from "../mock-data/legajos-service"
+import { getLegajos, updateLegajo, type Legajo, type PaginatedResponse } from "../mock-data/legajos-service"
 import LegajoButtons from "./legajos-buttons"
 import { exportDemandasToExcel } from "./legajos-service"
 
@@ -142,6 +136,8 @@ const StatusChip = ({ status }: { status: string }) => {
         "& .MuiChip-label": {
           px: 1,
         },
+        margin: "0 auto",
+        display: "flex",
       }}
     />
   )
@@ -176,7 +172,7 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
 
   // Show a summary in the cell
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
       <Tooltip title={`Ver ${adjuntos.length} ${adjuntos.length === 1 ? "adjunto" : "adjuntos"}`}>
         <Badge badgeContent={adjuntos.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "0.65rem" } }}>
           <IconButton
@@ -465,6 +461,8 @@ const LegajoTable: React.FC = () => {
           <Box
             sx={{
               width: "100%",
+              display: "flex",
+              justifyContent: "center",
               "& select": {
                 width: "100%",
                 padding: "8px",
@@ -738,6 +736,9 @@ const LegajoTable: React.FC = () => {
               },
               "& .MuiDataGrid-cell": {
                 padding: "8px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               },
               "& .MuiDataGrid-row": {
                 position: "relative",

@@ -16,14 +16,25 @@ import {
   TextField,
   Autocomplete,
   Chip,
+  Paper,
+  Divider,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  FormHelperText,
 } from "@mui/material"
+import {
+  History as HistoryIcon,
+  Send as SendIcon,
+  Close as CloseIcon,
+  Assignment as AssignmentIcon,
+} from "@mui/icons-material"
 import { get, create } from "@/app/api/apiService"
 import { toast } from "react-toastify"
 
 // Function to get the current user's ID
 function getCurrentUserId(): number {
   // Replace this with your actual method of getting the current user's ID
-  // This could be from a global state, context, or a custom hook
   return 1 // Temporary placeholder, replace with actual user ID
 }
 
@@ -77,6 +88,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   const [objetivo, setObjetivo] = useState<string>("peticion_informe")
   const [selectedUsers, setSelectedUsers] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isDataLoading, setIsDataLoading] = useState(false)
 
   // Obtener la última demanda zona activa
   const lastActiveDemandaZona = useMemo(() => {
@@ -117,7 +129,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   const fetchData = async () => {
     if (!demandaId) return
 
-    setIsLoading(true)
+    setIsDataLoading(true)
     try {
       const response = await get<{
         zonas: Zona[]
@@ -132,7 +144,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       console.error("Error fetching data:", error)
       toast.error("Error al cargar los datos")
     } finally {
-      setIsLoading(false)
+      setIsDataLoading(false)
     }
   }
 
@@ -216,6 +228,17 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     }
   }, [users])
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
+  }
+
   return (
     <Modal
       open={open}
@@ -223,202 +246,288 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       aria-labelledby="asignar-modal-title"
       aria-describedby="asignar-modal-description"
     >
-      <Box
+      <Paper
+        elevation={5}
         sx={{
           position: "absolute",
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: "80%",
-          maxWidth: 800,
+          width: "90%",
+          maxWidth: 700,
           minHeight: 500,
           maxHeight: "90vh",
           bgcolor: "background.paper",
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 1,
-          overflow: "auto",
+          p: 3,
+          borderRadius: 2,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
-        <Typography
-          id="asignar-modal-title"
-          variant="h4"
-          component="h2"
-          gutterBottom
-          sx={{
-            color: "text.primary",
-            fontWeight: 500,
-            mb: 3,
-          }}
-        >
-          Derivar Demanda {demandaId}
-        </Typography>
-        <Box
-          sx={{
-            borderBottom: 1,
-            borderColor: "divider",
-            mb: 3,
-          }}
-        >
+        {/* Header with close button */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography
+            id="asignar-modal-title"
+            variant="h5"
+            component="h2"
+            sx={{
+              color: "primary.main",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <AssignmentIcon /> Derivar Demanda {demandaId}
+          </Typography>
+          <Tooltip title="Cerrar">
+            <IconButton onClick={onClose} size="small" aria-label="cerrar" disabled={isLoading}>
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
+        <Divider sx={{ mb: 2 }} />
+
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
           <Tabs
             value={value}
             onChange={handleChange}
             aria-label="asignar tabs"
             sx={{
               "& .MuiTab-root": {
-                fontSize: "1rem",
+                fontSize: "0.9rem",
                 fontWeight: 500,
-                color: "text.primary",
-                textTransform: "uppercase",
-              },
-              "& .Mui-selected": {
-                color: "primary.main",
+                textTransform: "none",
+                minHeight: 48,
               },
             }}
-            size="small"
           >
-            <Tab label="Asignar" {...a11yProps(0)} />
-            <Tab label="Historia" {...a11yProps(1)} />
+            <Tab icon={<SendIcon fontSize="small" />} iconPosition="start" label="Asignar" {...a11yProps(0)} />
+            <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label="Historia" {...a11yProps(1)} />
           </Tabs>
         </Box>
-        <TabPanel value={value} index={0}>
-          <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-            Derivar a zona
-          </Typography>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <Autocomplete
-              options={zonas}
-              getOptionLabel={(option) => option.nombre}
-              value={zonas.find((zona) => zona.id === selectedZona) || null}
-              onChange={(_, newValue) => {
-                setSelectedZona(newValue ? newValue.id : null)
-                setSelectedUsers([]) // Reset user selection when zone changes
-              }}
-              renderInput={(params) => <TextField {...params} label="Zona" size="small" />}
-              PopperProps={{
-                style: { width: "auto", maxWidth: "300px" },
-              }}
-              size="small"
-              disabled={isLoading}
-            />
-          </FormControl>
 
-          {selectedZona && (
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <Autocomplete
-                multiple
-                options={filteredUsersByZona(selectedZona)}
-                getOptionLabel={(option) => option.username}
-                value={users.filter((user) => selectedUsers.includes(user.id))}
-                onChange={(_, newValue) => setSelectedUsers(newValue.map((user) => user.id))}
-                renderInput={(params) => <TextField {...params} label="Usuarios responsables" size="small" />}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip label={option.username} size="small" {...getTagProps({ index })} />
-                  ))
-                }
-                PopperProps={{
-                  style: { width: "auto", maxWidth: "300px" },
-                }}
-                size="small"
-                disabled={isLoading}
-              />
-            </FormControl>
+        {/* Content area with scrolling */}
+        <Box sx={{ flex: 1, overflow: "auto", mb: 2 }}>
+          {/* Loading indicator */}
+          {isDataLoading && (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <CircularProgress size={40} />
+            </Box>
           )}
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <Autocomplete
-              options={[
-                { value: "peticion_informe", label: "Petición de informe" },
-                { value: "proteccion", label: "Protección" },
-              ]}
-              getOptionLabel={(option) => option.label}
-              value={
-                objetivo === "peticion_informe"
-                  ? { value: "peticion_informe", label: "Petición de informe" }
-                  : { value: "proteccion", label: "Protección" }
-              }
-              onChange={(_, newValue) => setObjetivo(newValue ? newValue.value : "peticion_informe")}
-              renderInput={(params) => <TextField {...params} label="Objetivo de la demanda" size="small" />}
-              PopperProps={{
-                style: { width: "auto", maxWidth: "300px" },
-              }}
-              size="small"
-              disabled={isLoading}
-            />
-          </FormControl>
+          {!isDataLoading && (
+            <>
+              <TabPanel value={value} index={0}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Typography variant="subtitle1" color="primary" fontWeight={500} sx={{ mb: 1 }}>
+                    Información de derivación
+                  </Typography>
 
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            variant="outlined"
-            label="Comentarios"
-            value={comentarios}
-            onChange={handleComentariosChange}
-            sx={{ mb: 2 }}
-            size="small"
-            disabled={isLoading}
-          />
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAsignar}
-            size="small"
-            sx={{ mt: 2 }}
-            disabled={isLoading}
-          >
-            {isLoading ? "Asignando..." : "Asignar"}
-          </Button>
-        </TabPanel>
-        <TabPanel value={value} index={1}>
-          <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-            Historial de derivaciones para esta demanda
-          </Typography>
-          {auditHistory.length > 0 ? (
-            <List sx={{ maxHeight: "300px", overflow: "auto" }}>
-              {auditHistory
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                .map((record) => (
-                  <ListItem key={record.id} divider>
-                    <ListItemText
-                      primary={record.descripcion}
-                      primaryTypographyProps={{
-                        sx: { color: "text.primary", fontWeight: 600 },
+                  <FormControl fullWidth>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Zona
+                    </Typography>
+                    <Autocomplete
+                      options={zonas}
+                      getOptionLabel={(option) => option.nombre}
+                      value={zonas.find((zona) => zona.id === selectedZona) || null}
+                      onChange={(_, newValue) => {
+                        setSelectedZona(newValue ? newValue.id : null)
+                        setSelectedUsers([]) // Reset user selection when zone changes
                       }}
+                      renderInput={(params) => (
+                        <TextField {...params} placeholder="Seleccione una zona" size="small" fullWidth />
+                      )}
+                      disabled={isLoading}
+                      disableClearable
                     />
-                  </ListItem>
-                ))}
-            </List>
-          ) : (
-            <Typography variant="body1" color="text.secondary">
-              No hay registros de historial disponibles.
-            </Typography>
+                  </FormControl>
+
+                  {selectedZona && (
+                    <FormControl fullWidth>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        Usuarios responsables
+                      </Typography>
+                      <Autocomplete
+                        multiple
+                        options={filteredUsersByZona(selectedZona)}
+                        getOptionLabel={(option) => option.username}
+                        value={users.filter((user) => selectedUsers.includes(user.id))}
+                        onChange={(_, newValue) => setSelectedUsers(newValue.map((user) => user.id))}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="Seleccione usuarios responsables"
+                            size="small"
+                            fullWidth
+                          />
+                        )}
+                        renderTags={(value, getTagProps) =>
+                          value.map((option, index) => (
+                            <Chip
+                              key={option.id}
+                              label={option.username}
+                              size="small"
+                              {...getTagProps({ index })}
+                              sx={{
+                                bgcolor: "primary.light",
+                                color: "primary.contrastText",
+                                fontWeight: 500,
+                              }}
+                            />
+                          ))
+                        }
+                        disabled={isLoading}
+                      />
+                      {selectedUsers.length === 0 && (
+                        <FormHelperText>Seleccione al menos un usuario responsable</FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
+
+                  <FormControl fullWidth>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Objetivo de la demanda
+                    </Typography>
+                    <Autocomplete
+                      options={[
+                        { value: "peticion_informe", label: "Petición de informe" },
+                        { value: "proteccion", label: "Protección" },
+                      ]}
+                      getOptionLabel={(option) => option.label}
+                      value={
+                        objetivo === "peticion_informe"
+                          ? { value: "peticion_informe", label: "Petición de informe" }
+                          : { value: "proteccion", label: "Protección" }
+                      }
+                      onChange={(_, newValue) => setObjetivo(newValue ? newValue.value : "peticion_informe")}
+                      renderInput={(params) => (
+                        <TextField {...params} placeholder="Seleccione un objetivo" size="small" fullWidth />
+                      )}
+                      disabled={isLoading}
+                      disableClearable
+                    />
+                  </FormControl>
+
+                  <FormControl fullWidth>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Comentarios
+                    </Typography>
+                    <TextField
+                      multiline
+                      rows={4}
+                      variant="outlined"
+                      placeholder="Añada comentarios sobre esta asignación..."
+                      value={comentarios}
+                      onChange={handleComentariosChange}
+                      size="small"
+                      disabled={isLoading}
+                      sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.9rem" } }}
+                    />
+                  </FormControl>
+                </Box>
+              </TabPanel>
+
+              <TabPanel value={value} index={1}>
+                <Typography variant="subtitle1" color="primary" fontWeight={500} sx={{ mb: 2 }}>
+                  Historial de derivaciones para esta demanda
+                </Typography>
+
+                {auditHistory.length > 0 ? (
+                  <List
+                    sx={{
+                      maxHeight: "350px",
+                      overflow: "auto",
+                      bgcolor: "background.paper",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      p: 0,
+                    }}
+                  >
+                    {auditHistory
+                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .map((record, index) => (
+                        <ListItem
+                          key={record.id}
+                          divider={index < auditHistory.length - 1}
+                          sx={{
+                            py: 1.5,
+                            px: 2,
+                            "&:hover": { bgcolor: "action.hover" },
+                          }}
+                        >
+                          <ListItemText
+                            primary={record.descripcion}
+                            secondary={formatDate(record.timestamp)}
+                            primaryTypographyProps={{
+                              sx: { color: "text.primary", fontWeight: 500, fontSize: "0.95rem" },
+                            }}
+                            secondaryTypographyProps={{
+                              sx: { color: "text.secondary", fontSize: "0.8rem" },
+                            }}
+                          />
+                        </ListItem>
+                      ))}
+                  </List>
+                ) : (
+                  <Box
+                    sx={{
+                      p: 3,
+                      textAlign: "center",
+                      bgcolor: "background.paper",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body1" color="text.secondary">
+                      No hay registros de historial disponibles.
+                    </Typography>
+                  </Box>
+                )}
+              </TabPanel>
+            </>
           )}
-        </TabPanel>
+        </Box>
+
+        {/* Footer with actions */}
         <Box
           sx={{
-            mt: 4,
+            mt: "auto",
+            pt: 2,
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
+            borderTop: "1px solid",
+            borderColor: "divider",
           }}
         >
+          {value === 0 && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAsignar}
+              disabled={isLoading || !selectedZona}
+              startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+              sx={{ fontWeight: 500 }}
+            >
+              {isLoading ? "Asignando..." : "Asignar"}
+            </Button>
+          )}
           <Button
+            variant="outlined"
             onClick={onClose}
-            variant="contained"
-            size="small"
-            sx={{
-              fontSize: "1rem",
-              fontWeight: 500,
-              px: 4,
-            }}
+            sx={{ ml: value === 1 ? 0 : "auto", fontWeight: 500 }}
             disabled={isLoading}
           >
             Cerrar
           </Button>
         </Box>
-      </Box>
+      </Paper>
     </Modal>
   )
 }
@@ -447,11 +556,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          <Typography component="div">{children}</Typography>
-        </Box>
-      )}
+      {value === index && children}
     </div>
   )
 }

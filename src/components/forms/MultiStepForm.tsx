@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import {
   Box,
@@ -9,12 +9,9 @@ import {
   Stepper,
   Step,
   StepLabel,
-  CircularProgress,
   Alert,
   Skeleton,
   Typography,
-  Chip,
-  Tooltip,
   LinearProgress,
   useTheme,
   useMediaQuery,
@@ -22,15 +19,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import {
-  NavigateNext,
-  NavigateBefore,
-  Save,
-  Send,
-  CheckCircleOutline,
-  InfoOutlined,
-  WarningAmber,
-} from "@mui/icons-material"
+import { NavigateNext, NavigateBefore, Send, InfoOutlined, WarningAmber } from "@mui/icons-material"
 
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
@@ -91,8 +80,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   demandaId,
 }) => {
   const [activeStep, setActiveStep] = useState(0)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const formId = form || "new"
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -123,36 +110,16 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   // Watch for form changes to save draft
   const formValues = methods.watch()
 
-  // Save draft when form values change
-  const saveDraftWithFeedback = useCallback(() => {
-    if (!isReadOnly) {
-      setIsSaving(true)
-      saveDraft(formId, formValues)
-      setLastSaved(new Date())
-
-      // Show saving indicator briefly
-      setTimeout(() => {
-        setIsSaving(false)
-      }, 800)
-    }
-  }, [formValues, formId, saveDraft, isReadOnly])
-
-  // Save draft when form values change
+  // Save draft when form values change - but without visual feedback
   useEffect(() => {
     if (!isReadOnly) {
       const timeoutId = setTimeout(() => {
-        saveDraftWithFeedback()
+        saveDraft(formId, formValues)
       }, 1500) // Debounce to avoid saving on every keystroke
 
       return () => clearTimeout(timeoutId)
     }
-  }, [formValues, saveDraftWithFeedback, isReadOnly])
-
-  // Manual save function
-  const handleManualSave = () => {
-    saveDraftWithFeedback()
-    toast.success("Borrador guardado manualmente")
-  }
+  }, [formValues, formId, saveDraft, isReadOnly])
 
   useEffect(() => {
     if (initialData) {
@@ -194,7 +161,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
     if (isValid) {
       // Save current step data to draft before moving to next step
       saveDraft(formId, methods.getValues())
-      setLastSaved(new Date())
       setActiveStep((prevActiveStep) => prevActiveStep + 1)
     } else {
       // Show error toast if validation fails
@@ -206,7 +172,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
     // Save current step data to draft before moving to previous step
     if (!isReadOnly) {
       saveDraft(formId, methods.getValues())
-      setLastSaved(new Date())
     }
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
@@ -230,23 +195,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   const handleFinalSubmit = (e) => {
     e.preventDefault() // Prevent default button behavior
     handleFormSubmit() // Call the form submission handler
-  }
-
-  // Format the last saved time
-  const formatLastSaved = () => {
-    if (!lastSaved) return ""
-
-    const now = new Date()
-    const diffMs = now.getTime() - lastSaved.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-
-    if (diffMins < 1) return "hace unos segundos"
-    if (diffMins === 1) return "hace 1 minuto"
-    if (diffMins < 60) return `hace ${diffMins} minutos`
-
-    const hours = lastSaved.getHours().toString().padStart(2, "0")
-    const minutes = lastSaved.getMinutes().toString().padStart(2, "0")
-    return `a las ${hours}:${minutes}`
   }
 
   useEffect(() => {
@@ -451,49 +399,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
             Atrás
           </Button>
 
-          {!isReadOnly && (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                color: "text.secondary",
-                fontSize: "0.875rem",
-                mx: 2,
-                flexGrow: 1,
-                justifyContent: "center",
-              }}
-            >
-              {isSaving ? (
-                <Chip
-                  label="Guardando..."
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  icon={<CircularProgress size={16} color="inherit" />}
-                />
-              ) : lastSaved ? (
-                <Tooltip title={`Último guardado: ${lastSaved.toLocaleString()}`}>
-                  <Chip
-                    label={`Guardado ${formatLastSaved()}`}
-                    size="small"
-                    color="success"
-                    variant="outlined"
-                    icon={<CheckCircleOutline fontSize="small" />}
-                    onClick={handleManualSave}
-                  />
-                </Tooltip>
-              ) : (
-                <Chip
-                  label="Guardar borrador"
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  icon={<Save fontSize="small" />}
-                  onClick={handleManualSave}
-                />
-              )}
-            </Box>
-          )}
+          {/* Removed the draft saving indicator */}
 
           <Button
             variant="contained"

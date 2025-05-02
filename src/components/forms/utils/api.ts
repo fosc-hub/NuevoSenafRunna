@@ -250,9 +250,6 @@ function createFullFormData(formData: FormData): FormData {
           // Si autor_dv existe y es válido, lo incluimos
           if (vulneracion.autor_dv && vulneracion.autor_dv !== 0) {
             vulneracionData.autor_dv = vulneracion.autor_dv
-          } else {
-            // Si no tenemos autor_dv válido, usamos autordv_index
-            vulneracionData.autordv_index = vulneracion.autordv_index || 0
           }
 
           return vulneracionData

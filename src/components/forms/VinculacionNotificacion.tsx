@@ -41,8 +41,8 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
       // Verificar si la demanda actual está en los resultados
       const isSameDemanda = actualIdNum && vinculacionResults.demanda_ids.includes(actualIdNum)
 
-      // Solo mostrar si no es la misma demanda
-      setShouldShow(!isSameDemanda)
+      // Siempre mostrar la notificación, independientemente de si es la misma demanda o no
+      setShouldShow(true)
     } else {
       setShouldShow(true)
     }

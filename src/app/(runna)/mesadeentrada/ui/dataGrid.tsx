@@ -670,14 +670,15 @@ const DemandaTable: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               {params.value === null && <option value="">Seleccionar</option>}
-              <option value="URGENTE">Urgente</option>
-              <option value="NO_URGENTE">No Urgente</option>
-              <option value="COMPLETAR">Completar</option>
-              <option value="NO_PERTINENTE_SIPPDD">No Pertinente (SIPPDD)</option>
-              <option value="NO_PERTINENTE_OTRAS_PROVINCIAS">No Pertinente (Otras Provincias)</option>
-              <option value="NO_PERTINENTE_OFICIOS_INCOMPLETOS">No Pertinente (Oficios Incompletos)</option>
-              <option value="NO_PERTINENTE_LEY_9944">No Pertinente (Ley 9944)</option>
-              <option value="PASA_A_LEGAJO">Pasa a Legajo</option>
+              {params.row.calificacion_choices && Array.isArray(params.row.calificacion_choices) ? (
+                params.row.calificacion_choices.map((choice) => (
+                  <option key={choice[0]} value={choice[0]}>
+                    {choice[1]}
+                  </option>
+                ))
+              ) : (
+                <option value="">No hay opciones disponibles</option>
+              )}
             </select>
           </Box>
         ),
@@ -884,6 +885,7 @@ const DemandaTable: React.FC = () => {
         objetivoDemanda: demanda.objetivo_de_demanda || "N/A",
         etiqueta: demanda.etiqueta?.nombre || "N/A",
         adjuntos: demanda.adjuntos || [],
+        calificacion_choices: demanda.calificacion_choices || [],
       }
     }) || []
 

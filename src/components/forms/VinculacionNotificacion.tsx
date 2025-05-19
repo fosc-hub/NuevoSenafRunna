@@ -67,8 +67,8 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
 
       // Crear objeto para la vinculación
       const vinculacionData = {
-        demanda_1: Number(actualDemandaId),
-        demanda_2: demandaId,
+        demanda_preexistente: Number(actualDemandaId),
+        demanda_entrante: demandaId,
         deleted: false,
       }
 

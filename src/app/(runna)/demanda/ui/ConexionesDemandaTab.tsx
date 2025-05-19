@@ -30,8 +30,8 @@ interface Demanda {
 
 interface DemandaVinculada {
   id: number
-  demanda_1: number
-  demanda_2: number
+  demanda_preexistente: number
+  demanda_entrante: number
   deleted: boolean
 }
 
@@ -60,11 +60,11 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
       try {
         // Fetch all connections for this demanda
         const data = await get<DemandaVinculada>("demanda-vinculada/", {
-          demanda_1: demandaId,
+          demanda_preexistente: demandaId,
         })
 
         // Get the IDs of connected demandas
-        const connectedIds = data.filter((conn) => !conn.deleted).map((conn) => conn.demanda_2)
+        const connectedIds = data.filter((conn) => !conn.deleted).map((conn) => conn.demanda_entrante)
 
         // Return the connected demandas
         return allDemandas.filter((demanda) => connectedIds.includes(demanda.id))
@@ -96,8 +96,8 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
       try {
         // Find the connection
         const connections = await get<DemandaVinculada>("demanda-vinculada/", {
-          demanda_1: demandaId,
-          demanda_2: connectedDemandaId,
+          demanda_preexistente: demandaId,
+          demanda_entrante: connectedDemandaId,
         })
 
         if (connections.length === 0) {
@@ -141,8 +141,8 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
 
       // Create connection
       createConnectionMutation.mutate({
-        demanda_1: demandaId,
-        demanda_2: demandaId2,
+        demanda_preexistente: demandaId,
+        demanda_entrante: demandaId2,
         deleted: false,
       })
     } else {

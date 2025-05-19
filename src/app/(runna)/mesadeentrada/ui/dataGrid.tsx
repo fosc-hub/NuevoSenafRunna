@@ -446,9 +446,20 @@ const DemandaTable: React.FC = () => {
           "Demanda marcada como recibida",
         )
       } catch (error: any) {
-        // If we get a 404, try the fallback method using the regular update endpoint
-        if (error.response && error.response.status === 404) {
-          console.warn("Endpoint demanda-zona-recibir no encontrado. Usando método alternativo.")
+        // If we get a 404 or 403, try the fallback method or just continue
+        if (error.response && (error.response.status === 404 || error.response.status === 403)) {
+          console.warn(`Endpoint demanda-zona-recibir retornó ${error.response.status}. Continuando con visualización.`)
+
+          if (error.response.status === 403) {
+            toast.warning("No tienes permisos para marcar como recibida esta demanda, pero puedes ver los detalles.", {
+              position: "top-center",
+              autoClose: 3000,
+            })
+            // For 403 errors, return a minimal object with the demanda ID to allow viewing
+            return { id, demanda: id }
+          }
+
+          // For 404 errors, try the fallback method
           toast.warning(
             "No se pudo marcar como recibida usando el método principal. Intentando método alternativo...",
             {
@@ -470,32 +481,36 @@ const DemandaTable: React.FC = () => {
             "Demanda marcada como recibida (método alternativo)",
           )
         }
-        // If it's not a 404 error, rethrow it
+        // If it's not a 404 or 403 error, rethrow it
         throw error
       }
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["demandas"] })
-      // Update the local state to reflect the changes
-      setDemandasData((prevData) => {
-        if (!prevData) return null
-        return {
-          ...prevData,
-          results: prevData.results.map((demanda) =>
-            demanda.demanda_zona_id === data.id
-              ? {
-                  ...demanda,
-                  demanda_zona: {
-                    ...demanda.demanda_zona,
-                    recibido: true,
-                    fecha_recibido: data.fecha_recibido,
-                  },
-                }
-              : demanda,
-          ),
-        }
-      })
-      // Open DemandaDetalle modal after successful update
+      // Only invalidate queries if we actually updated something (not just viewing after 403)
+      if (data.fecha_recibido) {
+        queryClient.invalidateQueries({ queryKey: ["demandas"] })
+        // Update the local state to reflect the changes
+        setDemandasData((prevData) => {
+          if (!prevData) return null
+          return {
+            ...prevData,
+            results: prevData.results.map((demanda) =>
+              demanda.demanda_zona_id === data.id
+                ? {
+                    ...demanda,
+                    demanda_zona: {
+                      ...demanda.demanda_zona,
+                      recibido: true,
+                      fecha_recibido: data.fecha_recibido,
+                    },
+                  }
+                : demanda,
+            ),
+          }
+        })
+      }
+
+      // Open DemandaDetalle modal after successful request or even after 403
       handleOpenModal(data.demanda)
     },
     onError: (error) => {
@@ -992,6 +1007,7 @@ const DemandaTable: React.FC = () => {
                 !cellElement.closest("select")
               ) {
                 if (!params.row.recibido && params.row.demanda_zona_id) {
+                  // Try to mark as received, but will still show details even if it fails with 403
                   updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
                 } else {
                   handleOpenModal(params.row.id)

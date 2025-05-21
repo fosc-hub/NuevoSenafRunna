@@ -1,6 +1,6 @@
 "use client"
 
-import { Paper, Typography, Box, TextField, Grid, Chip } from "@mui/material"
+import { Paper, Typography, Box, TextField, Grid, Chip, List, ListItem, ListItemText } from "@mui/material"
 
 interface InformacionGeneralProps {
   data: any
@@ -121,8 +121,10 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
             </Typography>
             {data.etiqueta && (
               <Chip
-                label={data.etiqueta.toUpperCase()}
-                color={data.etiqueta === "urgente" ? "error" : "default"}
+                label={typeof data.etiqueta === "string" ? data.etiqueta.toUpperCase() : String(data.etiqueta)}
+                color={
+                  typeof data.etiqueta === "string" && data.etiqueta.toLowerCase() === "urgente" ? "error" : "default"
+                }
                 size="small"
                 sx={{ mt: 1 }}
               />
@@ -134,17 +136,17 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Códigos de Demanda
             </Typography>
-            {data.codigosDemanda && data.codigosDemanda.length > 0 ? (
-              data.codigosDemanda.map((codigo: any, index: number) => (
-                <Box key={index} sx={{ display: "flex", mt: 1 }}>
-                  <Typography variant="body2" sx={{ minWidth: 100 }}>
-                    Tipo {codigo.tipo}:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {codigo.codigo}
-                  </Typography>
-                </Box>
-              ))
+            {data.codigos_demanda && Array.isArray(data.codigos_demanda) && data.codigos_demanda.length > 0 ? (
+              <List dense>
+                {data.codigos_demanda.map((codigo: any, index: number) => (
+                  <ListItem key={index} disablePadding>
+                    <ListItemText
+                      primary={`Código: ${codigo.codigo || ""}`}
+                      secondary={`Tipo: ${codigo.tipo_codigo?.nombre || codigo.tipo_codigo || ""}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
             ) : (
               <Typography variant="body2" color="text.secondary">
                 No hay códigos de demanda registrados

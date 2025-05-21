@@ -12,6 +12,13 @@ import {
   AccordionDetails,
   Chip,
   Grid,
+  Divider,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
 } from "@mui/material"
 import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
 import { useState } from "react"
@@ -42,8 +49,11 @@ interface AdultoNoConviviente {
   vinculacion?: string
   vinculo_con_nnya_principal?: number
   vinculo_demanda?: string
-  condicionesVulnerabilidad?: number[]
+  condicionesVulnerabilidad?: any[]
   nacionalidad?: string
+  persona?: any
+  persona_enfermedades?: any[]
+  cobertura_medica?: any
 }
 
 interface AdultosNoConvivientesProps {
@@ -147,6 +157,24 @@ export default function AdultosNoConvivientes({
                     size="small"
                     InputProps={{ readOnly: true }}
                   />
+                  {adulto.fechaDefuncion && (
+                    <TextField
+                      label="Fecha de Defunción"
+                      value={adulto.fechaDefuncion}
+                      fullWidth
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                  )}
+                  {adulto.persona && adulto.persona.nombre_autopercibido && (
+                    <TextField
+                      label="Nombre Autopercibido"
+                      value={adulto.persona.nombre_autopercibido}
+                      fullWidth
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                  )}
                 </Box>
               </Grid>
 
@@ -186,7 +214,14 @@ export default function AdultosNoConvivientes({
                   />
                   <TextField
                     label="Barrio"
-                    value={adulto.Barrio || ""}
+                    value={adulto.localizacion?.barrio || adulto.Barrio || ""}
+                    fullWidth
+                    size="small"
+                    InputProps={{ readOnly: true }}
+                  />
+                  <TextField
+                    label="Localidad"
+                    value={adulto.localizacion?.localidad || ""}
                     fullWidth
                     size="small"
                     InputProps={{ readOnly: true }}
@@ -205,6 +240,36 @@ export default function AdultosNoConvivientes({
                     size="small"
                     InputProps={{ readOnly: true }}
                   />
+                  <TextField
+                    label="CPC"
+                    value={adulto.localizacion?.cpc || ""}
+                    fullWidth
+                    size="small"
+                    InputProps={{ readOnly: true }}
+                  />
+                  <TextField
+                    label="Manzana"
+                    value={adulto.localizacion?.mza || ""}
+                    fullWidth
+                    size="small"
+                    InputProps={{ readOnly: true }}
+                  />
+                  <TextField
+                    label="Lote"
+                    value={adulto.localizacion?.lote || ""}
+                    fullWidth
+                    size="small"
+                    InputProps={{ readOnly: true }}
+                  />
+                  {adulto.localizacion?.id && (
+                    <TextField
+                      label="ID Localización"
+                      value={adulto.localizacion.id}
+                      fullWidth
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                  )}
                 </Box>
               </Grid>
 
@@ -259,6 +324,100 @@ export default function AdultosNoConvivientes({
                 </Box>
               </Grid>
 
+              {/* Cobertura médica */}
+              {adulto.cobertura_medica && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Cobertura Médica
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+                    <TextField
+                      label="Obra Social"
+                      value={adulto.cobertura_medica.obra_social || ""}
+                      fullWidth
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                    <TextField
+                      label="Institución Sanitaria"
+                      value={
+                        adulto.cobertura_medica.institucion_sanitaria?.nombre ||
+                        adulto.cobertura_medica.institucion_sanitaria_nombre ||
+                        ""
+                      }
+                      fullWidth
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                    <TextField
+                      label="Tipo de Intervención"
+                      value={adulto.cobertura_medica.intervencion || ""}
+                      fullWidth
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                    {adulto.cobertura_medica.medico_cabecera && (
+                      <TextField
+                        label="Médico de Cabecera"
+                        value={adulto.cobertura_medica.medico_cabecera.nombre || ""}
+                        fullWidth
+                        size="small"
+                        InputProps={{ readOnly: true }}
+                      />
+                    )}
+                    {adulto.cobertura_medica.observaciones && (
+                      <TextField
+                        label="Observaciones"
+                        value={adulto.cobertura_medica.observaciones}
+                        fullWidth
+                        size="small"
+                        multiline
+                        rows={2}
+                        InputProps={{ readOnly: true }}
+                        sx={{ gridColumn: "span 2" }}
+                      />
+                    )}
+                  </Box>
+                </Grid>
+              )}
+
+              {/* Enfermedades */}
+              {adulto.persona_enfermedades && adulto.persona_enfermedades.length > 0 && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Enfermedades
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Enfermedad</TableCell>
+                          <TableCell>Diagnóstico</TableCell>
+                          <TableCell>Tratamiento</TableCell>
+                          <TableCell>Certificación</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {adulto.persona_enfermedades.map((enfermedad, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              {enfermedad.enfermedad?.nombre || enfermedad.enfermedad_nombre || "No especificada"}
+                            </TableCell>
+                            <TableCell>{enfermedad.diagnostico || "No especificado"}</TableCell>
+                            <TableCell>
+                              {enfermedad.recibe_tratamiento
+                                ? enfermedad.informacion_tratamiento || "Sí"
+                                : "No recibe tratamiento"}
+                            </TableCell>
+                            <TableCell>{enfermedad.certificacion || "No especificada"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+              )}
+
               {/* Condiciones de vulnerabilidad */}
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -267,7 +426,15 @@ export default function AdultosNoConvivientes({
                 {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 ? (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {adulto.condicionesVulnerabilidad.map((condicion, idx) => (
-                      <Chip key={idx} label={`Condición ${condicion}`} size="small" />
+                      <Chip
+                        key={idx}
+                        label={
+                          condicion.condicion_vulnerabilidad ||
+                          (typeof condicion === "object" ? JSON.stringify(condicion) : condicion)
+                        }
+                        size="small"
+                        color={condicion.si_no ? "primary" : "default"}
+                      />
                     ))}
                   </Box>
                 ) : (
@@ -279,6 +446,7 @@ export default function AdultosNoConvivientes({
 
               {/* Observaciones */}
               <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle2" gutterBottom>
                   Observaciones
                 </Typography>
@@ -294,6 +462,12 @@ export default function AdultosNoConvivientes({
           </AccordionDetails>
         </Accordion>
       ))}
+
+      {adultosNoConvivientes.length === 0 && (
+        <Typography variant="body1" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
+          No hay adultos no convivientes registrados
+        </Typography>
+      )}
     </Paper>
   )
 }

@@ -2,11 +2,22 @@
 
 import type React from "react"
 
-import { Paper, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material"
+import {
+  Paper,
+  Typography,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Chip,
+  Box,
+} from "@mui/material"
 
 interface Antecedente {
   IdDemandaVinculada: string
-  NumerosDemanda: string
+  NumerosDemanda?: string
 }
 
 interface AntecedentesDemandaProps {
@@ -26,14 +37,18 @@ export default function AntecedentesDemanda({ antecedentes, setAntecedentes }: A
           <TableHead>
             <TableRow>
               <TableCell>ID Demanda Vinculada</TableCell>
-              <TableCell>Números de Demanda</TableCell>
+              <TableCell>Estado</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {antecedentes.map((antecedente, index) => (
               <TableRow key={index}>
                 <TableCell>{antecedente.IdDemandaVinculada}</TableCell>
-                <TableCell>{antecedente.NumerosDemanda}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <Chip label="Vinculada" color="primary" size="small" />
+                  </Box>
+                </TableCell>
               </TableRow>
             ))}
             {antecedentes.length === 0 && (

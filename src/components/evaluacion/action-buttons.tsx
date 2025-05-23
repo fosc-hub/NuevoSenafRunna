@@ -44,6 +44,7 @@ interface ChildOption {
   id: string | number
   name: string
   type: string
+  databaseId?: string | number
 }
 
 // Lista de firmantes disponibles
@@ -170,10 +171,23 @@ export default function ActionButtons({
           position: "top-center",
           autoClose: 3000,
         })
-      } else {
-        // Handle other actions (autorizar, no autorizar) as before
-        const message = `Demanda enviada para ${action}`
-        toast.success(message + " exitosamente", {
+      } else if (action === "autorizar" || action === "no autorizar") {
+        const payload = {
+          descripcion_de_la_situacion: descripcionSituacion || "El niño refiere problemas de alimentación y estudio.",
+          valoracion_profesional_final: valoracionProfesional || "Se propone acompañamiento psicosocial.",
+          justificacion_tecnico: justificacionTecnico || "Informe de trabajador social adjunto.",
+          justificacion_director: "Aprobado por coordinación.",
+          solicitud_tecnico: "TOMAR MEDIDA",
+          decision_director: action === "autorizar" ? "AUTORIZAR" : "NO AUTORIZAR",
+          demanda: demandaId
+        }
+
+        console.log("Sending payload:", payload)
+
+        const response = await axiosInstance.put(`/evaluaciones/${demandaId}/autorizar/?autorizar=${action === "autorizar"}`, payload)
+        console.log("API Response:", response.data)
+
+        toast.success(`Solicitud ${action} enviada exitosamente`, {
           position: "top-center",
           autoClose: 3000,
         })

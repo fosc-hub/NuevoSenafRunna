@@ -430,11 +430,11 @@ const DemandaTable: React.FC = () => {
   })
 
   const updateDemandaZona = useMutation({
-    mutationFn: async ({ id, userId }: { id: number; userId: number }) => {
+    mutationFn: async ({ id, demandaId, userId }: { id: number; demandaId: number; userId: number }) => {
       const currentDate = new Date().toISOString()
       try {
         // Try to use the PUT endpoint first
-        return await put<TDemanda>(
+        const response = await put<TDemanda>(
           "demanda-zona-recibir",
           id,
           {
@@ -445,8 +445,23 @@ const DemandaTable: React.FC = () => {
           true,
           "Demanda marcada como recibida",
         )
+
+        // If successful, return the response
+        return response
       } catch (error: any) {
-        // If we get a 404 or 403, try the fallback method or just continue
+        // Special handling for 208 status code (Already Reported)
+        if (error.response && error.response.status === 208) {
+          console.log("La demanda ya estaba marcada como recibida (208). Continuando con visualización.")
+          return {
+            id,
+            demanda: demandaId,
+            fecha_recibido: currentDate,
+            recibido: true,
+            recibido_por: userId,
+          }
+        }
+
+        // Handle other error status codes
         if (error.response && (error.response.status === 404 || error.response.status === 403)) {
           console.warn(`Endpoint demanda-zona-recibir retornó ${error.response.status}. Continuando con visualización.`)
 
@@ -455,8 +470,7 @@ const DemandaTable: React.FC = () => {
               position: "top-center",
               autoClose: 3000,
             })
-            // For 403 errors, return a minimal object with the demanda ID to allow viewing
-            return { id, demanda: id }
+            return { id, demanda: demandaId }
           }
 
           // For 404 errors, try the fallback method
@@ -481,12 +495,13 @@ const DemandaTable: React.FC = () => {
             "Demanda marcada como recibida (método alternativo)",
           )
         }
-        // If it's not a 404 or 403 error, rethrow it
+
+        // If it's not a handled error status code, rethrow it
         throw error
       }
     },
-    onSuccess: (data) => {
-      // Only invalidate queries if we actually updated something (not just viewing after 403)
+    onSuccess: (data, variables) => {
+      // Only invalidate queries if we actually updated something
       if (data.fecha_recibido) {
         queryClient.invalidateQueries({ queryKey: ["demandas"] })
         // Update the local state to reflect the changes
@@ -497,21 +512,21 @@ const DemandaTable: React.FC = () => {
             results: prevData.results.map((demanda) =>
               demanda.demanda_zona_id === data.id
                 ? {
-                    ...demanda,
-                    demanda_zona: {
-                      ...demanda.demanda_zona,
-                      recibido: true,
-                      fecha_recibido: data.fecha_recibido,
-                    },
-                  }
+                  ...demanda,
+                  demanda_zona: {
+                    ...demanda.demanda_zona,
+                    recibido: true,
+                    fecha_recibido: data.fecha_recibido,
+                  },
+                }
                 : demanda,
             ),
           }
         })
       }
 
-      // Open DemandaDetalle modal after successful request or even after 403
-      handleOpenModal(data.demanda)
+      // Open DemandaDetalle modal using the demandaId from variables
+      handleOpenModal(variables.demandaId)
     },
     onError: (error) => {
       console.error("Error al actualizar la Demanda Zona:", error)
@@ -724,7 +739,11 @@ const DemandaTable: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation()
                   if (!params.row.recibido && params.row.demanda_zona_id) {
-                    updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
+                    updateDemandaZona.mutate({
+                      id: params.row.demanda_zona_id,
+                      demandaId: params.row.id,
+                      userId: user.id,
+                    })
                   } else {
                     handleOpenModal(params.row.id)
                   }
@@ -748,19 +767,34 @@ const DemandaTable: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={params.row.estado_demanda === "EVALUACION" ? "Evaluar" : "No disponible para evaluación"}>
+            <Tooltip
+              title={
+                params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                  ? "Evaluar"
+                  : "No disponible para evaluación"
+              }
+            >
               <span>
                 <IconButton
                   size="small"
-                  disabled={params.row.estado_demanda !== "EVALUACION"}
+                  disabled={
+                    params.row.estado_demanda !== "EVALUACION" && params.row.estado_demanda !== "PENDIENTE_AUTORIZACION"
+                  }
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (params.row.estado_demanda === "EVALUACION") {
+                    if (
+                      params.row.estado_demanda === "EVALUACION" ||
+                      params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                    ) {
                       window.location.href = `/evaluacion?id=${params.row.id}`
                     }
                   }}
                   sx={{
-                    color: params.row.estado_demanda === "EVALUACION" ? "success.main" : "action.disabled",
+                    color:
+                      params.row.estado_demanda === "EVALUACION" ||
+                        params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                        ? "success.main"
+                        : "action.disabled",
                   }}
                 >
                   <Edit fontSize="small" />
@@ -1008,7 +1042,11 @@ const DemandaTable: React.FC = () => {
               ) {
                 if (!params.row.recibido && params.row.demanda_zona_id) {
                   // Try to mark as received, but will still show details even if it fails with 403
-                  updateDemandaZona.mutate({ id: params.row.demanda_zona_id, userId: user.id })
+                  updateDemandaZona.mutate({
+                    id: params.row.demanda_zona_id,
+                    demandaId: params.row.id,
+                    userId: user.id,
+                  })
                 } else {
                   handleOpenModal(params.row.id)
                 }

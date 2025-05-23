@@ -184,6 +184,11 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     }
   }
 
+  const allNnyaIds = [
+    ...(nnyaConvivientes || []).map((nnya: any) => nnya.id || nnya.ID || nnya.DNI),
+    ...(nnyaNoConvivientes || []).map((nnya: any) => nnya.id || nnya.ID || nnya.DNI),
+  ];
+
   return (
     <Box>
       <Box>
@@ -355,6 +360,11 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         data={collectUpdatedData()}
         onSave={handleSaveData}
         onPDFGenerated={handlePDFGenerated}
+        demandaId={demandaId}
+        nnyaIds={allNnyaIds}
+        valoracionProfesional={valoracionProfesional}
+        justificacionTecnico={justificacionTecnico}
+        descripcionSituacion={descripcionSituacion}
       />
     </Box>
   )

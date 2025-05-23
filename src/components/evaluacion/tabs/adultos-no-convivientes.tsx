@@ -429,11 +429,13 @@ export default function AdultosNoConvivientes({
                       <Chip
                         key={idx}
                         label={
+                          condicion.condicion_vulnerabilidad?.nombre ||
                           condicion.condicion_vulnerabilidad ||
-                          (typeof condicion === "object" ? JSON.stringify(condicion) : condicion)
+                          `Condición ${idx + 1}`
                         }
                         size="small"
                         color={condicion.si_no ? "primary" : "default"}
+                        variant={condicion.si_no ? "filled" : "outlined"}
                       />
                     ))}
                   </Box>

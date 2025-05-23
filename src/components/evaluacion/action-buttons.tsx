@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Button,
@@ -15,6 +15,7 @@ import {
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import { Save as SaveIcon, Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
+import axiosInstance from '@/app/api/utils/axiosInstance';
 
 // Dynamic import para evitar errores SSR con Next.js
 const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
@@ -31,10 +32,16 @@ interface ActionButtonsProps {
   data: any
   onSave?: () => void
   onPDFGenerated?: (blob: Blob, fileName: string) => void
+  // Add these new props
+  descripcionSituacion?: string
+  valoracionProfesional?: string
+  justificacionTecnico?: string
+  demandaId?: number | null
+  nnyaIds?: (string | number)[]
 }
 
 interface ChildOption {
-  id: string
+  id: string | number
   name: string
   type: string
 }
@@ -48,44 +55,138 @@ const firmantesDisponibles = [
   { id: 5, nombre: "Laura Martínez", cargo: "Coordinadora" },
 ]
 
-export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerated }: ActionButtonsProps) {
-  const [selectedChildren, setSelectedChildren] = useState<string[]>([])
+export default function ActionButtons({
+  generatePDF,
+  data,
+  onSave,
+  onPDFGenerated,
+  descripcionSituacion,
+  valoracionProfesional,
+  justificacionTecnico,
+  demandaId,
+  nnyaIds,
+}: ActionButtonsProps) {
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>(nnyaIds || [])
   const [firmantes, setFirmantes] = useState<number[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleChildChange = (event: SelectChangeEvent<typeof selectedChildren>) => {
+  useEffect(() => {
+    if (nnyaIds) setSelectedChildrenIds(nnyaIds);
+  }, [nnyaIds]);
+
+  const handleChildChange = (event: SelectChangeEvent<typeof selectedChildrenIds>) => {
     const {
       target: { value },
     } = event
 
     // On autofill we get a stringified value.
-    setSelectedChildren(typeof value === "string" ? value.split(",") : value)
+    setSelectedChildrenIds(typeof value === "string" ? value.split(",") : value)
   }
 
   const handleFirmantesChange = (event: SelectChangeEvent<typeof firmantes>) => {
     const {
       target: { value },
     } = event
-    setFirmantes(typeof value === "string" ? value.split(',').map(Number) : value)
+    setFirmantes(typeof value === "string" ? value.split(",").map(Number) : value)
   }
 
+  // Get children from data with their IDs
+  const children: ChildOption[] = [
+    ...(data.NNYAConvivientes || []).map((nnya: any) => ({
+      id: nnya.persona?.id || nnya.id || nnya.ID || nnya.DNI,
+      name: nnya.ApellidoNombre || nnya.apellido_nombre,
+      type: "Conviviente",
+      databaseId: nnya.persona?.id, // Store the database ID separately
+    })),
+    ...(data.NNYANoConvivientes || []).map((nnya: any) => ({
+      id: nnya.persona?.id || nnya.id || nnya.ID || nnya.DNI,
+      name: nnya.ApellidoNombre || nnya.apellido_nombre,
+      type: "No Conviviente",
+      databaseId: nnya.persona?.id, // Store the database ID separately
+    })),
+  ]
+
   const handleAuthorizationAction = async (action: string) => {
-    if (action === "autorizar tomar medida" && selectedChildren.length === 0) {
-      toast.warning("Por favor seleccione al menos un niño antes de autorizar tomar medida", {
+    try {
+      setIsSubmitting(true)
+
+      if (!demandaId) {
+        toast.error("No se pudo procesar: ID de demanda no disponible", {
+          position: "top-center",
+          autoClose: 3000,
+        })
+        return
+      }
+
+      if (action === "autorizar tomar medida") {
+        if (selectedChildrenIds.length === 0) {
+          toast.warning("Por favor seleccione al menos un niño antes de autorizar tomar medida", {
+            position: "top-center",
+            autoClose: 3000,
+          })
+          return
+        }
+
+        // Get the database IDs for the selected children
+        const selectedDatabaseIds = selectedChildrenIds.map(selectedId => {
+          const child = children.find(c => c.id === selectedId);
+          return child?.databaseId || selectedId;
+        });
+
+        const payload = {
+          nnyas_evaluados_id: selectedDatabaseIds,
+          descripcion_de_la_situacion: descripcionSituacion || "Blank",
+          valoracion_profesional_final: valoracionProfesional || "Blank",
+          justificacion_tecnico: justificacionTecnico || "Blank",
+          solicitud_tecnico: "TOMAR MEDIDA",
+          demanda: demandaId,
+        }
+
+        console.log("Sending payload:", payload)
+
+        const response = await axiosInstance.post("/evaluaciones/", payload)
+        console.log("API Response:", response.data)
+
+        toast.success("Solicitud de tomar medida enviada exitosamente", {
+          position: "top-center",
+          autoClose: 3000,
+        })
+      } else if (action === "autorizar archivar") {
+        const payload = {
+          nnyas_evaluados_id: [],
+          descripcion_de_la_situacion: descripcionSituacion || "Blank",
+          valoracion_profesional_final: valoracionProfesional || "Blank",
+          justificacion_tecnico: justificacionTecnico || "Blank",
+          solicitud_tecnico: "ARCHIVAR",
+          demanda: demandaId,
+        }
+
+        console.log("Sending payload:", payload)
+
+        const response = await axiosInstance.post("/evaluaciones/", payload)
+        console.log("API Response:", response.data)
+
+        toast.success("Solicitud de archivar enviada exitosamente", {
+          position: "top-center",
+          autoClose: 3000,
+        })
+      } else {
+        // Handle other actions (autorizar, no autorizar) as before
+        const message = `Demanda enviada para ${action}`
+        toast.success(message + " exitosamente", {
+          position: "top-center",
+          autoClose: 3000,
+        })
+      }
+    } catch (error) {
+      console.error(`Error in ${action}:`, error)
+      toast.error(`Error al procesar la solicitud de ${action}`, {
         position: "top-center",
         autoClose: 3000,
       })
-      return
+    } finally {
+      setIsSubmitting(false)
     }
-
-    let message = `Demanda enviada para ${action}`
-    if (selectedChildren.length > 0 && action === "autorizar tomar medida") {
-      message += ` para ${selectedChildren.length === 1 ? selectedChildren[0] : `${selectedChildren.length} niños seleccionados`}`
-    }
-
-    toast.success(message + " exitosamente", {
-      position: "top-center",
-      autoClose: 3000,
-    })
   }
 
   const handleSave = () => {
@@ -107,32 +208,12 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
     }
   }
 
-  // Get children from data
-  const children: ChildOption[] = [
-    ...(data.NNYAConvivientes || []).map((nnya: any) => ({
-      id: nnya.DNI,
-      name: nnya.ApellidoNombre,
-      type: "Conviviente",
-    })),
-    ...(data.NNYANoConvivientes || []).map((nnya: any) => ({
-      id: nnya.DNI,
-      name: nnya.ApellidoNombre,
-      type: "No Conviviente",
-    })),
-  ]
-
-  // Find child by name
-  const getChildType = (name: string): string => {
-    const child = children.find((c) => c.name === name)
-    return child ? child.type : ""
-  }
-
   // Preparar los datos combinados para el PDF
   const combinedData = {
     ...data,
     // Asegurarse de que todos los datos necesarios estén disponibles
     // Esto se puede expandir según sea necesario
-    firmantes: firmantes.map(id => firmantesDisponibles.find(f => f.id === id)).filter(Boolean)
+    firmantes: firmantes.map((id) => firmantesDisponibles.find((f) => f.id === id)).filter(Boolean),
   }
 
   return (
@@ -145,7 +226,9 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
 
       {/* Selector de firmantes */}
       <FormControl sx={{ minWidth: 180 }}>
-        <InputLabel id="select-firmantes-label" size="small">Firmantes</InputLabel>
+        <InputLabel id="select-firmantes-label" size="small">
+          Firmantes
+        </InputLabel>
         <Select
           labelId="select-firmantes-label"
           id="select-firmantes"
@@ -156,7 +239,7 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
           renderValue={(selected) => (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
               {selected.map((value) => {
-                const firmante = firmantesDisponibles.find(f => f.id === value);
+                const firmante = firmantesDisponibles.find((f) => f.id === value)
                 return (
                   <Chip
                     key={value}
@@ -168,7 +251,7 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
                     }}
                     deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
                   />
-                );
+                )
               })}
             </Box>
           )}
@@ -190,7 +273,12 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
         </Select>
       </FormControl>
 
-      <Button variant="contained" color="secondary" onClick={() => handleAuthorizationAction("autorizar archivar")}>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => handleAuthorizationAction("autorizar archivar")}
+        disabled={isSubmitting}
+      >
         Autorizar archivar
       </Button>
 
@@ -201,22 +289,25 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
           labelId="select-multiple-children-label"
           id="select-multiple-children"
           multiple
-          value={selectedChildren}
+          value={selectedChildrenIds}
           onChange={handleChildChange}
           input={<OutlinedInput id="select-multiple-chip" label="Seleccionar NNyA" />}
           renderValue={(selected) => (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {selected.map((value) => (
-                <Chip
-                  key={value}
-                  label={value}
-                  size="small"
-                  deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
-                  onDelete={() => {
-                    setSelectedChildren(selectedChildren.filter((child) => child !== value))
-                  }}
-                />
-              ))}
+              {selected.map((value) => {
+                const child = children.find((c) => c.id === value)
+                return (
+                  <Chip
+                    key={value}
+                    label={child ? child.name : value}
+                    size="small"
+                    deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
+                    onDelete={() => {
+                      setSelectedChildrenIds(selectedChildrenIds.filter((id) => id !== value))
+                    }}
+                  />
+                )
+              })}
             </Box>
           )}
           size="small"
@@ -231,7 +322,7 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
         >
           {children.length > 0 ? (
             children.map((child) => (
-              <MenuItem key={child.id} value={child.name}>
+              <MenuItem key={child.id} value={child.id}>
                 {child.name} ({child.type})
               </MenuItem>
             ))
@@ -247,16 +338,26 @@ export default function ActionButtons({ generatePDF, data, onSave, onPDFGenerate
         variant="contained"
         color="secondary"
         onClick={() => handleAuthorizationAction("autorizar tomar medida")}
-        disabled={selectedChildren.length === 0}
+        disabled={selectedChildrenIds.length === 0 || isSubmitting}
       >
         Autorizar tomar medida
       </Button>
 
-      <Button variant="contained" color="primary" onClick={() => handleAuthorizationAction("autorizar")}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => handleAuthorizationAction("autorizar")}
+        disabled={isSubmitting}
+      >
         Autorizar
       </Button>
 
-      <Button variant="contained" color="error" onClick={() => handleAuthorizationAction("no autorizar")}>
+      <Button
+        variant="contained"
+        color="error"
+        onClick={() => handleAuthorizationAction("no autorizar")}
+        disabled={isSubmitting}
+      >
         No autorizar
       </Button>
     </Box>

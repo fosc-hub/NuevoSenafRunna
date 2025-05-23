@@ -7,6 +7,51 @@ interface InformacionGeneralProps {
 }
 
 export default function InformacionGeneral({ data }: InformacionGeneralProps) {
+  // Handle nested objects for various fields
+  const localidad = typeof data.localidad === "object" && data.localidad ? data.localidad.nombre : data.Localidad || ""
+  const institucion =
+    typeof data.institucion === "object" && data.institucion ? data.institucion.nombre : data.Institucion || ""
+  const tipoInstitucion =
+    typeof data.tipo_institucion === "object" && data.tipo_institucion
+      ? data.tipo_institucion.nombre
+      : data.TipoInstitucion || ""
+
+  // Handle etiqueta as object or string
+  const etiquetaValue =
+    typeof data.etiqueta === "object" && data.etiqueta
+      ? data.etiqueta.nombre
+      : typeof data.etiqueta === "string"
+        ? data.etiqueta
+        : ""
+
+  // Handle motivo_ingreso as object or string
+  const motivoIngreso =
+    typeof data.motivo_ingreso === "object" && data.motivo_ingreso
+      ? data.motivo_ingreso.nombre
+      : data.motivo_ingreso || ""
+
+  // Handle submotivo_ingreso as object or string
+  const submotivoIngreso =
+    typeof data.submotivo_ingreso === "object" && data.submotivo_ingreso
+      ? data.submotivo_ingreso.nombre
+      : data.submotivo_ingreso || ""
+
+  // Handle tipo_demanda as object or string
+  const tipoDemanda =
+    typeof data.tipo_demanda === "object" && data.tipo_demanda ? data.tipo_demanda.nombre : data.tipo_demanda || ""
+
+  // Handle objetivo_de_demanda as object or string
+  const objetivoDemanda =
+    typeof data.objetivo_de_demanda === "object" && data.objetivo_de_demanda
+      ? data.objetivo_de_demanda.nombre
+      : data.objetivo_de_demanda || ""
+
+  // Handle remitente data
+  const remitente =
+    typeof data.remitente === "object" && data.remitente
+      ? `${data.remitente.nombre || ""} ${data.remitente.apellido || ""}`.trim()
+      : data.BloqueDatosRemitente || ""
+
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -17,53 +62,53 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
         {/* Columna izquierda */}
         <Grid item xs={12} md={6}>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2 }}>
+            <TextField label="Localidad" name="Localidad" value={localidad} InputProps={{ readOnly: true }} fullWidth />
             <TextField
-              label="Localidad"
-              name="Localidad"
-              value={data.Localidad || ""}
+              label="Fecha"
+              name="Fecha"
+              value={data.fecha || data.Fecha || ""}
               InputProps={{ readOnly: true }}
               fullWidth
             />
-            <TextField label="Fecha" name="Fecha" value={data.Fecha || ""} InputProps={{ readOnly: true }} fullWidth />
             <TextField
               label="Cargo/Función"
               name="CargoFuncion"
-              value={data.CargoFuncion || ""}
+              value={data.cargo_funcion || data.CargoFuncion || ""}
               InputProps={{ readOnly: true }}
               fullWidth
             />
             <TextField
               label="Nombre y Apellido"
               name="NombreApellido"
-              value={data.NombreApellido || ""}
+              value={data.nombre_apellido || data.NombreApellido || ""}
               InputProps={{ readOnly: true }}
               fullWidth
             />
             <TextField
               label="Número de Demanda"
               name="NumerosDemanda"
-              value={data.NumerosDemanda || ""}
+              value={data.numero_demanda || data.NumerosDemanda || data.id || ""}
               InputProps={{ readOnly: true }}
               fullWidth
             />
             <TextField
               label="Remitente"
               name="BloqueDatosRemitente"
-              value={data.BloqueDatosRemitente || ""}
+              value={remitente}
               InputProps={{ readOnly: true }}
               fullWidth
             />
             <TextField
               label="Tipo Institución"
               name="TipoInstitucion"
-              value={data.TipoInstitucion || ""}
+              value={tipoInstitucion}
               InputProps={{ readOnly: true }}
               fullWidth
             />
             <TextField
               label="Institución"
               name="Institucion"
-              value={data.Institucion || ""}
+              value={institucion}
               InputProps={{ readOnly: true }}
               fullWidth
             />
@@ -119,12 +164,10 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Etiqueta
             </Typography>
-            {data.etiqueta && (
+            {etiquetaValue && (
               <Chip
-                label={typeof data.etiqueta === "string" ? data.etiqueta.toUpperCase() : String(data.etiqueta)}
-                color={
-                  typeof data.etiqueta === "string" && data.etiqueta.toLowerCase() === "urgente" ? "error" : "default"
-                }
+                label={etiquetaValue.toUpperCase()}
+                color={etiquetaValue.toLowerCase() === "urgente" ? "error" : "default"}
                 size="small"
                 sx={{ mt: 1 }}
               />
@@ -136,13 +179,13 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Códigos de Demanda
             </Typography>
-            {data.codigos_demanda && Array.isArray(data.codigos_demanda) && data.codigos_demanda.length > 0 ? (
+            {data.codigos_demanda && typeof data.codigos_demanda === "object" && data.codigos_demanda.length > 0 ? (
               <List dense>
                 {data.codigos_demanda.map((codigo: any, index: number) => (
                   <ListItem key={index} disablePadding>
                     <ListItemText
-                      primary={`Código: ${codigo.codigo || ""}`}
-                      secondary={`Tipo: ${codigo.tipo_codigo?.nombre || codigo.tipo_codigo || ""}`}
+                      primary={`Código: ${typeof codigo.codigo === "object" ? codigo.codigo.nombre : codigo.codigo}`}
+                      secondary={`Tipo: ${typeof codigo.tipo_codigo === "object" ? codigo.tipo_codigo.nombre : codigo.tipo_codigo}`}
                     />
                   </ListItem>
                 ))}
@@ -163,7 +206,7 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
               <Grid item xs={6}>
                 <TextField
                   label="Tipo de Demanda"
-                  value={data.tipo_demanda || ""}
+                  value={tipoDemanda}
                   fullWidth
                   margin="dense"
                   InputProps={{ readOnly: true }}
@@ -172,7 +215,7 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
               <Grid item xs={6}>
                 <TextField
                   label="Objetivo de Demanda"
-                  value={data.objetivo_de_demanda || ""}
+                  value={objetivoDemanda}
                   fullWidth
                   margin="dense"
                   InputProps={{ readOnly: true }}
@@ -181,7 +224,7 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
               <Grid item xs={6}>
                 <TextField
                   label="Motivo Ingreso"
-                  value={data.motivo_ingreso || ""}
+                  value={motivoIngreso}
                   fullWidth
                   margin="dense"
                   InputProps={{ readOnly: true }}
@@ -190,7 +233,7 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
               <Grid item xs={6}>
                 <TextField
                   label="Submotivo Ingreso"
-                  value={data.submotivo_ingreso || ""}
+                  value={submotivoIngreso}
                   fullWidth
                   margin="dense"
                   InputProps={{ readOnly: true }}

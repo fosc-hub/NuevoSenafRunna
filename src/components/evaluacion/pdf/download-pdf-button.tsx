@@ -42,13 +42,156 @@ export default function DownloadPDFButton({ data, label = "Generar PDF", onGener
     // Asegurarse de que todos los arrays existan para evitar errores
     const preparedData = {
       ...data,
-      NNYAConvivientes: data.NNYAConvivientes || [],
-      NNYANoConvivientes: data.NNYANoConvivientes || [],
-      AdultosConvivientes: data.AdultosConvivientes || [],
-      AdultosNoConvivientes: data.AdultosNoConvivientes || [],
+      NNYAConvivientes: (data.NNYAConvivientes || []).map((nnya: any) => ({
+        ...nnya,
+        educacion: nnya.educacion ? {
+          ...nnya.educacion,
+          institucion_educativa: typeof nnya.educacion.institucion_educativa === 'object' ?
+            nnya.educacion.institucion_educativa.nombre || '' :
+            String(nnya.educacion.institucion_educativa || ''),
+          nivel: String(nnya.educacion.nivel || ''),
+          curso: String(nnya.educacion.curso || ''),
+          turno: String(nnya.educacion.turno || ''),
+          tipo_escuela: String(nnya.educacion.tipo_escuela || '')
+        } : null,
+        cobertura_medica: nnya.cobertura_medica ? {
+          ...nnya.cobertura_medica,
+          obra_social: String(nnya.cobertura_medica.obra_social || ''),
+          institucion_sanitaria_nombre: String(nnya.cobertura_medica.institucion_sanitaria_nombre || ''),
+          medico_cabecera: typeof nnya.cobertura_medica.medico_cabecera === 'object' ?
+            nnya.cobertura_medica.medico_cabecera.nombre || '' :
+            String(nnya.cobertura_medica.medico_cabecera || '')
+        } : null,
+        persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
+          ...enfermedad,
+          enfermedad: typeof enfermedad.enfermedad === 'object' ?
+            enfermedad.enfermedad.nombre || '' :
+            String(enfermedad.enfermedad_nombre || ''),
+          diagnostico: String(enfermedad.diagnostico || ''),
+          tratamiento: String(enfermedad.tratamiento || '')
+        })),
+        vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => ({
+          ...vulneracion,
+          tipo_vulneracion_nombre: String(vulneracion.tipo_vulneracion_nombre || ''),
+          fecha_vulneracion: String(vulneracion.fecha_vulneracion || ''),
+          ambito_vulneracion_nombre: String(vulneracion.ambito_vulneracion_nombre || '')
+        }))
+      })),
+      NNYANoConvivientes: (data.NNYANoConvivientes || []).map((nnya: any) => ({
+        ...nnya,
+        educacion: nnya.educacion ? {
+          ...nnya.educacion,
+          institucion_educativa: typeof nnya.educacion.institucion_educativa === 'object' ?
+            nnya.educacion.institucion_educativa.nombre || '' :
+            String(nnya.educacion.institucion_educativa || ''),
+          nivel: String(nnya.educacion.nivel || ''),
+          curso: String(nnya.educacion.curso || ''),
+          turno: String(nnya.educacion.turno || ''),
+          tipo_escuela: String(nnya.educacion.tipo_escuela || '')
+        } : null,
+        cobertura_medica: nnya.cobertura_medica ? {
+          ...nnya.cobertura_medica,
+          obra_social: String(nnya.cobertura_medica.obra_social || ''),
+          institucion_sanitaria_nombre: String(nnya.cobertura_medica.institucion_sanitaria_nombre || ''),
+          medico_cabecera: typeof nnya.cobertura_medica.medico_cabecera === 'object' ?
+            nnya.cobertura_medica.medico_cabecera.nombre || '' :
+            String(nnya.cobertura_medica.medico_cabecera || '')
+        } : null,
+        persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
+          ...enfermedad,
+          enfermedad: typeof enfermedad.enfermedad === 'object' ?
+            enfermedad.enfermedad.nombre || '' :
+            String(enfermedad.enfermedad_nombre || ''),
+          diagnostico: String(enfermedad.diagnostico || ''),
+          tratamiento: String(enfermedad.tratamiento || '')
+        })),
+        vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => ({
+          ...vulneracion,
+          tipo_vulneracion_nombre: String(vulneracion.tipo_vulneracion_nombre || ''),
+          fecha_vulneracion: String(vulneracion.fecha_vulneracion || ''),
+          ambito_vulneracion_nombre: String(vulneracion.ambito_vulneracion_nombre || '')
+        }))
+      })),
+      AdultosConvivientes: (data.AdultosConvivientes || []).map((adulto: any) => ({
+        ...adulto,
+        condicionesVulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: any) =>
+          typeof condicion === 'object' ?
+            (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
+            String(condicion)
+        )
+      })),
+      AdultosNoConvivientes: (data.AdultosNoConvivientes || []).map((adulto: any) => ({
+        ...adulto,
+        condicionesVulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: any) =>
+          typeof condicion === 'object' ?
+            (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
+            String(condicion)
+        )
+      })),
       Actividades: data.Actividades || [],
-      IndicadoresEvaluacion: data.IndicadoresEvaluacion || [],
+      IndicadoresEvaluacion: (data.IndicadoresEvaluacion || []).map((ind: any) => ({
+        ...ind,
+        NombreIndicador: String(ind.NombreIndicador || ''),
+        Descripcion: String(ind.Descripcion || ''),
+        Peso: String(ind.Peso || '')
+      })),
       adjuntos: data.adjuntos || [],
+      InformacionGeneral: {
+        ...data.InformacionGeneral,
+        NumerosDemanda: String(data.InformacionGeneral?.NumerosDemanda || ''),
+        Localidad: String(data.InformacionGeneral?.Localidad || ''),
+        Fecha: String(data.InformacionGeneral?.Fecha || ''),
+        CargoFuncion: String(data.InformacionGeneral?.CargoFuncion || ''),
+        NombreApellido: String(data.InformacionGeneral?.NombreApellido || ''),
+        BloqueDatosRemitente: String(data.InformacionGeneral?.BloqueDatosRemitente || ''),
+        TipoInstitucion: String(data.InformacionGeneral?.TipoInstitucion || ''),
+        Institucion: String(data.InformacionGeneral?.Institucion || ''),
+        fecha_oficio_documento: String(data.InformacionGeneral?.fecha_oficio_documento || ''),
+        fecha_ingreso_senaf: String(data.InformacionGeneral?.fecha_ingreso_senaf || ''),
+        etiqueta: String(data.InformacionGeneral?.etiqueta || ''),
+        tipo_demanda: String(data.InformacionGeneral?.tipo_demanda || ''),
+        objetivo_de_demanda: String(data.InformacionGeneral?.objetivo_de_demanda || ''),
+        motivo_ingreso: String(data.InformacionGeneral?.motivo_ingreso || ''),
+        submotivo_ingreso: String(data.InformacionGeneral?.submotivo_ingreso || ''),
+        observaciones: String(data.InformacionGeneral?.observaciones || '')
+      },
+      DatosLocalizacion: {
+        ...data.DatosLocalizacion,
+        TipoCalle: String(data.DatosLocalizacion?.TipoCalle || ''),
+        Calle: String(data.DatosLocalizacion?.Calle || ''),
+        NumeroCasa: String(data.DatosLocalizacion?.NumeroCasa || ''),
+        PisoDepto: String(data.DatosLocalizacion?.PisoDepto || ''),
+        Lote: String(data.DatosLocalizacion?.Lote || ''),
+        Manzana: String(data.DatosLocalizacion?.Manzana || ''),
+        Barrio: String(data.DatosLocalizacion?.Barrio || ''),
+        Localidad: String(data.DatosLocalizacion?.Localidad || ''),
+        ReferenciaGeografica: String(data.DatosLocalizacion?.ReferenciaGeografica || ''),
+        CPC: String(data.DatosLocalizacion?.CPC || ''),
+        geolocalizacion: String(data.DatosLocalizacion?.geolocalizacion || ''),
+        barrio_id: String(data.DatosLocalizacion?.barrio_id || ''),
+        localidad_id: String(data.DatosLocalizacion?.localidad_id || ''),
+        cpc_id: String(data.DatosLocalizacion?.cpc_id || '')
+      },
+      DescripcionSituacion: String(data.DescripcionSituacion || ''),
+      AntecedentesDemanda: Array.isArray(data.AntecedentesDemanda) ?
+        data.AntecedentesDemanda.map((antecedente: any) => ({
+          ...antecedente,
+          IdDemandaVinculada: String(antecedente.IdDemandaVinculada || ''),
+          NumerosDemanda: String(antecedente.NumerosDemanda || '')
+        })) :
+        data.AntecedentesDemanda ? {
+          IdDemandaVinculada: String(data.AntecedentesDemanda.IdDemandaVinculada || ''),
+          NumerosDemanda: String(data.AntecedentesDemanda.NumerosDemanda || '')
+        } : null,
+      MotivosActuacion: Array.isArray(data.MotivosActuacion) ?
+        data.MotivosActuacion.map((motivo: any) => ({
+          ...motivo,
+          Motivos: String(motivo.Motivos || '')
+        })) :
+        data.MotivosActuacion ? {
+          Motivos: String(data.MotivosActuacion.Motivos || '')
+        } : null,
+      ValoracionProfesional: String(data.ValoracionProfesional || '')
     }
 
     return preparedData

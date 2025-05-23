@@ -590,6 +590,34 @@ export default function NnyaNoConvivientes({ nnyaNoConvivientes, setNnyaNoConviv
                 )}
               </Grid>
 
+              {/* Condiciones de vulnerabilidad */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Condiciones de Vulnerabilidad
+                </Typography>
+                {nnya.condicionesVulnerabilidad && nnya.condicionesVulnerabilidad.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {nnya.condicionesVulnerabilidad.map((condicion, idx) => (
+                      <Chip
+                        key={idx}
+                        label={
+                          condicion.condicion_vulnerabilidad?.nombre ||
+                          condicion.condicion_vulnerabilidad ||
+                          `Condición ${idx + 1}`
+                        }
+                        size="small"
+                        color={condicion.si_no ? "primary" : "default"}
+                        variant={condicion.si_no ? "filled" : "outlined"}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No hay condiciones de vulnerabilidad registradas
+                  </Typography>
+                )}
+              </Grid>
+
               {/* Vulneraciones */}
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -606,27 +634,6 @@ export default function NnyaNoConvivientes({ nnyaNoConvivientes, setNnyaNoConviv
                               Información General
                             </Typography>
                             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-                              <TextField
-                                label="ID"
-                                value={vulneracion.id || ""}
-                                fullWidth
-                                size="small"
-                                InputProps={{ readOnly: true }}
-                              />
-                              <TextField
-                                label="Fecha Creación"
-                                value={vulneracion.fecha_creacion || ""}
-                                fullWidth
-                                size="small"
-                                InputProps={{ readOnly: true }}
-                              />
-                              <TextField
-                                label="Última Modificación"
-                                value={vulneracion.ultima_modificacion || ""}
-                                fullWidth
-                                size="small"
-                                InputProps={{ readOnly: true }}
-                              />
                               <TextField
                                 label="Sumatoria de Pesos"
                                 value={vulneracion.sumatoria_de_pesos || ""}
@@ -656,31 +663,31 @@ export default function NnyaNoConvivientes({ nnyaNoConvivientes, setNnyaNoConviv
                             <Typography variant="subtitle2" gutterBottom>
                               Categorías y Gravedad
                             </Typography>
-                            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+                            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: 2 }}>
                               <TextField
                                 label="Categoría Motivo"
-                                value={vulneracion.categoria_motivo || ""}
+                                value={vulneracion.categoria_motivo?.nombre || ""}
                                 fullWidth
                                 size="small"
                                 InputProps={{ readOnly: true }}
                               />
                               <TextField
                                 label="Categoría Submotivo"
-                                value={vulneracion.categoria_submotivo || ""}
+                                value={vulneracion.categoria_submotivo?.nombre || ""}
                                 fullWidth
                                 size="small"
                                 InputProps={{ readOnly: true }}
                               />
                               <TextField
                                 label="Gravedad"
-                                value={vulneracion.gravedad_vulneracion || ""}
+                                value={vulneracion.gravedad_vulneracion?.nombre || ""}
                                 fullWidth
                                 size="small"
                                 InputProps={{ readOnly: true }}
                               />
                               <TextField
                                 label="Urgencia"
-                                value={vulneracion.urgencia_vulneracion || ""}
+                                value={vulneracion.urgencia_vulneracion?.nombre || ""}
                                 fullWidth
                                 size="small"
                                 InputProps={{ readOnly: true }}

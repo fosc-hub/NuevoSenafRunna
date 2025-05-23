@@ -274,15 +274,17 @@ const InformePDF = ({ data }: InformePDFProps) => (
                   <Text style={styles.personDetail}>Educación:</Text>
                   {nnya.educacion.institucion_educativa && (
                     <Text style={styles.subDetail}>
-                      Institución: {nnya.educacion.institucion_educativa.nombre || ""}
+                      Institución: {typeof nnya.educacion.institucion_educativa === 'object' ?
+                        nnya.educacion.institucion_educativa.nombre || '' :
+                        String(nnya.educacion.institucion_educativa || '')}
                     </Text>
                   )}
-                  {nnya.educacion.nivel && <Text style={styles.subDetail}>Nivel: {nnya.educacion.nivel}</Text>}
-                  {nnya.educacion.curso && <Text style={styles.subDetail}>Curso: {nnya.educacion.curso}</Text>}
-                  {nnya.educacion.turno && <Text style={styles.subDetail}>Turno: {nnya.educacion.turno}</Text>}
+                  {nnya.educacion.nivel && <Text style={styles.subDetail}>Nivel: {String(nnya.educacion.nivel)}</Text>}
+                  {nnya.educacion.curso && <Text style={styles.subDetail}>Curso: {String(nnya.educacion.curso)}</Text>}
+                  {nnya.educacion.turno && <Text style={styles.subDetail}>Turno: {String(nnya.educacion.turno)}</Text>}
                   <Text style={styles.subDetail}>Escolarizado: {nnya.educacion.esta_escolarizado ? "Sí" : "No"}</Text>
                   {nnya.educacion.tipo_escuela && (
-                    <Text style={styles.subDetail}>Tipo de escuela: {nnya.educacion.tipo_escuela}</Text>
+                    <Text style={styles.subDetail}>Tipo de escuela: {String(nnya.educacion.tipo_escuela)}</Text>
                   )}
                 </View>
               )}
@@ -292,11 +294,11 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <View>
                   <Text style={styles.personDetail}>Cobertura médica:</Text>
                   {nnya.cobertura_medica.obra_social && (
-                    <Text style={styles.subDetail}>Obra social: {nnya.cobertura_medica.obra_social}</Text>
+                    <Text style={styles.subDetail}>Obra social: {String(nnya.cobertura_medica.obra_social)}</Text>
                   )}
                   {nnya.cobertura_medica.institucion_sanitaria_nombre && (
                     <Text style={styles.subDetail}>
-                      Institución sanitaria: {nnya.cobertura_medica.institucion_sanitaria_nombre}
+                      Institución sanitaria: {String(nnya.cobertura_medica.institucion_sanitaria_nombre)}
                     </Text>
                   )}
                   {nnya.cobertura_medica.intervencion && (
@@ -305,7 +307,9 @@ const InformePDF = ({ data }: InformePDFProps) => (
                   <Text style={styles.subDetail}>AUH: {nnya.cobertura_medica.auh ? "Sí" : "No"}</Text>
                   {nnya.cobertura_medica.medico_cabecera && (
                     <Text style={styles.subDetail}>
-                      Médico de cabecera: {nnya.cobertura_medica.medico_cabecera.nombre || ""}
+                      Médico de cabecera: {typeof nnya.cobertura_medica.medico_cabecera === 'object' ?
+                        nnya.cobertura_medica.medico_cabecera.nombre || '' :
+                        String(nnya.cobertura_medica.medico_cabecera || '')}
                     </Text>
                   )}
                 </View>
@@ -317,8 +321,10 @@ const InformePDF = ({ data }: InformePDFProps) => (
                   <Text style={styles.personDetail}>Enfermedades:</Text>
                   {nnya.persona_enfermedades.map((enfermedad: any, idx: number) => (
                     <Text key={idx} style={styles.subDetail}>
-                      - {enfermedad.enfermedad_nombre}: {enfermedad.diagnostico || "Sin diagnóstico"}, Tratamiento:{" "}
-                      {enfermedad.tratamiento || "Sin tratamiento"}
+                      - {typeof enfermedad.enfermedad === 'object' ?
+                        enfermedad.enfermedad.nombre || '' :
+                        String(enfermedad.enfermedad_nombre || '')}: {String(enfermedad.diagnostico || "Sin diagnóstico")}, Tratamiento:{" "}
+                      {String(enfermedad.tratamiento || "Sin tratamiento")}
                     </Text>
                   ))}
                 </View>
@@ -330,10 +336,8 @@ const InformePDF = ({ data }: InformePDFProps) => (
                   <Text style={styles.personDetail}>Vulneraciones:</Text>
                   {nnya.vulneraciones.map((vulneracion: any, idx: number) => (
                     <Text key={idx} style={styles.subDetail}>
-                      - {vulneracion.tipo_vulneracion_nombre}, Fecha:{" "}
-                      {vulneracion.fecha_vulneracion || "No especificada"}, Ámbito:{" "}
-                      {vulneracion.ambito_vulneracion_nombre || "No especificado"}
-                      {vulneracion.observaciones ? `, Obs: ${vulneracion.observaciones}` : ""}
+                      - {String(vulneracion.tipo_vulneracion_nombre || '')}, Fecha: {String(vulneracion.fecha_vulneracion || "No especificada")}
+                      , Ámbito: {String(vulneracion.ambito_vulneracion_nombre || "No especificado")}
                     </Text>
                   ))}
                 </View>
@@ -394,14 +398,18 @@ const InformePDF = ({ data }: InformePDFProps) => (
               <View>
                 <Text style={styles.personDetail}>Educación:</Text>
                 {nnya.educacion.institucion_educativa && (
-                  <Text style={styles.subDetail}>Institución: {nnya.educacion.institucion_educativa.nombre || ""}</Text>
+                  <Text style={styles.subDetail}>
+                    Institución: {typeof nnya.educacion.institucion_educativa === 'object' ?
+                      nnya.educacion.institucion_educativa.nombre || '' :
+                      String(nnya.educacion.institucion_educativa || '')}
+                  </Text>
                 )}
-                {nnya.educacion.nivel && <Text style={styles.subDetail}>Nivel: {nnya.educacion.nivel}</Text>}
-                {nnya.educacion.curso && <Text style={styles.subDetail}>Curso: {nnya.educacion.curso}</Text>}
-                {nnya.educacion.turno && <Text style={styles.subDetail}>Turno: {nnya.educacion.turno}</Text>}
+                {nnya.educacion.nivel && <Text style={styles.subDetail}>Nivel: {String(nnya.educacion.nivel)}</Text>}
+                {nnya.educacion.curso && <Text style={styles.subDetail}>Curso: {String(nnya.educacion.curso)}</Text>}
+                {nnya.educacion.turno && <Text style={styles.subDetail}>Turno: {String(nnya.educacion.turno)}</Text>}
                 <Text style={styles.subDetail}>Escolarizado: {nnya.educacion.esta_escolarizado ? "Sí" : "No"}</Text>
                 {nnya.educacion.tipo_escuela && (
-                  <Text style={styles.subDetail}>Tipo de escuela: {nnya.educacion.tipo_escuela}</Text>
+                  <Text style={styles.subDetail}>Tipo de escuela: {String(nnya.educacion.tipo_escuela)}</Text>
                 )}
               </View>
             )}
@@ -411,11 +419,11 @@ const InformePDF = ({ data }: InformePDFProps) => (
               <View>
                 <Text style={styles.personDetail}>Cobertura médica:</Text>
                 {nnya.cobertura_medica.obra_social && (
-                  <Text style={styles.subDetail}>Obra social: {nnya.cobertura_medica.obra_social}</Text>
+                  <Text style={styles.subDetail}>Obra social: {String(nnya.cobertura_medica.obra_social)}</Text>
                 )}
                 {nnya.cobertura_medica.institucion_sanitaria_nombre && (
                   <Text style={styles.subDetail}>
-                    Institución sanitaria: {nnya.cobertura_medica.institucion_sanitaria_nombre}
+                    Institución sanitaria: {String(nnya.cobertura_medica.institucion_sanitaria_nombre)}
                   </Text>
                 )}
                 <Text style={styles.subDetail}>AUH: {nnya.cobertura_medica.auh ? "Sí" : "No"}</Text>
@@ -428,8 +436,10 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <Text style={styles.personDetail}>Enfermedades:</Text>
                 {nnya.persona_enfermedades.map((enfermedad: any, idx: number) => (
                   <Text key={idx} style={styles.subDetail}>
-                    - {enfermedad.enfermedad_nombre}: {enfermedad.diagnostico || "Sin diagnóstico"}, Tratamiento:{" "}
-                    {enfermedad.tratamiento || "Sin tratamiento"}
+                    - {typeof enfermedad.enfermedad === 'object' ?
+                      enfermedad.enfermedad.nombre || '' :
+                      String(enfermedad.enfermedad_nombre || '')}: {String(enfermedad.diagnostico || "Sin diagnóstico")}, Tratamiento:{" "}
+                    {String(enfermedad.tratamiento || "Sin tratamiento")}
                   </Text>
                 ))}
               </View>
@@ -441,8 +451,8 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <Text style={styles.personDetail}>Vulneraciones:</Text>
                 {nnya.vulneraciones.map((vulneracion: any, idx: number) => (
                   <Text key={idx} style={styles.subDetail}>
-                    - {vulneracion.tipo_vulneracion_nombre}, Fecha: {vulneracion.fecha_vulneracion || "No especificada"}
-                    , Ámbito: {vulneracion.ambito_vulneracion_nombre || "No especificado"}
+                    - {String(vulneracion.tipo_vulneracion_nombre || '')}, Fecha: {String(vulneracion.fecha_vulneracion || "No especificada")}
+                    , Ámbito: {String(vulneracion.ambito_vulneracion_nombre || "No especificado")}
                   </Text>
                 ))}
               </View>
@@ -497,7 +507,9 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
                 {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => (
                   <Text key={idx} style={styles.subDetail}>
-                    - Condición {condicion}
+                    - {typeof condicion === 'object' ?
+                      (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
+                      String(condicion)}
                   </Text>
                 ))}
               </View>
@@ -576,7 +588,9 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
                 {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => (
                   <Text key={idx} style={styles.subDetail}>
-                    - Condición {condicion}
+                    - {typeof condicion === 'object' ?
+                      (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
+                      String(condicion)}
                   </Text>
                 ))}
               </View>
@@ -597,12 +611,12 @@ const InformePDF = ({ data }: InformePDFProps) => (
         {Array.isArray(data.AntecedentesDemanda) && data.AntecedentesDemanda.length > 0 ? (
           data.AntecedentesDemanda.map((antecedente: any, index: number) => (
             <Text key={index} style={styles.text}>
-              {index + 1}. ID: {antecedente.IdDemandaVinculada}, Número: {antecedente.NumerosDemanda}
+              {index + 1}. ID: {String(antecedente.IdDemandaVinculada || '')}, Número: {String(antecedente.NumerosDemanda || '')}
             </Text>
           ))
         ) : data.AntecedentesDemanda && data.AntecedentesDemanda.IdDemandaVinculada ? (
           <Text style={styles.text}>
-            ID: {data.AntecedentesDemanda.IdDemandaVinculada}, Número: {data.AntecedentesDemanda.NumerosDemanda}
+            ID: {String(data.AntecedentesDemanda.IdDemandaVinculada)}, Número: {String(data.AntecedentesDemanda.NumerosDemanda)}
           </Text>
         ) : (
           <Text style={styles.text}>No hay antecedentes registrados</Text>
@@ -615,15 +629,14 @@ const InformePDF = ({ data }: InformePDFProps) => (
         {Array.isArray(data.MotivosActuacion) && data.MotivosActuacion.length > 0 ? (
           data.MotivosActuacion.map((motivo: any, index: number) => (
             <Text key={index} style={styles.text}>
-              - {motivo.Motivos}
+              - {String(motivo.Motivos || '')}
             </Text>
           ))
         ) : (
           <Text style={styles.text}>
-            -{" "}
-            {data.MotivosActuacion && data.MotivosActuacion.Motivos
-              ? data.MotivosActuacion.Motivos
-              : "No hay motivos registrados"}
+            - {data.MotivosActuacion && data.MotivosActuacion.Motivos ?
+              String(data.MotivosActuacion.Motivos) :
+              "No hay motivos registrados"}
           </Text>
         )}
       </View>
@@ -635,7 +648,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
           data.IndicadoresEvaluacion.map((ind: any, index: number) => (
             <View key={index}>
               <Text style={styles.text}>
-                {index + 1}. {ind.NombreIndicador} - {ind.Descripcion} - Peso: {ind.Peso}
+                {index + 1}. {String(ind.NombreIndicador || '')} - {String(ind.Descripcion || '')} - Peso: {String(ind.Peso || '')}
               </Text>
             </View>
           ))
@@ -649,7 +662,8 @@ const InformePDF = ({ data }: InformePDFProps) => (
         <Text style={styles.subtitle}>Valoración Profesional / Conclusiones</Text>
         <View style={styles.infoBox}>
           <Text style={styles.text}>
-            {data.ValoracionProfesional ||
+            {data.ValoracionProfesional ?
+              String(data.ValoracionProfesional) :
               "Dado el análisis de la situación y los indicadores de vulneración identificados, se recomienda APERTURA DE LEGAJO para realizar un seguimiento adecuado del caso y garantizar la protección de los derechos de los NNyA involucrados."}
           </Text>
         </View>

@@ -12,9 +12,35 @@ import {
   TableRow,
   Button,
   CircularProgress,
+  Divider,
+  Chip,
 } from "@mui/material"
 import { toast } from "react-toastify"
-import { getIndicadores, createEvaluaciones, type Indicador } from "./indicadores-service"
+import { getIndicadores, submitValoracion, type Indicador, type ValoracionItem } from "./api/indicadores-service"
+
+interface NNyA {
+  id: number
+  nombre: string
+  apellido: string
+  dni: number | string
+}
+
+interface Score {
+  id: number
+  score: number
+  score_condiciones_vulnerabilidad: number
+  score_vulneracion: number
+  score_valoracion: number
+  nnya: NNyA
+  nnya_id: number
+  decision: string
+  reason: string
+}
+
+interface ValoracionResponse {
+  valoraciones: ValoracionItem[]
+  scores: Score[]
+}
 
 interface DecisionBoxProps {
   vulnerabilityIndicators: any[]
@@ -27,6 +53,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showDecision, setShowDecision] = useState(false)
+  const [scores, setScores] = useState<Score[]>([])
 
   // Fetch indicators from API
   useEffect(() => {
@@ -58,28 +85,33 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
 
     setSubmitting(true)
     try {
-      // Prepare data for submission
-      const indicadoresData = indicators
+      // Prepare data for submission in the format expected by the new endpoint
+      const valoracionData: ValoracionItem[] = indicators
         .filter((ind) => ind.selected !== undefined)
         .map((ind) => ({
-          indicadorId: ind.id,
-          selected: ind.selected || false,
+          indicador: ind.id,
+          checked: ind.selected || false,
         }))
 
-      if (indicadoresData.length === 0) {
+      if (valoracionData.length === 0) {
         toast.warning("No hay indicadores seleccionados para valorar")
         setSubmitting(false)
         return
       }
 
-      // Submit evaluations - toast will be shown by the service
-      await createEvaluaciones(demandaId, indicadoresData)
+      // Submit evaluations using the new endpoint
+      const response = await submitValoracion(demandaId, valoracionData)
+
+      // Update scores with the response data
+      if (response && response.scores) {
+        setScores(response.scores)
+      }
 
       // Show decision after successful submission
       setShowDecision(true)
     } catch (error) {
       console.error("Error submitting evaluations:", error)
-      toast.error("Error al enviar la valoración")
+      // No need to show toast here as it's handled by the service
     } finally {
       setSubmitting(false)
     }
@@ -168,35 +200,77 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
               <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9", mb: 2 }}>
                 SCORES NNyA
               </Typography>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
-                      <TableCell align="right">433</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
-                      <TableCell align="right">0</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
-                      <TableCell align="right">433</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: "bold" }}>Score motivos intervención</TableCell>
-                      <TableCell align="right">-</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
+
+              {scores.length > 0 ? (
+                scores.map((scoreItem, index) => (
+                  <Box key={scoreItem.id} sx={{ mb: 3 }}>
+                    {index > 0 && <Divider sx={{ my: 2 }} />}
+
+                    {/* NNyA Information */}
+                    <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                        {scoreItem.nnya.apellido}, {scoreItem.nnya.nombre}
+                      </Typography>
+                      <Typography variant="body2">DNI: {scoreItem.nnya.dni || "No especificado"}</Typography>
+                      <Chip label="NNyA Principal" size="small" color="primary" sx={{ mt: 1, fontSize: "0.7rem" }} />
+                    </Box>
+
+                    {/* Score Table */}
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size="small">
+                        <TableBody>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: "bold" }}>Score Total</TableCell>
+                            <TableCell align="right">{scoreItem.score}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
+                            <TableCell align="right">{scoreItem.score_condiciones_vulnerabilidad}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
+                            <TableCell align="right">{scoreItem.score_vulneracion}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: "bold" }}>Score valoración</TableCell>
+                            <TableCell align="right">{scoreItem.score_valoracion}</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                ))
+              ) : (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableBody>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: "bold" }}>Score</TableCell>
+                        <TableCell align="right">-</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: "bold" }}>Score condiciones vulnerabilidad</TableCell>
+                        <TableCell align="right">-</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: "bold" }}>Score vulneración</TableCell>
+                        <TableCell align="right">-</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: "bold" }}>Score valoración</TableCell>
+                        <TableCell align="right">-</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </Box>
           </Box>
         </Paper>
       </Box>
 
       {/* Decisión Sugerida - Only shown after clicking "Valorar" */}
-      {showDecision && (
+      {showDecision && scores.length > 0 && (
         <Box sx={{ mt: 4, mb: 2 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
@@ -208,7 +282,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                   Decisión:
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-                  APERTURA DE LEGAJO
+                  {scores[0].decision}
                 </Typography>
               </Box>
               <Box>
@@ -216,7 +290,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                   Motivo:
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 1 }}>
-                  Dado el alto score del nnya (433.0), la decision sugerida es APERTURA DE LEGAJO.
+                  {scores[0].reason}
                 </Typography>
               </Box>
             </Box>
@@ -226,4 +300,3 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
     </>
   )
 }
-

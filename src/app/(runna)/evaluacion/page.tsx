@@ -20,7 +20,7 @@ const transformApiData = (apiData: any) => {
     CargoFuncion: apiData.rol_usuario || "",
     NombreApellido: `${apiData.apellido_usuario || ""}, ${apiData.nombre_usuario || ""}`,
     NumerosDemanda: apiData.id ? `DEM-${apiData.id}/2025` : "",
-    BloqueDatosRemitente: apiData.bloque_datos_remitente ? `Remitente: ${apiData.bloque_datos_remitente}` : "",
+    BloqueDatosRemitente: apiData.bloque_datos_remitente.nombre ? ` ${apiData.bloque_datos_remitente.nombre}` : "",
     TipoInstitucion: apiData.tipo_institucion ? "Institución" : "",
     Institucion: apiData.institucion?.nombre || "",
     fecha_oficio_documento: apiData.fecha_oficio_documento || "",
@@ -38,36 +38,36 @@ const transformApiData = (apiData: any) => {
   // Extraer datos de localización
   const datosLocalizacion = apiData.localizacion
     ? {
-        Calle: apiData.localizacion.calle || "",
-        TipoCalle: apiData.localizacion.tipo_calle || "",
-        PisoDepto: apiData.localizacion.piso_depto || "",
-        Lote: apiData.localizacion.lote || "",
-        Manzana: apiData.localizacion.mza || "",
-        NumeroCasa: apiData.localizacion.casa_nro || "",
-        ReferenciaGeografica: apiData.localizacion.referencia_geo || "",
-        Barrio: apiData.localizacion.barrio.nombre || "",
-        Localidad: apiData.localizacion.localidad.nombre || "",
-        CPC: apiData.localizacion.cpc.nombre || "",
-        geolocalizacion: apiData.localizacion.geolocalizacion || "",
-        barrio_id: apiData.localizacion.barrio || "",
-        localidad_id: apiData.localizacion.localidad || "",
-        cpc_id: apiData.localizacion.cpc || "",
-        deleted: apiData.localizacion.deleted,
-        id: apiData.localizacion.id || null,
-      }
+      Calle: apiData.localizacion?.calle || "",
+      TipoCalle: apiData.localizacion?.tipo_calle || "",
+      PisoDepto: apiData.localizacion?.piso_depto || "",
+      Lote: apiData.localizacion?.lote || "",
+      Manzana: apiData.localizacion?.mza || "",
+      NumeroCasa: apiData.localizacion?.casa_nro || "",
+      ReferenciaGeografica: apiData.localizacion?.referencia_geo || "",
+      Barrio: apiData.localizacion?.barrio?.nombre || "",
+      Localidad: apiData.localizacion?.localidad?.nombre || "",
+      CPC: apiData.localizacion?.cpc?.nombre || "",
+      geolocalizacion: apiData.localizacion?.geolocalizacion || "",
+      barrio_id: apiData.localizacion?.barrio || "",
+      localidad_id: apiData.localizacion?.localidad || "",
+      cpc_id: apiData.localizacion?.cpc || "",
+      deleted: apiData.localizacion?.deleted,
+      id: apiData.localizacion?.id || null,
+    }
     : {}
 
   // Extraer actividades
   const actividades = Array.isArray(apiData.actividades)
     ? apiData.actividades.map((act: any) => ({
-        FechaHora: act.fecha_y_hora_manual || act.fecha_y_hora || "",
-        TipoActividad: act.tipo || "Visita",
-        Institucion: act.institucion || "SENAF",
-        Descripcion: act.descripcion || "",
-        by_user: act.by_user || null,
-        adjuntos: act.adjuntos || [],
-        fecha_y_hora_manual: act.fecha_y_hora_manual || "",
-      }))
+      FechaHora: act.fecha_y_hora_manual || act.fecha_y_hora || "",
+      TipoActividad: act.tipo || "Visita",
+      Institucion: act.institucion || "SENAF",
+      Descripcion: act.descripcion || "",
+      by_user: act.by_user || null,
+      adjuntos: act.adjuntos || [],
+      fecha_y_hora_manual: act.fecha_y_hora_manual || "",
+    }))
     : []
 
   // Procesar personas para extraer NNyA y adultos
@@ -145,10 +145,10 @@ const transformApiData = (apiData: any) => {
   // Extraer antecedentes - simplificado para mostrar solo el ID
   const antecedentes = apiData.demandas_vinculadas
     ? [
-        {
-          IdDemandaVinculada: apiData.demandas_vinculadas || "",
-        },
-      ]
+      {
+        IdDemandaVinculada: apiData.demandas_vinculadas || "",
+      },
+    ]
     : []
 
   // Datos para motivos de actuación

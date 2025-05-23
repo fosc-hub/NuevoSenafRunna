@@ -176,6 +176,51 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
+  const handleStepClick = async (stepIndex) => {
+    // Don't do anything if clicking the current step
+    if (stepIndex === activeStep) return
+
+    // If in read-only mode, just navigate without validation
+    if (isReadOnly) {
+      setActiveStep(stepIndex)
+      return
+    }
+
+    // If going backward, save current data and navigate
+    if (stepIndex < activeStep) {
+      if (!isReadOnly) {
+        saveDraft(formId, methods.getValues())
+      }
+      setActiveStep(stepIndex)
+      return
+    }
+
+    // If going forward, validate current step before proceeding
+    // We'll validate all steps up to the target step
+    let canProceed = true
+
+    // Save current form data
+    const currentData = methods.getValues()
+
+    // For each step we need to pass through, validate
+    for (let i = activeStep; i < stepIndex; i++) {
+      const isValid = await methods.trigger()
+      if (!isValid) {
+        canProceed = false
+        toast.error("Por favor, complete todos los campos requeridos antes de continuar.")
+        break
+      }
+    }
+
+    if (canProceed) {
+      // Save current step data to draft before moving
+      if (!isReadOnly) {
+        saveDraft(formId, currentData)
+      }
+      setActiveStep(stepIndex)
+    }
+  }
+
   const handleFormSubmit = methods.handleSubmit((data) => {
     console.log("Form data before submission:", data)
     // Ensure ninosAdolescentes and adultosConvivientes are always arrays
@@ -306,7 +351,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
             }}
           >
             {steps.map((step, index) => (
-              <Step key={step.label}>
+              <Step key={step.label} sx={{ cursor: "pointer" }} onClick={() => handleStepClick(index)}>
                 <StepLabel>
                   {step.label}
                   {!isMobile && (

@@ -185,8 +185,8 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   }
 
   const allNnyaIds = [
-    ...(nnyaConvivientes || []).map((nnya: any) => nnya.id || nnya.ID || nnya.DNI),
-    ...(nnyaNoConvivientes || []).map((nnya: any) => nnya.id || nnya.ID || nnya.DNI),
+    ...(nnyaConvivientes || []).map((nnya: any) => nnya.persona?.id || nnya.id || nnya.ID || nnya.DNI).filter(Boolean),
+    ...(nnyaNoConvivientes || []).map((nnya: any) => nnya.persona?.id || nnya.id || nnya.ID || nnya.DNI).filter(Boolean),
   ];
 
   return (

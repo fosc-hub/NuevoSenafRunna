@@ -67,12 +67,14 @@ export default function ActionButtons({
   demandaId,
   nnyaIds,
 }: ActionButtonsProps) {
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>(nnyaIds || [])
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>([])
   const [firmantes, setFirmantes] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (nnyaIds) setSelectedChildrenIds(nnyaIds);
+    if (nnyaIds && Array.isArray(nnyaIds) && nnyaIds.length > 0) {
+      setSelectedChildrenIds(nnyaIds);
+    }
   }, [nnyaIds]);
 
   const handleChildChange = (event: SelectChangeEvent<typeof selectedChildrenIds>) => {

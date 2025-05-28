@@ -33,6 +33,7 @@ import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
 import * as XLSX from "xlsx"
 import { DownloadRounded } from "@mui/icons-material"
+import { useUser } from "@/utils/auth/userZustand"
 
 // Assume these imports are available in your project
 import { get, update, create, put } from "@/app/api/apiService"
@@ -295,6 +296,23 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
 const DemandaTable: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const user = useUser((state) => state.user)
+
+  // Check if user has the permission
+  const hasViewPermission = user?.all_permissions?.includes('view_tdemanda') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  if (!hasViewPermission) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="error">
+          No tiene permisos para ver las demandas
+        </Typography>
+      </Box>
+    )
+  }
+
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -314,7 +332,6 @@ const DemandaTable: React.FC = () => {
     constatados: false,
     evaluados: false,
   })
-  const [user, setUser] = useState({ id: 1, is_superuser: false, all_permissions: [] })
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
   const [demandasData, setDemandasData] = useState<TDemandaPaginated | null>(null)

@@ -16,6 +16,7 @@ import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import { Save as SaveIcon, Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
 import axiosInstance from '@/app/api/utils/axiosInstance';
+import { useUser } from "@/utils/auth/userZustand"
 
 // Dynamic import para evitar errores SSR con Next.js
 const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
@@ -70,6 +71,12 @@ export default function ActionButtons({
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>([])
   const [firmantes, setFirmantes] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const user = useUser((state) => state.user)
+
+  // Check if user is director
+  const isDirector = user?.all_permissions?.includes('view_tdemandavinculada') ||
+    user?.is_superuser ||
+    user?.is_staff
 
   useEffect(() => {
     if (nnyaIds && Array.isArray(nnyaIds) && nnyaIds.length > 0) {
@@ -289,93 +296,103 @@ export default function ActionButtons({
         </Select>
       </FormControl>
 
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={() => handleAuthorizationAction("autorizar archivar")}
-        disabled={isSubmitting}
-      >
-        Autorizar archivar
-      </Button>
+      {/* Show these buttons only if user is NOT a director */}
+      {!isDirector && (
+        <>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleAuthorizationAction("autorizar archivar")}
+            disabled={isSubmitting}
+          >
+            Autorizar archivar
+          </Button>
 
-      {/* Multi-select for children before "Autorizar tomar medida" */}
-      <FormControl sx={{ minWidth: 250 }}>
-        <InputLabel id="select-multiple-children-label">Seleccionar NNyA</InputLabel>
-        <Select
-          labelId="select-multiple-children-label"
-          id="select-multiple-children"
-          multiple
-          value={selectedChildrenIds}
-          onChange={handleChildChange}
-          input={<OutlinedInput id="select-multiple-chip" label="Seleccionar NNyA" />}
-          renderValue={(selected) => (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {selected.map((value) => {
-                const child = children.find((c) => c.id === value)
-                return (
-                  <Chip
-                    key={value}
-                    label={child ? child.name : value}
-                    size="small"
-                    deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
-                    onDelete={() => {
-                      setSelectedChildrenIds(selectedChildrenIds.filter((id) => id !== value))
-                    }}
-                  />
-                )
-              })}
-            </Box>
-          )}
-          size="small"
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 224,
-                width: 250,
-              },
-            },
-          }}
-        >
-          {children.length > 0 ? (
-            children.map((child) => (
-              <MenuItem key={child.id} value={child.id}>
-                {child.name} ({child.type})
-              </MenuItem>
-            ))
-          ) : (
-            <MenuItem disabled value="">
-              No hay NNyA registrados
-            </MenuItem>
-          )}
-        </Select>
-      </FormControl>
+          {/* Multi-select for children before "Autorizar tomar medida" */}
+          <FormControl sx={{ minWidth: 250 }}>
+            <InputLabel id="select-multiple-children-label">Seleccionar NNyA</InputLabel>
+            <Select
+              labelId="select-multiple-children-label"
+              id="select-multiple-children"
+              multiple
+              value={selectedChildrenIds}
+              onChange={handleChildChange}
+              input={<OutlinedInput id="select-multiple-chip" label="Seleccionar NNyA" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const child = children.find((c) => c.id === value)
+                    return (
+                      <Chip
+                        key={value}
+                        label={child ? child.name : value}
+                        size="small"
+                        deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
+                        onDelete={() => {
+                          setSelectedChildrenIds(selectedChildrenIds.filter((id) => id !== value))
+                        }}
+                      />
+                    )
+                  })}
+                </Box>
+              )}
+              size="small"
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 224,
+                    width: 250,
+                  },
+                },
+              }}
+            >
+              {children.length > 0 ? (
+                children.map((child) => (
+                  <MenuItem key={child.id} value={child.id}>
+                    {child.name} ({child.type})
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled value="">
+                  No hay NNyA registrados
+                </MenuItem>
+              )}
+            </Select>
+          </FormControl>
 
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={() => handleAuthorizationAction("autorizar tomar medida")}
-        disabled={selectedChildrenIds.length === 0 || isSubmitting}
-      >
-        Autorizar tomar medida
-      </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleAuthorizationAction("autorizar tomar medida")}
+            disabled={selectedChildrenIds.length === 0 || isSubmitting}
+          >
+            Autorizar tomar medida
+          </Button>
+        </>
+      )}
 
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => handleAuthorizationAction("autorizar")}
-        disabled={isSubmitting}
-      >
-        Autorizar
-      </Button>
+      {/* Show these buttons only if user IS a director */}
+      {isDirector && (
+        <>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleAuthorizationAction("autorizar")}
+            disabled={isSubmitting}
+          >
+            Autorizar
+          </Button>
 
-      <Button
-        variant="contained"
-        color="error"
-        onClick={() => handleAuthorizationAction("no autorizar")}
-        disabled={isSubmitting}
-      >
-        No autorizar
-      </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => handleAuthorizationAction("no autorizar")}
+            disabled={isSubmitting}
+          >
+            No autorizar
+          </Button>
+        </>
+      )}
     </Box>
   )
 }

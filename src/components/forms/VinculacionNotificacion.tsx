@@ -5,6 +5,7 @@ import { Snackbar, Alert, Typography, Box, Button } from "@mui/material"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { create } from "@/app/api/apiService"
+import { useUser } from "@/utils/auth/userZustand"
 
 interface VinculacionResult {
   demanda_ids: number[]
@@ -28,6 +29,19 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
   const params = useParams()
   const [shouldShow, setShouldShow] = useState(true)
   const [isVinculando, setIsVinculando] = useState(false)
+  const user = useUser((state) => state.user)
+
+  // Check if user has permission to view/access connections
+  const hasVinculacionPermission = user?.all_permissions?.includes('view_tdemandavinculada') ||
+    user?.all_permissions?.includes('add_tdemandavinculada') ||
+    user?.all_permissions?.includes('change_tdemandavinculada') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  // If user doesn't have permission, don't show the notification
+  if (!hasVinculacionPermission) {
+    return null
+  }
 
   // Verificar si alguna de las demandas encontradas es la misma que la actual
   useEffect(() => {

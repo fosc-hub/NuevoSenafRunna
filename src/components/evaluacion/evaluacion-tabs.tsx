@@ -32,6 +32,7 @@ import ActionButtons from "./action-buttons"
 import FileManagement, { type FileManagementHandle } from "./file-management"
 import AdjuntosTab from "./tabs/adjuntos"
 import axiosInstance from '@/app/api/utils/axiosInstance';
+import { useUser } from "@/utils/auth/userZustand"
 
 // Update the TABS array to include all necessary tabs for the expanded data
 const TABS = [
@@ -55,6 +56,13 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const searchParams = useSearchParams()
   const [demandaId, setDemandaId] = useState<number | null>(null)
   const [tabValue, setTabValue] = useState(0)
+  const user = useUser((state) => state.user)
+
+  // Check if user is director
+  const isDirector = user?.all_permissions?.includes('view_tdemandavinculada') ||
+    user?.is_superuser ||
+    user?.is_staff
+
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
     data.IndicadoresEvaluacion.map((indicator: any, index: number) => ({
       id: index + 1,
@@ -326,6 +334,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
               variant="outlined"
               placeholder="Ingrese la justificación técnica (no aparecerá en el informe)"
               sx={{ mb: 3 }}
+              disabled={isDirector}
             />
 
             <Divider sx={{ my: 2 }} />
@@ -341,6 +350,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
               fullWidth
               variant="outlined"
               placeholder="Ingrese la justificación del director (no aparecerá en el informe)"
+              disabled={!isDirector}
             />
 
             <Box sx={{ mt: 2, display: "flex", alignItems: "center" }}>

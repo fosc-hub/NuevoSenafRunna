@@ -303,6 +303,27 @@ const DemandaTable: React.FC = () => {
     user?.is_superuser ||
     user?.is_staff
 
+  // Check if user has permission to assign demandas
+  const hasAssignPermission = user?.all_permissions?.includes('add_tdemandazona') ||
+    user?.all_permissions?.includes('change_tdemandazona') ||
+    user?.all_permissions?.includes('view_tdemandazona') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  // Check if user has permission to evaluate
+  const hasEvaluatePermission = user?.all_permissions?.includes('add_tevaluacion') ||
+    user?.all_permissions?.includes('change_tevaluacion') ||
+    user?.all_permissions?.includes('view_tevaluacion') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  // Check if user has permission to calificar
+  const hasCalificarPermission = user?.all_permissions?.includes('add_tcalificaciondemanda') ||
+    user?.all_permissions?.includes('change_tcalificaciondemanda') ||
+    user?.all_permissions?.includes('view_tcalificaciondemanda') ||
+    user?.is_superuser ||
+    user?.is_staff
+
   if (!hasViewPermission) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -708,25 +729,31 @@ const DemandaTable: React.FC = () => {
               },
             }}
           >
-            <select
-              value={formatCalificacionValue(params.value)}
-              onChange={(e) => {
-                e.stopPropagation()
-                handleCalificacionChange(params.row.id, e.target.value)
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {params.value === null && <option value="">Seleccionar</option>}
-              {params.row.calificacion_choices && Array.isArray(params.row.calificacion_choices) ? (
-                params.row.calificacion_choices.map((choice) => (
-                  <option key={choice[0]} value={choice[0]}>
-                    {choice[1]}
-                  </option>
-                ))
-              ) : (
-                <option value="">No hay opciones disponibles</option>
-              )}
-            </select>
+            {hasCalificarPermission ? (
+              <select
+                value={formatCalificacionValue(params.value)}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  handleCalificacionChange(params.row.id, e.target.value)
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {params.value === null && <option value="">Seleccionar</option>}
+                {params.row.calificacion_choices && Array.isArray(params.row.calificacion_choices) ? (
+                  params.row.calificacion_choices.map((choice) => (
+                    <option key={choice[0]} value={choice[0]}>
+                      {choice[1]}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No hay opciones disponibles</option>
+                )}
+              </select>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {formatCalificacionValue(params.value)}
+              </Typography>
+            )}
           </Box>
         ),
       },
@@ -771,53 +798,57 @@ const DemandaTable: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="Asignar">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleOpenAsignarModal(params.row.id)
-                }}
-                sx={{ color: "secondary.main" }}
-              >
-                <PersonAdd fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip
-              title={
-                params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
-                  ? "Evaluar"
-                  : "No disponible para evaluación"
-              }
-            >
-              <span>
+            {hasAssignPermission && (
+              <Tooltip title="Asignar">
                 <IconButton
                   size="small"
-                  disabled={
-                    params.row.estado_demanda !== "EVALUACION" && params.row.estado_demanda !== "PENDIENTE_AUTORIZACION"
-                  }
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (
-                      params.row.estado_demanda === "EVALUACION" ||
-                      params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
-                    ) {
-                      window.location.href = `/evaluacion?id=${params.row.id}`
-                    }
+                    handleOpenAsignarModal(params.row.id)
                   }}
-                  sx={{
-                    color:
-                      params.row.estado_demanda === "EVALUACION" ||
-                        params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
-                        ? "success.main"
-                        : "action.disabled",
-                  }}
+                  sx={{ color: "secondary.main" }}
                 >
-                  <Edit fontSize="small" />
+                  <PersonAdd fontSize="small" />
                 </IconButton>
-              </span>
-            </Tooltip>
+              </Tooltip>
+            )}
+
+            {hasEvaluatePermission && (
+              <Tooltip
+                title={
+                  params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                    ? "Evaluar"
+                    : "No disponible para evaluación"
+                }
+              >
+                <span>
+                  <IconButton
+                    size="small"
+                    disabled={
+                      params.row.estado_demanda !== "EVALUACION" && params.row.estado_demanda !== "PENDIENTE_AUTORIZACION"
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (
+                        params.row.estado_demanda === "EVALUACION" ||
+                        params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                      ) {
+                        window.location.href = `/evaluacion?id=${params.row.id}`
+                      }
+                    }}
+                    sx={{
+                      color:
+                        params.row.estado_demanda === "EVALUACION" ||
+                          params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                          ? "success.main"
+                          : "action.disabled",
+                    }}
+                  >
+                    <Edit fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
           </Box>
         ),
       },

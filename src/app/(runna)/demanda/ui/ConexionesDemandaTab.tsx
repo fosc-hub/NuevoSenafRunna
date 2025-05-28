@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import { get, create, update } from "@/app/api/apiService"
 import SearchModal from "@/components/searchModal/searchModal"
+import { useUser } from "@/utils/auth/userZustand"
 
 interface Demanda {
   id: number
@@ -42,6 +43,25 @@ interface ConexionesDemandaTabProps {
 export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   const queryClient = useQueryClient()
   const theme = useTheme()
+  const user = useUser((state) => state.user)
+
+  // Check if user has permission to view/access connections
+  const hasVinculacionPermission = user?.all_permissions?.includes('view_tdemandavinculada') ||
+    user?.all_permissions?.includes('add_tdemandavinculada') ||
+    user?.all_permissions?.includes('change_tdemandavinculada') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  // If user doesn't have permission, show message
+  if (!hasVinculacionPermission) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="error">
+          No tiene permisos para ver las conexiones de la demanda
+        </Typography>
+      </Box>
+    )
+  }
 
   // States for existing connections
   const [error, setError] = useState<string | null>(null)

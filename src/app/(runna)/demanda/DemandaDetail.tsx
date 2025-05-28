@@ -14,6 +14,7 @@ import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
 import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
 import { useRouter } from "next/navigation"
 import { fetchCaseData } from "@/components/forms/utils/apiToFormData"
+import { useUser } from "@/utils/auth/userZustand"
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -62,6 +63,14 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
   const [tabValue, setTabValue] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
+  const user = useUser((state) => state.user)
+
+  // Check if user has permission to view/access connections
+  const hasVinculacionPermission = user?.all_permissions?.includes('view_tdemandavinculada') ||
+    user?.all_permissions?.includes('add_tdemandavinculada') ||
+    user?.all_permissions?.includes('change_tdemandavinculada') ||
+    user?.is_superuser ||
+    user?.is_staff
 
   useEffect(() => {
     const loadCaseData = async () => {
@@ -276,12 +285,14 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
                 disabled={isPeticionDeInforme}
                 sx={{ opacity: isPeticionDeInforme ? 0.7 : 1 }}
               />
-              <Tab
-                label="Conexiones"
-                {...a11yProps(3)}
-                disabled={isPeticionDeInforme}
-                sx={{ opacity: isPeticionDeInforme ? 0.7 : 1 }}
-              />
+              {hasVinculacionPermission && (
+                <Tab
+                  label="Conexiones"
+                  {...a11yProps(3)}
+                  disabled={isPeticionDeInforme}
+                  sx={{ opacity: isPeticionDeInforme ? 0.7 : 1 }}
+                />
+              )}
             </Tabs>
           </Box>
 
@@ -336,16 +347,18 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             </Box>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={3}>
-            <Box
-              sx={{
-                opacity: isPeticionDeInforme || isEditingBlocked ? 0.7 : 1,
-                pointerEvents: isPeticionDeInforme || isEditingBlocked ? "none" : "auto",
-              }}
-            >
-              <ConexionesDemandaTab demandaId={Number.parseInt(params.id)} />
-            </Box>
-          </TabPanel>
+          {hasVinculacionPermission && (
+            <TabPanel value={tabValue} index={3}>
+              <Box
+                sx={{
+                  opacity: isPeticionDeInforme || isEditingBlocked ? 0.7 : 1,
+                  pointerEvents: isPeticionDeInforme || isEditingBlocked ? "none" : "auto",
+                }}
+              >
+                <ConexionesDemandaTab demandaId={Number.parseInt(params.id)} />
+              </Box>
+            </TabPanel>
+          )}
         </Paper>
       </Box>
     </Box>

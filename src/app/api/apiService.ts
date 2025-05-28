@@ -7,17 +7,17 @@ import { useQuery } from "@tanstack/react-query";
  * Generic function to fetch all resources from an API endpoint.
  * @param endpoint API endpoint to fetch data from.
  * @param filters Optional filters for query parameters.
- * @returns Array of resources of type T.
+ * @returns Array of resources of type T or single resource if endpoint returns a single object.
  */
 export const get = async <T>(
   endpoint: string,
   filters?: Record<string, any>
-): Promise<T[]> => {
+): Promise<T | T[]> => {
   const queryString = filters
     ? `?${new URLSearchParams(filters as Record<string, string>).toString()}`
     : '';
-    const response = await axiosInstance.get<T[]>(`${endpoint}${queryString}`);
-    return response.data;
+  const response = await axiosInstance.get<T | T[]>(`${endpoint}${queryString}`);
+  return response.data;
 };
 
 export const getWithCustomParams = async <T>(
@@ -63,8 +63,7 @@ export const getWithCustomParams = async <T>(
  * @returns Newly created resource of type T.
  */
 export const create = async <T>(endpoint: string, data: Partial<T>, showToast: boolean = false, toastMessage: string = '¡Registro asignado con exito!')
-: Promise<T> =>
-{
+  : Promise<T> => {
   const response = await axiosInstance.post<T>(`${endpoint}/`, data)
 
   if (showToast) {
@@ -120,14 +119,13 @@ export const patch = async <T>(endpoint: string, id: number, data: Partial<T>): 
  * @returns Updated resource of type T.
  */
 export const put = async <T>(
-  endpoint: string, 
-  id: number, 
-  data?: Partial<T>, 
-  showToast: boolean = false, 
+  endpoint: string,
+  id: number,
+  data?: Partial<T>,
+  showToast: boolean = false,
   toastMessage: string = '¡Operación completada con éxito!'
 )
-: Promise<T> =>
-{
+  : Promise<T> => {
   try {
     const response = await axiosInstance.put<T>(`${endpoint}/${id}/`, data)
 

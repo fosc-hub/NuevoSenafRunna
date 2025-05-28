@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation"
 import { decodeToken, login } from "@/utils/auth"
 import { useUser } from "@/utils/auth/userZustand"
 import { errorMessages } from "@/utils/errorMessages"
+import { get } from "@/app/api/apiService"
+import type { UserPermissions } from "@/utils/auth/userZustand"
 
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -51,8 +53,19 @@ export default function Login() {
   const onSubmit = async (data: LoginFormInputs) => {
     try {
       await login(data.username, data.password)
-      const user = await decodeToken()
-      setUser(user)
+      const response = await get<UserPermissions>('/user/me/')
+      const userData = Array.isArray(response) ? response[0] : response
+
+      console.log('API Response:', response)
+      console.log('User data from API:', userData)
+      console.log('User permissions:', userData?.all_permissions)
+
+      if (!userData) {
+        throw new Error('No user data received from API')
+      }
+
+      setUser(userData)
+      console.log('User data after setting in Zustand:', useUser.getState().user)
       router.push("/mesadeentrada")
     } catch (error: any) {
       console.error("Error during login:", error)

@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation"
 import { decodeToken, login } from "@/utils/auth"
 import { useUser } from "@/utils/auth/userZustand"
 import { errorMessages } from "@/utils/errorMessages"
-import { get } from "@/app/api/apiService"
+import axiosInstance from "@/app/api/utils/axiosInstance"
 import type { UserPermissions } from "@/utils/auth/userZustand"
 
 import { useForm } from "react-hook-form"
@@ -52,35 +52,39 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
-      await login(data.username, data.password)
-      const response = await get<UserPermissions>('/user/me/')
-      const userData = Array.isArray(response) ? response[0] : response
-
-      console.log('API Response:', response)
-      console.log('User data from API:', userData)
-      console.log('User permissions:', userData?.all_permissions)
-
-      if (!userData) {
-        throw new Error('No user data received from API')
+      // First get the token
+      const accessToken = await login(data.username, data.password);
+      if (!accessToken) {
+        throw new Error('Failed to get access token');
       }
 
-      setUser(userData)
-      console.log('User data after setting in Zustand:', useUser.getState().user)
-      router.push("/mesadeentrada")
+      // Use axiosInstance with the token for this specific request
+      const userResponse = await axiosInstance.get<UserPermissions>('/user/me/', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+
+      if (!userResponse.data) {
+        throw new Error('No user data received from API');
+      }
+
+      setUser(userResponse.data);
+      router.push("/mesadeentrada");
     } catch (error: any) {
-      console.error("Error during login:", error)
-      const statusCode = error?.response?.status || "Desconocido"
-      const message = errorMessages[statusCode] || "Ocurrió un error"
-      const errorCode = error?.response?.status || "Desconocido"
-      const errorMessage = error?.response?.data?.message || "Sin detalles adicionales."
-      const details = `Credenciales Inválidas${errorCode}\nRespuesta del servidor: ${JSON.stringify(error?.response?.data)}`
-      setErrorDetails(details)
+      console.error("Error during login:", error);
+      const statusCode = error?.response?.status || "Desconocido";
+      const message = errorMessages[statusCode] || "Ocurrió un error";
+      const errorCode = error?.response?.status || "Desconocido";
+      const errorMessage = error?.response?.data?.message || "Sin detalles adicionales.";
+      const details = `Credenciales Inválidas${errorCode}\nRespuesta del servidor: ${JSON.stringify(error?.response?.data)}`;
+      setErrorDetails(details);
       setError("username", {
         type: "manual",
         message: "Nombre de usuario o contraseña incorrectos.",
-      })
+      });
     }
-  }
+  };
 
   const handleTogglePasswordVisibility = () => {
     setShowPassword((prev) => !prev)

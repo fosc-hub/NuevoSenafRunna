@@ -2,6 +2,9 @@
 import axiosInstance from '@/app/api/utils/axiosInstance';
 import jwt from 'jsonwebtoken';
 import { cookies } from "next/headers";
+import { getCookie, setCookie } from "cookies-next";
+import { JwtPayload } from "jsonwebtoken";
+import { UserPermissions } from './userZustand';
 
 export async function decodeToken(accessToken?: string) {
   try {
@@ -38,38 +41,66 @@ export async function login(username: string, password: string) {
     path: "/",
     secure: true,
   });
+
+  return tokens.access;
 }
 
-export async function getSession() {
-  const cookieStore = cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
-  const decodedPayload = await decodeToken(accessToken);
-
-  if (decodedPayload?.exp && Date.now() >= decodedPayload.exp * 1000) {
-    const refreshToken = cookieStore.get("refreshToken")?.value;
-
-    if (!refreshToken) return null; // Stop loop if refreshToken is missing
-
-    try {
-      const response = await axiosInstance.post('/token/refresh/', { refresh: refreshToken });
-      const newAccessToken = response.data.access;
-
-      cookieStore.set("accessToken", newAccessToken, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true,
-      });
-
-      return newAccessToken;
-    } catch (error) {
-      console.error("Token refresh failed:", error.message);
+export const getSession = async (returnUserData: boolean = false): Promise<string | UserPermissions | null> => {
+  try {
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    if (!accessToken) {
       return null;
     }
-  }
 
-  return accessToken || null;
-}
+    // If we just need the token, return it immediately
+    if (!returnUserData) {
+      return accessToken;
+    }
+
+    // Verify token and get user data
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET || 'default-secret') as JwtPayload;
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    // If token is expired, try to refresh it
+    if (decoded.exp && decoded.exp < currentTime) {
+      const refreshToken = cookieStore.get('refreshToken')?.value;
+      if (!refreshToken) {
+        return null;
+      }
+
+      try {
+        const response = await axiosInstance.post('/token/refresh/', {
+          refresh: refreshToken
+        });
+
+        const newAccessToken = response.data.access;
+        cookieStore.set('accessToken', newAccessToken, {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: true,
+        });
+        return newAccessToken;
+      } catch (error) {
+        console.error('Error refreshing token:', error);
+        return null;
+      }
+    }
+
+    // Get user data
+    try {
+      const response = await axiosInstance.get<UserPermissions>('/user/me/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return accessToken; // Return the token if we can't get user data
+    }
+  } catch (error) {
+    console.error('Error in getSession:', error);
+    return null;
+  }
+};
 
 export async function logout() {
   const cookieStore = cookies();

@@ -1,37 +1,43 @@
 import axios from 'axios';
 import { getSession } from '@/utils/auth';
 import { handleApiError } from './errorHandler';
-//import { getSession } from '../../auth/index';
+import Cookies from 'js-cookie';
 
-const secretKey = process.env.MYSECRETKEY || "Bearer";
-
-
-// Create an Axios instance
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-production-c6370.up.railway.app/api',
 });
 
-// Add a request interceptor to attach CSRF token
-axiosInstance.interceptors.request.use(async (config) => {
-  const accessToken = await getSession(); // Get the access token
-  if (accessToken) {
-    config.headers.Authorization = `${secretKey} ${accessToken}`;
+// Add a request interceptor to add the token to all requests
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    // Only add token if Authorization header is not already set
+    if (!config.headers.Authorization) {
+      const session = await getSession();
+      // Handle both cases: when getSession returns a token string or user data
+      const accessToken = typeof session === 'string' ? session : Cookies.get('accessToken');
+
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Add a response interceptor to handle errors globally
 axiosInstance.interceptors.response.use(
-  (response) => response, // Pass through successful responses
+  (response) => response,
   (error) => {
-    const method = error.config?.method?.toUpperCase(); // Determine the HTTP method
+    const method = error.config?.method?.toUpperCase();
     const endpoint = error.config?.url || 'Unknown endpoint';
     const errorDetails = `Código de error: ${error.code}\nRespuesta del servidor: ${JSON.stringify(error?.response?.data)}`;
-    // Only handle toasts for non-GET methods
     if (method && method !== 'GET') {
-      handleApiError(error, endpoint); // Show toast and log error
+      handleApiError(error, endpoint);
     }
-    return Promise.reject(error); // Propagate the error
+    return Promise.reject(error);
   }
 );
 

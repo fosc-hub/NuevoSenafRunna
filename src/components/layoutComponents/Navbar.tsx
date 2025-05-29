@@ -8,13 +8,14 @@ import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { getSession, logout } from "@/utils/auth"
 import { useUser } from "@/utils/auth/userZustand"
+import { UserPermissions } from "@/utils/auth/userZustand"
 
 export default function Header() {
   const [showMenu, setShowMenu] = useState(false)
   const [loadingUser, setLoadingUser] = useState(true)
   const [isClient, setIsClient] = useState(false)
 
-  const user = useUser((state) => state.user) || {} // Prevents undefined errors
+  const user = useUser((state) => state.user) as UserPermissions | null
 
   useEffect(() => {
     setIsClient(true)
@@ -23,9 +24,9 @@ export default function Header() {
   useEffect(() => {
     async function fetchUser() {
       if (!user || Object.keys(user).length === 0) {
-        const sessionUser = await getSession()
-        if (sessionUser) {
-          useUser.setState({ user: sessionUser })
+        const userData = await getSession(true)
+        if (userData) {
+          useUser.setState({ user: userData })
         }
       }
       setLoadingUser(false)
@@ -68,8 +69,8 @@ export default function Header() {
     <header className="bg-sky-500 text-white p-4 flex justify-between items-center">
       <Link href="/mesadeentrada">
         <UserAvatar
-          initials={user?.initials || "?"}
-          name={user?.name || "Invitado"}
+          initials={user?.first_name && user?.last_name ? `${user.first_name[0]}${user.last_name[0]}` : "?"}
+          name={user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : "Invitado"}
           role={user?.groups?.[0]?.name || "Sin rol"}
         />
       </Link>

@@ -38,29 +38,27 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
     user?.is_superuser ||
     user?.is_staff
 
-  // If user doesn't have permission, don't show the notification
-  if (!hasVinculacionPermission) {
-    return null
-  }
-
   // Verificar si alguna de las demandas encontradas es la misma que la actual
   useEffect(() => {
     if (vinculacionResults && vinculacionResults.demanda_ids.length > 0) {
       // Obtener el ID actual de la demanda desde props o params
       const actualDemandaId = currentDemandaId || params.id
-      console.log("ID actual de la demanda:", actualDemandaId)
       // Convertir a número para comparación
       const actualIdNum = actualDemandaId ? Number(actualDemandaId) : null
 
       // Verificar si la demanda actual está en los resultados
-      const isSameDemanda = actualIdNum && vinculacionResults.demanda_ids.includes(actualIdNum)
-
+      // const isSameDemanda = actualIdNum && vinculacionResults.demanda_ids.includes(actualIdNum)
       // Siempre mostrar la notificación, independientemente de si es la misma demanda o no
       setShouldShow(true)
     } else {
       setShouldShow(true)
     }
   }, [vinculacionResults, currentDemandaId, params.id])
+
+  // If user doesn't have permission, don't show the notification
+  if (!hasVinculacionPermission) {
+    return null
+  }
 
   // Si no hay resultados o no se debe mostrar, no renderizar nada
   if (!vinculacionResults || !shouldShow) return null
@@ -85,7 +83,6 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
         demanda_entrante: demandaId,
         deleted: false,
       }
-
 
       // Llamar a la API para crear la vinculación
       await create("demanda-vinculada", vinculacionData, true, "¡Demandas vinculadas con éxito!")

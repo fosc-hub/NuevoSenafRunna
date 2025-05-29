@@ -52,17 +52,6 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     user?.is_superuser ||
     user?.is_staff
 
-  // If user doesn't have permission, show message
-  if (!hasVinculacionPermission) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" color="error">
-          No tiene permisos para ver las conexiones de la demanda
-        </Typography>
-      </Box>
-    )
-  }
-
   // States for existing connections
   const [error, setError] = useState<string | null>(null)
 
@@ -145,6 +134,17 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
       toast.error("Error al eliminar la conexión")
     },
   })
+
+  // Permission check must come after all hooks
+  if (!hasVinculacionPermission) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="error">
+          No tiene permisos para ver las conexiones de la demanda
+        </Typography>
+      </Box>
+    )
+  }
 
   const handleConnect = (demandaId2: number) => {
     // Find the demanda in allDemandas
@@ -264,7 +264,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                     }
                     secondary={
                       <Typography variant="body2" color="text.secondary">
-                        Estado: {demanda.estado_demanda} | Fecha:{" "}
+                        Estado: {demanda.estado_demanda} | Fecha: {" "}
                         {new Date(demanda.fecha_ingreso_senaf).toLocaleDateString()}
                       </Typography>
                     }

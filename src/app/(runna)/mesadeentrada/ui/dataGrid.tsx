@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Paper,
   Button,
@@ -17,6 +17,7 @@ import {
   Badge,
   useMediaQuery,
   useTheme,
+  Skeleton,
 } from "@mui/material"
 import {
   DataGrid,
@@ -292,47 +293,10 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
   )
 }
 
-// Update the DemandaTable component to include the export function
-const DemandaTable: React.FC = () => {
+const DemandaTableContent: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const user = useUser((state) => state.user)
-
-  // Check if user has the permission
-  const hasViewPermission = user?.all_permissions?.includes('view_tdemanda') ||
-    user?.is_superuser ||
-    user?.is_staff
-
-  // Check if user has permission to assign demandas
-  const hasAssignPermission = user?.all_permissions?.includes('add_tdemandazona') ||
-    user?.all_permissions?.includes('change_tdemandazona') ||
-    user?.all_permissions?.includes('view_tdemandazona') ||
-    user?.is_superuser ||
-    user?.is_staff
-
-  // Check if user has permission to evaluate
-  const hasEvaluatePermission = user?.all_permissions?.includes('add_tevaluacion') ||
-    user?.all_permissions?.includes('change_tevaluacion') ||
-    user?.all_permissions?.includes('view_tevaluacion') ||
-    user?.is_superuser ||
-    user?.is_staff
-
-  // Check if user has permission to calificar
-  const hasCalificarPermission = user?.all_permissions?.includes('add_tcalificaciondemanda') ||
-    user?.all_permissions?.includes('change_tcalificaciondemanda') ||
-    user?.all_permissions?.includes('view_tcalificaciondemanda') ||
-    user?.is_superuser ||
-    user?.is_staff
-
-  if (!hasViewPermission) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" color="error">
-          No tiene permisos para ver las demandas
-        </Typography>
-      </Box>
-    )
-  }
 
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
@@ -362,6 +326,27 @@ const DemandaTable: React.FC = () => {
     estado_demanda: null,
     objetivo_de_demanda: null,
   })
+
+  // Check if user has permission to assign demandas
+  const hasAssignPermission = user?.all_permissions?.includes('add_tdemandazona') ||
+    user?.all_permissions?.includes('change_tdemandazona') ||
+    user?.all_permissions?.includes('view_tdemandazona') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  // Check if user has permission to evaluate
+  const hasEvaluatePermission = user?.all_permissions?.includes('add_tevaluacion') ||
+    user?.all_permissions?.includes('change_tevaluacion') ||
+    user?.all_permissions?.includes('view_tevaluacion') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  // Check if user has permission to calificar
+  const hasCalificarPermission = user?.all_permissions?.includes('add_tcalificaciondemanda') ||
+    user?.all_permissions?.includes('change_tcalificaciondemanda') ||
+    user?.all_permissions?.includes('view_tcalificaciondemanda') ||
+    user?.is_superuser ||
+    user?.is_staff
 
   const fetchDemandas = async (pageNumber: number, pageSize: number) => {
     try {
@@ -1220,6 +1205,53 @@ const DemandaTable: React.FC = () => {
       />
     </>
   )
+}
+
+const DemandaTable: React.FC = () => {
+  const user = useUser((state) => state.user)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Check if user has the permission
+  const hasViewPermission = user?.all_permissions?.includes('view_tdemanda') ||
+    user?.is_superuser ||
+    user?.is_staff
+
+  useEffect(() => {
+    // Simulate a small delay to show the skeleton
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return (
+      <Paper sx={{ p: 2, width: '100%' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Skeleton variant="rectangular" height={40} width="30%" />
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Skeleton variant="rectangular" height={36} width={120} />
+            <Skeleton variant="rectangular" height={36} width={120} />
+            <Skeleton variant="rectangular" height={36} width={120} />
+          </Box>
+          <Skeleton variant="rectangular" height={400} />
+        </Box>
+      </Paper>
+    )
+  }
+
+  if (!hasViewPermission) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="error">
+          No tiene permisos para ver las demandas
+        </Typography>
+      </Box>
+    )
+  }
+
+  return <DemandaTableContent />
 }
 
 export default DemandaTable

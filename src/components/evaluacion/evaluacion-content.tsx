@@ -81,6 +81,7 @@ const transformApiData = (apiData: any) => {
 
   if (Array.isArray(apiData.personas)) {
     apiData.personas.forEach((persona: any) => {
+// Inside transformApiData, within apiData.personas.forEach:
       const personaData = {
         ApellidoNombre: `${persona.persona.apellido || ""}, ${persona.persona.nombre || ""}`,
         FechaNacimiento: persona.persona.fecha_nacimiento || "",
@@ -97,7 +98,8 @@ const transformApiData = (apiData: any) => {
         observaciones: persona.persona.observaciones || "",
         nacionalidad: persona.persona.nacionalidad || "",
         // Datos de localización
-        Barrio: persona.localizacion?.barrio || "",
+        // Ensure you are accessing the 'nombre' property if 'barrio' or 'localidad' are objects
+        Barrio: persona.localizacion?.barrio?.nombre || (typeof persona.localizacion?.barrio === 'string' ? persona.localizacion.barrio : "") || "",
         Calle: persona.localizacion?.calle || "",
         NumeroCasa: persona.localizacion?.casa_nro || "",
         // Datos completos
@@ -118,7 +120,6 @@ const transformApiData = (apiData: any) => {
         vinculo_demanda: persona.demanda_persona?.vinculo_demanda || "",
         persona: persona.persona || null,
       }
-
       // Determinar si es NNyA o adulto
       const esNNYA = persona.persona.nnya === true
 

@@ -2,10 +2,14 @@
 import { useState, useEffect } from "react"
 import type React from "react"
 
-import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab } from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import ArticleIcon from "@mui/icons-material/Article"
 import AddIcon from "@mui/icons-material/Add"
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
+import SecurityIcon from "@mui/icons-material/Security"
+import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom"
+import GavelIcon from "@mui/icons-material/Gavel"
 import { useRouter } from "next/navigation"
 import { getLegajoById } from "../legajo-mesa/mock-data/legajos-service"
 import { Intervencion, Legajo } from "./[id]/medida/[medidaId]/types/legajo"
@@ -36,6 +40,8 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState("")
   const [openAddIntervencionDialog, setOpenAddIntervencionDialog] = useState(false)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const openMedidaMenu = Boolean(anchorEl)
 
   const router = useRouter()
 
@@ -66,9 +72,27 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
     router.push(`/legajo/${params.id}`)
   }
 
-  const handleTomarMedida = () => {
-    console.log("Tomar medida clicked")
-    // Implement the action for taking a measure
+  const handleTomarMedida = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleCloseMedidaMenu = () => {
+    setAnchorEl(null)
+  }
+
+  const handleSelectMedidaType = (type: 'MPI' | 'MPE' | 'MPJ') => {
+    handleCloseMedidaMenu()
+    console.log(`Creating ${type} medida`)
+
+    // Navigate to the appropriate medida page
+    if (type === 'MPE') {
+      router.push(`/legajo/${params.id}/medida/mpe`)
+    } else if (type === 'MPI') {
+      router.push(`/legajo/${params.id}/medida/medida-detail`)
+    } else if (type === 'MPJ') {
+      // For now, just show a message - you can implement MPJ later
+      console.log('MPJ functionality not implemented yet')
+    }
   }
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -255,25 +279,86 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {activeTab === 0 && (
           <>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "black" }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: "black" }}>
                 Medida activa (1)
               </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={handleTomarMedida}
-                sx={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  "&:hover": {
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-                  },
-                }}
-              >
-                Tomar Medida
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  endIcon={<ArrowDropDownIcon />}
+                  onClick={handleTomarMedida}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  Tomar Medida
+                </Button>
+
+                <Menu
+                  anchorEl={anchorEl}
+                  open={openMedidaMenu}
+                  onClose={handleCloseMedidaMenu}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <MenuItem onClick={() => handleSelectMedidaType('MPI')}>
+                    <ListItemIcon>
+                      <SecurityIcon fontSize="small" color="primary" />
+                    </ListItemIcon>
+                    <ListItemText>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        Medida de Protección Integral (MPI)
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Protección integral de derechos
+                      </Typography>
+                    </ListItemText>
+                  </MenuItem>
+
+                  <MenuItem onClick={() => handleSelectMedidaType('MPE')}>
+                    <ListItemIcon>
+                      <FamilyRestroomIcon fontSize="small" color="secondary" />
+                    </ListItemIcon>
+                    <ListItemText>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        Medida de Protección Excepcional (MPE)
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Evaluación familiar y competencias parentales
+                      </Typography>
+                    </ListItemText>
+                  </MenuItem>
+
+                  <Divider />
+
+                  <MenuItem onClick={() => handleSelectMedidaType('MPJ')} disabled>
+                    <ListItemIcon>
+                      <GavelIcon fontSize="small" color="disabled" />
+                    </ListItemIcon>
+                    <ListItemText>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.disabled' }}>
+                        Medida de Protección Judicial (MPJ)
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled">
+                        Próximamente disponible
+                      </Typography>
+                    </ListItemText>
+                  </MenuItem>
+                </Menu>
+              </>
             </Box>
 
             <MedidaActivaCard
@@ -303,7 +388,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {/* Intervenciones Section */}
         {activeTab === 2 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 , color: "black"}}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "black" }}>
               Historial de Intervenciones
             </Typography>
 

@@ -8,8 +8,13 @@ import { MedidaData } from "./[medidaId]/types/medidas"
 import { AddTaskDialog, NewTask } from "./[medidaId]/components/dialogs/add-task-dialog"
 import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[medidaId]/components/navigation-breadcrumbs"
 import { MedidaHeader } from "./[medidaId]/components/medida/medida-header"
+import { MPEHeader } from "./[medidaId]/components/medida/mpe-header"
+import { MPETabs } from "./[medidaId]/components/medida/mpe-tabs"
 import { AperturaSection } from "./[medidaId]/components/medida/apertura-section"
 import { PlanAccionSection } from "./[medidaId]/components/medida/plan-accion-section"
+import { PlanEvaluacionSection } from "./[medidaId]/components/medida/plan-evaluacion-section"
+import { EvaluacionFamiliarSection } from "./[medidaId]/components/medida/evaluacion-familiar-section"
+import { LegajosAfectadosSection } from "./[medidaId]/components/medida/legajos-afectados-section"
 import { HistorialSeguimientoSection } from "./[medidaId]/components/medida/historial-seguimiento-section"
 import { CierreSection } from "./[medidaId]/components/medida/cierre-section"
 import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-informe-section"
@@ -27,11 +32,17 @@ interface MedidaDetailProps {
 }
 
 // Mock data for the measure details
-const getMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
-  // In a real app, you would fetch this data from an API
+const getMedidaData = (legajoId: string, medidaId?: string, tipo: 'MPI' | 'MPE' = 'MPI'): MedidaData => {
+  if (tipo === 'MPE') {
+    return getMPEMedidaData(legajoId, medidaId)
+  }
+  return getMPIMedidaData(legajoId, medidaId)
+}
+
+const getMPIMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
   return {
     id: medidaId || "123456",
-    tipo: "MPI",
+    tipo: "MPI" as const,
     numero: "123456",
     persona: {
       nombre: "Martínez Alejandro",
@@ -112,6 +123,134 @@ const getMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
   }
 }
 
+const getMPEMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
+  return {
+    id: medidaId || "654321",
+    tipo: "MPE" as const,
+    numero: "654321",
+    persona: {
+      nombre: "Juan Martín Perez",
+      dni: "33445566",
+    },
+    fecha_apertura: "15/10/23",
+    ubicacion: "Residencia 1",
+    direccion: "Av. Colón 1234, Córdoba",
+    juzgado: "juzgado 1",
+    nro_sac: "345",
+    origen_demanda: "educacion",
+    motivo: "Evaluación de competencias parentales",
+    actores_intervinientes: "Familia González, Equipo interdisciplinario",
+    equipos: "Zona 1",
+    articulacion: "Juzgado, SENAF, Centro de Salud",
+    // MPE specific fields
+    fecha: "22/12/2024",
+    fecha_resguardo: "12/12/2025",
+    lugar_resguardo: "Residencia",
+    zona_trabajo: "Zona 1",
+    zona_centro_vida: "Zona 1",
+    articulacion_local: true,
+    numero_sac: "345",
+    articulacion_area_local: true,
+    estados: {
+      inicial: true,
+      apertura: true,
+      innovacion: 0,
+      prorroga: 0,
+      cambio_lugar: 0,
+      seguimiento_intervencion: true,
+      cese: false,
+      post_cese: false,
+    },
+    progreso: {
+      iniciada: 10,
+      en_seguimiento: 80,
+      cierre: 10,
+      total: 65,
+    },
+    etapas: {
+      apertura: {
+        fecha: "15/10/23",
+        estado: "Completada",
+        equipo: "Equipo de Evaluación Familiar",
+      },
+      plan_evaluacion: [
+        {
+          estado: true,
+          tarea: "Entrevista inicial familiar",
+          fecha: "20/10/23",
+          objetivo: "Establecer rapport y recopilar información inicial",
+          plazo: "30 días",
+        },
+        {
+          estado: true,
+          tarea: "Evaluación psicológica de adultos",
+          fecha: "25/10/23",
+          objetivo: "Evaluar competencias parentales",
+          plazo: "45 días",
+        },
+        {
+          estado: false,
+          tarea: "Visita domiciliaria",
+          fecha: "01/11/23",
+          objetivo: "Evaluar condiciones del hogar",
+          plazo: "60 días",
+        },
+      ],
+      evaluacion_familiar: {
+        estado: "En curso",
+        fecha_inicio: "15/10/23",
+        fecha_finalizacion: "",
+        equipo_evaluador: "Lic. Ana Rodríguez, Dr. Carlos López",
+        observaciones: "Familia colaborativa, muestra interés en el proceso de evaluación",
+      },
+      legajos_afectados: [
+        {
+          numero_legajo: "789012",
+          nombre_nnya: "González Sofía",
+          relacion: "Hija",
+        },
+        {
+          numero_legajo: "789013",
+          nombre_nnya: "González Mateo",
+          relacion: "Hijo",
+        },
+      ],
+      historial_seguimiento: [
+        {
+          fecha: "15 OCT 23",
+          descripcion: "Inicio de evaluación familiar",
+          hora: "09:00 am",
+        },
+        {
+          fecha: "20 OCT 23",
+          descripcion: "Primera entrevista familiar realizada",
+          hora: "14:30 pm",
+        },
+        {
+          fecha: "25 OCT 23",
+          descripcion: "Evaluación psicológica completada",
+          hora: "10:15 am",
+        },
+      ],
+      cierre: {
+        fecha: "",
+        estado: "",
+        equipo: "",
+      },
+    },
+    familia_evaluada: {
+      grupo_familiar: "Familia nuclear compuesta por madre, padre y dos hijos menores",
+      contexto_socioeconomico: "Nivel socioeconómico medio, ambos padres trabajan",
+      dinamicas_familiares: "Relaciones familiares estables, comunicación abierta",
+    },
+    ultimo_informe: {
+      fecha: "25/10/23",
+      autor: "Equipo de Evaluación Familiar",
+      archivo: "Informe_Evaluacion_Parcial.pdf",
+    },
+  }
+}
+
 export default function MedidaDetail({ params, onClose, isFullPage = false }: MedidaDetailProps) {
   const [medidaData, setMedidaData] = useState<MedidaData | null>(null)
   const [legajoData, setLegajoData] = useState<Legajo | null>(null)
@@ -140,14 +279,17 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           if (legajo) {
             setLegajoData(legajo)
 
-            // Load medida data
-            const medida = getMedidaData(params.id, params.medidaId)
+            // Load medida data - for now default to MPI, later we'll determine from legajo
+            const medidaTipo = params.medidaId === 'mpe' ? 'MPE' : 'MPI'
+            const medida = getMedidaData(params.id, params.medidaId, medidaTipo)
             setMedidaData(medida)
 
             // Determine active step based on data
             if (medida.etapas.cierre.estado) {
               setActiveStep(2)
-            } else if (medida.etapas.plan_accion.length > 0) {
+            } else if (medida.tipo === 'MPI' && 'plan_accion' in medida.etapas && medida.etapas.plan_accion.length > 0) {
+              setActiveStep(1)
+            } else if (medida.tipo === 'MPE' && 'plan_evaluacion' in medida.etapas && medida.etapas.plan_evaluacion.length > 0) {
               setActiveStep(1)
             } else {
               setActiveStep(0)
@@ -180,14 +322,22 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
   const handleEditTask = (index: number) => {
     if (medidaData) {
-      const task = medidaData.etapas.plan_accion[index]
-      setNewTask({
-        tarea: task.tarea,
-        objetivo: task.objetivo,
-        plazo: task.plazo,
-      })
-      setEditingTaskIndex(index)
-      setOpenAddTaskDialog(true)
+      let task;
+      if (medidaData.tipo === 'MPI' && 'plan_accion' in medidaData.etapas) {
+        task = medidaData.etapas.plan_accion[index]
+      } else if (medidaData.tipo === 'MPE' && 'plan_evaluacion' in medidaData.etapas) {
+        task = medidaData.etapas.plan_evaluacion[index]
+      }
+
+      if (task) {
+        setNewTask({
+          tarea: task.tarea,
+          objetivo: task.objetivo,
+          plazo: task.plazo,
+        })
+        setEditingTaskIndex(index)
+        setOpenAddTaskDialog(true)
+      }
     }
   }
 
@@ -198,21 +348,34 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const handleSaveTask = (task: NewTask) => {
     if (!medidaData) return
 
-    const updatedMedidaData = { ...medidaData }
+    const updatedMedidaData = { ...medidaData } as MedidaData
 
     if (editingTaskIndex !== null) {
       // Update existing task
-      updatedMedidaData.etapas.plan_accion[editingTaskIndex] = {
-        ...updatedMedidaData.etapas.plan_accion[editingTaskIndex],
-        ...task,
+      if (medidaData.tipo === 'MPI' && 'plan_accion' in updatedMedidaData.etapas) {
+        updatedMedidaData.etapas.plan_accion[editingTaskIndex] = {
+          ...updatedMedidaData.etapas.plan_accion[editingTaskIndex],
+          ...task,
+        }
+      } else if (medidaData.tipo === 'MPE' && 'plan_evaluacion' in updatedMedidaData.etapas) {
+        updatedMedidaData.etapas.plan_evaluacion[editingTaskIndex] = {
+          ...updatedMedidaData.etapas.plan_evaluacion[editingTaskIndex],
+          ...task,
+        }
       }
     } else {
       // Add new task
-      updatedMedidaData.etapas.plan_accion.push({
+      const newTask = {
         estado: false,
         ...task,
         fecha: new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" }),
-      })
+      }
+
+      if (medidaData.tipo === 'MPI' && 'plan_accion' in updatedMedidaData.etapas) {
+        updatedMedidaData.etapas.plan_accion.push(newTask)
+      } else if (medidaData.tipo === 'MPE' && 'plan_evaluacion' in updatedMedidaData.etapas) {
+        updatedMedidaData.etapas.plan_evaluacion.push(newTask)
+      }
     }
 
     setMedidaData(updatedMedidaData)
@@ -349,63 +512,76 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           </Box>
         )}
 
-        <MedidaHeader medidaData={medidaData} isActive={activeStep !== 2} onViewPersonalData={handleViewPersonalData} />
-
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-          Etapas de la medida
-        </Typography>
-
-        <Grid container spacing={3}>
-          {/* Apertura Section */}
-          <Grid item xs={12} md={4}>
-            <AperturaSection
-              data={medidaData.etapas.apertura}
-              isActive={activeStep === 0}
-              isCompleted={activeStep >= 0}
-              onViewForm={handleViewForm}
+        {medidaData.tipo === 'MPE' ? (
+          <>
+            <MPEHeader
+              medidaData={medidaData}
+              estados={medidaData.estados}
+              progreso={medidaData.progreso}
             />
-          </Grid>
+            <MPETabs medidaData={medidaData} />
+          </>
+        ) : (
+          <>
+            <MedidaHeader medidaData={medidaData} isActive={activeStep !== 2} onViewPersonalData={handleViewPersonalData} />
 
-          {/* Plan de acción Section */}
-          <Grid item xs={12} md={8}>
-            <PlanAccionSection
-              tasks={medidaData.etapas.plan_accion}
-              isActive={activeStep === 1}
-              onAddTask={handleAddTask}
-              onViewTaskDetails={(index) => console.log(`View task details for index ${index}`)}
-              onEditTask={handleEditTask}
-            />
-          </Grid>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Etapas de la medida
+            </Typography>
 
-          {/* Historial de seguimiento Section */}
-          <Grid item xs={12} md={4}>
-            <HistorialSeguimientoSection
-              items={medidaData.etapas.historial_seguimiento}
-              onAddSeguimiento={handleAddSeguimiento}
-              onViewAttachment={handleOpenAttachment}
-            />
-          </Grid>
+            <Grid container spacing={3}>
+              {/* Apertura Section */}
+              <Grid item xs={12} md={4}>
+                <AperturaSection
+                  data={medidaData.etapas.apertura}
+                  isActive={activeStep === 0}
+                  isCompleted={activeStep >= 0}
+                  onViewForm={handleViewForm}
+                />
+              </Grid>
 
-          {/* Cierre Section */}
+              {/* Plan de acción Section - Only for MPI */}
+              <Grid item xs={12} md={8}>
+                {medidaData.tipo === 'MPI' && 'plan_accion' in medidaData.etapas && (
+                  <PlanAccionSection
+                    tasks={medidaData.etapas.plan_accion}
+                    isActive={activeStep === 1}
+                    onAddTask={handleAddTask}
+                    onViewTaskDetails={(index) => console.log(`View task details for index ${index}`)}
+                    onEditTask={handleEditTask}
+                  />
+                )}
+              </Grid>
 
+              {/* Historial de seguimiento Section */}
+              <Grid item xs={12} md={4}>
+                <HistorialSeguimientoSection
+                  items={medidaData.etapas.historial_seguimiento}
+                  onAddSeguimiento={handleAddSeguimiento}
+                  onViewAttachment={handleOpenAttachment}
+                />
+              </Grid>
 
-          {/* Último informe Section */}
-          <Grid item xs={12} md={4}>
-            <UltimoInformeSection
-              data={medidaData.ultimo_informe}
-              onViewAttachment={handleOpenAttachment}
-              onDownload={handleDownloadAttachment}
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <CierreSection
-              data={medidaData.etapas.cierre}
-              isActive={activeStep === 2}
-              isCompleted={activeStep === 2}
-              onCloseMeasure={handleCloseMeasure}
-            />
-          </Grid>
-        </Grid>
+              {/* Último informe Section */}
+              <Grid item xs={12} md={4}>
+                <UltimoInformeSection
+                  data={medidaData.ultimo_informe}
+                  onViewAttachment={handleOpenAttachment}
+                  onDownload={handleDownloadAttachment}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <CierreSection
+                  data={medidaData.etapas.cierre}
+                  isActive={activeStep === 2}
+                  isCompleted={activeStep === 2}
+                  onCloseMeasure={handleCloseMeasure}
+                />
+              </Grid>
+            </Grid>
+          </>
+        )}
       </Box>
 
       {/* Dialogs */}

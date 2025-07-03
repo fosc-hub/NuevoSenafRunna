@@ -251,8 +251,6 @@ export const ResidenciasTab: React.FC = () => {
     const [situaciones] = useState<SituacionCritica[]>(mockSituaciones)
 
     const sidebarOptions = [
-        { id: "nueva-medida", label: "Nueva Medida" },
-        { id: "plan-trabajo", label: "Plan de trabajo" },
         { id: "plan-acompaniamiento", label: "Plan de acompañamiento" },
         { id: "situaciones-criticas", label: "Situaciones críticas" },
         { id: "cambio-lugar", label: "Cambio de lugar de resguardo" },
@@ -368,7 +366,6 @@ export const ResidenciasTab: React.FC = () => {
 
     const renderContent = () => {
         switch (selectedSection) {
-            case "plan-trabajo":
             case "plan-acompaniamiento":
                 return <PlanTrabajoTab medidaData={{}} />
             case "cambio-lugar":
@@ -377,14 +374,6 @@ export const ResidenciasTab: React.FC = () => {
                 return <NotasSeguimientoSection />
             case "situaciones-criticas":
                 return renderSituacionesCriticas()
-            case "nueva-medida":
-                return (
-                    <Box sx={{ textAlign: "center", py: 6 }}>
-                        <Typography variant="h6" color="text.secondary">
-                            Nueva Medida - En desarrollo
-                        </Typography>
-                    </Box>
-                )
             default:
                 return renderSituacionesCriticas()
         }

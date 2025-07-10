@@ -23,6 +23,7 @@ import AdjuntarActasModal from "../adjuntar-actas-modal"
 import { AgregarIntervencionModal } from "../agregar-intervencion-modal"
 import { CarouselStepper } from "../carousel-stepper"
 import { MensajesModal } from "../mensajes-modal"
+import { FormularioDocumentoModal } from "../formulario-documento-modal"
 
 interface AperturaTabProps {
     medidaData: any
@@ -44,6 +45,7 @@ export const AperturaTab: React.FC<AperturaTabProps> = ({ medidaData }) => {
     })
     const [agregarIntervencionModalOpen, setAgregarIntervencionModalOpen] = useState<boolean>(false)
     const [mensajesModalOpen, setMensajesModalOpen] = useState<boolean>(false)
+    const [formularioDocumentoModalOpen, setFormularioDocumentoModalOpen] = useState<boolean>(false)
 
     const handleDocumentChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
         setDocumentStates(prev => ({
@@ -462,6 +464,7 @@ export const AperturaTab: React.FC<AperturaTabProps> = ({ medidaData }) => {
                     variant="contained"
                     color="primary"
                     size="small"
+                    onClick={() => setFormularioDocumentoModalOpen(true)}
                     sx={{
                         textTransform: "none",
                         borderRadius: 2,
@@ -754,6 +757,11 @@ export const AperturaTab: React.FC<AperturaTabProps> = ({ medidaData }) => {
                 open={mensajesModalOpen}
                 onClose={() => setMensajesModalOpen(false)}
                 title="Mensajes - Informe de medida adoptada"
+            />
+
+            <FormularioDocumentoModal
+                open={formularioDocumentoModalOpen}
+                onClose={() => setFormularioDocumentoModalOpen(false)}
             />
         </Box>
     )

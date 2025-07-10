@@ -11,6 +11,7 @@ import AdjuntarActasModal from "../adjuntar-actas-modal"
 import { AgregarIntervencionModal } from "../agregar-intervencion-modal"
 import { CarouselStepper } from "../carousel-stepper"
 import { MensajesModal } from "../mensajes-modal"
+import { FormularioDocumentoModal } from "../formulario-documento-modal"
 import { SectionRenderer } from "../shared/section-renderer"
 import {
     getInformeMedidaConfig,
@@ -34,6 +35,7 @@ export const AperturaTabRefactored: React.FC<AperturaTabProps> = ({ medidaData }
     const [notaAvalModalOpen, setNotaAvalModalOpen] = useState<boolean>(false)
     const [agregarIntervencionModalOpen, setAgregarIntervencionModalOpen] = useState<boolean>(false)
     const [mensajesModalOpen, setMensajesModalOpen] = useState<boolean>(false)
+    const [formularioDocumentoModalOpen, setFormularioDocumentoModalOpen] = useState<boolean>(false)
 
     // Document states
     const [documentStates, setDocumentStates] = useState({
@@ -75,7 +77,7 @@ export const AperturaTabRefactored: React.FC<AperturaTabProps> = ({ medidaData }
     })
 
     const step3Config = getInformeJuridicoConfig({
-        onAgregarInforme: () => { }
+        onAgregarInforme: () => setFormularioDocumentoModalOpen(true)
     })
 
     const step4Config = getRatificacionConfig({
@@ -188,6 +190,11 @@ export const AperturaTabRefactored: React.FC<AperturaTabProps> = ({ medidaData }
                 open={mensajesModalOpen}
                 onClose={() => setMensajesModalOpen(false)}
                 title="Mensajes - Informe de medida adoptada"
+            />
+
+            <FormularioDocumentoModal
+                open={formularioDocumentoModalOpen}
+                onClose={() => setFormularioDocumentoModalOpen(false)}
             />
         </Box>
     )

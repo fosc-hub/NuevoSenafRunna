@@ -192,7 +192,7 @@ const MedidaAccordion: React.FC<MedidaAccordionProps> = ({
                       onClick={() => {
                         const path =
                           title === "MPE"
-                            ? `/legajo/${legajoId}/medida/MPE_${item.fecha_alta.replace(/\//g, "-")}`
+                            ? `/legajo/${legajoId}/medida/mpe`
                             : `/legajo/${legajoId}/medida/${item.medida}_${item.fecha_alta.replace(/\//g, "-")}`
                         router.push(path)
                       }}

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress } from "@mui/material"
+import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress, useTheme } from "@mui/material"
 
 interface MPEHeaderProps {
     medidaData: {
@@ -41,6 +41,7 @@ interface MPEHeaderProps {
 }
 
 export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progreso }) => {
+    const theme = useTheme();
     const getChipColor = (active: boolean, count?: number) => {
         if (count !== undefined) {
             return count > 0 ? "primary" : "default"
@@ -66,13 +67,13 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
             }}
         >
             {/* MPE Title */}
-            <Typography variant="h4" sx={{ textAlign: "center", fontWeight: 600, mb: 3 }}>
+            <Typography variant="h4" sx={{ textAlign: "center", fontWeight: 600, mb: 3, color: "primary.main" }}>
                 MPE
             </Typography>
 
             {/* Estado de Medida Section */}
             <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
                     Estado de Medida
                 </Typography>
 
@@ -83,48 +84,56 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                         color={getChipColor(estados.inicial)}
                         variant={getChipVariant(estados.inicial)}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label="Apertura"
                         color={getChipColor(estados.apertura)}
                         variant={getChipVariant(estados.apertura)}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label={`Innovación ${estados.innovacion}`}
-                        color={getChipColor(false, estados.innovacion)}
-                        variant={getChipVariant(false, estados.innovacion)}
+                        color={estados.innovacion > 0 ? "secondary" : "default"}
+                        variant={estados.innovacion > 0 ? "filled" : "outlined"}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label={`Prórroga ${estados.prorroga}`}
-                        color={getChipColor(false, estados.prorroga)}
-                        variant={getChipVariant(false, estados.prorroga)}
+                        color={estados.prorroga > 0 ? "secondary" : "default"}
+                        variant={estados.prorroga > 0 ? "filled" : "outlined"}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label={`Cambio de lugar de resguardo ${estados.cambio_lugar}`}
-                        color={getChipColor(false, estados.cambio_lugar)}
-                        variant={getChipVariant(false, estados.cambio_lugar)}
+                        color={estados.cambio_lugar > 0 ? "secondary" : "default"}
+                        variant={estados.cambio_lugar > 0 ? "filled" : "outlined"}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label="Seguimiento Intervención"
                         color="success"
                         variant={estados.seguimiento_intervencion ? "filled" : "outlined"}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label="Cese"
                         color={getChipColor(estados.cese)}
                         variant={getChipVariant(estados.cese)}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                     <Chip
                         label="Post Cese"
                         color={getChipColor(estados.post_cese)}
                         variant={getChipVariant(estados.post_cese)}
                         size="small"
+                        sx={{ fontWeight: 500 }}
                     />
                 </Box>
 
@@ -135,7 +144,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                             <Typography variant="body2" sx={{ color: "primary.main", fontWeight: "bold" }}>
                                 Fecha: {medidaData.fecha}
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                            <Typography variant="body2" sx={{ fontWeight: "bold", color: "secondary.main" }}>
                                 Juzgado: {medidaData.juzgado}
                             </Typography>
                         </Box>
@@ -162,7 +171,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
 
                     <Grid item xs={12} md={6}>
                         <Box sx={{ textAlign: { md: "right" } }}>
-                            <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                            <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: "primary.main" }}>
                                 {medidaData.persona.nombre}
                             </Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
@@ -185,19 +194,20 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                 <Box sx={{ mb: 3 }}>
                     {/* Progress Labels */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                        <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                        <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "primary.main" }}>
                             Iniciada {progreso.iniciada}%
                         </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                        <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "secondary.main" }}>
                             En seguimiento {progreso.en_seguimiento}%
                         </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                        <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "warning.main" }}>
                             Cierre {progreso.cierre}%
                         </Typography>
                     </Box>
 
                     {/* Main Progress Bar */}
-                    <Box sx={{ position: "relative", borderRadius: 2, overflow: "hidden", height: 40 }}>
+                    <Box sx={{ position: "relative", borderRadius: 2, overflow: "hidden", height: 40, background: theme.palette.grey[200] }}>
+                        {/* Iniciada */}
                         <Box
                             sx={{
                                 position: "absolute",
@@ -205,16 +215,18 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                                 top: 0,
                                 bottom: 0,
                                 width: `${progreso.iniciada}%`,
-                                backgroundColor: "#e0e0e0",
+                                backgroundColor: "primary.main",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
+                                zIndex: 1
                             }}
                         >
-                            <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 500, color: "white" }}>
                                 Iniciada {progreso.iniciada}%
                             </Typography>
                         </Box>
+                        {/* En seguimiento */}
                         <Box
                             sx={{
                                 position: "absolute",
@@ -222,30 +234,33 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                                 top: 0,
                                 bottom: 0,
                                 width: `${progreso.en_seguimiento}%`,
-                                backgroundColor: "#4db6ac",
+                                backgroundColor: "secondary.main",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
+                                zIndex: 2
                             }}
                         >
                             <Typography variant="caption" sx={{ fontWeight: 500, color: "white" }}>
                                 En seguimiento {progreso.en_seguimiento}%
                             </Typography>
                         </Box>
+                        {/* Cierre */}
                         <Box
                             sx={{
                                 position: "absolute",
-                                right: 0,
+                                left: `calc(${progreso.iniciada}% + ${progreso.en_seguimiento}%)`,
                                 top: 0,
                                 bottom: 0,
                                 width: `${progreso.cierre}%`,
-                                backgroundColor: "#ff8a65",
+                                backgroundColor: "warning.main",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
+                                zIndex: 3
                             }}
                         >
-                            <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 500, color: "white" }}>
                                 Cierre {progreso.cierre}%
                             </Typography>
                         </Box>
@@ -253,56 +268,34 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
 
                     {/* Total Progress */}
                     <Box sx={{ mt: 2 }}>
-                        <Box sx={{
-                            backgroundColor: "#4db6ac",
-                            height: 40,
-                            borderRadius: 2,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
-                            overflow: "hidden"
-                        }}>
-                            <Box
-                                sx={{
-                                    position: "absolute",
-                                    left: 0,
-                                    top: 0,
-                                    bottom: 0,
-                                    width: `${progreso.total}%`,
-                                    backgroundColor: "#4db6ac",
-                                }}
-                            />
-                            <Box
-                                sx={{
-                                    position: "absolute",
-                                    left: `${progreso.total}%`,
-                                    top: 0,
-                                    bottom: 0,
-                                    right: 0,
-                                    backgroundColor: "#ff8a65",
-                                }}
-                            />
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: "white", zIndex: 1 }}>
-                                {progreso.total}%
-                            </Typography>
-                        </Box>
+                        <LinearProgress
+                            variant="determinate"
+                            value={progreso.total}
+                            sx={{
+                                height: 16,
+                                borderRadius: 2,
+                                backgroundColor: theme.palette.grey[300],
+                                '& .MuiLinearProgress-bar': {
+                                    backgroundColor: theme.palette.primary.main,
+                                },
+                            }}
+                        />
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main", mt: 1, textAlign: "center" }}>
+                            {progreso.total}%
+                        </Typography>
                     </Box>
                 </Box>
 
                 {/* Action Button */}
                 <Button
                     variant="contained"
+                    color="primary"
                     fullWidth
                     sx={{
-                        backgroundColor: "#5c6bc0",
-                        color: "white",
                         py: 1.5,
                         borderRadius: 2,
                         fontWeight: 600,
-                        "&:hover": {
-                            backgroundColor: "#3f51b5",
-                        },
+                        fontSize: "1rem"
                     }}
                 >
                     Carga para residencias

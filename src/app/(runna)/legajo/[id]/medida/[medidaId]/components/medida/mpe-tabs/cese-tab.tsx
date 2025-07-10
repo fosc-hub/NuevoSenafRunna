@@ -234,17 +234,6 @@ export const CeseTab: React.FC = () => {
                         Aprobado
                     </Button>
                     <Button
-                        variant="contained"
-                        color="error"
-                        sx={{
-                            flex: 1,
-                            textTransform: "none",
-                            borderRadius: 2,
-                        }}
-                    >
-                        Anulado
-                    </Button>
-                    <Button
                         variant="outlined"
                         color="primary"
                         sx={{
@@ -254,6 +243,17 @@ export const CeseTab: React.FC = () => {
                         }}
                     >
                         Observar
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        sx={{
+                            flex: 1,
+                            textTransform: "none",
+                            borderRadius: 2,
+                        }}
+                    >
+                        Anulado
                     </Button>
                 </Box>
             </Paper>
@@ -328,7 +328,7 @@ export const CeseTab: React.FC = () => {
                         Observar
                     </Button>
                     <Button
-                        variant="contained"
+                        variant="outlined"
                         color="error"
                         sx={{
                             flex: 1,
@@ -415,7 +415,7 @@ export const CeseTab: React.FC = () => {
                         Observar
                     </Button>
                     <Button
-                        variant="contained"
+                        variant="outlined"
                         color="error"
                         sx={{
                             flex: 1,

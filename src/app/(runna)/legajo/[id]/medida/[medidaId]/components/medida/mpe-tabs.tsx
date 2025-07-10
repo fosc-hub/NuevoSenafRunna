@@ -4,10 +4,10 @@ import type React from "react"
 import { useState } from "react"
 import { Box, Tabs, Tab, Paper } from "@mui/material"
 import { AperturaTab } from "./mpe-tabs/apertura-tab"
+import { InnovacionTab } from "./mpe-tabs/innovacion-tab"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
 import { CeseTab } from "./mpe-tabs/cese-tab"
-import { ResidenciasTab } from "./mpe-tabs/residencias-tab"
 import { HistorialSeguimientoTable } from "./historial-seguimiento-table"
 import { InformesMensualesTable } from "./informes-mensuales-table"
 
@@ -46,18 +46,13 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData }) => {
                     <Tab label="Plan de trabajo" />
                     <Tab label="Cese" />
                     <Tab label="Post cese" />
-                    <Tab label="Residencias" />
                 </Tabs>
             </Box>
 
             {/* Tab Content */}
             <Box>
                 {activeTab === 0 && <AperturaTab medidaData={medidaData} />}
-                {activeTab === 1 && (
-                    <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                        Contenido de Innovación - En desarrollo
-                    </Box>
-                )}
+                {activeTab === 1 && <InnovacionTab medidaData={medidaData} />}
                 {activeTab === 2 && <ProrrogaTab />}
                 {activeTab === 3 && <PlanTrabajoTab medidaData={medidaData} />}
                 {activeTab === 4 && <CeseTab />}
@@ -66,7 +61,6 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData }) => {
                         Contenido de Post cese - En desarrollo
                     </Box>
                 )}
-                {activeTab === 6 && <ResidenciasTab />}
             </Box>
 
             {/* Tables outside tabs */}

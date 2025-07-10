@@ -1,7 +1,10 @@
 "use client"
 
 import type React from "react"
-import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress, useTheme } from "@mui/material"
+import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, IconButton } from "@mui/material"
+import CloseIcon from "@mui/icons-material/Close"
+import { ResidenciasTab } from "./mpe-tabs/residencias-tab"
+import { useState } from "react"
 
 interface MPEHeaderProps {
     medidaData: {
@@ -42,6 +45,7 @@ interface MPEHeaderProps {
 
 export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progreso }) => {
     const theme = useTheme();
+    const [residenciasModalOpen, setResidenciasModalOpen] = useState(false);
     const getChipColor = (active: boolean, count?: number) => {
         if (count !== undefined) {
             return count > 0 ? "primary" : "default"
@@ -291,6 +295,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     variant="contained"
                     color="primary"
                     fullWidth
+                    onClick={() => setResidenciasModalOpen(true)}
                     sx={{
                         py: 1.5,
                         borderRadius: 2,
@@ -301,6 +306,45 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     Carga para residencias
                 </Button>
             </Box>
+
+            {/* Residencias Modal */}
+            <Dialog
+                open={residenciasModalOpen}
+                onClose={() => setResidenciasModalOpen(false)}
+                maxWidth="lg"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        maxHeight: '90vh'
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    fontSize: '1.5rem',
+                    position: 'relative',
+                    pb: 1,
+                    borderBottom: '1px solid #e0e0e0'
+                }}>
+                    Carga para Residencias
+                    <IconButton
+                        onClick={() => setResidenciasModalOpen(false)}
+                        sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            color: 'grey.500',
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+                    <ResidenciasTab />
+                </DialogContent>
+            </Dialog>
         </Paper>
     )
 } 

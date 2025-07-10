@@ -24,11 +24,11 @@ import { AgregarIntervencionModal } from "../agregar-intervencion-modal"
 import { CarouselStepper } from "../carousel-stepper"
 import { MensajesModal } from "../mensajes-modal"
 
-interface AperturaTabProps {
+interface InnovacionTabProps {
     medidaData: any
 }
 
-export const AperturaTab: React.FC<AperturaTabProps> = ({ medidaData }) => {
+export const InnovacionTab: React.FC<InnovacionTabProps> = ({ medidaData }) => {
     const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
     const [notificationModalOpen, setNotificationModalOpen] = useState<boolean>(false)
     const [dniModalOpen, setDniModalOpen] = useState<boolean>(false)

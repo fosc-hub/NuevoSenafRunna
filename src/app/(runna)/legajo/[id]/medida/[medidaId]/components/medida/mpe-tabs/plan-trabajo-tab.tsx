@@ -65,7 +65,7 @@ const mockActividades: Actividad[] = [
     }
 ]
 
-export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData }) => {
+const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData }) => {
     const [page, setPage] = useState(0)
     const [rowsPerPage, setRowsPerPage] = useState(5)
     const [actividades] = useState<Actividad[]>(mockActividades)
@@ -258,4 +258,6 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData }) =>
             />
         </>
     )
-} 
+}
+
+export { PlanTrabajoTab } 

@@ -10,13 +10,40 @@ import {
     Typography,
     TextField,
     Button,
-    IconButton
+    IconButton,
+    Card,
+    CardContent,
+    Alert,
+    Chip,
+    Paper,
+    LinearProgress,
+    FormHelperText,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Divider,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Stepper,
+    Step,
+    StepLabel
 } from "@mui/material"
 import { useState } from "react"
 import CloseIcon from "@mui/icons-material/Close"
 import DownloadIcon from "@mui/icons-material/Download"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import DeleteIcon from "@mui/icons-material/Delete"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import WarningIcon from "@mui/icons-material/Warning"
+import InfoIcon from "@mui/icons-material/Info"
+import SaveIcon from "@mui/icons-material/Save"
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
+import DescriptionIcon from "@mui/icons-material/Description"
 
 interface AdjuntarNotaModalProps {
     open: boolean
@@ -27,6 +54,16 @@ interface AdjuntarNotaModalProps {
     sectionTitle?: string
 }
 
+interface ArchivoAdjunto {
+    id: string
+    nombre: string
+    tipo: string
+    tamaño: number
+    fechaSubida: Date
+    estado: 'subiendo' | 'completado' | 'error'
+    progreso: number
+}
+
 export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
     open,
     onClose,
@@ -35,41 +72,574 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
     sectionNumber = "1",
     sectionTitle = "Nota de Aprobación"
 }) => {
+    const [activeStep, setActiveStep] = useState(0)
     const [fecha, setFecha] = useState<string>("")
     const [observaciones, setObservaciones] = useState<string>("")
-    const [archivoSeleccionado, setArchivoSeleccionado] = useState<string>("")
+    const [archivosAdjuntos, setArchivosAdjuntos] = useState<ArchivoAdjunto[]>([])
+    const [dragOver, setDragOver] = useState(false)
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const [modeloDescargado, setModeloDescargado] = useState(false)
+    const [expandedSection, setExpandedSection] = useState<string | null>('instrucciones')
 
-    const handleSave = () => {
-        // Handle save logic
-        console.log("Guardando nota...")
-        onClose()
+    const steps = ['Instrucciones', 'Documentos', 'Revisión']
+
+    const tiposArchivosPermitidos = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+    const tamañoMaximo = 5 * 1024 * 1024 // 5MB
+
+    const validateForm = () => {
+        const errors: Record<string, string> = {}
+
+        if (!fecha) {
+            errors.fecha = 'La fecha es requerida'
+        } else if (new Date(fecha) > new Date()) {
+            errors.fecha = 'La fecha no puede ser futura'
+        }
+
+        if (!observaciones.trim()) {
+            errors.observaciones = 'Las observaciones son requeridas'
+        } else if (observaciones.length < 10) {
+            errors.observaciones = 'Las observaciones deben tener al menos 10 caracteres'
+        }
+
+        if (archivosAdjuntos.filter(a => a.estado === 'completado').length === 0) {
+            errors.archivos = 'Debe adjuntar al menos un archivo'
+        }
+
+        return errors
+    }
+
+    const handleFileUpload = async (files: FileList) => {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+
+            // Validar tipo de archivo
+            const extension = '.' + file.name.split('.').pop()?.toLowerCase()
+            if (!tiposArchivosPermitidos.includes(extension)) {
+                continue
+            }
+
+            // Validar tamaño
+            if (file.size > tamañoMaximo) {
+                continue
+            }
+
+            const nuevoArchivo: ArchivoAdjunto = {
+                id: Math.random().toString(36).substr(2, 9),
+                nombre: file.name,
+                tipo: file.type,
+                tamaño: file.size,
+                fechaSubida: new Date(),
+                estado: 'subiendo',
+                progreso: 0
+            }
+
+            setArchivosAdjuntos(prev => [...prev, nuevoArchivo])
+
+            // Simular subida con progreso
+            const interval = setInterval(() => {
+                setArchivosAdjuntos(prev => prev.map(archivo => {
+                    if (archivo.id === nuevoArchivo.id) {
+                        const nuevoProgreso = Math.min(archivo.progreso + 10, 100)
+                        return {
+                            ...archivo,
+                            progreso: nuevoProgreso,
+                            estado: nuevoProgreso === 100 ? 'completado' : 'subiendo'
+                        }
+                    }
+                    return archivo
+                }))
+            }, 200)
+
+            setTimeout(() => clearInterval(interval), 2000)
+        }
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        setDragOver(false)
+        const files = e.dataTransfer.files
+        if (files.length > 0) {
+            handleFileUpload(files)
+        }
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+        setDragOver(true)
+    }
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault()
+        setDragOver(false)
+    }
+
+    const handleFileSelect = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.multiple = true
+        input.accept = tiposArchivosPermitidos.join(',')
+        input.onchange = (e) => {
+            const files = (e.target as HTMLInputElement).files
+            if (files) {
+                handleFileUpload(files)
+            }
+        }
+        input.click()
     }
 
     const handleDescargarModelo = () => {
-        // Handle download model
         console.log("Descargando modelo...")
+        setModeloDescargado(true)
+        // Simular descarga
+        setTimeout(() => {
+            // Crear un enlace de descarga temporal
+            const link = document.createElement('a')
+            link.href = '#'
+            link.download = 'modelo_nota_aprobacion.docx'
+            link.click()
+        }, 500)
     }
 
-    const handleSeleccionarArchivo = () => {
-        // Handle file selection
-        console.log("Seleccionando archivo...")
-        setArchivoSeleccionado("documento_ejemplo.pdf")
+    const removeArchivo = (id: string) => {
+        setArchivosAdjuntos(prev => prev.filter(a => a.id !== id))
+    }
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes === 0) return '0 Bytes'
+        const k = 1024
+        const sizes = ['Bytes', 'KB', 'MB', 'GB']
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    }
+
+    const getCompletionPercentage = () => {
+        let score = 0
+        if (fecha) score += 25
+        if (observaciones.trim()) score += 25
+        if (archivosAdjuntos.filter(a => a.estado === 'completado').length > 0) score += 25
+        if (modeloDescargado) score += 25
+        return score
+    }
+
+    const canProceed = () => {
+        if (activeStep === 0) return true
+        if (activeStep === 1) return archivosAdjuntos.filter(a => a.estado === 'completado').length > 0
+        if (activeStep === 2) {
+            const errors = validateForm()
+            return Object.keys(errors).length === 0
+        }
+        return true
+    }
+
+    const handleNext = () => {
+        if (activeStep < steps.length - 1) {
+            setActiveStep(activeStep + 1)
+        }
+    }
+
+    const handleBack = () => {
+        if (activeStep > 0) {
+            setActiveStep(activeStep - 1)
+        }
+    }
+
+    const handleSave = () => {
+        const errors = validateForm()
+        setValidationErrors(errors)
+
+        if (Object.keys(errors).length === 0) {
+            console.log("Guardando nota...")
+            onClose()
+        }
+    }
+
+    const getStepContent = (step: number) => {
+        switch (step) {
+            case 0:
+                return (
+                    <Box>
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                            <Typography variant="body2">
+                                Siga las instrucciones para adjuntar correctamente la nota de aprobación.
+                            </Typography>
+                        </Alert>
+
+                        <Accordion
+                            expanded={expandedSection === 'instrucciones'}
+                            onChange={() => setExpandedSection(expandedSection === 'instrucciones' ? null : 'instrucciones')}
+                            sx={{ mb: 2 }}
+                        >
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <InfoIcon sx={{ mr: 1, color: 'primary.main' }} />
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        Instrucciones Generales
+                                    </Typography>
+                                </Box>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <List>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                1.
+                                            </Typography>
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Descargar el modelo de nota"
+                                            secondary="Utilice el modelo oficial para mantener el formato estándar"
+                                        />
+                                    </ListItem>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                2.
+                                            </Typography>
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Completar la información requerida"
+                                            secondary="Incluya todos los datos necesarios según el caso específico"
+                                        />
+                                    </ListItem>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                3.
+                                            </Typography>
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Adjuntar el documento firmado"
+                                            secondary="El documento debe estar firmado por la autoridad competente"
+                                        />
+                                    </ListItem>
+                                </List>
+                            </AccordionDetails>
+                        </Accordion>
+
+                        <Card elevation={2} sx={{ p: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                {sectionNumber}. {sectionTitle}
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Paper
+                                    elevation={1}
+                                    sx={{
+                                        p: 2,
+                                        backgroundColor: modeloDescargado ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0, 0, 0, 0.03)',
+                                        border: modeloDescargado ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)',
+                                        borderRadius: 2
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <DescriptionIcon sx={{ mr: 2, color: 'primary.main' }} />
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                    {modeloTexto}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Formato: DOCX • Tamaño: ~50KB
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            {modeloDescargado && (
+                                                <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
+                                            )}
+                                            <Button
+                                                variant="contained"
+                                                startIcon={<DownloadIcon />}
+                                                onClick={handleDescargarModelo}
+                                                sx={{ textTransform: 'none' }}
+                                            >
+                                                {modeloDescargado ? 'Descargar nuevamente' : 'Descargar'}
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                </Paper>
+
+                                <Alert severity="warning" sx={{ mt: 2 }}>
+                                    <Typography variant="body2">
+                                        <strong>Importante:</strong> El documento debe estar completo y firmado antes de adjuntarlo.
+                                        Revise que toda la información esté correcta.
+                                    </Typography>
+                                </Alert>
+                            </Box>
+                        </Card>
+                    </Box>
+                )
+
+            case 1:
+                return (
+                    <Box>
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                            <Typography variant="body2">
+                                Adjunte el documento completado. Puede arrastrar archivos o seleccionarlos manualmente.
+                            </Typography>
+                        </Alert>
+
+                        {/* Upload Area */}
+                        <Paper
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onClick={handleFileSelect}
+                            sx={{
+                                border: dragOver ? '2px dashed #2196f3' : '2px dashed #ccc',
+                                borderRadius: 2,
+                                p: 4,
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                backgroundColor: dragOver ? 'rgba(33, 150, 243, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                                transition: 'all 0.2s ease',
+                                mb: 3,
+                                '&:hover': {
+                                    backgroundColor: 'rgba(33, 150, 243, 0.05)',
+                                    borderColor: '#2196f3'
+                                }
+                            }}
+                        >
+                            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                                {dragOver ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                o{" "}
+                                <Button variant="text" sx={{ textTransform: "none", fontWeight: 600, p: 0 }}>
+                                    selecciona archivos
+                                </Button>
+                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
+                                {tiposArchivosPermitidos.map(tipo => (
+                                    <Chip
+                                        key={tipo}
+                                        label={tipo.toUpperCase()}
+                                        size="small"
+                                        color="primary"
+                                        variant="outlined"
+                                    />
+                                ))}
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                Máximo 5MB por archivo
+                            </Typography>
+                        </Paper>
+
+                        {/* Uploaded Files */}
+                        {archivosAdjuntos.length > 0 && (
+                            <Card elevation={1} sx={{ p: 2 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                                    Archivos adjuntos ({archivosAdjuntos.length})
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    {archivosAdjuntos.map((archivo) => (
+                                        <Paper
+                                            key={archivo.id}
+                                            elevation={1}
+                                            sx={{
+                                                p: 2,
+                                                backgroundColor: archivo.estado === 'completado'
+                                                    ? 'rgba(76, 175, 80, 0.05)'
+                                                    : archivo.estado === 'error'
+                                                        ? 'rgba(244, 67, 54, 0.05)'
+                                                        : 'rgba(33, 150, 243, 0.05)',
+                                                border: `1px solid ${archivo.estado === 'completado'
+                                                        ? 'rgba(76, 175, 80, 0.2)'
+                                                        : archivo.estado === 'error'
+                                                            ? 'rgba(244, 67, 54, 0.2)'
+                                                            : 'rgba(33, 150, 243, 0.2)'
+                                                    }`
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                                    <AttachFileIcon
+                                                        sx={{
+                                                            color: archivo.estado === 'completado'
+                                                                ? 'success.main'
+                                                                : archivo.estado === 'error'
+                                                                    ? 'error.main'
+                                                                    : 'primary.main',
+                                                            mr: 2
+                                                        }}
+                                                    />
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                            {archivo.nombre}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {formatFileSize(archivo.tamaño)} • {archivo.estado === 'subiendo' ? 'Subiendo...' : archivo.estado === 'completado' ? 'Completado' : 'Error'}
+                                                        </Typography>
+                                                        {archivo.estado === 'subiendo' && (
+                                                            <LinearProgress
+                                                                variant="determinate"
+                                                                value={archivo.progreso}
+                                                                sx={{ mt: 0.5 }}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    {archivo.estado === 'completado' && (
+                                                        <IconButton size="small" color="primary">
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    )}
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => removeArchivo(archivo.id)}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    ))}
+                                </Box>
+                            </Card>
+                        )}
+
+                        {validationErrors.archivos && (
+                            <Alert severity="error" sx={{ mt: 2 }}>
+                                <Typography variant="body2">
+                                    {validationErrors.archivos}
+                                </Typography>
+                            </Alert>
+                        )}
+                    </Box>
+                )
+
+            case 2:
+                return (
+                    <Box>
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            <Typography variant="body2">
+                                Complete los datos adicionales y revise la información antes de guardar.
+                            </Typography>
+                        </Alert>
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <Card elevation={2} sx={{ p: 3 }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                    Información Adicional
+                                </Typography>
+
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                            Fecha del documento
+                                        </Typography>
+                                        <TextField
+                                            type="date"
+                                            value={fecha}
+                                            onChange={(e) => setFecha(e.target.value)}
+                                            variant="outlined"
+                                            fullWidth
+                                            error={!!validationErrors.fecha}
+                                            helperText={validationErrors.fecha}
+                                            InputLabelProps={{ shrink: true }}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                                                }
+                                            }}
+                                        />
+                                    </Box>
+
+                                    <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                            Observaciones
+                                        </Typography>
+                                        <TextField
+                                            multiline
+                                            rows={4}
+                                            fullWidth
+                                            value={observaciones}
+                                            onChange={(e) => setObservaciones(e.target.value)}
+                                            placeholder="Ingrese observaciones adicionales sobre el documento adjuntado"
+                                            variant="outlined"
+                                            error={!!validationErrors.observaciones}
+                                            helperText={validationErrors.observaciones}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                                                }
+                                            }}
+                                        />
+                                    </Box>
+                                </Box>
+                            </Card>
+
+                            <Card elevation={1} sx={{ p: 3 }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                    Resumen
+                                </Typography>
+
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Sección:
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {sectionNumber}. {sectionTitle}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Archivos adjuntos:
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {archivosAdjuntos.filter(a => a.estado === 'completado').length}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Fecha:
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {fecha || 'No especificada'}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Progreso:
+                                        </Typography>
+                                        <Chip
+                                            label={`${getCompletionPercentage()}% completado`}
+                                            color={getCompletionPercentage() === 100 ? "success" : "primary"}
+                                            size="small"
+                                        />
+                                    </Box>
+                                </Box>
+                            </Card>
+                        </Box>
+                    </Box>
+                )
+
+            default:
+                return null
+        }
     }
 
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
             PaperProps={{
                 sx: {
                     borderRadius: 3,
-                    maxHeight: '90vh'
+                    maxHeight: '95vh',
+                    height: '95vh'
                 }
             }}
         >
-            {/* Header */}
             <DialogTitle sx={{
                 textAlign: 'center',
                 fontWeight: 600,
@@ -92,139 +662,79 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ px: 4, py: 3 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {/* Nota Section */}
-                    <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 2 }}>
-                            {sectionNumber}. {sectionTitle}
-                        </Typography>
-
-                        {/* Download Model Button */}
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            p: 2,
-                            backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                            borderRadius: 1,
-                            mb: 2
-                        }}>
-                            <Typography variant="body2" color="text.secondary">
-                                {modeloTexto}
-                            </Typography>
-                            <IconButton
-                                onClick={handleDescargarModelo}
-                                sx={{
-                                    backgroundColor: 'primary.main',
-                                    color: 'white',
-                                    '&:hover': {
-                                        backgroundColor: 'primary.dark',
-                                    }
-                                }}
-                            >
-                                <DownloadIcon />
-                            </IconButton>
-                        </Box>
-
-                        {/* Select File Button */}
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            p: 2,
-                            backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                            borderRadius: 1
-                        }}>
-                            <Typography variant="body2" color="text.secondary">
-                                {archivoSeleccionado || "Seleccionar archivo"}
-                            </Typography>
-                            <IconButton
-                                onClick={handleSeleccionarArchivo}
-                                sx={{
-                                    backgroundColor: 'primary.main',
-                                    color: 'white',
-                                    '&:hover': {
-                                        backgroundColor: 'primary.dark',
-                                    }
-                                }}
-                            >
-                                <AttachFileIcon />
-                            </IconButton>
-                        </Box>
-                    </Box>
-
-                    {/* Fecha */}
-                    <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                            Fecha
-                        </Typography>
-                        <Box sx={{ position: 'relative' }}>
-                            <TextField
-                                type="date"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                variant="outlined"
-                                fullWidth
-                                InputLabelProps={{ shrink: true }}
-                                placeholder="DD/MM/AAAA"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                                    }
-                                }}
-                            />
-                            <CalendarTodayIcon sx={{
-                                position: 'absolute',
-                                right: 12,
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                color: 'primary.main',
-                                pointerEvents: 'none'
-                            }} />
-                        </Box>
-                    </Box>
-
-                    {/* Observaciones */}
-                    <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                            Observaciones
-                        </Typography>
-                        <TextField
-                            multiline
-                            rows={4}
-                            fullWidth
-                            value={observaciones}
-                            onChange={(e) => setObservaciones(e.target.value)}
-                            placeholder="Ingrese sus observaciones aquí"
-                            variant="outlined"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                                }
-                            }}
-                        />
-                    </Box>
+            {/* Progress indicator */}
+            <Box sx={{ px: 4, py: 1, backgroundColor: 'rgba(0, 0, 0, 0.02)', borderBottom: '1px solid #e0e0e0' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                        Progreso general
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {getCompletionPercentage()}%
+                    </Typography>
                 </Box>
+                <LinearProgress
+                    variant="determinate"
+                    value={getCompletionPercentage()}
+                    sx={{ height: 4, borderRadius: 2, mt: 0.5 }}
+                />
+            </Box>
+
+            {/* Stepper */}
+            <Box sx={{ px: 4, py: 2, borderBottom: '1px solid #e0e0e0' }}>
+                <Stepper activeStep={activeStep} alternativeLabel>
+                    {steps.map((label) => (
+                        <Step key={label}>
+                            <StepLabel>{label}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
+            </Box>
+
+            <DialogContent sx={{ px: 4, py: 3, overflow: 'auto' }}>
+                {getStepContent(activeStep)}
             </DialogContent>
 
-            <DialogActions sx={{ px: 4, pb: 3, pt: 2 }}>
+            <DialogActions sx={{ px: 4, pb: 3, pt: 2, borderTop: '1px solid #e0e0e0', justifyContent: 'space-between' }}>
                 <Button
-                    onClick={handleSave}
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    size="large"
-                    startIcon={<AttachFileIcon />}
-                    sx={{
-                        textTransform: "none",
-                        borderRadius: 2,
-                        py: 1.5,
-                        fontWeight: 600,
-                    }}
+                    disabled={activeStep === 0}
+                    onClick={handleBack}
+                    sx={{ textTransform: "none", borderRadius: 2 }}
                 >
-                    Guardar
+                    Anterior
                 </Button>
+
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    {activeStep === steps.length - 1 ? (
+                        <Button
+                            onClick={handleSave}
+                            variant="contained"
+                            disabled={!canProceed()}
+                            startIcon={<SaveIcon />}
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                                px: 4,
+                                py: 1.5,
+                                fontWeight: 600,
+                            }}
+                        >
+                            Guardar Nota
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleNext}
+                            variant="contained"
+                            disabled={!canProceed()}
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                                px: 4
+                            }}
+                        >
+                            Siguiente
+                        </Button>
+                    )}
+                </Box>
             </DialogActions>
         </Dialog>
     )

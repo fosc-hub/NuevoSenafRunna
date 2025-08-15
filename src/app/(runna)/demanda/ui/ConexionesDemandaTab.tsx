@@ -58,7 +58,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   // Fetch all demandas
   const { data: allDemandas = [], isLoading: isLoadingDemandas } = useQuery({
     queryKey: ["allDemandas"],
-    queryFn: () => get<Demanda>("demanda/"),
+    queryFn: () => get<Demanda[]>("demanda/"),
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
@@ -68,15 +68,15 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     queryFn: async () => {
       try {
         // Fetch all connections for this demanda
-        const data = await get<DemandaVinculada>("demanda-vinculada/", {
+        const data = await get<DemandaVinculada[]>("demanda-vinculada/", {
           demanda_preexistente: demandaId,
         })
 
         // Get the IDs of connected demandas
-        const connectedIds = data.filter((conn) => !conn.deleted).map((conn) => conn.demanda_entrante)
+        const connectedIds = data.filter((conn: DemandaVinculada) => !conn.deleted).map((conn: DemandaVinculada) => conn.demanda_entrante)
 
         // Return the connected demandas
-        return allDemandas.filter((demanda) => connectedIds.includes(demanda.id))
+        return allDemandas.filter((demanda: Demanda) => connectedIds.includes(demanda.id))
       } catch (err) {
         console.error("Error fetching connections:", err)
         setError("Error al cargar las conexiones de la demanda")
@@ -104,7 +104,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     mutationFn: async (connectedDemandaId: number) => {
       try {
         // Find the connection
-        const connections = await get<DemandaVinculada>("demanda-vinculada/", {
+        const connections = await get<DemandaVinculada[]>("demanda-vinculada/", {
           demanda_preexistente: demandaId,
           demanda_entrante: connectedDemandaId,
         })
@@ -148,11 +148,11 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
 
   const handleConnect = (demandaId2: number) => {
     // Find the demanda in allDemandas
-    const demandaToConnect = allDemandas.find((d) => d.id === demandaId2)
+    const demandaToConnect = allDemandas.find((d: Demanda) => d.id === demandaId2)
 
     if (demandaToConnect) {
       // Check if already connected
-      const isAlreadyConnected = conexiones.some((c) => c.id === demandaId2)
+      const isAlreadyConnected = conexiones.some((c: Demanda) => c.id === demandaId2)
 
       if (isAlreadyConnected) {
         toast.info("Esta demanda ya está conectada")
@@ -228,7 +228,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
           </Box>
         ) : conexiones.length > 0 ? (
           <List sx={{ mt: 2 }}>
-            {conexiones.map((demanda) => (
+            {conexiones.map((demanda: Demanda) => (
               <React.Fragment key={demanda.id}>
                 <ListItem
                   sx={{

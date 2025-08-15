@@ -299,16 +299,14 @@ const DemandaTableContent: React.FC = () => {
   const queryClient = useQueryClient()
   const [selectedDemandaId, setSelectedDemandaId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [filterState, setFilterState] = useState({
-    todos: true,
-    sinAsignar: false,
-    asignados: false,
-    archivados: false,
-    completados: false,
-    sinLeer: false,
-    leidos: false,
-    constatados: false,
-    evaluados: false,
+  const [filterState, setFilterState] = useState<{
+    envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null;
+    estado_demanda: "SIN_ASIGNAR" | "CONSTATACION" | "EVALUACION" | "PENDIENTE_AUTORIZACION" | "ARCHIVADA" | "ADMITIDA" | null;
+    objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null;
+  }>({
+    envio_de_respuesta: null,
+    estado_demanda: null,
+    objetivo_de_demanda: null,
   })
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
@@ -316,8 +314,8 @@ const DemandaTableContent: React.FC = () => {
 
   const [apiFilters, setApiFilters] = useState<{
     envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null;
-    estado_demanda: string | null;
-    objetivo_de_demanda: string | null;
+    estado_demanda: "SIN_ASIGNAR" | "CONSTATACION" | "EVALUACION" | "PENDIENTE_AUTORIZACION" | "ARCHIVADA" | "ADMITIDA" | null;
+    objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null;
   }>({
     envio_de_respuesta: null,
     estado_demanda: null,
@@ -382,8 +380,16 @@ const DemandaTableContent: React.FC = () => {
     }
   }
 
-  const handleFilterChange = (newFilters: typeof apiFilters) => {
-    setApiFilters(newFilters)
+  const handleFilterChange = (newFilters: {
+    envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null;
+    estado_demanda: "SIN_ASIGNAR" | "CONSTATACION" | "EVALUACION" | "PENDIENTE_AUTORIZACION" | "ARCHIVADA" | "ADMITIDA" | null;
+    objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null;
+  }) => {
+    setApiFilters({
+      envio_de_respuesta: newFilters.envio_de_respuesta,
+      estado_demanda: newFilters.estado_demanda,
+      objetivo_de_demanda: newFilters.objetivo_de_demanda,
+    })
     // Reset to first page when filters change
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
@@ -1051,9 +1057,6 @@ const DemandaTableContent: React.FC = () => {
             <Buttons
               isLoading={isLoading}
               handleNuevoRegistro={handleNuevoRegistro}
-              filterState={filterState}
-              setFilterState={setFilterState}
-              user={user}
               onFilterChange={handleFilterChange}
             />
           </div>

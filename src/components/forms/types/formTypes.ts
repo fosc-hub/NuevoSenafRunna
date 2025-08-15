@@ -176,6 +176,10 @@ export interface DropdownData {
   envio_de_respuesta_choices: any
   objetivo_de_demanda_choices: any
   zonas: any
+  // Education dropdown fields
+  nivel_educativo_choices: any
+  ultimo_cursado_choices: any
+  tipo_escuela_choices: any
   // Add other dropdown fields as needed
 }
 

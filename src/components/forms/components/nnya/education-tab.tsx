@@ -22,19 +22,19 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Controller
-            name={`ninosAdolescentes.${index}.educacion.institucion_educativa.nombre`}
+            name={`ninosAdolescentes.${index}.educacion.institucion_educativa`}
             control={control}
             rules={{ required: "Este campo es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={[...(dropdownData.institucion_educativa || []), { id: "other", nombre: "Otra" }]}
-                  getOptionLabel={(option) => option.nombre || ""}
+                  options={[...(dropdownData.instituciones_educativas || []), { id: "other", nombre: "Otra" }]}
+                  getOptionLabel={(option: any) => option.nombre || ""}
                   value={
                     field.value === "other"
                       ? { id: "other", nombre: "Otra" }
-                      : dropdownData.institucion_educativa?.find((item) => item.nombre === field.value) || null
+                      : dropdownData.instituciones_educativas?.find((item: any) => item.nombre === field.value) || null
                   }
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.nombre : null)}
                   renderInput={(params) => (
@@ -46,9 +46,6 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                       size="small"
                     />
                   )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
                   size="small"
                 />
               </FormControl>
@@ -56,10 +53,10 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
           />
         </Grid>
 
-        {watchedFields?.[index]?.educacion?.institucion_educativa?.nombre === "other" && (
+        {watchedFields?.[index]?.educacion?.institucion_educativa === "other" && (
           <Grid item xs={12}>
             <Controller
-              name={`ninosAdolescentes.${index}.educacion.institucion_educativa.nombre`}
+              name={`ninosAdolescentes.${index}.educacion.institucion_educativa`}
               control={control}
               rules={{ required: "Este campo es obligatorio" }}
               render={({ field, fieldState: { error } }) => (
@@ -89,9 +86,9 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
               <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={dropdownData.nivel_alcanzado_choices || []}
-                  getOptionLabel={(option) => option.value || ""}
-                  value={dropdownData.nivel_alcanzado_choices?.find((item) => item.key === field.value) || null}
+                  options={dropdownData.nivel_educativo_choices || []}
+                  getOptionLabel={(option: any) => option.value || ""}
+                  value={dropdownData.nivel_educativo_choices?.find((item: any) => item.key === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                   renderInput={(params) => (
                     <TextField
@@ -102,9 +99,6 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                       size="small"
                     />
                   )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
                   size="small"
                 />
               </FormControl>
@@ -153,8 +147,8 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                 <Autocomplete
                   disabled={readOnly}
                   options={dropdownData.ultimo_cursado_choices || []}
-                  getOptionLabel={(option) => option.value || ""}
-                  value={dropdownData.ultimo_cursado_choices?.find((item) => item.key === field.value) || null}
+                  getOptionLabel={(option: any) => option.value || ""}
+                  value={dropdownData.ultimo_cursado_choices?.find((item: any) => item.key === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                   renderInput={(params) => (
                     <TextField
@@ -165,9 +159,6 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                       size="small"
                     />
                   )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
                   size="small"
                 />
               </FormControl>
@@ -185,8 +176,8 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                 <Autocomplete
                   disabled={readOnly}
                   options={dropdownData.tipo_escuela_choices || []}
-                  getOptionLabel={(option) => option.value || ""}
-                  value={dropdownData.tipo_escuela_choices?.find((item) => item.key === field.value) || null}
+                  getOptionLabel={(option: any) => option.value || ""}
+                  value={dropdownData.tipo_escuela_choices?.find((item: any) => item.key === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                   renderInput={(params) => (
                     <TextField
@@ -197,9 +188,6 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                       size="small"
                     />
                   )}
-                  PopperProps={{
-                    style: { width: "auto", maxWidth: "300px" },
-                  }}
                   size="small"
                 />
               </FormControl>

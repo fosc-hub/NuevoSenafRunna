@@ -38,7 +38,7 @@ import { useUser } from "@/utils/auth/userZustand"
 
 // Assume these imports are available in your project
 import { get, update, create, put } from "@/app/api/apiService"
-import type { TDemanda } from "@/app/interfaces"
+import type { TDemanda, TCalificacionOperation, TDemandaZonaOperation } from "@/app/interfaces"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/DemandaDetail"), { ssr: false })
@@ -67,14 +67,7 @@ const getFileNameFromUrl = (url: string): string => {
 const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
   return (
     <GridToolbarContainer sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
-      <GridToolbarFilterButton
-        sx={{
-          mr: 1,
-          "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.04)",
-          },
-        }}
-      />
+      <GridToolbarFilterButton />
       <Button
         size="small"
         startIcon={<DownloadRounded />}
@@ -190,8 +183,8 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
     setAnchorEl(event.currentTarget)
   }
 
-  const handleClose = (event?: React.MouseEvent<HTMLElement>) => {
-    if (event) {
+  const handleClose = (event?: React.MouseEvent<HTMLElement> | {}, reason?: "backdropClick" | "escapeKeyDown") => {
+    if (event && 'stopPropagation' in event) {
       event.stopPropagation()
     }
     setAnchorEl(null)
@@ -321,7 +314,11 @@ const DemandaTableContent: React.FC = () => {
   const [selectedDemandaIdForAssignment, setSelectedDemandaIdForAssignment] = useState<number | null>(null)
   const [demandasData, setDemandasData] = useState<TDemandaPaginated | null>(null)
 
-  const [apiFilters, setApiFilters] = useState({
+  const [apiFilters, setApiFilters] = useState<{
+    envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null;
+    estado_demanda: string | null;
+    objetivo_de_demanda: string | null;
+  }>({
     envio_de_respuesta: null,
     estado_demanda: null,
     objetivo_de_demanda: null,
@@ -348,7 +345,7 @@ const DemandaTableContent: React.FC = () => {
     user?.is_superuser ||
     user?.is_staff
 
-  const fetchDemandas = async (pageNumber: number, pageSize: number) => {
+  const fetchDemandas = async (pageNumber: number, pageSize: number): Promise<TDemandaPaginated> => {
     try {
       // Construct query parameters
       const params = new URLSearchParams()
@@ -370,9 +367,9 @@ const DemandaTableContent: React.FC = () => {
 
       const response = await get<TDemandaPaginated>(`mesa-de-entrada/?${params.toString()}`)
       setTotalCount(response.count)
-      const updatedResponse = {
+      const updatedResponse: TDemandaPaginated = {
         ...response,
-        results: response.results.map((demanda) => ({
+        results: response.results.map((demanda: any) => ({
           ...demanda,
           demanda_zona_id: demanda.demanda_zona?.id,
         })),
@@ -394,8 +391,14 @@ const DemandaTableContent: React.FC = () => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["demandas", paginationModel.page, paginationModel.pageSize, filterState, apiFilters],
     queryFn: () => fetchDemandas(paginationModel.page, paginationModel.pageSize),
-    onSuccess: (data) => setDemandasData(data),
   })
+
+  // Use useEffect to handle data updates
+  useEffect(() => {
+    if (data) {
+      setDemandasData(data)
+    }
+  }, [data])
 
   const handleNuevoRegistro = () => {
     console.log("Nuevo registro clicked")
@@ -407,7 +410,7 @@ const DemandaTableContent: React.FC = () => {
       if (!demanda) throw new Error("Demanda not found")
 
       if (demanda.calificacion) {
-        return update<TDemanda>(
+        return update<TCalificacionOperation>(
           "calificacion-demanda",
           demanda.calificacion.id,
           {
@@ -419,7 +422,7 @@ const DemandaTableContent: React.FC = () => {
         )
       } else {
         const currentDate = new Date().toISOString()
-        return create<TDemanda>(
+        return create<TCalificacionOperation>(
           `calificacion-demanda`,
           {
             fecha_y_hora: currentDate,
@@ -457,7 +460,7 @@ const DemandaTableContent: React.FC = () => {
       const currentDate = new Date().toISOString()
       try {
         // Try to use the PUT endpoint first
-        const response = await put<TDemanda>(
+        const response = await put<TDemandaZonaOperation>(
           "demanda-zona-recibir",
           id,
           {
@@ -506,7 +509,7 @@ const DemandaTableContent: React.FC = () => {
           )
 
           // Fallback to the regular update endpoint
-          return update<TDemanda>(
+          return update<TDemandaZonaOperation>(
             "demanda-zona",
             id,
             {
@@ -525,7 +528,7 @@ const DemandaTableContent: React.FC = () => {
     },
     onSuccess: (data, variables) => {
       // Only invalidate queries if we actually updated something
-      if (data.fecha_recibido) {
+      if ('fecha_recibido' in data && data.fecha_recibido) {
         queryClient.invalidateQueries({ queryKey: ["demandas"] })
         // Update the local state to reflect the changes
         setDemandasData((prevData) => {
@@ -541,7 +544,7 @@ const DemandaTableContent: React.FC = () => {
                     recibido: true,
                     fecha_recibido: data.fecha_recibido,
                   },
-                }
+                } as TDemanda
                 : demanda,
             ),
           }
@@ -725,7 +728,7 @@ const DemandaTableContent: React.FC = () => {
               >
                 {params.value === null && <option value="">Seleccionar</option>}
                 {params.row.calificacion_choices && Array.isArray(params.row.calificacion_choices) ? (
-                  params.row.calificacion_choices.map((choice) => (
+                  params.row.calificacion_choices.map((choice: any) => (
                     <option key={choice[0]} value={choice[0]}>
                       {choice[1]}
                     </option>
@@ -771,7 +774,7 @@ const DemandaTableContent: React.FC = () => {
                     updateDemandaZona.mutate({
                       id: params.row.demanda_zona_id,
                       demandaId: params.row.id,
-                      userId: user.id,
+                      userId: user?.id || 0,
                     })
                   } else {
                     handleOpenModal(params.row.id)
@@ -1064,7 +1067,7 @@ const DemandaTableContent: React.FC = () => {
             pageSizeOptions={[5, 10, 25, 50]}
             rowCount={totalCount}
             paginationMode="server"
-            loading={isLoading || updateCalificacion.isLoading || updateDemandaZona.isLoading}
+            loading={isLoading || updateCalificacion.isPending || updateDemandaZona.isPending}
             onRowClick={(params, event) => {
               const cellElement = event.target as HTMLElement
               if (
@@ -1078,7 +1081,7 @@ const DemandaTableContent: React.FC = () => {
                   updateDemandaZona.mutate({
                     id: params.row.demanda_zona_id,
                     demandaId: params.row.id,
-                    userId: user.id,
+                    userId: user?.id || 0,
                   })
                 } else {
                   handleOpenModal(params.row.id)

@@ -52,7 +52,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
           setIsLoading(true)
           const data = getLegajoById(params.id)
           if (data) {
-            setLegajoData(data)
+            setLegajoData(data as any)
           } else {
             setError(`No se encontró el legajo con ID ${params.id}`)
           }

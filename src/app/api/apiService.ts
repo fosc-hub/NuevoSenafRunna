@@ -12,11 +12,11 @@ import { useQuery } from "@tanstack/react-query";
 export const get = async <T>(
   endpoint: string,
   filters?: Record<string, any>
-): Promise<T | T[]> => {
+): Promise<T> => {
   const queryString = filters
     ? `?${new URLSearchParams(filters as Record<string, string>).toString()}`
     : '';
-  const response = await axiosInstance.get<T | T[]>(`${endpoint}${queryString}`);
+  const response = await axiosInstance.get<T>(`${endpoint}${queryString}`);
   return response.data;
 };
 

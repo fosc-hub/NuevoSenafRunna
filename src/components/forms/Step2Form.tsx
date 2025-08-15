@@ -18,7 +18,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { Add as AddIcon, Delete as DeleteIcon, Person as PersonIcon } from "@mui/icons-material"
-import type { DropdownData, FormData } from "./types/formTypes"
+import type { DropdownData, FormData, AdultoData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
 import AdultoCard from "./components/adulto/adulto-card"
@@ -58,38 +58,26 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
     }
   }, [])
 
-  // Observar SOLO los campos específicos que necesitamos para la búsqueda
-  const watchedNombres = useWatch({
+  // Watch the entire adultosConvivientes array instead of individual fields
+  const watchedAdultos = useWatch({
     control,
-    name: fields.map((field, index) => `adultosConvivientes.${index}.nombre`),
-  })
-
-  const watchedApellidos = useWatch({
-    control,
-    name: fields.map((field, index) => `adultosConvivientes.${index}.apellido`),
-  })
-
-  const watchedDnis = useWatch({
-    control,
-    name: fields.map((field, index) => `adultosConvivientes.${index}.dni`),
-  })
-
-  const watchedUseDefaultLocalizacion = useWatch({
-    control,
-    name: fields.map((field, index) => `adultosConvivientes.${index}.useDefaultLocalizacion`),
+    name: "adultosConvivientes",
   })
 
   // Effect para manejar cambios SOLO en los campos relevantes para la búsqueda
   useEffect(() => {
-    if (!fields.length) return
+    if (!fields.length || !watchedAdultos) return
 
     // Procesar cada adulto
     fields.forEach((field, index) => {
+      const adulto = watchedAdultos[index]
+      if (!adulto) return
+
       // Obtener los valores actuales
-      const nombre = watchedNombres[index] || ""
-      const apellido = watchedApellidos[index] || ""
-      const dni = watchedDnis[index] || ""
-      const useDefaultLocalizacion = watchedUseDefaultLocalizacion[index]
+      const nombre = adulto.nombre || ""
+      const apellido = adulto.apellido || ""
+      const dni = adulto.dni || ""
+      const useDefaultLocalizacion = adulto.useDefaultLocalizacion
 
       // Construir nombre completo
       const nombreCompleto = nombre && apellido ? `${nombre} ${apellido}`.trim() : ""
@@ -97,8 +85,8 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
 
       // Verificar si tiene localización específica
       let localizacionData = undefined
-      if (!useDefaultLocalizacion && watchedFields?.[index]?.localizacion) {
-        const localizacion = watchedFields[index].localizacion
+      if (!useDefaultLocalizacion && adulto.localizacion) {
+        const localizacion = adulto.localizacion
         if (localizacion) {
           localizacionData = {
             calle: localizacion.calle || "",
@@ -112,11 +100,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
     })
   }, [
     fields,
-    watchedNombres,
-    watchedApellidos,
-    watchedDnis,
-    watchedUseDefaultLocalizacion,
-    watchedFields,
+    watchedAdultos,
     buscarCompleto,
     handleVinculacionResults,
   ])

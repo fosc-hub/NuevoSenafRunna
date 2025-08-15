@@ -131,7 +131,7 @@ const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; 
                     Archivos nuevos:
                   </Typography>
                   <Paper variant="outlined" sx={{ p: 1, maxHeight: "150px", overflow: "auto" }}>
-                    {newFiles.map((file: File, index: number) => (
+                    {newFiles.map((file: File | { archivo: string }, index: number) => (
                       <Box
                         key={index}
                         sx={{
@@ -146,8 +146,8 @@ const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; 
                       >
                         <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
                           <AttachFile sx={{ mr: 1, color: "primary.light", flexShrink: 0 }} fontSize="small" />
-                          <Typography variant="body2" noWrap title={file.name}>
-                            {file.name}
+                          <Typography variant="body2" noWrap title={'name' in file ? file.name : file.archivo}>
+                            {'name' in file ? file.name : file.archivo}
                           </Typography>
                         </Box>
                         <Tooltip title="Eliminar archivo">
@@ -306,7 +306,7 @@ interface Step1FormProps {
   readOnly?: boolean
 }
 
-const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = ({ control, readOnly = false, id }) => {
+const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?: number }> = ({ control, readOnly = false, id }) => {
   const {
     data: dropdownData,
     isLoading,
@@ -354,7 +354,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
     if (!watchedCodigos || !watchedLocalizacion) return
 
     // Check if we have a valid codigo
-    const codigoValido = watchedCodigos.find((codigo) => codigo.codigo && codigo.codigo.trim().length > 0)
+    const codigoValido = watchedCodigos.find((codigo: any) => codigo.codigo && codigo.codigo.trim().length > 0)
 
     // Check if we have valid localizacion data
     const calleValida = watchedLocalizacion?.calle && watchedLocalizacion.calle.trim().length > 0
@@ -390,9 +390,9 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
         codigoValido?.codigo || "",
         calleValida && localidadValida
           ? {
-              calle: watchedLocalizacion.calle,
-              localidad: Number(watchedLocalizacion.localidad),
-            }
+            calle: watchedLocalizacion.calle,
+            localidad: Number(watchedLocalizacion.localidad),
+          }
           : undefined,
         handleVinculacionResults,
       )
@@ -517,8 +517,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.etiqueta || []}
-                      getOptionLabel={(option) => option.nombre || ""}
-                      value={dropdownData.etiqueta?.find((item) => item.id === field.value) || null}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={dropdownData.etiqueta?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
                         <TextField
@@ -529,9 +529,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -548,8 +545,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.envio_de_respuesta_choices || []}
-                      getOptionLabel={(option) => option.value || ""}
-                      value={dropdownData.envio_de_respuesta_choices?.find((item) => item.key === field.value) || null}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={dropdownData.envio_de_respuesta_choices?.find((item: any) => item.key === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                       renderInput={(params) => (
                         <TextField
@@ -560,9 +557,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -585,8 +579,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.bloques_datos_remitente || []}
-                      getOptionLabel={(option) => option.nombre || ""}
-                      value={dropdownData.bloques_datos_remitente?.find((item) => item.id === field.value) || null}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={dropdownData.bloques_datos_remitente?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
                         <TextField
@@ -597,9 +591,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -621,8 +612,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                       <Autocomplete
                         disabled={readOnly}
                         options={filteredSubOrigins || []}
-                        getOptionLabel={(option) => option.nombre || ""}
-                        value={filteredSubOrigins?.find((item) => item.id === field.value) || null}
+                        getOptionLabel={(option: any) => option.nombre || ""}
+                        value={filteredSubOrigins?.find((item: any) => item.id === field.value) || null}
                         onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                         renderInput={(params) => (
                           <TextField
@@ -633,9 +624,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                             size="medium"
                           />
                         )}
-                        PopperProps={{
-                          style: { width: "auto", maxWidth: "300px" },
-                        }}
                         size="medium"
                       />
                     </FormControl>
@@ -688,13 +676,10 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           <Autocomplete
                             disabled={readOnly}
                             options={dropdownData.tipo_codigo_demanda || []}
-                            getOptionLabel={(option) => option.nombre || ""}
-                            value={dropdownData.tipo_codigo_demanda?.find((item) => item.id === field.value) || null}
+                            getOptionLabel={(option: any) => option.nombre || ""}
+                            value={dropdownData.tipo_codigo_demanda?.find((item: any) => item.id === field.value) || null}
                             onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                             renderInput={(params) => <TextField {...params} label="Tipo de Número" size="medium" />}
-                            PopperProps={{
-                              style: { width: "auto", maxWidth: "300px" },
-                            }}
                             size="medium"
                           />
                         )}
@@ -766,8 +751,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.ambito_vulneracion || []}
-                      getOptionLabel={(option) => option.nombre || ""}
-                      value={dropdownData.ambito_vulneracion?.find((item) => item.id === field.value) || null}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={dropdownData.ambito_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
                         <TextField
@@ -778,9 +763,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -791,15 +773,15 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
             <Grid item xs={12}>
               <Controller
                 name="objetivo_de_demanda"
-                control={control}
                 rules={{ required: "Este campo es obligatorio" }}
+                control={control}
                 render={({ field, fieldState: { error } }) => (
                   <FormControl fullWidth error={!!error}>
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.objetivo_de_demanda_choices || []}
-                      getOptionLabel={(option) => option.value || ""}
-                      value={dropdownData.objetivo_de_demanda_choices?.find((item) => item.key === field.value) || null}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={dropdownData.objetivo_de_demanda_choices?.find((item: any) => item.key === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                       renderInput={(params) => (
                         <TextField
@@ -810,9 +792,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -834,8 +813,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.categoria_motivo || []}
-                      getOptionLabel={(option) => option.nombre || ""}
-                      value={dropdownData.categoria_motivo?.find((item) => item.id === field.value) || null}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={dropdownData.categoria_motivo?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
                         <TextField
@@ -846,9 +825,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -861,7 +837,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                 control={control}
                 render={({ field, fieldState: { error } }) => {
                   const filteredSubmotivos = dropdownData.categoria_submotivo?.filter(
-                    (submotivo) => submotivo.motivo === selectedMotivo,
+                    (submotivo: any) => submotivo.motivo === selectedMotivo,
                   )
 
                   return (
@@ -869,8 +845,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                       <Autocomplete
                         disabled={readOnly}
                         options={filteredSubmotivos || []}
-                        getOptionLabel={(option) => option.nombre || ""}
-                        value={filteredSubmotivos?.find((item) => item.id === field.value) || null}
+                        getOptionLabel={(option: any) => option.nombre || ""}
+                        value={filteredSubmotivos?.find((item: any) => item.id === field.value) || null}
                         onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                         renderInput={(params) => (
                           <TextField
@@ -881,9 +857,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                             size="medium"
                           />
                         )}
-                        PopperProps={{
-                          style: { width: "auto", maxWidth: "300px" },
-                        }}
                         size="medium"
                       />
                       {error && <FormHelperText>{error.message}</FormHelperText>}
@@ -908,8 +881,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.zonas || []}
-                      getOptionLabel={(option) => option.nombre || ""}
-                      value={dropdownData.zonas?.find((item) => item.id === field.value) || null}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={dropdownData.zonas?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
                         <TextField
@@ -920,9 +893,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
                           size="medium"
                         />
                       )}
-                      PopperProps={{
-                        style: { width: "auto", maxWidth: "300px" },
-                      }}
                       size="medium"
                     />
                   </FormControl>
@@ -934,7 +904,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean }> = 
 
         {/* Sección de Localización */}
         <FormSection title="Datos de Localización del grupo familiar">
-          <LocalizacionFields prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
+          <LocalizacionFields control={control} prefix="localizacion" dropdownData={dropdownData} readOnly={readOnly} />
         </FormSection>
 
         {/* Sección de Archivos Adjuntos */}

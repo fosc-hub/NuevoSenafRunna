@@ -19,7 +19,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { Add as AddIcon, Delete as DeleteIcon, ChildCare as ChildIcon } from "@mui/icons-material"
-import type { DropdownData, FormData } from "./types/formTypes"
+import type { DropdownData, FormData, NnyaData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
 import NNYACard from "./components/nnya/nnya-card"
@@ -63,38 +63,26 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
     }
   }, [])
 
-  // Observar SOLO los campos específicos que necesitamos para la búsqueda
-  const watchedNombres = useWatch({
+  // Watch the entire ninosAdolescentes array instead of individual fields
+  const watchedNnyas = useWatch({
     control,
-    name: fields.map((field, index) => `ninosAdolescentes.${index}.nombre`),
-  })
-
-  const watchedApellidos = useWatch({
-    control,
-    name: fields.map((field, index) => `ninosAdolescentes.${index}.apellido`),
-  })
-
-  const watchedDnis = useWatch({
-    control,
-    name: fields.map((field, index) => `ninosAdolescentes.${index}.dni`),
-  })
-
-  const watchedUseDefaultLocalizacion = useWatch({
-    control,
-    name: fields.map((field, index) => `ninosAdolescentes.${index}.useDefaultLocalizacion`),
+    name: "ninosAdolescentes",
   })
 
   // Effect para manejar cambios SOLO en los campos relevantes para la búsqueda
   useEffect(() => {
-    if (!fields.length) return
+    if (!fields.length || !watchedNnyas) return
 
     // Procesar cada niño/adolescente
     fields.forEach((field, index) => {
+      const nnya = watchedNnyas[index]
+      if (!nnya) return
+
       // Obtener los valores actuales
-      const nombre = watchedNombres[index] || ""
-      const apellido = watchedApellidos[index] || ""
-      const dni = watchedDnis[index] || ""
-      const useDefaultLocalizacion = watchedUseDefaultLocalizacion[index]
+      const nombre = nnya.nombre || ""
+      const apellido = nnya.apellido || ""
+      const dni = nnya.dni || ""
+      const useDefaultLocalizacion = nnya.useDefaultLocalizacion
 
       // Construir nombre completo
       const nombreCompleto = nombre && apellido ? `${nombre} ${apellido}`.trim() : ""
@@ -102,8 +90,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
 
       // Verificar si tiene localización específica
       let localizacionData = undefined
-      if (!useDefaultLocalizacion && watchedFields?.[index]?.localizacion) {
-        const localizacion = watchedFields[index].localizacion
+      if (!useDefaultLocalizacion && nnya.localizacion) {
+        const localizacion = nnya.localizacion
         if (localizacion) {
           localizacionData = {
             calle: localizacion.calle || "",
@@ -117,11 +105,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
     })
   }, [
     fields,
-    watchedNombres,
-    watchedApellidos,
-    watchedDnis,
-    watchedUseDefaultLocalizacion,
-    watchedFields,
+    watchedNnyas,
     buscarCompleto,
     handleVinculacionResults,
   ])
@@ -156,9 +140,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         casa_nro: "",
         referencia_geo: "",
         geolocalizacion: "",
-        barrio: null,
-        localidad: null,
-        cpc: null,
+        barrio: "",
+        localidad: "",
+        cpc: "",
       },
       educacion: {
         institucion_educativa: "",
@@ -177,8 +161,8 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         intervencion: "",
         auh: false,
         observaciones: "",
-        institucion_sanitaria: null,
-        medico_cabecera: null,
+        institucion_sanitaria: "",
+        medico_cabecera: "",
       },
       persona_enfermedades: [],
       demanda_persona: {

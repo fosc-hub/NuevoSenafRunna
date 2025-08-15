@@ -48,6 +48,16 @@ interface Localidad {
   nombre: string
 }
 
+interface SearchPayload {
+  nombre_y_apellido?: string
+  dni?: number
+  codigo?: string
+  localizacion?: {
+    calle?: string
+    localidad?: number
+  }
+}
+
 interface SearchModalProps {
   // Modal props
   open?: boolean
@@ -66,7 +76,7 @@ interface SearchModalProps {
 
 export default function SearchModal({
   open = true,
-  onClose = () => {},
+  onClose = () => { },
   mode = "view",
   onConnect,
   title = "Búsqueda Avanzada de Demandas",
@@ -99,7 +109,7 @@ export default function SearchModal({
     const fetchLocalidades = async () => {
       setLoadingLocalidades(true)
       try {
-        const data = await get<Localidad>("localidad/")
+        const data = await get<Localidad[]>("localidad/")
         setLocalidades(data)
       } catch (error) {
         console.error("Error fetching localidades:", error)
@@ -156,37 +166,40 @@ export default function SearchModal({
 
     try {
       // Prepare the payload according to the required format
-      const payload = {
+      const payload: SearchPayload = {
         nombre_y_apellido: searchParams.nombre_y_apellido || undefined,
         dni: searchParams.dni ? Number.parseInt(searchParams.dni, 10) : undefined,
         codigo: searchParams.codigo || undefined,
         localizacion:
           searchParams.calle || searchParams.localidad
             ? {
-                calle: searchParams.calle || undefined,
-                localidad: searchParams.localidad ? Number.parseInt(searchParams.localidad, 10) : undefined,
-              }
+              calle: searchParams.calle || undefined,
+              localidad: searchParams.localidad ? Number.parseInt(searchParams.localidad, 10) : undefined,
+            }
             : undefined,
       }
 
       // Remove undefined values
-      Object.keys(payload).forEach((key) => {
-        if (payload[key] === undefined) {
-          delete payload[key]
-        } else if (typeof payload[key] === "object" && payload[key] !== null) {
-          Object.keys(payload[key]).forEach((subKey) => {
-            if (payload[key][subKey] === undefined) {
-              delete payload[key][subKey]
+      const cleanPayload: Record<string, any> = {}
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (typeof value === "object" && value !== null) {
+            const cleanLocalizacion: Record<string, any> = {}
+            Object.entries(value).forEach(([subKey, subValue]) => {
+              if (subValue !== undefined) {
+                cleanLocalizacion[subKey] = subValue
+              }
+            })
+            if (Object.keys(cleanLocalizacion).length > 0) {
+              cleanPayload[key] = cleanLocalizacion
             }
-          })
-          // Remove empty objects
-          if (Object.keys(payload[key]).length === 0) {
-            delete payload[key]
+          } else {
+            cleanPayload[key] = value
           }
         }
       })
 
-      const result = await create<SearchResult>("demanda-busqueda-vinculacion", payload)
+      const result = await create<SearchResult>("demanda-busqueda-vinculacion", cleanPayload as any)
 
       setSearchResults(result)
     } catch (err) {
@@ -317,7 +330,7 @@ export default function SearchModal({
             {activeSearchFields.map((field) => (
               <Chip
                 key={field}
-                label={`${getFieldLabel(field)}: ${getFieldDisplayValue(field, searchParams[field])}`}
+                label={`${getFieldLabel(field)}: ${getFieldDisplayValue(field, searchParams[field as keyof typeof searchParams])}`}
                 onDelete={() => handleClearField(field)}
                 color="primary"
                 variant="outlined"

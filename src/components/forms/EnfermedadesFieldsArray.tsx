@@ -38,7 +38,7 @@ const FileUploadSection = ({
 
   const { field } = useController({ name, control })
   const { value, onChange } = field
-  const { error } = control.getFieldState(name, {})
+  const { error } = control.getFieldState(name)
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -369,7 +369,6 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>
@@ -431,7 +430,6 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>
@@ -443,24 +441,24 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
             {watchedValues?.[
               `ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente`
             ] === "other" && (
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente_nombre`}
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <TextField
-                      {...field}
-                      label="Nombre de la Institución Sanitaria"
-                      fullWidth
-                      error={!!error}
-                      helperText={error?.message}
-                      InputProps={{ readOnly }}
-                      size="small"
-                    />
-                  )}
-                />
-              </Grid>
-            )}
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.institucion_sanitaria_interviniente_nombre`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Nombre de la Institución Sanitaria"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="small"
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
 
             {/* Certificación */}
             <Grid item xs={12} md={6}>
@@ -484,7 +482,6 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>

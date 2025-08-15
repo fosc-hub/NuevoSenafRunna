@@ -11,13 +11,13 @@ import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } f
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
   estado_demanda:
-    | "SIN_ASIGNAR"
-    | "CONSTATACION"
-    | "EVALUACION"
-    | "PENDIENTE_AUTORIZACION"
-    | "ARCHIVADA"
-    | "ADMITIDA"
-    | null
+  | "SIN_ASIGNAR"
+  | "CONSTATACION"
+  | "EVALUACION"
+  | "PENDIENTE_AUTORIZACION"
+  | "ARCHIVADA"
+  | "ADMITIDA"
+  | null
   objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null
 }
 
@@ -58,7 +58,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
     const newState = {
       envio_de_respuesta: null,
       estado_demanda: null,
-      objetivo_demanda: null,
+      objetivo_de_demanda: null,
     }
     setFilterState(newState)
     onFilterChange(newState)
@@ -165,9 +165,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("envio_de_respuesta", "NO_NECESARIO")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Mail className="h-4 w-4" />
@@ -177,9 +176,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("envio_de_respuesta", "PENDIENTE")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Clock className="h-4 w-4" />
@@ -189,9 +187,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("envio_de_respuesta", "ENVIADO")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Send className="h-4 w-4" />
@@ -208,9 +205,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("estado_demanda", "SIN_ASIGNAR")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <AlertCircle className="h-4 w-4" />
@@ -220,9 +216,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("estado_demanda", "CONSTATACION")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <FileText className="h-4 w-4" />
@@ -232,9 +227,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("estado_demanda", "EVALUACION")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <FileCheck className="h-4 w-4" />
@@ -244,9 +238,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("estado_demanda", "PENDIENTE_AUTORIZACION")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Clock className="h-4 w-4" />
@@ -258,9 +251,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("estado_demanda", "ARCHIVADA")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Archive className="h-4 w-4" />
@@ -269,7 +261,10 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                   {filterState.estado_demanda === "ARCHIVADA" && <Check className="h-4 w-4 text-primary" />}
                 </ListItem>
 
-                <ListItem button onClick={() => handleFilterChange("estado_demanda", "ADMITIDA")} sx={{ py: 1, px: 2 }}>
+                <ListItem
+                  onClick={() => handleFilterChange("estado_demanda", "ADMITIDA")}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
+                >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <FileCheck className="h-4 w-4" />
                   </ListItemIcon>
@@ -285,9 +280,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("objetivo_de_demanda", "CONSTATACION")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <FileText className="h-4 w-4" />
@@ -297,9 +291,8 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 </ListItem>
 
                 <ListItem
-                  button
                   onClick={() => handleFilterChange("objetivo_de_demanda", "PETICION_DE_INFORME")}
-                  sx={{ py: 1, px: 2 }}
+                  sx={{ py: 1, px: 2, cursor: "pointer" }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <Mail className="h-4 w-4" />

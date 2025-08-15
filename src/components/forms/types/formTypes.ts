@@ -169,7 +169,7 @@ export interface DropdownData {
   genero_choices: DropdownOption[]
   vinculos: { id: string; nombre: string }[]
   condiciones_vulnerabilidad: {
-    nnya: any; id: string; nombre: string; descripcion: string; adulto: boolean
+    nnya: any; id: string; nombre: string; descripcion: string; adulto: boolean; peso: number
   }[]
   origenes: { id: string; nombre: string }[]
   etiqueta: any

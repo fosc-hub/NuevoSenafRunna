@@ -175,7 +175,8 @@ const NNYACard: React.FC<NNYACardProps> = ({
                 icon={<LinkIcon fontSize="small" />}
                 label={
                   dropdownData.vinculo_demanda_choices?.find(
-                    (item) => item.key === watchedField.demanda_persona?.vinculo_demanda,
+                    (item: { key: string; value: string }) =>
+                      item.key === watchedField.demanda_persona?.vinculo_demanda,
                   )?.value || "Vinculación"
                 }
                 size="small"
@@ -211,7 +212,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
             <IconButton onClick={toggleExpanded} size="small">
               {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
-            {!readOnly && !isPrincipal && (
+            {!readOnly && (
               <IconButton onClick={onDelete} size="small" color="error">
                 <DeleteIcon />
               </IconButton>

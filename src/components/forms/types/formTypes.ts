@@ -149,6 +149,8 @@ export interface DropdownData {
   vinculo_con_nnya_principal_choices: any
   obra_social_choices: any
   instituciones_educativas: any
+  // Some payloads provide singular key name; keep as optional for compatibility
+  institucion_educativa?: any
   instituciones_sanitarias: any
   categoria_motivos: any
   categoria_submotivos: any
@@ -177,6 +179,8 @@ export interface DropdownData {
   objetivo_de_demanda_choices: any
   zonas: any
   // Education dropdown fields
+  // Some payloads provide nivel_alcanzado_choices instead; keep both
+  nivel_alcanzado_choices?: any
   nivel_educativo_choices: any
   ultimo_cursado_choices: any
   tipo_escuela_choices: any

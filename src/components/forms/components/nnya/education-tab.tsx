@@ -29,14 +29,20 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
               <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={[...(dropdownData.instituciones_educativas || []), { id: "other", nombre: "Otra" }]}
+                  options={[
+                    ...((dropdownData.instituciones_educativas || dropdownData.institucion_educativa) || []),
+                    { id: "other", nombre: "Otra" },
+                  ]}
                   getOptionLabel={(option: any) => option.nombre || ""}
                   value={
                     field.value === "other"
                       ? { id: "other", nombre: "Otra" }
-                      : dropdownData.instituciones_educativas?.find((item: any) => item.nombre === field.value) || null
+                      : ((dropdownData.instituciones_educativas || dropdownData.institucion_educativa) || [])
+                        .find((item: any) => item.nombre === field.value) || null
                   }
-                  onChange={(_, newValue) => field.onChange(newValue ? newValue.nombre : null)}
+                  onChange={(_, newValue) =>
+                    field.onChange(newValue ? (newValue.id === "other" ? "other" : newValue.nombre) : null)
+                  }
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -86,9 +92,12 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
               <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={dropdownData.nivel_educativo_choices || []}
+                  options={(dropdownData.nivel_alcanzado_choices || dropdownData.nivel_educativo_choices) || []}
                   getOptionLabel={(option: any) => option.value || ""}
-                  value={dropdownData.nivel_educativo_choices?.find((item: any) => item.key === field.value) || null}
+                  value={
+                    ((dropdownData.nivel_alcanzado_choices || dropdownData.nivel_educativo_choices) || [])
+                      .find((item: any) => item.key === field.value) || null
+                  }
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                   renderInput={(params) => (
                     <TextField

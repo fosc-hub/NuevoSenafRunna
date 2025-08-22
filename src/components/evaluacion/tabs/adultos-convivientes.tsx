@@ -327,7 +327,7 @@ export default function AdultosConvivientes({ adultosConvivientes, setAdultosCon
                       // Handle different data structures for vulnerability conditions
                       let label = "Condición no especificada"
                       let color: "primary" | "default" = "default"
-                      
+
                       if (typeof condicion === "string") {
                         label = condicion
                       } else if (typeof condicion === "object" && condicion !== null) {
@@ -345,13 +345,13 @@ export default function AdultosConvivientes({ adultosConvivientes, setAdultosCon
                           // Fallback to descripcion
                           label = condicion.descripcion
                         }
-                        
+
                         // Set color based on si_no property if available
                         if (condicion.si_no !== undefined) {
                           color = condicion.si_no ? "primary" : "default"
                         }
                       }
-                      
+
                       return (
                         <Chip
                           key={idx}

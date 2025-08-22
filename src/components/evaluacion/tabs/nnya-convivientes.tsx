@@ -600,7 +600,7 @@ export default function NnyaConvivientes({ nnyaConvivientes, setNnyaConvivientes
                       let label = "Condición no especificada"
                       let color: "primary" | "default" = "default"
                       let variant: "filled" | "outlined" = "outlined"
-                      
+
                       if (typeof condicion === "string") {
                         label = condicion
                       } else if (typeof condicion === "object" && condicion !== null) {
@@ -618,14 +618,14 @@ export default function NnyaConvivientes({ nnyaConvivientes, setNnyaConvivientes
                           // Fallback to descripcion
                           label = condicion.descripcion
                         }
-                        
+
                         // Set color and variant based on si_no property if available
                         if (condicion.si_no !== undefined) {
                           color = condicion.si_no ? "primary" : "default"
                           variant = condicion.si_no ? "filled" : "outlined"
                         }
                       }
-                      
+
                       return (
                         <Chip
                           key={idx}

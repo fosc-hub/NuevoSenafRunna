@@ -507,7 +507,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
                 {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => {
                   let label = "Condición no especificada"
-                  
+
                   if (typeof condicion === 'string') {
                     label = condicion
                   } else if (typeof condicion === 'object' && condicion !== null) {
@@ -523,7 +523,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
                       label = condicion.descripcion
                     }
                   }
-                  
+
                   return (
                     <Text key={idx} style={styles.subDetail}>
                       - {label}
@@ -606,7 +606,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
                 {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => {
                   let label = "Condición no especificada"
-                  
+
                   if (typeof condicion === 'string') {
                     label = condicion
                   } else if (typeof condicion === 'object' && condicion !== null) {
@@ -622,7 +622,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
                       label = condicion.descripcion
                     }
                   }
-                  
+
                   return (
                     <Text key={idx} style={styles.subDetail}>
                       - {label}

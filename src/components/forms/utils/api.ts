@@ -127,44 +127,44 @@ function createFullFormData(formData: FormData): FormData {
         localizacion: nnya.useDefaultLocalizacion ? null : nnya.localizacion,
         educacion: nnya.educacion
           ? {
-              ...(nnya.educacion.id ? { id: nnya.educacion.id } : {}),
-              institucion_educativa: nnya.educacion.institucion_educativa
-                ? {
-                    ...(nnya.educacion.institucion_educativa.id ? { id: nnya.educacion.institucion_educativa.id } : {}),
-                    nombre: nnya.educacion.institucion_educativa.nombre || null,
-                  }
-                : null,
-              nivel_alcanzado: nnya.educacion.nivel_alcanzado || null,
-              esta_escolarizado: nnya.educacion.esta_escolarizado || false,
-              ultimo_cursado: nnya.educacion.ultimo_cursado || null,
-              tipo_escuela: nnya.educacion.tipo_escuela || null,
-              comentarios_educativos: nnya.educacion.comentarios_educativos || null,
-              deleted: false,
-            }
+            ...(nnya.educacion.id ? { id: nnya.educacion.id } : {}),
+            institucion_educativa: nnya.educacion.institucion_educativa
+              ? {
+                ...(nnya.educacion.institucion_educativa.id ? { id: nnya.educacion.institucion_educativa.id } : {}),
+                nombre: nnya.educacion.institucion_educativa.nombre || null,
+              }
+              : null,
+            nivel_alcanzado: nnya.educacion.nivel_alcanzado || null,
+            esta_escolarizado: nnya.educacion.esta_escolarizado || false,
+            ultimo_cursado: nnya.educacion.ultimo_cursado || null,
+            tipo_escuela: nnya.educacion.tipo_escuela || null,
+            comentarios_educativos: nnya.educacion.comentarios_educativos || null,
+            deleted: false,
+          }
           : null,
 
         cobertura_medica: nnya.cobertura_medica
           ? {
-              ...(nnya.cobertura_medica.id ? { id: nnya.cobertura_medica.id } : {}),
-              institucion_sanitaria: nnya.cobertura_medica.institucion_sanitaria
-                ? {
-                    id:
-                      typeof nnya.cobertura_medica.institucion_sanitaria === "object"
-                        ? nnya.cobertura_medica.institucion_sanitaria.id
-                        : nnya.cobertura_medica.institucion_sanitaria,
-                    nombre:
-                      typeof nnya.cobertura_medica.institucion_sanitaria === "object"
-                        ? nnya.cobertura_medica.institucion_sanitaria.nombre
-                        : nnya.cobertura_medica.institucion_sanitaria_nombre || null,
-                  }
-                : null,
-              obra_social: nnya.cobertura_medica.obra_social || null,
-              intervencion: nnya.cobertura_medica.intervencion || null,
-              medico_cabecera: nnya.cobertura_medica.medico_cabecera || null,
-              auh: nnya.cobertura_medica.auh || false,
-              observaciones: nnya.cobertura_medica.observaciones || null,
-              deleted: false,
-            }
+            ...(nnya.cobertura_medica.id ? { id: nnya.cobertura_medica.id } : {}),
+            institucion_sanitaria: nnya.cobertura_medica.institucion_sanitaria
+              ? {
+                id:
+                  typeof nnya.cobertura_medica.institucion_sanitaria === "object"
+                    ? nnya.cobertura_medica.institucion_sanitaria.id
+                    : nnya.cobertura_medica.institucion_sanitaria,
+                nombre:
+                  typeof nnya.cobertura_medica.institucion_sanitaria === "object"
+                    ? nnya.cobertura_medica.institucion_sanitaria.nombre
+                    : nnya.cobertura_medica.institucion_sanitaria_nombre || null,
+              }
+              : null,
+            obra_social: nnya.cobertura_medica.obra_social || null,
+            intervencion: nnya.cobertura_medica.intervencion || null,
+            medico_cabecera: nnya.cobertura_medica.medico_cabecera || null,
+            auh: nnya.cobertura_medica.auh || false,
+            observaciones: nnya.cobertura_medica.observaciones || null,
+            deleted: false,
+          }
           : null,
 
         persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({
@@ -172,22 +172,22 @@ function createFullFormData(formData: FormData): FormData {
           situacion_salud: enfermedad.situacion_salud,
           enfermedad: enfermedad.enfermedad
             ? {
-                ...(enfermedad.enfermedad.id ? { id: enfermedad.enfermedad.id } : {}),
-                nombre: enfermedad.enfermedad.nombre || null,
-                situacion_salud_categoria: enfermedad.situacion_salud,
-              }
+              ...(enfermedad.enfermedad.id ? { id: enfermedad.enfermedad.id } : {}),
+              nombre: enfermedad.enfermedad.nombre || null,
+              situacion_salud_categoria: enfermedad.situacion_salud,
+            }
             : null,
           institucion_sanitaria_interviniente: enfermedad.institucion_sanitaria_interviniente
             ? {
-                id:
-                  typeof enfermedad.institucion_sanitaria_interviniente === "object"
-                    ? enfermedad.institucion_sanitaria_interviniente.id
-                    : enfermedad.institucion_sanitaria_interviniente,
-                nombre:
-                  typeof enfermedad.institucion_sanitaria_interviniente === "object"
-                    ? enfermedad.institucion_sanitaria_interviniente.nombre
-                    : enfermedad.institucion_sanitaria_interviniente_nombre || null,
-              }
+              id:
+                typeof enfermedad.institucion_sanitaria_interviniente === "object"
+                  ? enfermedad.institucion_sanitaria_interviniente.id
+                  : enfermedad.institucion_sanitaria_interviniente,
+              nombre:
+                typeof enfermedad.institucion_sanitaria_interviniente === "object"
+                  ? enfermedad.institucion_sanitaria_interviniente.nombre
+                  : enfermedad.institucion_sanitaria_interviniente_nombre || null,
+            }
             : null,
           medico_tratamiento: enfermedad.medico_tratamiento || {
             nombre: null,
@@ -322,8 +322,8 @@ function addFilesToFormData(formDataObj: FormData, formData: FormData): void {
     })
   }
   // Add medical certificate files
-  ;(formData.ninosAdolescentes || []).forEach((nnya: any, nnyaIndex: number) => {
-    ;(nnya.persona_enfermedades || []).forEach((enfermedad: any, enfIndex: number) => {
+  ; (formData.ninosAdolescentes || []).forEach((nnya: any, nnyaIndex: number) => {
+    ; (nnya.persona_enfermedades || []).forEach((enfermedad: any, enfIndex: number) => {
       if (enfermedad.certificado_adjunto) {
         if (Array.isArray(enfermedad.certificado_adjunto)) {
           enfermedad.certificado_adjunto.forEach((file: string | Blob, fileIndex: number) => {

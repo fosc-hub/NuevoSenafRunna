@@ -114,19 +114,45 @@ export default function DownloadPDFButton({ data, label = "Generar PDF", onGener
       })),
       AdultosConvivientes: (data.AdultosConvivientes || []).map((adulto: any) => ({
         ...adulto,
-        condicionesVulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: any) =>
-          typeof condicion === 'object' ?
-            (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
-            String(condicion)
-        )
+        condicionesVulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: any) => {
+          if (typeof condicion === 'string') {
+            return condicion
+          } else if (typeof condicion === 'object' && condicion !== null) {
+            if (condicion.condicion_vulnerabilidad) {
+              if (typeof condicion.condicion_vulnerabilidad === 'string') {
+                return condicion.condicion_vulnerabilidad
+              } else if (typeof condicion.condicion_vulnerabilidad === 'object' && condicion.condicion_vulnerabilidad.nombre) {
+                return condicion.condicion_vulnerabilidad.nombre
+              }
+            } else if (condicion.nombre) {
+              return condicion.nombre
+            } else if (condicion.descripcion) {
+              return condicion.descripcion
+            }
+          }
+          return "Condición no especificada"
+        })
       })),
       AdultosNoConvivientes: (data.AdultosNoConvivientes || []).map((adulto: any) => ({
         ...adulto,
-        condicionesVulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: any) =>
-          typeof condicion === 'object' ?
-            (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
-            String(condicion)
-        )
+        condicionesVulnerabilidad: (adulto.condicionesVulnerabilidad || []).map((condicion: any) => {
+          if (typeof condicion === 'string') {
+            return condicion
+          } else if (typeof condicion === 'object' && condicion !== null) {
+            if (condicion.condicion_vulnerabilidad) {
+              if (typeof condicion.condicion_vulnerabilidad === 'string') {
+                return condicion.condicion_vulnerabilidad
+              } else if (typeof condicion.condicion_vulnerabilidad === 'object' && condicion.condicion_vulnerabilidad.nombre) {
+                return condicion.condicion_vulnerabilidad.nombre
+              }
+            } else if (condicion.nombre) {
+              return condicion.nombre
+            } else if (condicion.descripcion) {
+              return condicion.descripcion
+            }
+          }
+          return "Condición no especificada"
+        })
       })),
       Actividades: data.Actividades || [],
       IndicadoresEvaluacion: (data.IndicadoresEvaluacion || []).map((ind: any) => ({

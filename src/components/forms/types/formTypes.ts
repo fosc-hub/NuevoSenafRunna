@@ -67,7 +67,7 @@ export interface NnyaData {
     cpc: string | null
   }
   educacion: {
-    institucion_educativa: string
+    institucion_educativa: { nombre: string } | string
     nivel_alcanzado: string
     esta_escolarizado: boolean
     ultimo_cursado: string
@@ -83,8 +83,8 @@ export interface NnyaData {
     intervencion: string
     auh: boolean
     observaciones: string
-    institucion_sanitaria: string | null
-    medico_cabecera: string | null
+    institucion_sanitaria: { nombre: string } | null
+    medico_cabecera: { nombre: string; mail?: string; telefono?: string } | null
   }
   persona_enfermedades: string[]
   demanda_persona: {
@@ -148,10 +148,13 @@ export interface DropdownData {
   vinculo_demanda_choices: any
   vinculo_con_nnya_principal_choices: any
   obra_social_choices: any
+  intervencion_choices: any
   instituciones_educativas: any
   // Some payloads provide singular key name; keep as optional for compatibility
   institucion_educativa?: any
   instituciones_sanitarias: any
+  // Some payloads provide singular key name; keep as optional for compatibility
+  institucion_sanitaria?: any
   categoria_motivos: any
   categoria_submotivos: any
   gravedades_vulneracion: any

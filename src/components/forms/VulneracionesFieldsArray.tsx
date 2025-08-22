@@ -56,7 +56,10 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.categoria_motivo || []}
-                      getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                      }}
                       value={dropdownData.categoria_motivo?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
@@ -72,7 +75,6 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>
@@ -97,7 +99,10 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                             watch(`ninosAdolescentes.${nestIndex}.vulneraciones.${vulIndex}.categoria_motivo`),
                         ) || []
                       }
-                      getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                      }}
                       value={
                         dropdownData.categoria_submotivo
                           ?.filter(
@@ -121,7 +126,6 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>
@@ -140,7 +144,10 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.gravedad_vulneracion || []}
-                      getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                      }}
                       value={dropdownData.gravedad_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
@@ -156,7 +163,6 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>
@@ -175,7 +181,10 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.urgencia_vulneracion || []}
-                      getOptionLabel={(option) => (option.nombre ? `${option.nombre} (Peso: ${option.peso})` : "")}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                      }}
                       value={dropdownData.urgencia_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
@@ -191,7 +200,6 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                           size="small"
                         />
                       )}
-                      PopperProps={{ style: { width: "auto", maxWidth: "300px" } }}
                       size="small"
                     />
                   </FormControl>

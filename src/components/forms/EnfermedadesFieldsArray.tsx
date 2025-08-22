@@ -353,7 +353,10 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.situacion_salud || []}
-                      getOptionLabel={(option) => option.nombre || ""}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.nombre || ""
+                      }}
                       value={dropdownData.situacion_salud?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                       renderInput={(params) => (
@@ -410,7 +413,10 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.institucion_sanitaria || []}
-                      getOptionLabel={(option) => option.nombre || ""}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.nombre || ""
+                      }}
                       value={dropdownData.institucion_sanitaria?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => {
                         field.onChange(newValue ? newValue.id : null)
@@ -470,7 +476,10 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
                     <Autocomplete
                       disabled={readOnly}
                       options={dropdownData.certificacion_choices || []}
-                      getOptionLabel={(option) => option.value || ""}
+                      getOptionLabel={(option) => {
+                        if (!option || typeof option !== 'object') return ""
+                        return option.value || ""
+                      }}
                       value={dropdownData.certificacion_choices?.find((item: any) => item.key === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                       renderInput={(params) => (

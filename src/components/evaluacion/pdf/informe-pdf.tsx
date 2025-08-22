@@ -505,13 +505,31 @@ const InformePDF = ({ data }: InformePDFProps) => (
             {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 && (
               <View>
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
-                {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => (
-                  <Text key={idx} style={styles.subDetail}>
-                    - {typeof condicion === 'object' ?
-                      (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
-                      String(condicion)}
-                  </Text>
-                ))}
+                {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => {
+                  let label = "Condición no especificada"
+                  
+                  if (typeof condicion === 'string') {
+                    label = condicion
+                  } else if (typeof condicion === 'object' && condicion !== null) {
+                    if (condicion.condicion_vulnerabilidad) {
+                      if (typeof condicion.condicion_vulnerabilidad === 'string') {
+                        label = condicion.condicion_vulnerabilidad
+                      } else if (typeof condicion.condicion_vulnerabilidad === 'object' && condicion.condicion_vulnerabilidad.nombre) {
+                        label = condicion.condicion_vulnerabilidad.nombre
+                      }
+                    } else if (condicion.nombre) {
+                      label = condicion.nombre
+                    } else if (condicion.descripcion) {
+                      label = condicion.descripcion
+                    }
+                  }
+                  
+                  return (
+                    <Text key={idx} style={styles.subDetail}>
+                      - {label}
+                    </Text>
+                  )
+                })}
               </View>
             )}
 
@@ -586,13 +604,31 @@ const InformePDF = ({ data }: InformePDFProps) => (
             {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 && (
               <View>
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
-                {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => (
-                  <Text key={idx} style={styles.subDetail}>
-                    - {typeof condicion === 'object' ?
-                      (condicion.condicion_vulnerabilidad || JSON.stringify(condicion)) :
-                      String(condicion)}
-                  </Text>
-                ))}
+                {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => {
+                  let label = "Condición no especificada"
+                  
+                  if (typeof condicion === 'string') {
+                    label = condicion
+                  } else if (typeof condicion === 'object' && condicion !== null) {
+                    if (condicion.condicion_vulnerabilidad) {
+                      if (typeof condicion.condicion_vulnerabilidad === 'string') {
+                        label = condicion.condicion_vulnerabilidad
+                      } else if (typeof condicion.condicion_vulnerabilidad === 'object' && condicion.condicion_vulnerabilidad.nombre) {
+                        label = condicion.condicion_vulnerabilidad.nombre
+                      }
+                    } else if (condicion.nombre) {
+                      label = condicion.nombre
+                    } else if (condicion.descripcion) {
+                      label = condicion.descripcion
+                    }
+                  }
+                  
+                  return (
+                    <Text key={idx} style={styles.subDetail}>
+                      - {label}
+                    </Text>
+                  )
+                })}
               </View>
             )}
 

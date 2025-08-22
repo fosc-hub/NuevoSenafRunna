@@ -42,11 +42,13 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                 <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                   <Autocomplete
                     disabled={readOnly}
-                    options={dropdownData.instituciones_sanitarias || []}
+                    options={dropdownData.institucion_sanitaria || []}
                     getOptionLabel={(option: { id: string; nombre: string }) => option.nombre || ""}
-                    value={dropdownData.instituciones_sanitarias?.find((item: { id: string; nombre: string }) => item.id === field.value) || null}
+                    value={dropdownData.institucion_sanitaria?.find((item: { id: string; nombre: string }) =>
+                      item.nombre === (typeof field.value === 'object' && field.value ? (field.value as any).nombre : field.value)
+                    ) || null}
                     onChange={(_, newValue) => {
-                      field.onChange(newValue ? newValue.id : null)
+                      field.onChange(newValue ? { nombre: newValue.nombre } : null)
                     }}
                     renderInput={(params) => (
                       <TextField
@@ -100,15 +102,23 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
               control={control}
               render={({ field, fieldState: { error } }) => (
                 <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
-                  <TextField
-                    {...field}
-                    label={<RequiredLabel label="Intervención" />}
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                    InputProps={{ readOnly }}
+                  <Autocomplete
+                    disabled={readOnly}
+                    options={dropdownData.intervencion_choices || []}
+                    getOptionLabel={(option: { key: string; value: string }) => option.value || ""}
+                    value={dropdownData.intervencion_choices?.find((item: { key: string; value: string }) => item.key === field.value) || null}
+                    onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={<RequiredLabel label="Intervención" />}
+                        error={!!error}
+                        helperText={error?.message}
+                        size="small"
+                        placeholder="Seleccione el tipo de intervención médica..."
+                      />
+                    )}
                     size="small"
-                    placeholder="Ingrese el tipo de intervención médica..."
                   />
                 </FormControl>
               )}
@@ -159,9 +169,9 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                 Médico Cabecera
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={4}>
                   <Controller
-                    name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera`}
+                    name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.nombre`}
                     rules={{ required: "Este campo es obligatorio" }}
                     control={control}
                     render={({ field, fieldState }) => (
@@ -174,6 +184,44 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                         InputProps={{ readOnly }}
                         size="small"
                         sx={{ mb: 2 }}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.mail`}
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        label="Email del Médico"
+                        fullWidth
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        InputProps={{ readOnly }}
+                        size="small"
+                        sx={{ mb: 2 }}
+                        placeholder="medico@ejemplo.com"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name={`ninosAdolescentes.${index}.cobertura_medica.medico_cabecera.telefono`}
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        label="Teléfono del Médico"
+                        fullWidth
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        InputProps={{ readOnly }}
+                        size="small"
+                        sx={{ mb: 2 }}
+                        placeholder="1234567890"
                       />
                     )}
                   />

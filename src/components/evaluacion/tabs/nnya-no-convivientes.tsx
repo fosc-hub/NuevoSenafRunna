@@ -597,19 +597,44 @@ export default function NnyaNoConvivientes({ nnyaNoConvivientes, setNnyaNoConviv
                 </Typography>
                 {nnya.condicionesVulnerabilidad && nnya.condicionesVulnerabilidad.length > 0 ? (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {nnya.condicionesVulnerabilidad.map((condicion, idx) => (
-                      <Chip
-                        key={idx}
-                        label={
-                          condicion.condicion_vulnerabilidad?.nombre ||
-                          condicion.condicion_vulnerabilidad ||
-                          `Condición ${idx + 1}`
+                    {nnya.condicionesVulnerabilidad.map((condicion, idx) => {
+                      // Handle different data structures for vulnerability conditions
+                      let label = "Condición no especificada"
+                      let color: "primary" | "default" = "default"
+                      
+                      if (typeof condicion === "string") {
+                        label = condicion
+                      } else if (typeof condicion === "object" && condicion !== null) {
+                        if (condicion.condicion_vulnerabilidad) {
+                          // If it's a nested object with condicion_vulnerabilidad
+                          if (typeof condicion.condicion_vulnerabilidad === "string") {
+                            label = condicion.condicion_vulnerabilidad
+                          } else if (typeof condicion.condicion_vulnerabilidad === "object" && condicion.condicion_vulnerabilidad.nombre) {
+                            label = condicion.condicion_vulnerabilidad.nombre
+                          }
+                        } else if (condicion.nombre) {
+                          // If it's a direct object with nombre
+                          label = condicion.nombre
+                        } else if (condicion.descripcion) {
+                          // Fallback to descripcion
+                          label = condicion.descripcion
                         }
-                        size="small"
-                        color={condicion.si_no ? "primary" : "default"}
-                        variant={condicion.si_no ? "filled" : "outlined"}
-                      />
-                    ))}
+                        
+                        // Set color based on si_no property if available
+                        if (condicion.si_no !== undefined) {
+                          color = condicion.si_no ? "primary" : "default"
+                        }
+                      }
+                      
+                      return (
+                        <Chip
+                          key={idx}
+                          label={label}
+                          size="small"
+                          color={color}
+                        />
+                      )
+                    })}
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
@@ -722,17 +747,44 @@ export default function NnyaNoConvivientes({ nnyaNoConvivientes, setNnyaNoConviv
                 </Typography>
                 {nnya.condicionesVulnerabilidad && nnya.condicionesVulnerabilidad.length > 0 ? (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {nnya.condicionesVulnerabilidad.map((condicion, idx) => (
-                      <Chip
-                        key={idx}
-                        label={
-                          condicion.condicion_vulnerabilidad ||
-                          (typeof condicion === "object" ? JSON.stringify(condicion) : condicion)
+                    {nnya.condicionesVulnerabilidad.map((condicion, idx) => {
+                      // Handle different data structures for vulnerability conditions
+                      let label = "Condición no especificada"
+                      let color: "primary" | "default" = "default"
+                      
+                      if (typeof condicion === "string") {
+                        label = condicion
+                      } else if (typeof condicion === "object" && condicion !== null) {
+                        if (condicion.condicion_vulnerabilidad) {
+                          // If it's a nested object with condicion_vulnerabilidad
+                          if (typeof condicion.condicion_vulnerabilidad === "string") {
+                            label = condicion.condicion_vulnerabilidad
+                          } else if (typeof condicion.condicion_vulnerabilidad === "object" && condicion.condicion_vulnerabilidad.nombre) {
+                            label = condicion.condicion_vulnerabilidad.nombre
+                          }
+                        } else if (condicion.nombre) {
+                          // If it's a direct object with nombre
+                          label = condicion.nombre
+                        } else if (condicion.descripcion) {
+                          // Fallback to descripcion
+                          label = condicion.descripcion
                         }
-                        size="small"
-                        color={condicion.si_no ? "primary" : "default"}
-                      />
-                    ))}
+                        
+                        // Set color based on si_no property if available
+                        if (condicion.si_no !== undefined) {
+                          color = condicion.si_no ? "primary" : "default"
+                        }
+                      }
+                      
+                      return (
+                        <Chip
+                          key={idx}
+                          label={label}
+                          size="small"
+                          color={color}
+                        />
+                      )
+                    })}
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">

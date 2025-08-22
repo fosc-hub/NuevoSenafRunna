@@ -423,7 +423,7 @@ export default function AdultosNoConvivientes({
                 <Typography variant="subtitle2" gutterBottom>
                   Condiciones de Vulnerabilidad
                 </Typography>
-                {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 ? (
+                {adulto.condicionesVulnerabilidad && Array.isArray(adulto.condicionesVulnerabilidad) && adulto.condicionesVulnerabilidad.length > 0 ? (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {adulto.condicionesVulnerabilidad.map((condicion, idx) => (
                       <Chip

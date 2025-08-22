@@ -502,7 +502,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
             )}
 
             {/* Condiciones de vulnerabilidad */}
-            {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 && (
+            {adulto.condicionesVulnerabilidad && Array.isArray(adulto.condicionesVulnerabilidad) && adulto.condicionesVulnerabilidad.length > 0 && (
               <View>
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
                 {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => {
@@ -601,7 +601,7 @@ const InformePDF = ({ data }: InformePDFProps) => (
             )}
 
             {/* Condiciones de vulnerabilidad */}
-            {adulto.condicionesVulnerabilidad && adulto.condicionesVulnerabilidad.length > 0 && (
+            {adulto.condicionesVulnerabilidad && Array.isArray(adulto.condicionesVulnerabilidad) && adulto.condicionesVulnerabilidad.length > 0 && (
               <View>
                 <Text style={styles.personDetail}>Condiciones de vulnerabilidad:</Text>
                 {adulto.condicionesVulnerabilidad.map((condicion: any, idx: number) => {

@@ -32,7 +32,7 @@ const transformApiData = (apiData: any) => {
     submotivo_ingreso: apiData.submotivo_ingreso || "",
     observaciones: apiData.observaciones || "",
     // Pasar los códigos de demanda directamente como vienen del API
-    codigos_demanda: apiData.codigos_demanda || [],
+    codigos_demanda: Array.isArray(apiData.codigos_demanda) ? apiData.codigos_demanda : [],
   }
 
   // Extraer datos de localización
@@ -61,11 +61,11 @@ const transformApiData = (apiData: any) => {
   const actividades = Array.isArray(apiData.actividades)
     ? apiData.actividades.map((act: any) => ({
       FechaHora: act.fecha_y_hora_manual || act.fecha_y_hora || "",
-      TipoActividad: act.tipo || "Visita",
-      Institucion: act.institucion || "SENAF",
+      TipoActividad: typeof act.tipo === 'object' && act.tipo?.nombre ? act.tipo.nombre : (typeof act.tipo === 'string' ? act.tipo : "Visita"),
+      Institucion: typeof act.institucion === 'object' && act.institucion?.nombre ? act.institucion.nombre : (typeof act.institucion === 'string' ? act.institucion : "SENAF"),
       Descripcion: act.descripcion || "",
       by_user: act.by_user || null,
-      adjuntos: act.adjuntos || [],
+      adjuntos: Array.isArray(act.adjuntos) ? act.adjuntos : [],
       fecha_y_hora_manual: act.fecha_y_hora_manual || "",
     }))
     : []
@@ -106,10 +106,10 @@ const transformApiData = (apiData: any) => {
         localizacion: persona.localizacion || null,
         educacion: persona.educacion || null,
         cobertura_medica: persona.cobertura_medica || null,
-        persona_enfermedades: persona.persona_enfermedades || [],
+        persona_enfermedades: Array.isArray(persona.persona_enfermedades) ? persona.persona_enfermedades : [],
         demanda_persona: persona.demanda_persona || null,
-        condicionesVulnerabilidad: persona.condiciones_vulnerabilidad || [],
-        vulneraciones: persona.vulneraciones || [],
+        condicionesVulnerabilidad: Array.isArray(persona.condiciones_vulnerabilidad) ? persona.condiciones_vulnerabilidad : [],
+        vulneraciones: Array.isArray(persona.vulneraciones) ? persona.vulneraciones : [],
         telefono: persona.persona.telefono || "",
         ocupacion: persona.demanda_persona?.ocupacion || "",
         legalmenteResponsable: persona.demanda_persona?.legalmente_responsable || false,
@@ -182,7 +182,7 @@ const transformApiData = (apiData: any) => {
   }
 
   // Extraer adjuntos
-  const adjuntos = apiData.adjuntos || []
+  const adjuntos = Array.isArray(apiData.adjuntos) ? apiData.adjuntos : []
 
   // Extraer valoración profesional y descripción de la situación
   let valoracionProfesional = ""

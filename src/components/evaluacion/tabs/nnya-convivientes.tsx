@@ -593,7 +593,7 @@ export default function NnyaConvivientes({ nnyaConvivientes, setNnyaConvivientes
                 <Typography variant="subtitle2" gutterBottom>
                   Condiciones de Vulnerabilidad
                 </Typography>
-                {nnya.condicionesVulnerabilidad && nnya.condicionesVulnerabilidad.length > 0 ? (
+                {nnya.condicionesVulnerabilidad && Array.isArray(nnya.condicionesVulnerabilidad) && nnya.condicionesVulnerabilidad.length > 0 ? (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {nnya.condicionesVulnerabilidad.map((condicion, idx) => {
                       // Handle different data structures for vulnerability conditions

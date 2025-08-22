@@ -64,26 +64,26 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     user?.is_staff
 
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
-    data.IndicadoresEvaluacion.map((indicator: any, index: number) => ({
+    Array.isArray(data.IndicadoresEvaluacion) ? data.IndicadoresEvaluacion.map((indicator: any, index: number) => ({
       id: index + 1,
       nombre: indicator.NombreIndicador,
       descripcion: indicator.Descripcion,
       peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
       selected: false,
-    })),
+    })) : []
   )
 
   // State for editable data
-  const [actividades, setActividades] = useState(data.Actividades || [])
-  const [nnyaConvivientes, setNnyaConvivientes] = useState(data.NNYAConvivientes || [])
-  const [nnyaNoConvivientes, setNnyaNoConvivientes] = useState(data.NNYANoConvivientes || [])
-  const [adultosConvivientes, setAdultosConvivientes] = useState(data.AdultosConvivientes || [])
-  const [adultosNoConvivientes, setAdultosNoConvivientes] = useState(data.AdultosNoConvivientes || [])
+  const [actividades, setActividades] = useState(Array.isArray(data.Actividades) ? data.Actividades : [])
+  const [nnyaConvivientes, setNnyaConvivientes] = useState(Array.isArray(data.NNYAConvivientes) ? data.NNYAConvivientes : [])
+  const [nnyaNoConvivientes, setNnyaNoConvivientes] = useState(Array.isArray(data.NNYANoConvivientes) ? data.NNYANoConvivientes : [])
+  const [adultosConvivientes, setAdultosConvivientes] = useState(Array.isArray(data.AdultosConvivientes) ? data.AdultosConvivientes : [])
+  const [adultosNoConvivientes, setAdultosNoConvivientes] = useState(Array.isArray(data.AdultosNoConvivientes) ? data.AdultosNoConvivientes : [])
   const [valoracionProfesional, setValoracionProfesional] = useState("")
   const [justificacionTecnico, setJustificacionTecnico] = useState("")
   const [justificacionDirector, setJustificacionDirector] = useState("")
   const [expandedJustificaciones, setExpandedJustificaciones] = useState(true)
-  const [adjuntos, setAdjuntos] = useState(data.adjuntos || [])
+  const [adjuntos, setAdjuntos] = useState(Array.isArray(data.adjuntos) ? data.adjuntos : [])
 
   // Reference to the file management component
   const fileManagementRef = useRef<FileManagementHandle>(null)
@@ -91,16 +91,16 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   // Convert antecedentes to array if it's not already
   const initialAntecedentes = Array.isArray(data.AntecedentesDemanda)
     ? data.AntecedentesDemanda
-    : [data.AntecedentesDemanda]
+    : data.AntecedentesDemanda ? [data.AntecedentesDemanda] : []
   const [antecedentes, setAntecedentes] = useState(initialAntecedentes)
 
 
-  const [descripcionSituacion, setDescripcionSituacion] = useState(data.DescripcionSituacion || "")
+  const [descripcionSituacion, setDescripcionSituacion] = useState(typeof data.DescripcionSituacion === 'string' ? data.DescripcionSituacion : "")
 
   // Get demandaId from URL query parameter
   useEffect(() => {
     const id = searchParams.get("id")
-    if (id) {
+    if (id && !isNaN(Number(id))) {
       setDemandaId(Number.parseInt(id))
     }
   }, [searchParams])
@@ -111,7 +111,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
 
   const handleIndicatorChange = (id: number, value: boolean) => {
     setVulnerabilityIndicators(
-      vulnerabilityIndicators.map((indicator) => (indicator.id === id ? { ...indicator, selected: value } : indicator)),
+      vulnerabilityIndicators.map((indicator: VulnerabilityIndicator) => (indicator.id === id ? { ...indicator, selected: value } : indicator)),
     )
   }
 
@@ -129,7 +129,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       ValoracionProfesional: valoracionProfesional,
       adjuntos: adjuntos,
       // Note: justificacionTecnico and justificacionDirector are intentionally not included in the PDF
-      IndicadoresEvaluacion: vulnerabilityIndicators.map((indicator) => ({
+      IndicadoresEvaluacion: Array.isArray(vulnerabilityIndicators) ? vulnerabilityIndicators.map((indicator: VulnerabilityIndicator) => ({
         NombreIndicador: indicator.nombre,
         Descripcion: indicator.descripcion,
         Peso:
@@ -140,7 +140,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
                 ? "Medio"
                 : "Bajo"
             : indicator.peso,
-      })),
+      })) : [],
     }
   }
 
@@ -152,7 +152,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       const dataToSend = {
         // Aquí transformamos los datos al formato que espera el API
         descripcion: updatedData.DescripcionSituacion,
-        observaciones: updatedData.InformacionGeneral.observaciones,
+        observaciones: updatedData.InformacionGeneral?.observaciones || "",
         // Si hay una evaluación, actualizarla
         evaluacion: {
           descripcion_de_la_situacion: updatedData.DescripcionSituacion,

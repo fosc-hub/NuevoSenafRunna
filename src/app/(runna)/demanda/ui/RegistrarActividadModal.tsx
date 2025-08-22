@@ -28,7 +28,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { AttachFile, Download, CloudUpload } from "@mui/icons-material"
 import { create, get } from "@/app/api/apiService"
-import type { Actividad, ActividadTipo } from "@/types/actividad"
+// Types defined locally since @/types/actividad doesn't exist
 
 // Update the Actividad type to match the new API response structure
 type Adjunto = {
@@ -59,6 +59,10 @@ interface ActividadResponse {
   tipo: TipoActividad
   institucion: Institucion
 }
+
+// Define the missing types
+type ActividadTipo = TipoActividad
+type Actividad = ActividadResponse
 
 const actividadSchema = z.object({
   fecha_y_hora: z.date().min(new Date(1900, 0, 1), "La fecha y hora es requerida"),
@@ -135,7 +139,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
 
   const fetchInstituciones = async () => {
     try {
-      const data = await get<{ id: number; nombre: string }[]>("actividad-dropdown/")
+      const data = await get<{ instituciones_actividad: { id: number; nombre: string }[] }>("actividad-dropdown/")
       setInstituciones(data.instituciones_actividad)
     } catch (err) {
       console.error("Error fetching instituciones:", err)
@@ -145,7 +149,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      setSelectedFiles((prev) => [...prev, ...Array.from(event.target.files)])
+      setSelectedFiles((prev) => [...prev, ...Array.from(event.target.files!)])
     }
   }
 
@@ -241,7 +245,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
         formDataToSend.append(`adjuntos[${index}]archivo`, file)
       })
 
-      await create<Actividad>("actividad", formDataToSend)
+      await create("actividad", formDataToSend)
       await fetchActividades()
       reset()
       setSelectedFiles([])
@@ -273,7 +277,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
                 label="Fecha y Hora"
                 value={field.value}
                 onChange={(newValue) => field.onChange(newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
+                slotProps={{ textField: { fullWidth: true } }}
               />
             )}
           />
@@ -303,7 +307,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
               <Select {...field} label="Tipo de Actividad">
                 {actividadTipos.map((tipo) => (
                   <MenuItem key={tipo.id} value={tipo.id}>
-                    {tipo.nombre} {tipo.remitir_a_jefe && " (Remitir a Jefe)"}
+                    {tipo.nombre}{tipo.remitir_a_jefe ? " (Remitir a Jefe)" : ""}
                   </MenuItem>
                 ))}
               </Select>
@@ -443,10 +447,10 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}{" "}
-                        - {actividad.tipo.nombre}
+                        - {actividad.tipo?.nombre || "Sin tipo"}
                       </Typography>
                       {" — "}
-                      {actividad.institucion.nombre}
+                      {actividad.institucion?.nombre || "Sin institución"}
                       {actividad.adjuntos && actividad.adjuntos.length > 0 && (
                         <Box sx={{ mt: 1 }}>
                           <Typography component="span" variant="body2" color="text.primary">

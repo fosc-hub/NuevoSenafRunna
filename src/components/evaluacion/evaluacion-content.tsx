@@ -17,22 +17,31 @@ const transformApiData = (apiData: any) => {
   const informacionGeneral = {
     Localidad: apiData.localidad_usuario || "",
     Fecha: apiData.fecha_ingreso_senaf || new Date().toISOString().split("T")[0],
-    CargoFuncion: apiData.rol_usuario || "",
+    CargoFuncion: Array.isArray(apiData.rol_usuario) ? apiData.rol_usuario.join(", ") : (apiData.rol_usuario || ""),
     NombreApellido: `${apiData.apellido_usuario || ""}, ${apiData.nombre_usuario || ""}`,
     NumerosDemanda: apiData.id ? `DEM-${apiData.id}/2025` : "",
-    BloqueDatosRemitente: apiData.bloque_datos_remitente.nombre ? ` ${apiData.bloque_datos_remitente.nombre}` : "",
-    TipoInstitucion: apiData.tipo_institucion ? "Institución" : "",
-    Institucion: apiData.institucion?.nombre || "",
+    BloqueDatosRemitente: typeof apiData.bloque_datos_remitente === 'object' && apiData.bloque_datos_remitente?.nombre ? ` ${apiData.bloque_datos_remitente.nombre}` : "",
+    TipoInstitucion: typeof apiData.tipo_institucion === 'object' && apiData.tipo_institucion?.nombre ? apiData.tipo_institucion.nombre : (apiData.tipo_institucion ? "Institución" : ""),
+    Institucion: typeof apiData.institucion === 'object' && apiData.institucion?.nombre ? apiData.institucion.nombre : (apiData.institucion || ""),
     fecha_oficio_documento: apiData.fecha_oficio_documento || "",
     fecha_ingreso_senaf: apiData.fecha_ingreso_senaf || "",
-    etiqueta: apiData.etiqueta ? String(apiData.etiqueta) : "",
+    etiqueta: typeof apiData.etiqueta === 'object' && apiData.etiqueta?.nombre ? apiData.etiqueta.nombre : (apiData.etiqueta ? String(apiData.etiqueta) : ""),
     tipo_demanda: apiData.tipo_demanda || "",
     objetivo_de_demanda: apiData.objetivo_de_demanda || "",
-    motivo_ingreso: apiData.motivo_ingreso || "",
-    submotivo_ingreso: apiData.submotivo_ingreso || "",
+    motivo_ingreso: typeof apiData.motivo_ingreso === 'object' && apiData.motivo_ingreso?.nombre ? apiData.motivo_ingreso.nombre : (apiData.motivo_ingreso || ""),
+    submotivo_ingreso: typeof apiData.submotivo_ingreso === 'object' && apiData.submotivo_ingreso?.nombre ? apiData.submotivo_ingreso.nombre : (apiData.submotivo_ingreso || ""),
+    ambito_vulneracion: typeof apiData.ambito_vulneracion === 'object' && apiData.ambito_vulneracion?.nombre ? apiData.ambito_vulneracion.nombre : (apiData.ambito_vulneracion || ""),
     observaciones: apiData.observaciones || "",
     // Pasar los códigos de demanda directamente como vienen del API
-    codigos_demanda: Array.isArray(apiData.codigos_demanda) ? apiData.codigos_demanda : [],
+    codigos_demanda: Array.isArray(apiData.codigos_demanda) ? apiData.codigos_demanda.map((codigo: any) => ({
+      ...codigo,
+      codigo: typeof codigo.codigo === 'object' && codigo.codigo?.nombre ? codigo.codigo.nombre : (codigo.codigo || ""),
+      tipo_codigo: typeof codigo.tipo_codigo === 'object' && codigo.tipo_codigo?.nombre ? codigo.tipo_codigo.nombre : (codigo.tipo_codigo || ""),
+    })) : [],
+    // Add missing fields that might be needed by tabs
+    bloque_datos_remitente: typeof apiData.bloque_datos_remitente === 'object' && apiData.bloque_datos_remitente?.nombre ? apiData.bloque_datos_remitente.nombre : (apiData.bloque_datos_remitente || ""),
+    tipo_institucion: typeof apiData.tipo_institucion === 'object' && apiData.tipo_institucion?.nombre ? apiData.tipo_institucion.nombre : (apiData.tipo_institucion || ""),
+    registrado_por_user_zona: typeof apiData.registrado_por_user_zona === 'object' && apiData.registrado_por_user_zona?.nombre ? apiData.registrado_por_user_zona.nombre : (apiData.registrado_por_user_zona || ""),
   }
 
   // Extraer datos de localización
@@ -67,6 +76,9 @@ const transformApiData = (apiData: any) => {
       by_user: act.by_user || null,
       adjuntos: Array.isArray(act.adjuntos) ? act.adjuntos : [],
       fecha_y_hora_manual: act.fecha_y_hora_manual || "",
+      // Add additional fields that might be needed
+      id: act.id,
+      demanda: act.demanda,
     }))
     : []
 
@@ -86,7 +98,7 @@ const transformApiData = (apiData: any) => {
         ApellidoNombre: `${persona.persona.apellido || ""}, ${persona.persona.nombre || ""}`,
         FechaNacimiento: persona.persona.fecha_nacimiento || "",
         DNI: persona.persona.dni || "",
-        VinculoConNNYAPrincipal: persona.demanda_persona?.vinculo_demanda || "",
+        VinculoConNNYAPrincipal: typeof persona.demanda_persona?.vinculo_demanda === 'object' && persona.demanda_persona?.vinculo_demanda?.nombre ? persona.demanda_persona.vinculo_demanda.nombre : (persona.demanda_persona?.vinculo_demanda || ""),
         LegajoRUNNA: "",
         // Datos adicionales
         nombre: persona.persona.nombre || "",
@@ -104,20 +116,39 @@ const transformApiData = (apiData: any) => {
         NumeroCasa: persona.localizacion?.casa_nro || "",
         // Datos completos
         localizacion: persona.localizacion || null,
-        educacion: persona.educacion || null,
-        cobertura_medica: persona.cobertura_medica || null,
-        persona_enfermedades: Array.isArray(persona.persona_enfermedades) ? persona.persona_enfermedades : [],
+        educacion: persona.educacion ? {
+          ...persona.educacion,
+          institucion_educativa: typeof persona.educacion.institucion_educativa === 'object' && persona.educacion.institucion_educativa?.nombre ? persona.educacion.institucion_educativa.nombre : (persona.educacion.institucion_educativa || ""),
+        } : null,
+        cobertura_medica: persona.cobertura_medica ? {
+          ...persona.cobertura_medica,
+          institucion_sanitaria: typeof persona.cobertura_medica.institucion_sanitaria === 'object' && persona.cobertura_medica.institucion_sanitaria?.nombre ? persona.cobertura_medica.institucion_sanitaria.nombre : (persona.cobertura_medica.institucion_sanitaria || ""),
+          medico_cabecera: typeof persona.cobertura_medica.medico_cabecera === 'object' && persona.cobertura_medica.medico_cabecera?.nombre ? persona.cobertura_medica.medico_cabecera.nombre : (persona.cobertura_medica.medico_cabecera || ""),
+        } : null,
+        persona_enfermedades: Array.isArray(persona.persona_enfermedades) ? persona.persona_enfermedades.map((enf: any) => ({
+          ...enf,
+          enfermedad: typeof enf.enfermedad === 'object' && enf.enfermedad?.nombre ? enf.enfermedad.nombre : (enf.enfermedad || ""),
+        })) : [],
         demanda_persona: persona.demanda_persona || null,
-        condicionesVulnerabilidad: Array.isArray(persona.condiciones_vulnerabilidad) ? persona.condiciones_vulnerabilidad : [],
-        vulneraciones: Array.isArray(persona.vulneraciones) ? persona.vulneraciones : [],
+        condicionesVulnerabilidad: Array.isArray(persona.condiciones_vulnerabilidad) ? persona.condiciones_vulnerabilidad.map((cond: any) => ({
+          ...cond,
+          condicion_vulnerabilidad: typeof cond.condicion_vulnerabilidad === 'object' && cond.condicion_vulnerabilidad?.nombre ? cond.condicion_vulnerabilidad.nombre : (cond.condicion_vulnerabilidad || ""),
+        })) : [],
+        vulneraciones: Array.isArray(persona.vulneraciones) ? persona.vulneraciones.map((vuln: any) => ({
+          ...vuln,
+          categoria_motivo: typeof vuln.categoria_motivo === 'object' && vuln.categoria_motivo?.nombre ? vuln.categoria_motivo.nombre : (vuln.categoria_motivo || ""),
+          categoria_submotivo: typeof vuln.categoria_submotivo === 'object' && vuln.categoria_submotivo?.nombre ? vuln.categoria_submotivo.nombre : (vuln.categoria_submotivo || ""),
+          gravedad_vulneracion: typeof vuln.gravedad_vulneracion === 'object' && vuln.gravedad_vulneracion?.nombre ? vuln.gravedad_vulneracion.nombre : (vuln.gravedad_vulneracion || ""),
+          urgencia_vulneracion: typeof vuln.urgencia_vulneracion === 'object' && vuln.urgencia_vulneracion?.nombre ? vuln.urgencia_vulneracion.nombre : (vuln.urgencia_vulneracion || ""),
+        })) : [],
         telefono: persona.persona.telefono || "",
-        ocupacion: persona.demanda_persona?.ocupacion || "",
+        ocupacion: typeof persona.demanda_persona?.ocupacion === 'object' && persona.demanda_persona?.ocupacion?.nombre ? persona.demanda_persona.ocupacion.nombre : (persona.demanda_persona?.ocupacion || ""),
         legalmenteResponsable: persona.demanda_persona?.legalmente_responsable || false,
         supuesto_autordv: "",
         garantiza_proteccion: false,
         vinculacion: "",
-        vinculo_con_nnya_principal: persona.demanda_persona?.vinculo_con_nnya_principal || "",
-        vinculo_demanda: persona.demanda_persona?.vinculo_demanda || "",
+        vinculo_con_nnya_principal: typeof persona.demanda_persona?.vinculo_con_nnya_principal === 'object' && persona.demanda_persona?.vinculo_con_nnya_principal?.nombre ? persona.demanda_persona.vinculo_con_nnya_principal.nombre : (persona.demanda_persona?.vinculo_con_nnya_principal || ""),
+        vinculo_demanda: typeof persona.demanda_persona?.vinculo_demanda === 'object' && persona.demanda_persona?.vinculo_demanda?.nombre ? persona.demanda_persona.vinculo_demanda.nombre : (persona.demanda_persona?.vinculo_demanda || ""),
         persona: persona.persona || null,
       }
       // Determinar si es NNyA o adulto
@@ -154,31 +185,18 @@ const transformApiData = (apiData: any) => {
 
   // Datos para motivos de actuación
   const motivosActuacion = {
-    motivo_ingreso: apiData.motivo_ingreso || "",
-    submotivo_ingreso: apiData.submotivo_ingreso || "",
+    motivo_ingreso: typeof apiData.motivo_ingreso === 'object' && apiData.motivo_ingreso?.nombre ? apiData.motivo_ingreso.nombre : (apiData.motivo_ingreso || ""),
+    submotivo_ingreso: typeof apiData.submotivo_ingreso === 'object' && apiData.submotivo_ingreso?.nombre ? apiData.submotivo_ingreso.nombre : (apiData.submotivo_ingreso || ""),
   }
 
-  // Extraer indicadores - verificar si es string o ya es un objeto
+  // Extraer indicadores de valoración
   let indicadoresEvaluacion: any[] = []
-  if (apiData.indicadores_valoracion) {
-    try {
-      // Verificar si ya es un objeto o necesita ser parseado
-      const indicadoresData =
-        typeof apiData.indicadores_valoracion === "string"
-          ? JSON.parse(apiData.indicadores_valoracion)
-          : apiData.indicadores_valoracion
-
-      if (Array.isArray(indicadoresData)) {
-        indicadoresEvaluacion = indicadoresData.map((ind: any) => ({
-          NombreIndicador: ind.nombre || "Indicador",
-          Descripcion: ind.descripcion || "",
-          Peso: ind.peso >= 5 ? "Alto" : ind.peso >= 3 ? "Medio" : "Bajo",
-        }))
-      }
-    } catch (error) {
-      console.error("Error parsing indicadores_valoracion:", error)
-      indicadoresEvaluacion = []
-    }
+  if (Array.isArray(apiData.indicadores_valoracion)) {
+    indicadoresEvaluacion = apiData.indicadores_valoracion.map((ind: any) => ({
+      NombreIndicador: ind.nombre || "Indicador",
+      Descripcion: ind.descripcion || "",
+      Peso: ind.peso >= 5 ? "Alto" : ind.peso >= 3 ? "Medio" : "Bajo",
+    }))
   }
 
   // Extraer adjuntos
@@ -217,10 +235,17 @@ const transformApiData = (apiData: any) => {
     AdultosNoConvivientes: adultosNoConvivientes,
     AntecedentesDemanda: antecedentes,
     MotivosActuacion: motivosActuacion, // Ahora es un objeto con motivo_ingreso y submotivo_ingreso
+    // Add missing fields that might be needed by tabs
+    codigos_demanda: informacionGeneral.codigos_demanda,
+    bloque_datos_remitente: informacionGeneral.bloque_datos_remitente,
+    tipo_institucion: informacionGeneral.tipo_institucion,
+    registrado_por_user_zona: informacionGeneral.registrado_por_user_zona,
     IndicadoresEvaluacion: indicadoresEvaluacion,
     DescripcionSituacion: descripcionSituacion,
     ValoracionProfesional: valoracionProfesional,
     adjuntos: adjuntos,
+    // Add scores data from API
+    scores: Array.isArray(apiData.scores) ? apiData.scores : [],
   }
 }
 
@@ -237,7 +262,24 @@ export default function EvaluacionContent() {
   })
 
   // Transformar los datos si están disponibles
-  const transformedData = data ? transformApiData(data) : null
+  let transformedData = null
+  try {
+    transformedData = data ? transformApiData(data) : null
+  } catch (error) {
+    console.error("Error transforming API data:", error)
+    return (
+      <Box sx={{ maxWidth: "1200px", mx: "auto", p: 5 }}>
+        <Alert severity="error">
+          Error al procesar los datos de la API. Por favor, contacte al administrador.
+        </Alert>
+      </Box>
+    )
+  }
+
+  // Debug: Log the transformed data to see what's being passed to tabs
+  if (transformedData) {
+    console.log("Transformed data for tabs:", transformedData)
+  }
 
   if (isLoading) {
     return (

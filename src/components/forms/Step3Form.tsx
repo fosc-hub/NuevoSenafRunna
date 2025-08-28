@@ -28,7 +28,7 @@ interface Step3FormProps {
   dropdownData: DropdownData
   readOnly?: boolean
   adultosConvivientes: FormData["adultosConvivientes"]
-  id?: string
+  id?: number
 }
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes, id }) => {
@@ -101,7 +101,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       }
 
       // La función buscarCompleto ahora se encarga de validar los datos y aplicar el debounce
-      buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults)
+      buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults, id)
     })
   }, [
     fields,

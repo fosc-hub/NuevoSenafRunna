@@ -15,6 +15,7 @@ interface BusquedaVinculacionRequest {
   dni?: number
   codigo?: string
   localizacion?: LocalizacionData
+  demanda?: number
 }
 
 interface BusquedaVinculacionResponse {
@@ -79,7 +80,7 @@ export const useBusquedaVinculacion = (delay = 500) => {
 
   // Debounced function for searching by name and surname
   const buscarPorNombreApellido = useCallback(
-    debounce(async (nombreYApellido: string, callback: (result: BusquedaVinculacionResponse) => void) => {
+    debounce(async (nombreYApellido: string, callback: (result: BusquedaVinculacionResponse) => void, demanda?: number) => {
       // Solo buscar si el nombre es válido y diferente al anterior
       if (!isValidSearchValue(nombreYApellido) || nombreYApellido === prevNombreRef.current) return
 
@@ -88,6 +89,7 @@ export const useBusquedaVinculacion = (delay = 500) => {
       try {
         const result = await buscarVinculacion({
           nombre_y_apellido: nombreYApellido,
+          demanda,
         })
         callback(result)
       } catch (error) {
@@ -100,7 +102,7 @@ export const useBusquedaVinculacion = (delay = 500) => {
 
   // Debounced function for searching by DNI
   const buscarPorDni = useCallback(
-    debounce(async (dni: number, callback: (result: BusquedaVinculacionResponse) => void) => {
+    debounce(async (dni: number, callback: (result: BusquedaVinculacionResponse) => void, demanda?: number) => {
       // Solo buscar si el DNI es válido y diferente al anterior
       if (!isValidSearchValue(dni) || dni === prevDniRef.current) return
 
@@ -109,6 +111,7 @@ export const useBusquedaVinculacion = (delay = 500) => {
       try {
         const result = await buscarVinculacion({
           dni,
+          demanda,
         })
         callback(result)
       } catch (error) {
@@ -128,6 +131,7 @@ export const useBusquedaVinculacion = (delay = 500) => {
         codigo?: string,
         localizacion?: LocalizacionData,
         callback?: (result: BusquedaVinculacionResponse) => void,
+        demanda?: number,
       ) => {
         try {
           const data: BusquedaVinculacionRequest = {}
@@ -171,7 +175,10 @@ export const useBusquedaVinculacion = (delay = 500) => {
           // Solo realizar la búsqueda si hay al menos un criterio válido Y ha habido cambios
           if (shouldSearch && (nombreCambio || dniCambio || codigoCambio || localizacionCambio)) {
             console.log("Realizando búsqueda con datos:", data)
-            const result = await buscarVinculacion(data)
+            const result = await buscarVinculacion({
+              ...data,
+              demanda,
+            })
             if (callback) callback(result)
             return result
           } else {

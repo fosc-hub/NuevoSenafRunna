@@ -395,6 +395,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
           }
           : undefined,
         handleVinculacionResults,
+        id, // Pass the current demanda ID
       )
     }
   }, [watchedCodigos, watchedLocalizacion, buscarCompleto])

@@ -27,7 +27,7 @@ interface Step2FormProps {
   control: Control<FormData>
   dropdownData: DropdownData
   readOnly?: boolean
-  id?: string
+  id?: number
 }
 
 const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly = false, id }) => {
@@ -96,7 +96,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       }
 
       // La función buscarCompleto ahora se encarga de validar los datos y aplicar el debounce
-      buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults)
+      buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults, id)
     })
   }, [
     fields,

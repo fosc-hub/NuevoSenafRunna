@@ -56,6 +56,7 @@ interface SearchPayload {
     calle?: string
     localidad?: number
   }
+  demanda?: number
 }
 
 interface SearchModalProps {
@@ -72,6 +73,8 @@ interface SearchModalProps {
   isModal?: boolean
   // Optional compact mode for embedded view
   compact?: boolean
+  // Current demanda ID to exclude from search results
+  demanda?: number
 }
 
 export default function SearchModal({
@@ -82,6 +85,7 @@ export default function SearchModal({
   title = "Búsqueda Avanzada de Demandas",
   isModal = true,
   compact = false,
+  demanda,
 }: SearchModalProps) {
   const router = useRouter()
   const theme = useTheme()
@@ -177,6 +181,7 @@ export default function SearchModal({
               localidad: searchParams.localidad ? Number.parseInt(searchParams.localidad, 10) : undefined,
             }
             : undefined,
+        demanda: demanda,
       }
 
       // Remove undefined values

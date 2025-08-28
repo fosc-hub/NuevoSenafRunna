@@ -205,6 +205,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
           onConnect={handleConnect}
           title="Buscar demandas para conectar"
           compact={true}
+          demanda={demandaId}
         />
       </Paper>
 

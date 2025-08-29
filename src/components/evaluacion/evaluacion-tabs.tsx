@@ -59,7 +59,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const user = useUser((state) => state.user)
 
   // Check if user is director
-  const isDirector = user?.all_permissions?.includes('view_tdemandavinculada') ||
+  const isDirector = 
     user?.is_superuser ||
     user?.is_staff
 

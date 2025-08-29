@@ -74,8 +74,7 @@ export default function ActionButtons({
   const user = useUser((state) => state.user)
 
   // Check if user is director
-  const isDirector = user?.all_permissions?.includes('view_tdemandavinculada') ||
-    user?.is_superuser ||
+  const isDirector = user?.is_superuser ||
     user?.is_staff
 
   useEffect(() => {

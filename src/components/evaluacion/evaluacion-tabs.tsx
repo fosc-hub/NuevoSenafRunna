@@ -59,7 +59,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const user = useUser((state) => state.user)
 
   // Check if user is director
-  const isDirector = 
+  const isDirector =
     user?.is_superuser ||
     user?.is_staff
 
@@ -164,7 +164,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
 
       // Enviar los datos al API
       if (demandaId) {
-        await axiosInstance.patch(`/api/registro-demanda-form/${demandaId}/`, dataToSend)
+        await axiosInstance.patch(`/registro-demanda-form/${demandaId}/`, dataToSend)
 
         toast.success("Datos guardados exitosamente", {
           position: "top-center",

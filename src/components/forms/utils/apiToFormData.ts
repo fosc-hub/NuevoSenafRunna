@@ -54,23 +54,22 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
         localizacion: nnya.localizacion,
         educacion: nnya.educacion
           ? {
-              ...nnya.educacion,
-              institucion_educativa: nnya.educacion.institucion_educativa || null,
-            }
+            ...nnya.educacion,
+            institucion_educativa: nnya.educacion.institucion_educativa || null,
+          }
           : null,
 
         cobertura_medica: nnya.cobertura_medica
           ? {
-              id: nnya.cobertura_medica.id,
-              institucion_sanitaria: nnya.cobertura_medica?.institucion_sanitaria?.id || null,
-              institucion_sanitaria_nombre: nnya.cobertura_medica?.institucion_sanitaria?.nombre || null,
-              obra_social: nnya.cobertura_medica.obra_social || null,
-              intervencion: nnya.cobertura_medica.intervencion || null,
-              medico_cabecera: nnya.cobertura_medica.medico_cabecera || null,
-              auh: nnya.cobertura_medica.auh || false,
-              observaciones: nnya.cobertura_medica.observaciones || null,
-              deleted: nnya.cobertura_medica.deleted || false,
-            }
+            id: nnya.cobertura_medica.id,
+            institucion_sanitaria: nnya.cobertura_medica?.institucion_sanitaria || null,
+            obra_social: nnya.cobertura_medica.obra_social || null,
+            intervencion: nnya.cobertura_medica.intervencion || null,
+            medico_cabecera: nnya.cobertura_medica.medico_cabecera || null,
+            auh: nnya.cobertura_medica.auh || false,
+            observaciones: nnya.cobertura_medica.observaciones || null,
+            deleted: nnya.cobertura_medica.deleted || false,
+          }
           : null,
 
         persona_enfermedades: (nnya.persona_enfermedades || []).map((enfermedad: any) => ({

@@ -45,10 +45,10 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                     options={dropdownData.institucion_sanitaria || []}
                     getOptionLabel={(option: { id: string; nombre: string }) => option.nombre || ""}
                     value={dropdownData.institucion_sanitaria?.find((item: { id: string; nombre: string }) =>
-                      item.nombre === (typeof field.value === 'object' && field.value ? (field.value as any).nombre : field.value)
+                      item.id === (typeof field.value === 'object' && field.value ? (field.value as any).id : field.value)
                     ) || null}
                     onChange={(_, newValue) => {
-                      field.onChange(newValue ? { nombre: newValue.nombre } : null)
+                      field.onChange(newValue ? { id: newValue.id, nombre: newValue.nombre } : null)
                     }}
                     renderInput={(params) => (
                       <TextField

@@ -111,6 +111,28 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
   const changes = getChangedValues(originalData, updatedData)
   console.log("Detected changes:", JSON.stringify(changes, null, 2))
 
+  // HOTFIX: Check if there's education data that should be preserved
+  const hasEducationInUpdatedData = updatedData.personas?.some((persona: any) =>
+    persona.educacion && (
+      persona.educacion.institucion_educativa?.nombre ||
+      persona.educacion.nivel_alcanzado ||
+      persona.educacion.esta_escolarizado ||
+      persona.educacion.ultimo_cursado ||
+      persona.educacion.tipo_escuela ||
+      persona.educacion.comentarios_educativos
+    )
+  )
+
+  if (hasEducationInUpdatedData) {
+    console.log("🎓 Education data detected in updated data, ensuring personas are preserved")
+    if (!changes.personas) {
+      console.log("🚨 HOTFIX: Force including personas because education data detected but not in changes")
+      changes.personas = updatedData.personas
+    } else {
+      console.log("✅ Personas already in changes, preserving education data")
+    }
+  }
+
   // Transform the changes into the API expected format
   const transformedChanges: any = {}
 
@@ -134,10 +156,25 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
     }
   })
 
-  // Handle institution
+  // Handle institution - ensure we always create correct structure
   if (changes && changes.institucion !== undefined) {
+    let institucionNombre: string = ''
+
+    if (typeof changes.institucion === 'string') {
+      institucionNombre = changes.institucion
+    } else if (typeof changes.institucion === 'object' && changes.institucion !== null) {
+      // Handle case where institucion is already an object
+      if (typeof changes.institucion.nombre === 'string') {
+        institucionNombre = changes.institucion.nombre
+      } else if (typeof changes.institucion.nombre === 'object' && changes.institucion.nombre?.nombre) {
+        // Handle double nesting case
+        institucionNombre = changes.institucion.nombre.nombre
+        console.warn('⚠️ Double nesting detected in institucion, fixing automatically')
+      }
+    }
+
     transformedChanges.institucion = {
-      nombre: changes.institucion,
+      nombre: institucionNombre,
       tipo_institucion: updatedData.tipo_institucion,
     }
   }
@@ -201,9 +238,32 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
         // Also check if there are changes detected by getChangedValues
         const detectedChanges = changes?.ninosAdolescentes?.[index]
 
-        if (isNew || hasChanges || detectedChanges) {
+        // FORCE INCLUSION: For now, always include education data if it exists to fix the missing data issue
+        const hasEducationData = nnya.educacion && (
+          nnya.educacion.institucion_educativa?.nombre ||
+          nnya.educacion.nivel_alcanzado ||
+          nnya.educacion.esta_escolarizado ||
+          nnya.educacion.ultimo_cursado ||
+          nnya.educacion.tipo_escuela ||
+          nnya.educacion.comentarios_educativos
+        )
+
+        // Temporary fix: Include if there's education data that wasn't in original
+        const originalHadEducation = originalNnya?.educacion && originalNnya.educacion !== null
+        const shouldIncludeEducation = hasEducationData && !originalHadEducation
+
+        console.log(`🔍 NNYA ${index} Education Debug:`)
+        console.log(`   hasEducationData: ${hasEducationData}`)
+        console.log(`   originalHadEducation: ${originalHadEducation}`)
+        console.log(`   originalNnya.educacion: ${JSON.stringify(originalNnya?.educacion)}`)
+        console.log(`   shouldIncludeEducation: ${shouldIncludeEducation}`)
+
+        if (isNew || hasChanges || detectedChanges || shouldIncludeEducation) {
+          if (shouldIncludeEducation) {
+            console.log(`🎓 Including NNYA ${index} due to new education data`)
+          }
           console.log(
-            `Processing nnya ${index}: isNew=${isNew}, hasChanges=${hasChanges}, detectedChanges=${!!detectedChanges}`,
+            `Processing nnya ${index}: isNew=${isNew}, hasChanges=${hasChanges}, detectedChanges=${!!detectedChanges}, shouldIncludeEducation=${shouldIncludeEducation}`,
           )
 
           const personaData: any = {
@@ -270,6 +330,13 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
     }
   }
 
+  // CRITICAL FIX: If changes.personas exists but transformedChanges.personas doesn't, copy it over
+  if (changes.personas && !transformedChanges.personas) {
+    console.log("🚨 CRITICAL FIX: Copying personas from changes to transformedChanges")
+    transformedChanges.personas = changes.personas
+  }
+
+  console.log("🔥 FINAL TRANSFORMED CHANGES:", JSON.stringify(transformedChanges, null, 2))
   return transformedChanges
 }
 
@@ -355,7 +422,13 @@ function hasPersonaFieldChanges(originalPersona: any, updatedPersona: any): bool
   // For ninosAdolescentes, check additional fields
   if ("educacion" in originalPersona || "educacion" in updatedPersona) {
     // Check education
-    if (JSON.stringify(originalPersona.educacion) !== JSON.stringify(updatedPersona.educacion)) {
+    const originalEducacion = JSON.stringify(originalPersona.educacion)
+    const updatedEducacion = JSON.stringify(updatedPersona.educacion)
+
+    if (originalEducacion !== updatedEducacion) {
+      console.log(`🎓 Education changed:`)
+      console.log(`   Original: ${originalEducacion}`)
+      console.log(`   Updated: ${updatedEducacion}`)
       return true
     }
 

@@ -38,10 +38,10 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                     field.value === "other"
                       ? { id: "other", nombre: "Otra" }
                       : ((dropdownData.instituciones_educativas || dropdownData.institucion_educativa) || [])
-                        .find((item: any) => item.nombre === (typeof field.value === 'object' && field.value ? (field.value as any).nombre : field.value)) || null
+                        .find((item: any) => item.id === (typeof field.value === 'object' && field.value ? (field.value as any).id : field.value)) || null
                   }
                   onChange={(_, newValue) =>
-                    field.onChange(newValue ? (newValue.id === "other" ? "other" : { nombre: newValue.nombre }) : null)
+                    field.onChange(newValue ? (newValue.id === "other" ? "other" : { id: newValue.id, nombre: newValue.nombre }) : null)
                   }
                   renderInput={(params) => (
                     <TextField

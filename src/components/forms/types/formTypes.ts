@@ -43,6 +43,8 @@ export interface AdultoData {
 
 // Interface for child/adolescent data
 export interface NnyaData {
+  personaId?: number
+  demandaPersonaId?: number
   nombre: string
   apellido: string
   fechaNacimiento: string | null
@@ -67,7 +69,7 @@ export interface NnyaData {
     cpc: string | null
   }
   educacion: {
-    institucion_educativa: { nombre: string } | string
+    institucion_educativa: { id?: number; nombre: string } | string
     nivel_alcanzado: string
     esta_escolarizado: boolean
     ultimo_cursado: string
@@ -79,15 +81,18 @@ export interface NnyaData {
     comentarios: string
   }
   cobertura_medica: {
+    id?: number
     obra_social: string
     intervencion: string
     auh: boolean
     observaciones: string
-    institucion_sanitaria: { nombre: string } | null
-    medico_cabecera: { nombre: string; mail?: string; telefono?: string } | null
+    institucion_sanitaria: { id?: number; nombre: string } | null
+    medico_cabecera: { id?: number; nombre: string; mail?: string; telefono?: string } | null
+    deleted?: boolean
   }
   persona_enfermedades: string[]
   demanda_persona: {
+    id?: number
     conviviente: boolean
     vinculo_demanda: string
     vinculo_con_nnya_principal: string
@@ -113,7 +118,7 @@ export interface FormData {
   bloque_datos_remitente: string | null;
   tipo_demanda: string | null;
   tipo_institucion: string | null;
-  institucion: string;
+  institucion: string | { nombre: string; tipo_institucion?: string | number };
   nro_notificacion_102: string | null;
   nro_sac: string | null;
   nro_suac: string | null;
@@ -140,6 +145,7 @@ export interface FormData {
   } | null;
   etiqueta: string | null;
   objetivo_de_demanda: string | null;
+  estado_demanda: string | null;
   adjuntos: Array<File | { archivo: string }>;
   createNewUsuarioExterno: boolean;
 }

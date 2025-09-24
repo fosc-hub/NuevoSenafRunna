@@ -66,10 +66,10 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
     Array.isArray(data.IndicadoresEvaluacion) ? data.IndicadoresEvaluacion.map((indicator: any, index: number) => {
       // Find if there's a previous valoracion for this indicator
-      const previousValoracion = Array.isArray(data.valoracionesSeleccionadas) 
+      const previousValoracion = Array.isArray(data.valoracionesSeleccionadas)
         ? data.valoracionesSeleccionadas.find((val: any) => val.indicador === indicator.id)
         : null;
-      
+
       return {
         id: indicator.id || index + 1, // Use the actual ID from the API
         nombre: indicator.NombreIndicador,
@@ -118,10 +118,10 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       console.log("Updating vulnerability indicators with valoraciones:", data.valoracionesSeleccionadas);
       const updatedIndicators = data.IndicadoresEvaluacion.map((indicator: any, index: number) => {
         // Find if there's a previous valoracion for this indicator
-        const previousValoracion = Array.isArray(data.valoracionesSeleccionadas) 
+        const previousValoracion = Array.isArray(data.valoracionesSeleccionadas)
           ? data.valoracionesSeleccionadas.find((val: any) => val.indicador === indicator.id)
           : null;
-        
+
         const indicatorData = {
           id: indicator.id || index + 1, // Use the actual ID from the API
           nombre: indicator.NombreIndicador,
@@ -129,11 +129,11 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
           peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
           selected: previousValoracion ? previousValoracion.checked : false, // Apply previous selection
         };
-        
+
         if (previousValoracion) {
           console.log(`Applied valoracion for indicator ${indicator.id}:`, previousValoracion.checked);
         }
-        
+
         return indicatorData;
       });
       setVulnerabilityIndicators(updatedIndicators);
@@ -310,12 +310,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} />
       </Box>
 
-      
+
       <DecisionBox
         vulnerabilityIndicators={vulnerabilityIndicators}
         handleIndicatorChange={handleIndicatorChange}
         demandaId={demandaId}
-        initialScores={Array.isArray(data.scores) ? data.scores : []}
+        preloadedScores={Array.isArray(data.scores) ? data.scores : []}
       />
 
       {/* Valoración Profesional Final */}

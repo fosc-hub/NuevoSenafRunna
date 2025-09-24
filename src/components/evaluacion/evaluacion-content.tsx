@@ -200,10 +200,17 @@ const transformApiData = (apiData: any) => {
     }))
   }
 
-  // Extraer valoraciones seleccionadas previas
+  // Extraer valoraciones seleccionadas previas (top-level o anidadas)
   let valoracionesSeleccionadas: any[] = []
-  if (Array.isArray(apiData.valoraciones_seleccionadas)) {
-    valoracionesSeleccionadas = apiData.valoraciones_seleccionadas.map((val: any) => ({
+  const rawValoracionesTop = Array.isArray(apiData.valoraciones_seleccionadas)
+    ? apiData.valoraciones_seleccionadas
+    : []
+  const rawValoracionesNested = Array.isArray(apiData.latest_evaluacion?.demanda_log?.log?.valoraciones_seleccionadas)
+    ? apiData.latest_evaluacion.demanda_log.log.valoraciones_seleccionadas
+    : []
+  const rawValoraciones = rawValoracionesTop.length > 0 ? rawValoracionesTop : rawValoracionesNested
+  if (Array.isArray(rawValoraciones)) {
+    valoracionesSeleccionadas = rawValoraciones.map((val: any) => ({
       indicador: val.indicador,
       checked: val.checked,
     }))
@@ -230,8 +237,8 @@ const transformApiData = (apiData: any) => {
       justificacionTecnico = evaluacionData.justificacion_tecnico || ""
       justificacionDirector = evaluacionData.justificacion_director || ""
 
-      // Solo sobrescribir descripcionSituacion si hay un valor en la evaluación
-      if (evaluacionData.descripcion_de_la_situacion) {
+      // Solo sobrescribir descripcionSituacion si hay un valor real (no placeholder "Blank")
+      if (evaluacionData.descripcion_de_la_situacion && String(evaluacionData.descripcion_de_la_situacion).trim().toLowerCase() !== "blank") {
         descripcionSituacion = evaluacionData.descripcion_de_la_situacion
       }
     } catch (error) {
@@ -260,28 +267,35 @@ const transformApiData = (apiData: any) => {
     JustificacionTecnico: justificacionTecnico,
     JustificacionDirector: justificacionDirector,
     adjuntos: adjuntos,
-    // Add scores data from API with enriched NNyA information
-    scores: Array.isArray(apiData.scores) ? apiData.scores.map((score: any) => {
-      // Find the NNyA information from personas array
-      const nnyaInfo = Array.isArray(apiData.personas) 
-        ? apiData.personas.find((persona: any) => persona.persona.id === score.nnya)
-        : null;
-      
-      return {
-        ...score,
-        nnya: nnyaInfo ? {
-          id: nnyaInfo.persona.id,
-          nombre: nnyaInfo.persona.nombre || "",
-          apellido: nnyaInfo.persona.apellido || "",
-          dni: nnyaInfo.persona.dni || "No especificado"
-        } : {
-          id: score.nnya,
-          nombre: "",
-          apellido: "",
-          dni: "No especificado"
+    // Add scores data from API with enriched NNyA information (top-level or nested)
+    scores: (() => {
+      const rawScoresTop = Array.isArray(apiData.scores) ? apiData.scores : []
+      const rawScoresNested = Array.isArray(apiData.latest_evaluacion?.demanda_log?.log?.scores)
+        ? apiData.latest_evaluacion.demanda_log.log.scores
+        : []
+      const rawScores = rawScoresTop.length > 0 ? rawScoresTop : rawScoresNested
+      if (!Array.isArray(rawScores)) return []
+      return rawScores.map((score: any) => {
+        const nnyaId = (score && (score.nnya_id || score.nnya)) || null
+        const nnyaInfo = nnyaId && Array.isArray(apiData.personas)
+          ? apiData.personas.find((persona: any) => persona.persona.id === nnyaId)
+          : null
+        return {
+          ...score,
+          nnya: nnyaInfo ? {
+            id: nnyaInfo.persona.id,
+            nombre: nnyaInfo.persona.nombre || "",
+            apellido: nnyaInfo.persona.apellido || "",
+            dni: nnyaInfo.persona.dni || "No especificado",
+          } : {
+            id: nnyaId || null,
+            nombre: "",
+            apellido: "",
+            dni: "No especificado",
+          },
         }
-      };
-    }) : [],
+      })
+    })(),
     // Add valoraciones seleccionadas data from API
     valoracionesSeleccionadas: valoracionesSeleccionadas,
   }

@@ -46,9 +46,10 @@ interface DecisionBoxProps {
   vulnerabilityIndicators: any[]
   handleIndicatorChange: (id: number, value: boolean) => void
   demandaId?: number | null
+  initialScores?: Score[]
 }
 
-export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId }: DecisionBoxProps) {
+export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId, initialScores }: DecisionBoxProps) {
   const [indicators, setIndicators] = useState<Indicador[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -72,6 +73,15 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
 
     fetchIndicators()
   }, [])
+
+  // Initialize scores from props when available
+  useEffect(() => {
+    if (Array.isArray(initialScores) && initialScores.length > 0) {
+      setScores(initialScores as any)
+      const hasDecision = (initialScores as any[]).some((s) => s && (s as any).decision)
+      if (hasDecision) setShowDecision(true)
+    }
+  }, [initialScores])
 
   const handleIndicatorSelectionChange = (id: number, value: boolean) => {
     setIndicators(indicators.map((indicator) => (indicator.id === id ? { ...indicator, selected: value } : indicator)))
@@ -208,10 +218,22 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
 
                     {/* NNyA Information */}
                     <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                        {scoreItem.nnya.apellido}, {scoreItem.nnya.nombre}
-                      </Typography>
-                      <Typography variant="body2">DNI: {scoreItem.nnya.dni || "No especificado"}</Typography>
+                      {(() => {
+                        const nnyObj: any = (scoreItem as any).nnya
+                        const isObject = nnyObj && typeof nnyObj === 'object'
+                        const displayName = isObject
+                          ? `${nnyObj.apellido || ''}, ${nnyObj.nombre || ''}`.trim()
+                          : `NNyA ID: ${(scoreItem as any).nnya || (scoreItem as any).nnya_id || '-'}`
+                        const displayDni = isObject ? (nnyObj.dni || 'No especificado') : 'No especificado'
+                        return (
+                          <>
+                            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                              {displayName}
+                            </Typography>
+                            <Typography variant="body2">DNI: {displayDni}</Typography>
+                          </>
+                        )
+                      })()}
                       <Chip label="NNyA Principal" size="small" color="primary" sx={{ mt: 1, fontSize: "0.7rem" }} />
                     </Box>
 

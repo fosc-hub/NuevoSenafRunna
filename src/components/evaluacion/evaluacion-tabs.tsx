@@ -279,6 +279,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         vulnerabilityIndicators={vulnerabilityIndicators}
         handleIndicatorChange={handleIndicatorChange}
         demandaId={demandaId}
+        initialScores={Array.isArray(data.scores) ? data.scores : []}
       />
 
       {/* Valoración Profesional Final */}

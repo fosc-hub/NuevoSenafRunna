@@ -82,6 +82,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
 
   // State for editable data
   const [actividades, setActividades] = useState(Array.isArray(data.Actividades) ? data.Actividades : [])
+  const [informacionGeneral, setInformacionGeneral] = useState<any>(data.InformacionGeneral || {})
   const [nnyaConvivientes, setNnyaConvivientes] = useState(Array.isArray(data.NNYAConvivientes) ? data.NNYAConvivientes : [])
   const [nnyaNoConvivientes, setNnyaNoConvivientes] = useState(Array.isArray(data.NNYANoConvivientes) ? data.NNYANoConvivientes : [])
   const [adultosConvivientes, setAdultosConvivientes] = useState(Array.isArray(data.AdultosConvivientes) ? data.AdultosConvivientes : [])
@@ -162,6 +163,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const collectUpdatedData = () => {
     return {
       ...data,
+      InformacionGeneral: informacionGeneral,
       Actividades: actividades,
       NNYAConvivientes: nnyaConvivientes,
       NNYANoConvivientes: nnyaNoConvivientes,
@@ -196,6 +198,28 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         // Aquí transformamos los datos al formato que espera el API
         descripcion: updatedData.DescripcionSituacion,
         observaciones: updatedData.InformacionGeneral?.observaciones || "",
+        localidad_usuario: updatedData.InformacionGeneral?.Localidad || "",
+        // Si el backend espera lista, se podría dividir por coma; por ahora enviamos string
+        rol_usuario: updatedData.InformacionGeneral?.CargoFuncion || "",
+        nombre_usuario: (() => {
+          const raw = updatedData.InformacionGeneral?.NombreApellido || ""
+          // Formato esperado: "Apellido, Nombre" o "Nombre Apellido"
+          if (raw.includes(",")) {
+            const parts = raw.split(",")
+            return String(parts[1] || "").trim()
+          }
+          const tokens = String(raw).trim().split(/\s+/)
+          return tokens.length > 1 ? tokens.slice(0, -1).join(" ") : raw
+        })(),
+        apellido_usuario: (() => {
+          const raw = updatedData.InformacionGeneral?.NombreApellido || ""
+          if (raw.includes(",")) {
+            const parts = raw.split(",")
+            return String(parts[0] || "").trim()
+          }
+          const tokens = String(raw).trim().split(/\s+/)
+          return tokens.length > 1 ? tokens[tokens.length - 1] : ""
+        })(),
         // Si hay una evaluación, actualizarla
         evaluacion: {
           descripcion_de_la_situacion: updatedData.DescripcionSituacion,
@@ -270,7 +294,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
 
       <Box>
         <TabPanel value={tabValue} index={0}>
-          <InformacionGeneral data={data.InformacionGeneral} />
+          <InformacionGeneral
+            data={informacionGeneral}
+            onFieldChange={(fieldName: string, value: string) =>
+              setInformacionGeneral((prev: any) => ({ ...prev, [fieldName]: value }))
+            }
+          />
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>

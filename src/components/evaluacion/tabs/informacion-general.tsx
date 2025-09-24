@@ -2,11 +2,12 @@
 
 import { Paper, Typography, Box, TextField, Grid, Chip, List, ListItem, ListItemText } from "@mui/material"
 
-interface InformacionGeneralProps {
+export interface InformacionGeneralProps {
   data: any
+  onFieldChange?: (fieldName: string, value: string) => void
 }
 
-export default function InformacionGeneral({ data }: InformacionGeneralProps) {
+export default function InformacionGeneral({ data, onFieldChange }: InformacionGeneralProps) {
   // Handle nested objects for various fields
   const localidad = typeof data.localidad === "object" && data.localidad ? data.localidad.nombre : data.Localidad || ""
   const institucion =
@@ -62,7 +63,13 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
         {/* Columna izquierda */}
         <Grid item xs={12} md={6}>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2 }}>
-            <TextField label="Localidad" name="Localidad" value={localidad} InputProps={{ readOnly: true }} fullWidth />
+            <TextField
+              label="Localidad"
+              name="Localidad"
+              value={data.Localidad ?? localidad}
+              onChange={(e) => onFieldChange?.("Localidad", e.target.value)}
+              fullWidth
+            />
             <TextField
               label="Fecha"
               name="Fecha"
@@ -73,15 +80,15 @@ export default function InformacionGeneral({ data }: InformacionGeneralProps) {
             <TextField
               label="Cargo/Función"
               name="CargoFuncion"
-              value={data.cargo_funcion || data.CargoFuncion || ""}
-              InputProps={{ readOnly: true }}
+              value={data.CargoFuncion ?? data.cargo_funcion ?? ""}
+              onChange={(e) => onFieldChange?.("CargoFuncion", e.target.value)}
               fullWidth
             />
             <TextField
               label="Nombre y Apellido"
               name="NombreApellido"
-              value={data.nombre_apellido || data.NombreApellido || ""}
-              InputProps={{ readOnly: true }}
+              value={data.NombreApellido ?? data.nombre_apellido ?? ""}
+              onChange={(e) => onFieldChange?.("NombreApellido", e.target.value)}
               fullWidth
             />
             <TextField

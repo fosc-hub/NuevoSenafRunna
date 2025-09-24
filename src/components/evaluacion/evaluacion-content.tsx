@@ -196,6 +196,16 @@ const transformApiData = (apiData: any) => {
       NombreIndicador: ind.nombre || "Indicador",
       Descripcion: ind.descripcion || "",
       Peso: ind.peso >= 5 ? "Alto" : ind.peso >= 3 ? "Medio" : "Bajo",
+      id: ind.id, // Agregar el ID del indicador
+    }))
+  }
+
+  // Extraer valoraciones seleccionadas previas
+  let valoracionesSeleccionadas: any[] = []
+  if (Array.isArray(apiData.valoraciones_seleccionadas)) {
+    valoracionesSeleccionadas = apiData.valoraciones_seleccionadas.map((val: any) => ({
+      indicador: val.indicador,
+      checked: val.checked,
     }))
   }
 
@@ -246,6 +256,8 @@ const transformApiData = (apiData: any) => {
     adjuntos: adjuntos,
     // Add scores data from API
     scores: Array.isArray(apiData.scores) ? apiData.scores : [],
+    // Add valoraciones seleccionadas data from API
+    valoracionesSeleccionadas: valoracionesSeleccionadas,
   }
 }
 
@@ -279,6 +291,7 @@ export default function EvaluacionContent() {
   // Debug: Log the transformed data to see what's being passed to tabs
   if (transformedData) {
     console.log("Transformed data for tabs:", transformedData)
+    console.log("Valoraciones seleccionadas:", transformedData.valoracionesSeleccionadas)
   }
 
   if (isLoading) {

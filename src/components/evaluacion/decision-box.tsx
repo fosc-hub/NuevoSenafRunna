@@ -50,31 +50,27 @@ interface DecisionBoxProps {
 
 export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId }: DecisionBoxProps) {
   const [indicators, setIndicators] = useState<Indicador[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [showDecision, setShowDecision] = useState(false)
   const [scores, setScores] = useState<Score[]>([])
 
-  // Fetch indicators from API
+  // Use vulnerability indicators from props instead of fetching from API
   useEffect(() => {
-    const fetchIndicators = async () => {
-      setLoading(true)
-      try {
-        const data = await getIndicadores()
-        setIndicators(data.map((ind) => ({ ...ind, selected: false })))
-      } catch (error) {
-        console.error("Error fetching indicators:", error)
-        toast.error("Error al cargar los indicadores")
-      } finally {
-        setLoading(false)
-      }
+    if (Array.isArray(vulnerabilityIndicators) && vulnerabilityIndicators.length > 0) {
+      console.log("Setting indicators from props:", vulnerabilityIndicators)
+      setIndicators(vulnerabilityIndicators)
+      setLoading(false)
+    } else {
+      console.log("No vulnerability indicators received:", vulnerabilityIndicators)
     }
-
-    fetchIndicators()
-  }, [])
+  }, [vulnerabilityIndicators])
 
   const handleIndicatorSelectionChange = (id: number, value: boolean) => {
+    // Update local state
     setIndicators(indicators.map((indicator) => (indicator.id === id ? { ...indicator, selected: value } : indicator)))
+    // Also call the parent handler to keep the parent state in sync
+    handleIndicatorChange(id, value)
   }
 
   const handleSubmitEvaluacion = async () => {

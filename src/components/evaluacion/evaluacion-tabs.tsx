@@ -64,13 +64,20 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     user?.is_staff
 
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
-    Array.isArray(data.IndicadoresEvaluacion) ? data.IndicadoresEvaluacion.map((indicator: any, index: number) => ({
-      id: index + 1,
-      nombre: indicator.NombreIndicador,
-      descripcion: indicator.Descripcion,
-      peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
-      selected: false,
-    })) : []
+    Array.isArray(data.IndicadoresEvaluacion) ? data.IndicadoresEvaluacion.map((indicator: any, index: number) => {
+      // Find if there's a previous valoracion for this indicator
+      const previousValoracion = Array.isArray(data.valoracionesSeleccionadas) 
+        ? data.valoracionesSeleccionadas.find((val: any) => val.indicador === indicator.id)
+        : null;
+      
+      return {
+        id: indicator.id || index + 1, // Use the actual ID from the API
+        nombre: indicator.NombreIndicador,
+        descripcion: indicator.Descripcion,
+        peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
+        selected: previousValoracion ? previousValoracion.checked : false, // Apply previous selection
+      }
+    }) : []
   )
 
   // State for editable data
@@ -104,6 +111,34 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       setDemandaId(Number.parseInt(id))
     }
   }, [searchParams])
+
+  // Update vulnerability indicators when data changes (including valoraciones_seleccionadas)
+  useEffect(() => {
+    if (Array.isArray(data.IndicadoresEvaluacion)) {
+      console.log("Updating vulnerability indicators with valoraciones:", data.valoracionesSeleccionadas);
+      const updatedIndicators = data.IndicadoresEvaluacion.map((indicator: any, index: number) => {
+        // Find if there's a previous valoracion for this indicator
+        const previousValoracion = Array.isArray(data.valoracionesSeleccionadas) 
+          ? data.valoracionesSeleccionadas.find((val: any) => val.indicador === indicator.id)
+          : null;
+        
+        const indicatorData = {
+          id: indicator.id || index + 1, // Use the actual ID from the API
+          nombre: indicator.NombreIndicador,
+          descripcion: indicator.Descripcion,
+          peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
+          selected: previousValoracion ? previousValoracion.checked : false, // Apply previous selection
+        };
+        
+        if (previousValoracion) {
+          console.log(`Applied valoracion for indicator ${indicator.id}:`, previousValoracion.checked);
+        }
+        
+        return indicatorData;
+      });
+      setVulnerabilityIndicators(updatedIndicators);
+    }
+  }, [data.IndicadoresEvaluacion, data.valoracionesSeleccionadas])
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
@@ -275,6 +310,9 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} />
       </Box>
 
+      {/* Debug: Log indicators before passing to DecisionBox */}
+      {console.log("Passing indicators to DecisionBox:", vulnerabilityIndicators)}
+      
       <DecisionBox
         vulnerabilityIndicators={vulnerabilityIndicators}
         handleIndicatorChange={handleIndicatorChange}

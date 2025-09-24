@@ -46,6 +46,11 @@ export interface TIndicadoresValoracion {
     peso: number;
 }
 
+export interface TValoracionSeleccionada {
+    indicador: number;
+    checked: boolean;
+}
+
 interface TEvaluacionesBase {
     id: number;
     demanda: number;

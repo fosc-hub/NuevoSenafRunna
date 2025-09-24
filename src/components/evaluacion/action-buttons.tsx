@@ -161,8 +161,14 @@ export default function ActionButtons({
           autoClose: 3000,
         })
       } else if (action === "autorizar archivar") {
+        // Include selected NNyA IDs in the archivar request as well
+        const selectedDatabaseIds = selectedChildrenIds.map(selectedId => {
+          const child = children.find(c => c.id === selectedId);
+          return child?.databaseId || selectedId;
+        });
+
         const payload = {
-          nnyas_evaluados_id: [],
+          nnyas_evaluados_id: selectedDatabaseIds,
           descripcion_de_la_situacion: descripcionSituacion || "Blank",
           valoracion_profesional_final: valoracionProfesional || "Blank",
           justificacion_tecnico: justificacionTecnico || "Blank",

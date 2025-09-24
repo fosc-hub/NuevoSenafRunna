@@ -86,9 +86,9 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const [nnyaNoConvivientes, setNnyaNoConvivientes] = useState(Array.isArray(data.NNYANoConvivientes) ? data.NNYANoConvivientes : [])
   const [adultosConvivientes, setAdultosConvivientes] = useState(Array.isArray(data.AdultosConvivientes) ? data.AdultosConvivientes : [])
   const [adultosNoConvivientes, setAdultosNoConvivientes] = useState(Array.isArray(data.AdultosNoConvivientes) ? data.AdultosNoConvivientes : [])
-  const [valoracionProfesional, setValoracionProfesional] = useState("")
-  const [justificacionTecnico, setJustificacionTecnico] = useState("")
-  const [justificacionDirector, setJustificacionDirector] = useState("")
+  const [valoracionProfesional, setValoracionProfesional] = useState(typeof data.ValoracionProfesional === 'string' ? data.ValoracionProfesional : "")
+  const [justificacionTecnico, setJustificacionTecnico] = useState(typeof data.JustificacionTecnico === 'string' ? data.JustificacionTecnico : "")
+  const [justificacionDirector, setJustificacionDirector] = useState(typeof data.JustificacionDirector === 'string' ? data.JustificacionDirector : "")
   const [expandedJustificaciones, setExpandedJustificaciones] = useState(true)
   const [adjuntos, setAdjuntos] = useState(Array.isArray(data.adjuntos) ? data.adjuntos : [])
 
@@ -315,7 +315,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         vulnerabilityIndicators={vulnerabilityIndicators}
         handleIndicatorChange={handleIndicatorChange}
         demandaId={demandaId}
-        preloadedScores={data.scores}
+        initialScores={Array.isArray(data.scores) ? data.scores : []}
       />
 
       {/* Valoración Profesional Final */}

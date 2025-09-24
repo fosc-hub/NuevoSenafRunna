@@ -213,10 +213,22 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
 
                     {/* NNyA Information */}
                     <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                        {scoreItem.nnya.apellido}, {scoreItem.nnya.nombre}
-                      </Typography>
-                      <Typography variant="body2">DNI: {scoreItem.nnya.dni || "No especificado"}</Typography>
+                      {(() => {
+                        const nnyObj: any = (scoreItem as any).nnya
+                        const isObject = nnyObj && typeof nnyObj === 'object'
+                        const displayName = isObject
+                          ? `${nnyObj.apellido || ''}, ${nnyObj.nombre || ''}`.trim()
+                          : `NNyA ID: ${(scoreItem as any).nnya || (scoreItem as any).nnya_id || '-'}`
+                        const displayDni = isObject ? (nnyObj.dni || 'No especificado') : 'No especificado'
+                        return (
+                          <>
+                            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                              {displayName}
+                            </Typography>
+                            <Typography variant="body2">DNI: {displayDni}</Typography>
+                          </>
+                        )
+                      })()}
                       <Chip label="NNyA Principal" size="small" color="primary" sx={{ mt: 1, fontSize: "0.7rem" }} />
                     </Box>
 

@@ -150,10 +150,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     )
   }
 
-  // Color only the decision word "ARCHIVAR"; keep the rest default
+  // Color decision word: ARCHIVAR in red, TOMAR MEDIDA in green, others default
   const decisionWordColor = (sol?: string) => {
     const v = (sol || '').trim().toUpperCase()
-    return v === 'ARCHIVAR' ? '#DC2626' : 'inherit'
+    if (v.includes('ARCHIV')) return '#DC2626'
+    if (v.includes('TOMAR')) return '#16A34A'
+    return 'inherit'
   }
 
   // Function to collect all updated data

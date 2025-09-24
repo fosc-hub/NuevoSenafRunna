@@ -202,9 +202,11 @@ const transformApiData = (apiData: any) => {
   // Extraer adjuntos
   const adjuntos = Array.isArray(apiData.adjuntos) ? apiData.adjuntos : []
 
-  // Extraer valoración profesional y descripción de la situación
+  // Extraer valoración profesional, descripción de la situación y justificaciones
   let valoracionProfesional = ""
   let descripcionSituacion = apiData.descripcion || ""
+  let justificacionTecnico = ""
+  let justificacionDirector = ""
 
   if (apiData.latest_evaluacion) {
     try {
@@ -215,6 +217,8 @@ const transformApiData = (apiData: any) => {
           : apiData.latest_evaluacion
 
       valoracionProfesional = evaluacionData.valoracion_profesional_final || ""
+      justificacionTecnico = evaluacionData.justificacion_tecnico || ""
+      justificacionDirector = evaluacionData.justificacion_director || ""
 
       // Solo sobrescribir descripcionSituacion si hay un valor en la evaluación
       if (evaluacionData.descripcion_de_la_situacion) {
@@ -243,6 +247,8 @@ const transformApiData = (apiData: any) => {
     IndicadoresEvaluacion: indicadoresEvaluacion,
     DescripcionSituacion: descripcionSituacion,
     ValoracionProfesional: valoracionProfesional,
+    JustificacionTecnico: justificacionTecnico,
+    JustificacionDirector: justificacionDirector,
     adjuntos: adjuntos,
     // Add scores data from API
     scores: Array.isArray(apiData.scores) ? apiData.scores : [],

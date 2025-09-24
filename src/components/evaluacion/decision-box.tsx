@@ -47,9 +47,11 @@ interface DecisionBoxProps {
   handleIndicatorChange: (id: number, value: boolean) => void
   demandaId?: number | null
   preloadedScores?: Score[]
+  solicitudTecnico?: string
+  justificacionTecnico?: string
 }
 
-export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId, preloadedScores }: DecisionBoxProps) {
+export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId, preloadedScores, solicitudTecnico, justificacionTecnico }: DecisionBoxProps) {
   const [indicators, setIndicators] = useState<Indicador[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)

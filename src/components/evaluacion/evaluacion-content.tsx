@@ -224,6 +224,7 @@ const transformApiData = (apiData: any) => {
   let descripcionSituacion = apiData.descripcion || ""
   let justificacionTecnico = ""
   let justificacionDirector = ""
+  let solicitudTecnico = ""
 
   if (apiData.latest_evaluacion) {
     try {
@@ -236,6 +237,7 @@ const transformApiData = (apiData: any) => {
       valoracionProfesional = evaluacionData.valoracion_profesional_final || ""
       justificacionTecnico = evaluacionData.justificacion_tecnico || ""
       justificacionDirector = evaluacionData.justificacion_director || ""
+      solicitudTecnico = evaluacionData.solicitud_tecnico || ""
 
       // Solo sobrescribir descripcionSituacion si hay un valor real (no placeholder "Blank")
       if (evaluacionData.descripcion_de_la_situacion && String(evaluacionData.descripcion_de_la_situacion).trim().toLowerCase() !== "blank") {
@@ -266,6 +268,7 @@ const transformApiData = (apiData: any) => {
     ValoracionProfesional: valoracionProfesional,
     JustificacionTecnico: justificacionTecnico,
     JustificacionDirector: justificacionDirector,
+    SolicitudTecnico: solicitudTecnico,
     adjuntos: adjuntos,
     // Add scores data from API with enriched NNyA information (top-level or nested)
     scores: (() => {

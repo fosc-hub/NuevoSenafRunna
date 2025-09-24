@@ -150,6 +150,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     )
   }
 
+  // Color only the decision word "ARCHIVAR"; keep the rest default
+  const decisionWordColor = (sol?: string) => {
+    const v = (sol || '').trim().toUpperCase()
+    return v === 'ARCHIVAR' ? '#DC2626' : 'inherit'
+  }
+
   // Function to collect all updated data
   const collectUpdatedData = () => {
     return {
@@ -316,14 +322,31 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         handleIndicatorChange={handleIndicatorChange}
         demandaId={demandaId}
         preloadedScores={Array.isArray(data.scores) ? data.scores : []}
+        // pass técnico context
+        solicitudTecnico={typeof data.SolicitudTecnico === 'string' ? data.SolicitudTecnico : ''}
+        justificacionTecnico={typeof data.JustificacionTecnico === 'string' ? data.JustificacionTecnico : ''}
       />
 
       {/* Valoración Profesional Final */}
       <Box sx={{ mt: 4, mb: 2 }}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-            VALORACIÓN PROFESIONAL FINAL
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+              VALORACIÓN PROFESIONAL FINAL
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              {typeof data?.SolicitudTecnico === 'string' && data.SolicitudTecnico.trim() !== '' ? (
+                <>
+                  · Decisión del técnico: {''}
+                  <Box component="span" sx={{ color: decisionWordColor(data?.SolicitudTecnico) }}>
+                    {data.SolicitudTecnico}
+                  </Box>
+                </>
+              ) : (
+                '· Decisión del técnico: —'
+              )}
+            </Typography>
+          </Box>
           <TextField
             value={valoracionProfesional}
             onChange={(e) => setValoracionProfesional(e.target.value)}
@@ -335,6 +358,8 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
           />
         </Paper>
       </Box>
+
+
 
       {/* Justificaciones - Accordion for better UX */}
       <Accordion

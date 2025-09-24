@@ -254,8 +254,28 @@ const transformApiData = (apiData: any) => {
     DescripcionSituacion: descripcionSituacion,
     ValoracionProfesional: valoracionProfesional,
     adjuntos: adjuntos,
-    // Add scores data from API
-    scores: Array.isArray(apiData.scores) ? apiData.scores : [],
+    // Add scores data from API with enriched NNyA information
+    scores: Array.isArray(apiData.scores) ? apiData.scores.map((score: any) => {
+      // Find the NNyA information from personas array
+      const nnyaInfo = Array.isArray(apiData.personas) 
+        ? apiData.personas.find((persona: any) => persona.persona.id === score.nnya)
+        : null;
+      
+      return {
+        ...score,
+        nnya: nnyaInfo ? {
+          id: nnyaInfo.persona.id,
+          nombre: nnyaInfo.persona.nombre || "",
+          apellido: nnyaInfo.persona.apellido || "",
+          dni: nnyaInfo.persona.dni || "No especificado"
+        } : {
+          id: score.nnya,
+          nombre: "",
+          apellido: "",
+          dni: "No especificado"
+        }
+      };
+    }) : [],
     // Add valoraciones seleccionadas data from API
     valoracionesSeleccionadas: valoracionesSeleccionadas,
   }
@@ -291,7 +311,7 @@ export default function EvaluacionContent() {
   // Debug: Log the transformed data to see what's being passed to tabs
   if (transformedData) {
     console.log("Transformed data for tabs:", transformedData)
-    console.log("Valoraciones seleccionadas:", transformedData.valoracionesSeleccionadas)
+    console.log("Enriched scores with NNyA info:", transformedData.scores)
   }
 
   if (isLoading) {

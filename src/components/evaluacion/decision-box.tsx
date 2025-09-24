@@ -46,9 +46,10 @@ interface DecisionBoxProps {
   vulnerabilityIndicators: any[]
   handleIndicatorChange: (id: number, value: boolean) => void
   demandaId?: number | null
+  preloadedScores?: Score[]
 }
 
-export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId }: DecisionBoxProps) {
+export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorChange, demandaId, preloadedScores }: DecisionBoxProps) {
   const [indicators, setIndicators] = useState<Indicador[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -65,6 +66,14 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
       console.log("No vulnerability indicators received:", vulnerabilityIndicators)
     }
   }, [vulnerabilityIndicators])
+
+  // Use preloaded scores from props
+  useEffect(() => {
+    if (Array.isArray(preloadedScores) && preloadedScores.length > 0) {
+      setScores(preloadedScores)
+      setShowDecision(true) // Show decision section if there are preloaded scores
+    }
+  }, [preloadedScores])
 
   const handleIndicatorSelectionChange = (id: number, value: boolean) => {
     // Update local state

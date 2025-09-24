@@ -310,13 +310,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} />
       </Box>
 
-      {/* Debug: Log indicators before passing to DecisionBox */}
-      {console.log("Passing indicators to DecisionBox:", vulnerabilityIndicators)}
       
       <DecisionBox
         vulnerabilityIndicators={vulnerabilityIndicators}
         handleIndicatorChange={handleIndicatorChange}
         demandaId={demandaId}
+        preloadedScores={data.scores}
       />
 
       {/* Valoración Profesional Final */}

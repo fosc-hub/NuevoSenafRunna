@@ -15,7 +15,6 @@ import {
   Divider,
 } from "@mui/material"
 import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
-import { toast } from "react-toastify"
 import { useSearchParams } from "next/navigation"
 import TabPanel from "./tab-panel"
 import InformacionGeneral from "./tabs/informacion-general"
@@ -31,7 +30,6 @@ import DecisionBox from "./decision-box"
 import ActionButtons from "./action-buttons"
 import FileManagement, { type FileManagementHandle } from "./file-management"
 import AdjuntosTab from "./tabs/adjuntos"
-import axiosInstance from '@/app/api/utils/axiosInstance';
 import { useUser } from "@/utils/auth/userZustand"
 
 // Update the TABS array to include all necessary tabs for the expanded data
@@ -189,68 +187,6 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     }
   }
 
-  const handleSaveData = async () => {
-    try {
-      const updatedData = collectUpdatedData()
-
-      // Preparar los datos para enviar al API
-      const dataToSend = {
-        // Aquí transformamos los datos al formato que espera el API
-        descripcion: updatedData.DescripcionSituacion,
-        observaciones: updatedData.InformacionGeneral?.observaciones || "",
-        localidad_usuario: updatedData.InformacionGeneral?.Localidad || "",
-        // Si el backend espera lista, se podría dividir por coma; por ahora enviamos string
-        rol_usuario: updatedData.InformacionGeneral?.CargoFuncion || "",
-        nombre_usuario: (() => {
-          const raw = updatedData.InformacionGeneral?.NombreApellido || ""
-          // Formato esperado: "Apellido, Nombre" o "Nombre Apellido"
-          if (raw.includes(",")) {
-            const parts = raw.split(",")
-            return String(parts[1] || "").trim()
-          }
-          const tokens = String(raw).trim().split(/\s+/)
-          return tokens.length > 1 ? tokens.slice(0, -1).join(" ") : raw
-        })(),
-        apellido_usuario: (() => {
-          const raw = updatedData.InformacionGeneral?.NombreApellido || ""
-          if (raw.includes(",")) {
-            const parts = raw.split(",")
-            return String(parts[0] || "").trim()
-          }
-          const tokens = String(raw).trim().split(/\s+/)
-          return tokens.length > 1 ? tokens[tokens.length - 1] : ""
-        })(),
-        // Si hay una evaluación, actualizarla
-        evaluacion: {
-          descripcion_de_la_situacion: updatedData.DescripcionSituacion,
-          valoracion_profesional_final: updatedData.ValoracionProfesional,
-          justificacion_tecnico: justificacionTecnico,
-          justificacion_director: justificacionDirector,
-        },
-      }
-
-      // Enviar los datos al API
-      if (demandaId) {
-        await axiosInstance.patch(`/registro-demanda-form/${demandaId}/`, dataToSend)
-
-        toast.success("Datos guardados exitosamente", {
-          position: "top-center",
-          autoClose: 3000,
-        })
-      } else {
-        toast.error("No se pudo guardar: ID de demanda no disponible", {
-          position: "top-center",
-          autoClose: 3000,
-        })
-      }
-    } catch (error) {
-      console.error("Error saving data:", error)
-      toast.error("Error al guardar los datos", {
-        position: "top-center",
-        autoClose: 3000,
-      })
-    }
-  }
 
   const handlePDFGenerated = (blob: Blob, fileName: string) => {
     // Add the generated PDF to the file management component
@@ -461,7 +397,6 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       <ActionButtons
         generatePDF={() => Promise.resolve(collectUpdatedData())}
         data={collectUpdatedData()}
-        onSave={handleSaveData}
         onPDFGenerated={handlePDFGenerated}
         demandaId={demandaId}
         nnyaIds={allNnyaIds}

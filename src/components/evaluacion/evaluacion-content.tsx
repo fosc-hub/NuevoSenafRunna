@@ -15,10 +15,10 @@ const fetchDemandaData = async (id: string) => {
 const transformApiData = (apiData: any) => {
   // Extraer información general
   const informacionGeneral = {
-    Localidad: apiData.localidad_usuario || "",
+    Localidad: apiData.latest_evaluacion?.localidad_usuario || apiData.localidad_usuario || "",
     Fecha: apiData.fecha_ingreso_senaf || new Date().toISOString().split("T")[0],
-    CargoFuncion: Array.isArray(apiData.rol_usuario) ? apiData.rol_usuario.join(", ") : (apiData.rol_usuario || ""),
-    NombreApellido: `${apiData.apellido_usuario || ""}, ${apiData.nombre_usuario || ""}`,
+    CargoFuncion: apiData.latest_evaluacion?.rol_usuario || (Array.isArray(apiData.rol_usuario) ? apiData.rol_usuario.join(", ") : (apiData.rol_usuario || "")),
+    NombreApellido: apiData.latest_evaluacion?.nombre_usuario || apiData.nombre_usuario || "",
     NumerosDemanda: apiData.id ? `${apiData.id}` : "",
     BloqueDatosRemitente: typeof apiData.bloque_datos_remitente === 'object' && apiData.bloque_datos_remitente?.nombre ? ` ${apiData.bloque_datos_remitente.nombre}` : "",
     TipoInstitucion: typeof apiData.tipo_institucion === 'object' && apiData.tipo_institucion?.nombre ? apiData.tipo_institucion.nombre : (apiData.tipo_institucion ? "Institución" : ""),

@@ -14,7 +14,7 @@ import {
 } from "@mui/material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
-import { Save as SaveIcon, Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
+import { Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
 import axiosInstance from '@/app/api/utils/axiosInstance';
 import { useUser } from "@/utils/auth/userZustand"
 
@@ -31,7 +31,6 @@ const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
 interface ActionButtonsProps {
   generatePDF: (data: any) => Promise<any>
   data: any
-  onSave?: () => void
   onPDFGenerated?: (blob: Blob, fileName: string) => void
   // Add these new props
   descripcionSituacion?: string
@@ -60,7 +59,6 @@ const firmantesDisponibles = [
 export default function ActionButtons({
   generatePDF,
   data,
-  onSave,
   onPDFGenerated,
   descripcionSituacion,
   valoracionProfesional,
@@ -127,6 +125,11 @@ export default function ActionButtons({
         return
       }
 
+      // Get user data for all authorization actions
+      const localidad_usuario = data?.InformacionGeneral?.Localidad || "string"
+      const nombre_usuario = data?.InformacionGeneral?.NombreApellido || "string"
+      const rol_usuario = data?.InformacionGeneral?.CargoFuncion || "string"
+
       if (action === "autorizar tomar medida") {
         if (selectedChildrenIds.length === 0) {
           toast.warning("Por favor seleccione al menos un niño antes de autorizar tomar medida", {
@@ -149,6 +152,9 @@ export default function ActionButtons({
           justificacion_tecnico: justificacionTecnico || "Blank",
           solicitud_tecnico: "TOMAR MEDIDA",
           demanda: demandaId,
+          localidad_usuario,
+          nombre_usuario,
+          rol_usuario
         }
 
         console.log("Sending payload:", payload)
@@ -174,6 +180,9 @@ export default function ActionButtons({
           justificacion_tecnico: justificacionTecnico || "Blank",
           solicitud_tecnico: "ARCHIVAR",
           demanda: demandaId,
+          localidad_usuario,
+          nombre_usuario,
+          rol_usuario
         }
 
         console.log("Sending payload:", payload)
@@ -193,7 +202,10 @@ export default function ActionButtons({
           justificacion_director: "Aprobado por coordinación.",
           solicitud_tecnico: "TOMAR MEDIDA",
           decision_director: action === "autorizar" ? "AUTORIZAR" : "NO AUTORIZAR",
-          demanda: demandaId
+          demanda: demandaId,
+          localidad_usuario,
+          nombre_usuario,
+          rol_usuario
         }
 
         console.log("Sending payload:", payload)
@@ -217,18 +229,6 @@ export default function ActionButtons({
     }
   }
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave()
-    } else {
-      // Fallback if no onSave function is provided
-      console.log("Saving data:", data)
-      toast.success("Datos guardados exitosamente", {
-        position: "top-center",
-        autoClose: 3000,
-      })
-    }
-  }
 
   const handlePDFGenerated = (blob: Blob, fileName: string) => {
     if (onPDFGenerated) {
@@ -246,10 +246,6 @@ export default function ActionButtons({
 
   return (
     <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
-      <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleSave}>
-        Guardar
-      </Button>
-
       <DownloadPDFButton data={combinedData} onGenerate={handlePDFGenerated} />
 
       {/* Selector de firmantes */}

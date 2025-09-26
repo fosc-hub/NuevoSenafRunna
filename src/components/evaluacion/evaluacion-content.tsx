@@ -19,7 +19,7 @@ const transformApiData = (apiData: any) => {
     Fecha: apiData.fecha_ingreso_senaf || new Date().toISOString().split("T")[0],
     CargoFuncion: Array.isArray(apiData.rol_usuario) ? apiData.rol_usuario.join(", ") : (apiData.rol_usuario || ""),
     NombreApellido: `${apiData.apellido_usuario || ""}, ${apiData.nombre_usuario || ""}`,
-    NumerosDemanda: apiData.id ? `DEM-${apiData.id}/2025` : "",
+    NumerosDemanda: apiData.id ? `${apiData.id}` : "",
     BloqueDatosRemitente: typeof apiData.bloque_datos_remitente === 'object' && apiData.bloque_datos_remitente?.nombre ? ` ${apiData.bloque_datos_remitente.nombre}` : "",
     TipoInstitucion: typeof apiData.tipo_institucion === 'object' && apiData.tipo_institucion?.nombre ? apiData.tipo_institucion.nombre : (apiData.tipo_institucion ? "Institución" : ""),
     Institucion: typeof apiData.institucion === 'object' && apiData.institucion?.nombre ? apiData.institucion.nombre : (apiData.institucion || ""),

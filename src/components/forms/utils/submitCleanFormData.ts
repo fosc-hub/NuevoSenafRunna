@@ -437,6 +437,7 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
     motivo_ingreso: formData.motivo_ingreso,
     submotivo_ingreso: formData.submotivo_ingreso,
     objetivo_de_demanda: formData.objetivo_de_demanda,
+    observaciones: formData.observaciones || null,
     localizacion: formData.localizacion,
 
     relacion_demanda: {
@@ -448,7 +449,6 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
         zona: formData.zona,
         esta_activo: true,
         recibido: false,
-        comentarios: formData.observaciones || null,
       },
     },
 

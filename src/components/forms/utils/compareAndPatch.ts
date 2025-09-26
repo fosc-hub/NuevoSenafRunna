@@ -1,4 +1,4 @@
-import type { FormData } from "../types/formTypes"
+// Keeping this module untyped for flexibility with transient shapes
 
 /**
  * Deep compares two objects and returns an object containing only the changed values
@@ -107,7 +107,7 @@ export function getChangedValues(original: any, updated: any, path = ""): any {
 /**
  * Creates a patch object from the original and updated form data
  */
-export function createPatchFromChanges(originalData: FormData, updatedData: FormData): any {
+export function createPatchFromChanges(originalData: any, updatedData: any): any {
   const changes = getChangedValues(originalData, updatedData)
   console.log("Detected changes:", JSON.stringify(changes, null, 2))
 
@@ -148,6 +148,7 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
     "motivo_ingreso",
     "submotivo_ingreso",
     "objetivo_de_demanda",
+    "observaciones",
   ]
 
   simpleFields.forEach((field) => {
@@ -185,7 +186,7 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
   }
 
   // Handle relacion_demanda - FIXED to include required fields
-  if (changes && (changes.codigosDemanda || changes.zona || changes.observaciones)) {
+  if (changes && (changes.codigosDemanda || changes.zona)) {
     transformedChanges.relacion_demanda = {}
 
     if (changes.codigosDemanda) {
@@ -196,20 +197,12 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
     }
 
     // If any field in demanda_zona changes, include the entire structure with required fields
-    if (changes.zona !== undefined || changes.observaciones !== undefined) {
+    if (changes.zona !== undefined) {
       transformedChanges.relacion_demanda.demanda_zona = {
         // Always include these required fields
         zona: changes.zona !== undefined ? changes.zona : originalData.zona,
         esta_activo: true,
         recibido: false,
-      }
-
-      // Only include comentarios if it changed
-      if (changes.observaciones !== undefined) {
-        transformedChanges.relacion_demanda.demanda_zona.comentarios = changes.observaciones
-      } else if (originalData.observaciones !== null) {
-        // Include original comentarios if it exists to prevent it from being cleared
-        transformedChanges.relacion_demanda.demanda_zona.comentarios = originalData.observaciones
       }
     }
   }
@@ -343,7 +336,7 @@ export function createPatchFromChanges(originalData: FormData, updatedData: Form
 /**
  * Determines if personas should be included in the patch
  */
-function shouldIncludePersonas(originalData: FormData, updatedData: FormData, changes: any): boolean {
+function shouldIncludePersonas(originalData: any, updatedData: any, changes: any): boolean {
   // Check if there are changes detected by getChangedValues
   const hasDetectedChanges = !!(changes?.ninosAdolescentes || changes?.adultosConvivientes)
 
@@ -475,9 +468,9 @@ function addFullNnyaData(personaData: any, nnya: any, index: number): void {
       ...(nnya.educacion.id ? { id: nnya.educacion.id } : {}),
       institucion_educativa: nnya.educacion.institucion_educativa
         ? {
-            ...(nnya.educacion.institucion_educativa.id ? { id: nnya.educacion.institucion_educativa.id } : {}),
-            nombre: nnya.educacion.institucion_educativa.nombre || null,
-          }
+          ...(nnya.educacion.institucion_educativa.id ? { id: nnya.educacion.institucion_educativa.id } : {}),
+          nombre: nnya.educacion.institucion_educativa.nombre || null,
+        }
         : null,
       nivel_alcanzado: nnya.educacion.nivel_alcanzado || null,
       esta_escolarizado: nnya.educacion.esta_escolarizado || false,
@@ -493,15 +486,15 @@ function addFullNnyaData(personaData: any, nnya: any, index: number): void {
       ...(nnya.cobertura_medica.id ? { id: nnya.cobertura_medica.id } : {}),
       institucion_sanitaria: nnya.cobertura_medica.institucion_sanitaria
         ? {
-            id:
-              typeof nnya.cobertura_medica.institucion_sanitaria === "object"
-                ? nnya.cobertura_medica.institucion_sanitaria.id
-                : nnya.cobertura_medica.institucion_sanitaria,
-            nombre:
-              typeof nnya.cobertura_medica.institucion_sanitaria === "object"
-                ? nnya.cobertura_medica.institucion_sanitaria.nombre
-                : nnya.cobertura_medica.institucion_sanitaria_nombre || null,
-          }
+          id:
+            typeof nnya.cobertura_medica.institucion_sanitaria === "object"
+              ? nnya.cobertura_medica.institucion_sanitaria.id
+              : nnya.cobertura_medica.institucion_sanitaria,
+          nombre:
+            typeof nnya.cobertura_medica.institucion_sanitaria === "object"
+              ? nnya.cobertura_medica.institucion_sanitaria.nombre
+              : nnya.cobertura_medica.institucion_sanitaria_nombre || null,
+        }
         : null,
       obra_social: nnya.cobertura_medica.obra_social || null,
       intervencion: nnya.cobertura_medica.intervencion || null,
@@ -518,22 +511,22 @@ function addFullNnyaData(personaData: any, nnya: any, index: number): void {
       situacion_salud: enfermedad.situacion_salud,
       enfermedad: enfermedad.enfermedad
         ? {
-            ...(enfermedad.enfermedad.id ? { id: enfermedad.enfermedad.id } : {}),
-            nombre: enfermedad.enfermedad.nombre || null,
-            situacion_salud_categoria: enfermedad.situacion_salud,
-          }
+          ...(enfermedad.enfermedad.id ? { id: enfermedad.enfermedad.id } : {}),
+          nombre: enfermedad.enfermedad.nombre || null,
+          situacion_salud_categoria: enfermedad.situacion_salud,
+        }
         : null,
       institucion_sanitaria_interviniente: enfermedad.institucion_sanitaria_interviniente
         ? {
-            id:
-              typeof enfermedad.institucion_sanitaria_interviniente === "object"
-                ? enfermedad.institucion_sanitaria_interviniente.id
-                : enfermedad.institucion_sanitaria_interviniente,
-            nombre:
-              typeof enfermedad.institucion_sanitaria_interviniente === "object"
-                ? enfermedad.institucion_sanitaria_interviniente.nombre
-                : enfermedad.institucion_sanitaria_interviniente_nombre || null,
-          }
+          id:
+            typeof enfermedad.institucion_sanitaria_interviniente === "object"
+              ? enfermedad.institucion_sanitaria_interviniente.id
+              : enfermedad.institucion_sanitaria_interviniente,
+          nombre:
+            typeof enfermedad.institucion_sanitaria_interviniente === "object"
+              ? enfermedad.institucion_sanitaria_interviniente.nombre
+              : enfermedad.institucion_sanitaria_interviniente_nombre || null,
+        }
         : null,
       medico_tratamiento: enfermedad.medico_tratamiento || {
         nombre: null,

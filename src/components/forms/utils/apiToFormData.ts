@@ -26,7 +26,7 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
 
     // zona & observaciones
     zona: apiData.relacion_demanda?.demanda_zona?.zona || null,
-    observaciones: apiData.relacion_demanda?.demanda_zona?.comentarios || null,
+    observaciones: apiData.observaciones || null,
 
     // Niños/niñas/adolescentes
     ninosAdolescentes: apiData.personas

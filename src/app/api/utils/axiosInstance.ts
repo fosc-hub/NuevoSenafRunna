@@ -4,7 +4,7 @@ import { handleApiError } from './errorHandler';
 import Cookies from 'js-cookie';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-production-c6370.up.railway.app/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-runna-v2legajos.up.railway.app/api',
 });
 
 // Add a request interceptor to add the token to all requests

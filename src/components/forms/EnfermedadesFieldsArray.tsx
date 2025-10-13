@@ -326,7 +326,7 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
 
   // Function to open file in new tab
   const openFile = (filePath: string) => {
-    window.open(`https://web-production-c6370.up.railway.app${filePath}`, "_blank")
+    window.open(`https://web-runna-v2legajos.up.railway.app${filePath}`, "_blank")
   }
 
   return (

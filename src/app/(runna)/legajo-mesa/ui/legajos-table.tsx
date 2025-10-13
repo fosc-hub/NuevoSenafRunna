@@ -28,36 +28,19 @@ import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRoun
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import AsignarModal from "../../../../components/asignarModal"
-import { getLegajos, updateLegajo, type Legajo, type PaginatedResponse } from "../mock-data/legajos-service"
+import { fetchLegajos, updateLegajoPrioridad } from "../api/legajos-api-service"
+import type { LegajoApiResponse, PaginatedLegajosResponse } from "../types/legajo-api"
 import LegajoButtons from "./legajos-buttons"
 import { exportDemandasToExcel } from "./legajos-service"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
 
-// Define a type for adjuntos to help with debugging
-interface Adjunto {
-  archivo: string
-}
-
-// Helper function to get file name from URL
-const getFileNameFromUrl = (url: string): string => {
-  const parts = url.split("/")
-  return parts[parts.length - 1]
-}
-
 // Custom toolbar component
 const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
   return (
     <GridToolbarContainer sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
-      <GridToolbarFilterButton
-        sx={{
-          mr: 1,
-          "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.04)",
-          },
-        }}
-      />
+      <GridToolbarFilterButton />
       <Button
         size="small"
         startIcon={<DownloadRounded />}
@@ -144,127 +127,12 @@ const StatusChip = ({ status }: { status: string }) => {
 }
 
 // Custom component for rendering adjuntos
-const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
-  const { adjuntos } = props
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
-
-  if (!adjuntos || !Array.isArray(adjuntos) || adjuntos.length === 0) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Sin adjuntos
-      </Typography>
-    )
-  }
-
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    event.stopPropagation()
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleClose = (event?: React.MouseEvent<HTMLElement>) => {
-    if (event) {
-      event.stopPropagation()
-    }
-    setAnchorEl(null)
-  }
-
-  const open = Boolean(anchorEl)
-
-  // Show a summary in the cell
+// Note: Adjuntos are not available in the current API response
+const AdjuntosCell = () => {
   return (
-    <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-      <Tooltip title={`Ver ${adjuntos.length} ${adjuntos.length === 1 ? "adjunto" : "adjuntos"}`}>
-        <Badge badgeContent={adjuntos.length} color="primary" sx={{ "& .MuiBadge-badge": { fontSize: "0.65rem" } }}>
-          <IconButton
-            size="small"
-            onClick={handleClick}
-            sx={{
-              color: "primary.main",
-              "&:hover": {
-                backgroundColor: "rgba(25, 118, 210, 0.04)",
-              },
-            }}
-          >
-            <AttachFile fontSize="small" />
-          </IconButton>
-        </Badge>
-      </Tooltip>
-
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "left",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        onClick={(e) => e.stopPropagation()}
-        sx={{ zIndex: 9999 }}
-      >
-        <Box
-          sx={{
-            width: 300,
-            p: 2,
-            maxHeight: 300,
-            overflowY: "auto",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              Adjuntos ({adjuntos.length})
-            </Typography>
-            <Button size="small" variant="outlined" onClick={handleClose} sx={{ minWidth: "auto", padding: "2px 8px" }}>
-              Cerrar
-            </Button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {adjuntos.map((adjunto, index) => {
-              if (!adjunto || !adjunto.archivo) {
-                return null
-              }
-
-              const fileName = getFileNameFromUrl(adjunto.archivo)
-
-              // Use a div instead of Link to avoid nested <a> tags
-              return (
-                <div
-                  key={index}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    window.open(adjunto.archivo, "_blank", "noopener,noreferrer")
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    color: "#1976d2",
-                    textDecoration: "none",
-                    fontSize: "0.875rem",
-                    padding: "8px 12px",
-                    borderRadius: "4px",
-                    transition: "background-color 0.2s",
-                    cursor: "pointer",
-                    backgroundColor: "transparent",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f0f7ff"
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent"
-                  }}
-                >
-                  <AttachFile style={{ fontSize: "1rem", marginRight: "8px", flexShrink: 0 }} />
-                  <span style={{ wordBreak: "break-word" }}>{fileName}</span>
-                </div>
-              )
-            })}
-          </div>
-        </Box>
-      </Popover>
-    </div>
+    <Typography variant="body2" color="text.secondary">
+      N/A
+    </Typography>
   )
 }
 
@@ -291,24 +159,46 @@ const LegajoTable: React.FC = () => {
   const [user, setUser] = useState({ id: 1, is_superuser: false, all_permissions: [] })
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedLegajoIdForAssignment, setSelectedLegajoIdForAssignment] = useState<number | null>(null)
-  const [legajosData, setLegajosData] = useState<PaginatedResponse<Legajo> | null>(null)
+  const [legajosData, setLegajosData] = useState<PaginatedLegajosResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const [apiFilters, setApiFilters] = useState({
-    tipo_legajo: null,
-    estado_legajo: null,
-    prioridad: null,
+  const [apiFilters, setApiFilters] = useState<{
+    zona: number | null
+    urgencia: string | null
+    search: string | null
+  }>({
+    zona: null,
+    urgencia: null,
+    search: null,
   })
 
   useEffect(() => {
-    fetchLegajos()
+    loadLegajos()
   }, [paginationModel.page, paginationModel.pageSize, apiFilters])
 
-  const fetchLegajos = () => {
+  const loadLegajos = async () => {
     try {
       setIsLoading(true)
-      const response = getLegajos(paginationModel.page, paginationModel.pageSize, apiFilters)
+
+      // Build query params - API uses 1-based pagination
+      const queryParams: any = {
+        page: paginationModel.page + 1, // Convert from 0-based to 1-based
+        page_size: paginationModel.pageSize,
+      }
+
+      // Add filters if they exist
+      if (apiFilters.zona !== null) {
+        queryParams.zona = apiFilters.zona
+      }
+      if (apiFilters.urgencia !== null && apiFilters.urgencia.trim() !== "") {
+        queryParams.urgencia = apiFilters.urgencia
+      }
+      if (apiFilters.search !== null && apiFilters.search.trim() !== "") {
+        queryParams.search = apiFilters.search
+      }
+
+      const response = await fetchLegajos(queryParams)
       setTotalCount(response.count)
       setLegajosData(response)
     } catch (error) {
@@ -329,16 +219,17 @@ const LegajoTable: React.FC = () => {
     console.log("Nuevo registro clicked")
   }
 
-  const handlePrioridadChange = (legajoId: number, newValue: string) => {
+  const handlePrioridadChange = async (legajoId: number, newValue: string) => {
     console.log(`Updating prioridad for legajo ${legajoId} to ${newValue}`)
     setIsUpdating(true)
     try {
-      const updatedLegajo = updateLegajo(legajoId, { prioridad: newValue })
+      // Call the API to update the prioridad
+      await updateLegajoPrioridad(legajoId, newValue as "ALTA" | "MEDIA" | "BAJA")
 
       // Update the local state to reflect the changes
       if (legajosData) {
         const updatedResults = legajosData.results.map((legajo) =>
-          legajo.id === legajoId ? { ...legajo, prioridad: newValue } : legajo,
+          legajo.id === legajoId ? { ...legajo, prioridad: newValue as "ALTA" | "MEDIA" | "BAJA" } : legajo,
         )
         setLegajosData({
           ...legajosData,
@@ -577,7 +468,7 @@ const LegajoTable: React.FC = () => {
         field: "adjuntos",
         headerName: "Adjuntos",
         width: 100,
-        renderCell: (params) => <AdjuntosCell adjuntos={params.value} />,
+        renderCell: () => <AdjuntosCell />,
       },
     ]
 
@@ -625,31 +516,42 @@ const LegajoTable: React.FC = () => {
   const columns = useMemo(() => getColumns(), [isMobile])
 
   const rows =
-    legajosData?.results.map((legajo: Legajo) => {
+    legajosData?.results.map((legajo: LegajoApiResponse) => {
+      // Format fecha_ultima_actualizacion safely
+      let ultimaActualizacionFormatted = "N/A"
+      try {
+        if (legajo.fecha_ultima_actualizacion) {
+          const date = new Date(legajo.fecha_ultima_actualizacion)
+          if (!isNaN(date.getTime())) {
+            ultimaActualizacionFormatted = date.toLocaleString("es-AR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error formatting fecha_ultima_actualizacion:", error)
+      }
+
       return {
         id: legajo.id,
-        numero_legajo: legajo.numero_legajo || `L-${legajo.id}`,
-        nombre: legajo.persona_principal
-          ? `${legajo.persona_principal.nombre} ${legajo.persona_principal.apellido}`
-          : "N/A",
-        dni: legajo.persona_principal?.dni || "N/A",
+        numero_legajo: legajo.numero || `L-${legajo.id}`,
+        nombre: legajo.nnya ? legajo.nnya.nombre_completo : "N/A",
+        dni: legajo.nnya?.dni || "N/A",
         prioridad: legajo.prioridad || null,
-        ultimaActualizacion: new Date(legajo.ultima_actualizacion).toLocaleString("es-AR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        localidad: legajo.localidad?.nombre || "N/A",
-        zonaEquipo: legajo.legajo_zona?.zona?.nombre || "N/A",
-        estado_legajo: legajo.estado_legajo,
-        recibido: legajo.legajo_zona?.recibido || false,
-        legajo_zona_id: legajo.legajo_zona?.id,
-        tipo_legajo: legajo.tipo_legajo || "N/A",
-        profesional_asignado: legajo.profesional_asignado?.nombre || null,
+        ultimaActualizacion: ultimaActualizacionFormatted,
+        localidad: "N/A", // Not available in API response
+        zonaEquipo: legajo.zona || "N/A",
+        estado_legajo: "ABIERTO", // Default value
+        recibido: true, // Default to true
+        legajo_zona_id: null,
+        tipo_legajo: legajo.equipo_trabajo || "N/A",
+        profesional_asignado: legajo.user_responsable || null,
         fecha_apertura: legajo.fecha_apertura,
-        adjuntos: legajo.adjuntos || [],
+        adjuntos: [], // Not available in API response
       }
     }) || []
 
@@ -706,8 +608,8 @@ const LegajoTable: React.FC = () => {
           </Typography>
           <div className="flex gap-4 relative z-10">
             <LegajoButtons
-              onSearch={(query) => console.log("Searching for:", query)}
-              onFilter={(filters) => console.log("Filters applied:", filters)}
+              onSearch={() => console.log("Searching...")}
+              onFilter={() => console.log("Filters applied")}
               onNewLegajo={() => console.log("Creating new legajo")}
             />
           </div>
@@ -832,7 +734,7 @@ const LegajoTable: React.FC = () => {
       <AsignarModal
         open={isAsignarModalOpen}
         onClose={handleCloseAsignarModal}
-        legajoId={selectedLegajoIdForAssignment}
+        demandaId={selectedLegajoIdForAssignment}
       />
     </>
   )

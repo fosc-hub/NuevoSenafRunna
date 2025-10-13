@@ -24,7 +24,7 @@ import { get, create } from "@/app/api/apiService"
 import { CloudUpload } from "@mui/icons-material"
 
 // URL base para los archivos
-const BASE_URL = "https://web-production-c6370.up.railway.app"
+const BASE_URL = "https://web-runna-v2legajos.up.railway.app"
 
 interface Respuesta {
   id: number

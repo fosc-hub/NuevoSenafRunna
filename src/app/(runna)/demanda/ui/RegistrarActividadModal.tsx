@@ -464,7 +464,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
                                   startIcon={<AttachFile />}
                                   onClick={() =>
                                     window.open(
-                                      `https://web-production-c6370.up.railway.app${adjunto.archivo}`,
+                                      `https://web-runna-v2legajos.up.railway.app${adjunto.archivo}`,
                                       "_blank",
                                     )
                                   }

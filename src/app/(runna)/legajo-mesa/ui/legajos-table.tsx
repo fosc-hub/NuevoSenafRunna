@@ -70,71 +70,6 @@ const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
   )
 }
 
-// Status chip component for better visual representation
-const StatusChip = ({ status }: { status: string }) => {
-  let color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default"
-  let label = status
-
-  switch (status) {
-    case "ABIERTO":
-      color = "success"
-      label = "Abierto"
-      break
-    case "EN_PROCESO":
-      color = "info"
-      label = "En Proceso"
-      break
-    case "PENDIENTE_REVISION":
-      color = "warning"
-      label = "Pendiente Revisión"
-      break
-    case "CERRADO":
-      color = "default"
-      label = "Cerrado"
-      break
-    case "ARCHIVADO":
-      color = "secondary"
-      label = "Archivado"
-      break
-    case "DERIVADO":
-      color = "primary"
-      label = "Derivado"
-      break
-    case "SUSPENDIDO":
-      color = "error"
-      label = "Suspendido"
-      break
-    default:
-      label = "Desconocido"
-  }
-
-  return (
-    <Chip
-      label={label}
-      color={color}
-      size="small"
-      variant="outlined"
-      sx={{
-        fontWeight: 500,
-        "& .MuiChip-label": {
-          px: 1,
-        },
-        margin: "0 auto",
-        display: "flex",
-      }}
-    />
-  )
-}
-
-// Custom component for rendering adjuntos
-// Note: Adjuntos are not available in the current API response
-const AdjuntosCell = () => {
-  return (
-    <Typography variant="body2" color="text.secondary">
-      N/A
-    </Typography>
-  )
-}
 
 const LegajoTable: React.FC = () => {
   const theme = useTheme()
@@ -146,17 +81,6 @@ const LegajoTable: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0)
   const [selectedLegajoId, setSelectedLegajoId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [filterState, setFilterState] = useState({
-    todos: true,
-    abiertos: false,
-    enProceso: false,
-    cerrados: false,
-    archivados: false,
-    derivados: false,
-    suspendidos: false,
-    pendienteRevision: false,
-  })
-  const [user, setUser] = useState({ id: 1, is_superuser: false, all_permissions: [] })
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedLegajoIdForAssignment, setSelectedLegajoIdForAssignment] = useState<number | null>(null)
   const [legajosData, setLegajosData] = useState<PaginatedLegajosResponse | null>(null)
@@ -270,40 +194,6 @@ const LegajoTable: React.FC = () => {
     setIsAsignarModalOpen(false)
   }
 
-  const getStatusColor = (estado: string) => {
-    switch (estado) {
-      case "ABIERTO":
-        return "#4caf50" // green
-      case "EN_PROCESO":
-        return "#2196f3" // blue
-      case "PENDIENTE_REVISION":
-        return "#ff9800" // orange
-      case "CERRADO":
-        return "#9e9e9e" // dark gray
-      case "ARCHIVADO":
-        return "#673ab7" // purple
-      case "DERIVADO":
-        return "#00bcd4" // cyan
-      case "SUSPENDIDO":
-        return "#f44336" // red
-      default:
-        return "transparent"
-    }
-  }
-
-  // Helper function to format text with underscores
-  const formatUnderscoreText = (text: any): string => {
-    if (!text || typeof text !== "string" || text === "N/A") {
-      return "N/A"
-    }
-
-    return text
-      .split("_")
-      .join(" ")
-      .toLowerCase()
-      .replace(/\b\w/g, (char) => char.toUpperCase())
-  }
-
   // Define responsive columns based on screen size
   const getColumns = (): GridColDef[] => {
     const baseColumns: GridColDef[] = [
@@ -327,7 +217,7 @@ const LegajoTable: React.FC = () => {
         headerName: "Nº Legajo",
         width: 120,
         renderCell: (params) => (
-          <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
+          <Typography variant="body2" sx={{ fontWeight: "normal" }}>
             {params.value}
           </Typography>
         ),
@@ -338,7 +228,7 @@ const LegajoTable: React.FC = () => {
         width: 180,
         renderCell: (params) => (
           <Tooltip title={`DNI: ${params.row.dni}`}>
-            <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
+            <Typography variant="body2" sx={{ fontWeight: "normal" }}>
               {params.value}
             </Typography>
           </Tooltip>
@@ -403,9 +293,54 @@ const LegajoTable: React.FC = () => {
         ),
       },
       {
+        field: "medidas_activas_count",
+        headerName: "Medidas",
+        width: 100,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => (
+          <Chip
+            label={params.value || 0}
+            size="small"
+            color={params.value > 0 ? "primary" : "default"}
+            sx={{ minWidth: 40 }}
+          />
+        ),
+      },
+      {
+        field: "actividades_activas_count",
+        headerName: "Actividades",
+        width: 110,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => (
+          <Chip
+            label={params.value || 0}
+            size="small"
+            color={params.value > 0 ? "secondary" : "default"}
+            sx={{ minWidth: 40 }}
+          />
+        ),
+      },
+      {
+        field: "oficios_count",
+        headerName: "Oficios",
+        width: 100,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => (
+          <Chip
+            label={params.value || 0}
+            size="small"
+            color={params.value > 0 ? "info" : "default"}
+            sx={{ minWidth: 40 }}
+          />
+        ),
+      },
+      {
         field: "actions",
         headerName: "Acciones",
-        width: 160,
+        width: 120,
         sortable: false,
         filterable: false,
         renderCell: (params) => (
@@ -435,40 +370,8 @@ const LegajoTable: React.FC = () => {
                 <PersonAdd fontSize="small" />
               </IconButton>
             </Tooltip>
-
-            <Tooltip title={params.row.estado_legajo === "EN_PROCESO" ? "Editar" : "No disponible para edición"}>
-              <span>
-                <IconButton
-                  size="small"
-                  disabled={params.row.estado_legajo !== "EN_PROCESO"}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (params.row.estado_legajo === "EN_PROCESO") {
-                      window.location.href = `/legajo/editar?id=${params.row.id}`
-                    }
-                  }}
-                  sx={{
-                    color: params.row.estado_legajo === "EN_PROCESO" ? "success.main" : "action.disabled",
-                  }}
-                >
-                  <Edit fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
           </Box>
         ),
-      },
-      {
-        field: "estado_legajo",
-        headerName: "Estado",
-        width: 160,
-        renderCell: (params) => <StatusChip status={params.value} />,
-      },
-      {
-        field: "adjuntos",
-        headerName: "Adjuntos",
-        width: 100,
-        renderCell: () => <AdjuntosCell />,
       },
     ]
 
@@ -476,24 +379,16 @@ const LegajoTable: React.FC = () => {
     if (!isMobile) {
       baseColumns.push(
         {
-          field: "tipo_legajo",
-          headerName: "Tipo",
+          field: "zona",
+          headerName: "Zona",
+          width: 130,
+          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
+        },
+        {
+          field: "equipo_trabajo",
+          headerName: "Equipo",
           width: 150,
-          renderCell: (params) => {
-            return <Typography variant="body2">{formatUnderscoreText(params.value)}</Typography>
-          },
-        },
-        {
-          field: "localidad",
-          headerName: "Localidad",
-          width: 130,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
-        },
-        {
-          field: "zonaEquipo",
-          headerName: "Zona/Equipo",
-          width: 130,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
         },
         {
           field: "profesional_asignado",
@@ -502,10 +397,31 @@ const LegajoTable: React.FC = () => {
           renderCell: (params) => <Typography variant="body2">{params.value || "Sin asignar"}</Typography>,
         },
         {
+          field: "jefe_zonal",
+          headerName: "Jefe Zonal",
+          width: 150,
+          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
+        },
+        {
           field: "fecha_apertura",
           headerName: "Fecha Apertura",
-          width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value}</Typography>,
+          width: 130,
+          renderCell: (params) => {
+            try {
+              const date = new Date(params.value)
+              return (
+                <Typography variant="body2">
+                  {date.toLocaleDateString("es-AR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </Typography>
+              )
+            } catch {
+              return <Typography variant="body2">{params.value}</Typography>
+            }
+          },
         },
       )
     }
@@ -536,53 +452,57 @@ const LegajoTable: React.FC = () => {
         console.error("Error formatting fecha_ultima_actualizacion:", error)
       }
 
+      // Safely extract counts from arrays
+      const medidasCount = Array.isArray(legajo.medidas_activas) ? legajo.medidas_activas.length : 0
+      const actividadesCount = Array.isArray(legajo.actividades_activas) ? legajo.actividades_activas.length : 0
+      const oficiosCount = Array.isArray(legajo.oficios) ? legajo.oficios.length : 0
+
+      // Safely extract string values from fields that might be strings or objects
+      const zonaValue = typeof legajo.zona === "string"
+        ? legajo.zona
+        : legajo.zona && typeof legajo.zona === "object" && (legajo.zona as any).nombre
+        ? (legajo.zona as any).nombre
+        : null
+
+      const equipoTrabajoValue = typeof legajo.equipo_trabajo === "string"
+        ? legajo.equipo_trabajo
+        : legajo.equipo_trabajo && typeof legajo.equipo_trabajo === "object" && (legajo.equipo_trabajo as any).nombre
+        ? (legajo.equipo_trabajo as any).nombre
+        : null
+
+      const userResponsableValue = typeof legajo.user_responsable === "string"
+        ? legajo.user_responsable
+        : legajo.user_responsable && typeof legajo.user_responsable === "object" && (legajo.user_responsable as any).nombre_completo
+        ? (legajo.user_responsable as any).nombre_completo
+        : null
+
+      const jefeZonalValue = typeof legajo.jefe_zonal === "string"
+        ? legajo.jefe_zonal
+        : legajo.jefe_zonal && typeof legajo.jefe_zonal === "object" && (legajo.jefe_zonal as any).nombre_completo
+        ? (legajo.jefe_zonal as any).nombre_completo
+        : null
+
       return {
         id: legajo.id,
         numero_legajo: legajo.numero || `L-${legajo.id}`,
         nombre: legajo.nnya ? legajo.nnya.nombre_completo : "N/A",
-        dni: legajo.nnya?.dni || "N/A",
+        dni: legajo.nnya?.dni ? String(legajo.nnya.dni) : "N/A",
         prioridad: legajo.prioridad || null,
         ultimaActualizacion: ultimaActualizacionFormatted,
-        localidad: "N/A", // Not available in API response
-        zonaEquipo: legajo.zona || "N/A",
-        estado_legajo: "ABIERTO", // Default value
-        recibido: true, // Default to true
-        legajo_zona_id: null,
-        tipo_legajo: legajo.equipo_trabajo || "N/A",
-        profesional_asignado: legajo.user_responsable || null,
+        medidas_activas_count: medidasCount,
+        actividades_activas_count: actividadesCount,
+        oficios_count: oficiosCount,
+        zona: zonaValue,
+        equipo_trabajo: equipoTrabajoValue,
+        profesional_asignado: userResponsableValue,
+        jefe_zonal: jefeZonalValue,
         fecha_apertura: legajo.fecha_apertura,
-        adjuntos: [], // Not available in API response
       }
     }) || []
 
   // Add this function to handle Excel export
   const handleExportXlsx = () => {
-    // Define field mappings (raw field name -> display name)
-    const fieldMappings = {
-      id: "ID",
-      numero_legajo: "Nº Legajo",
-      nombre: "Nombre",
-      dni: "DNI",
-      prioridad: "Prioridad",
-      ultimaActualizacion: "Última Actualización",
-      localidad: "Localidad",
-      zonaEquipo: "Zona/Equipo",
-      estado_legajo: "Estado",
-      tipo_legajo: "Tipo",
-      profesional_asignado: "Profesional",
-      fecha_apertura: "Fecha Apertura",
-      adjuntos: "Cantidad de Adjuntos",
-    }
-
-    // Define formatters for specific fields
-    const formatters = {
-      estado_legajo: (value: string) => formatUnderscoreText(value),
-      tipo_legajo: (value: string) => formatUnderscoreText(value),
-      prioridad: (value: string) => formatUnderscoreText(value),
-      adjuntos: (value: any[]) => (Array.isArray(value) ? value.length : 0),
-    }
-
-    // Export to Excel
+    // Export to Excel with current table data
     exportDemandasToExcel(rows)
 
     // Show success message
@@ -643,55 +563,11 @@ const LegajoTable: React.FC = () => {
                 justifyContent: "center",
               },
               "& .MuiDataGrid-row": {
-                position: "relative",
                 transition: "background-color 0.2s",
                 "&:hover": {
                   backgroundColor: "rgba(25, 118, 210, 0.04)",
                 },
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: "7px",
-                },
               },
-              // Add specific styles for each estado_legajo
-              "& .row-abierto::before": {
-                backgroundColor: "#4caf50",
-              },
-              "& .row-en-proceso::before": {
-                backgroundColor: "#2196f3",
-              },
-              "& .row-pendiente-revision::before": {
-                backgroundColor: "#ff9800",
-              },
-              "& .row-cerrado::before": {
-                backgroundColor: "#9e9e9e",
-              },
-              "& .row-archivado::before": {
-                backgroundColor: "#673ab7",
-              },
-              "& .row-derivado::before": {
-                backgroundColor: "#00bcd4",
-              },
-              "& .row-suspendido::before": {
-                backgroundColor: "#f44336",
-              },
-              // Add style for non-received rows
-              "& .row-not-received": {
-                fontWeight: "500",
-              },
-              // Add a new style for received rows
-              "& .row-received": {
-                color: "#666666",
-              },
-            }}
-            getRowClassName={(params) => {
-              const estado = params.row.estado_legajo?.toLowerCase() || ""
-              const recibido = params.row.recibido
-              return `row-${estado.replace(/_/g, "-")}${recibido ? " row-received" : " row-not-received"}`
             }}
           />
         </div>

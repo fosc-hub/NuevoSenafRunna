@@ -56,8 +56,8 @@ export const fetchLegajos = async (
 
     console.log("Fetching legajos with params:", queryParams)
 
-    // Make API call
-    const response = await get<PaginatedLegajosResponse>("/legajos", queryParams)
+    // Make API call - Django requires trailing slash
+    const response = await get<PaginatedLegajosResponse>("legajos/", queryParams)
 
     console.log("Legajos response:", response)
 

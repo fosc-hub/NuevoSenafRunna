@@ -1,18 +1,14 @@
 /**
  * API Service for Legajos
- * Uses Next.js API proxy to avoid CORS issues
+ * Connects to GET /api/legajos/ endpoint
  */
 
-import axiosInstance from "@/app/api/utils/axiosInstance"
-import Cookies from "js-cookie"
+import { get } from "@/app/api/apiService"
 import type {
   LegajosQueryParams,
   PaginatedLegajosResponse,
   LegajoApiResponse,
 } from "../types/legajo-api"
-
-// Use local proxy to avoid CORS issues
-const USE_PROXY = true
 
 /**
  * Fetch legajos with pagination and filters
@@ -60,44 +56,12 @@ export const fetchLegajos = async (
 
     console.log("Fetching legajos with params:", queryParams)
 
-    let response: any
+    // Make API call
+    const response = await get<PaginatedLegajosResponse>("/legajos", queryParams)
 
-    if (USE_PROXY) {
-      // Use Next.js API proxy route (no baseURL)
-      const queryString = new URLSearchParams(queryParams).toString()
-      const url = `/api/proxy/legajos${queryString ? `?${queryString}` : ""}`
+    console.log("Legajos response:", response)
 
-      console.log("Using proxy:", url)
-
-      // Get token from cookies
-      const token = Cookies.get("accessToken")
-
-      // Use fetch directly to avoid baseURL
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      })
-
-      if (!res.ok) {
-        const errorText = await res.text()
-        console.error("Proxy error:", res.status, errorText)
-        throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`)
-      }
-
-      response = { data: await res.json() }
-    } else {
-      // Use axiosInstance directly with external API
-      const queryString = new URLSearchParams(queryParams).toString()
-      const endpoint = `/legajos${queryString ? `?${queryString}` : ""}`
-      response = await axiosInstance.get<PaginatedLegajosResponse>(endpoint)
-    }
-
-    console.log("Legajos response:", response.data)
-
-    return response.data
+    return response
   } catch (error: any) {
     console.error("Error fetching legajos:", error)
     console.error("Error details:", {

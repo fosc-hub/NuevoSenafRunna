@@ -110,6 +110,10 @@ export interface LegajosQueryParams {
   fecha_apertura__ultimos_dias?: number
   ordering?: string
   id?: number
+  id__gt?: number
+  id__lt?: number
+  id__gte?: number
+  id__lte?: number
   numero_legajo?: string
   numero_legajo__icontains?: string
   nnya_nombre__icontains?: string

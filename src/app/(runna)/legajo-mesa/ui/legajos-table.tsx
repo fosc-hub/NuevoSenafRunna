@@ -42,6 +42,9 @@ import {
 } from "../components/indicadores-chips"
 import ActionMenu from "../components/action-menu"
 import { useUserPermissions } from "../hooks/useUserPermissions"
+import LegajoSearchBar from "../components/search/LegajoSearchBar"
+import ActiveFiltersBar from "../components/search/ActiveFiltersBar"
+import { useFilterOptions } from "../hooks/useFilterOptions"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
@@ -85,6 +88,7 @@ const LegajoTable: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const permissions = useUserPermissions()
+  const filterOptions = useFilterOptions()
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -98,16 +102,40 @@ const LegajoTable: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const [apiFilters, setApiFilters] = useState<LegajoFiltersState & { search: string | null }>({
-    zona: null,
-    urgencia: null,
-    tiene_medidas_activas: null,
-    tiene_oficios: null,
-    tiene_plan_trabajo: null,
-    tiene_alertas: null,
-    tiene_demanda_pi: null,
-    search: null,
+  // Initialize filters from sessionStorage or default values
+  const [apiFilters, setApiFilters] = useState<LegajoFiltersState & { search: string | null }>(() => {
+    if (typeof window !== "undefined") {
+      const savedFilters = sessionStorage.getItem("legajo-mesa-filters")
+      if (savedFilters) {
+        try {
+          return JSON.parse(savedFilters)
+        } catch (error) {
+          console.error("Error parsing saved filters:", error)
+        }
+      }
+    }
+    return {
+      zona: null,
+      urgencia: null,
+      tiene_medidas_activas: null,
+      tiene_oficios: null,
+      tiene_plan_trabajo: null,
+      tiene_alertas: null,
+      tiene_demanda_pi: null,
+      search: null,
+      jefe_zonal: null,
+      director: null,
+      equipo_trabajo: null,
+      equipo_centro_vida: null,
+    }
   })
+
+  // Save filters to sessionStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("legajo-mesa-filters", JSON.stringify(apiFilters))
+    }
+  }, [apiFilters])
 
   useEffect(() => {
     loadLegajos()
@@ -149,6 +177,45 @@ const LegajoTable: React.FC = () => {
         queryParams.tiene_demanda_pi = apiFilters.tiene_demanda_pi
       }
 
+      // Add numeric filters
+      if (apiFilters.id__gt !== undefined && apiFilters.id__gt !== null) {
+        queryParams.id__gt = apiFilters.id__gt
+      }
+      if (apiFilters.id__lt !== undefined && apiFilters.id__lt !== null) {
+        queryParams.id__lt = apiFilters.id__lt
+      }
+      if (apiFilters.id__gte !== undefined && apiFilters.id__gte !== null) {
+        queryParams.id__gte = apiFilters.id__gte
+      }
+      if (apiFilters.id__lte !== undefined && apiFilters.id__lte !== null) {
+        queryParams.id__lte = apiFilters.id__lte
+      }
+
+      // Add date filters
+      if (apiFilters.fecha_apertura__gte) {
+        queryParams.fecha_apertura__gte = apiFilters.fecha_apertura__gte
+      }
+      if (apiFilters.fecha_apertura__lte) {
+        queryParams.fecha_apertura__lte = apiFilters.fecha_apertura__lte
+      }
+      if (apiFilters.fecha_apertura__ultimos_dias !== undefined && apiFilters.fecha_apertura__ultimos_dias !== null) {
+        queryParams.fecha_apertura__ultimos_dias = apiFilters.fecha_apertura__ultimos_dias
+      }
+
+      // Add responsable filters
+      if (apiFilters.jefe_zonal !== undefined && apiFilters.jefe_zonal !== null) {
+        queryParams.jefe_zonal = apiFilters.jefe_zonal
+      }
+      if (apiFilters.director !== undefined && apiFilters.director !== null) {
+        queryParams.director = apiFilters.director
+      }
+      if (apiFilters.equipo_trabajo !== undefined && apiFilters.equipo_trabajo !== null) {
+        queryParams.equipo_trabajo = apiFilters.equipo_trabajo
+      }
+      if (apiFilters.equipo_centro_vida !== undefined && apiFilters.equipo_centro_vida !== null) {
+        queryParams.equipo_centro_vida = apiFilters.equipo_centro_vida
+      }
+
       const response = await fetchLegajos(queryParams)
       setTotalCount(response.count)
       setLegajosData(response)
@@ -163,6 +230,54 @@ const LegajoTable: React.FC = () => {
   const handleFilterChange = (newFilters: typeof apiFilters) => {
     setApiFilters(newFilters)
     // Reset to first page when filters change
+    setPaginationModel((prev) => ({ ...prev, page: 0 }))
+  }
+
+  const handleSearch = (searchTerm: string) => {
+    setApiFilters((prev) => ({ ...prev, search: searchTerm || null }))
+    // Reset to first page when search changes
+    setPaginationModel((prev) => ({ ...prev, page: 0 }))
+  }
+
+  const handleRemoveFilter = (filterKey: string) => {
+    // Handle composite filters
+    if (filterKey === "fecha_apertura") {
+      setApiFilters((prev) => ({
+        ...prev,
+        fecha_apertura__gte: null,
+        fecha_apertura__lte: null,
+        fecha_apertura__ultimos_dias: null,
+      }))
+    } else if (filterKey === "id_filter") {
+      setApiFilters((prev) => ({
+        ...prev,
+        id__gt: null,
+        id__lt: null,
+        id__gte: null,
+        id__lte: null,
+      }))
+    } else {
+      setApiFilters((prev) => ({ ...prev, [filterKey]: null }))
+    }
+    setPaginationModel((prev) => ({ ...prev, page: 0 }))
+  }
+
+  const handleClearAllFilters = () => {
+    const clearedFilters: typeof apiFilters = {
+      zona: null,
+      urgencia: null,
+      tiene_medidas_activas: null,
+      tiene_oficios: null,
+      tiene_plan_trabajo: null,
+      tiene_alertas: null,
+      tiene_demanda_pi: null,
+      search: null,
+      jefe_zonal: null,
+      director: null,
+      equipo_trabajo: null,
+      equipo_centro_vida: null,
+    }
+    setApiFilters(clearedFilters)
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
 
@@ -539,6 +654,39 @@ const LegajoTable: React.FC = () => {
 
   const columns = useMemo(() => getColumns(), [isMobile, permissions])
 
+  // Build name mappings for ActiveFiltersBar
+  const jefeZonalNames = useMemo(() => {
+    const mapping: Record<number, string> = {}
+    filterOptions.jefesZonales.forEach((jefe) => {
+      mapping[jefe.id] = jefe.nombre_completo || jefe.nombre || `ID: ${jefe.id}`
+    })
+    return mapping
+  }, [filterOptions.jefesZonales])
+
+  const directorNames = useMemo(() => {
+    const mapping: Record<number, string> = {}
+    filterOptions.directores.forEach((director) => {
+      mapping[director.id] = director.nombre_completo || director.nombre || `ID: ${director.id}`
+    })
+    return mapping
+  }, [filterOptions.directores])
+
+  const equipoTrabajoNames = useMemo(() => {
+    const mapping: Record<number, string> = {}
+    filterOptions.equiposTrabajo.forEach((equipo) => {
+      mapping[equipo.id] = equipo.nombre || equipo.codigo || `ID: ${equipo.id}`
+    })
+    return mapping
+  }, [filterOptions.equiposTrabajo])
+
+  const equipoCentroVidaNames = useMemo(() => {
+    const mapping: Record<number, string> = {}
+    filterOptions.equiposCentroVida.forEach((equipo) => {
+      mapping[equipo.id] = equipo.nombre || equipo.codigo || `ID: ${equipo.id}`
+    })
+    return mapping
+  }, [filterOptions.equiposCentroVida])
+
   const rows =
     legajosData?.results.map((legajo: LegajoApiResponse) => {
       // Format fecha_ultima_actualizacion safely
@@ -613,8 +761,11 @@ const LegajoTable: React.FC = () => {
 
   // Add this function to handle Excel export
   const handleExportXlsx = () => {
-    // Export to Excel with current table data
-    exportLegajosToExcel(rows)
+    // Export to Excel with current table data and filter metadata
+    exportLegajosToExcel(rows, {
+      filters: apiFilters,
+      totalCount: totalCount,
+    })
 
     // Show success message
     toast.success("Archivo Excel generado correctamente", {
@@ -637,6 +788,16 @@ const LegajoTable: React.FC = () => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>
             Gestión de Legajos
           </Typography>
+
+          {/* Search Bar - LEG-03 CA-1 */}
+          <Box sx={{ mb: 2 }}>
+            <LegajoSearchBar
+              onSearch={handleSearch}
+              initialValue={apiFilters.search || ""}
+            />
+          </Box>
+
+          {/* Action Buttons and Filters */}
           <div className="flex gap-4 relative z-10">
             <LegajoButtons
               isLoading={isLoading}
@@ -663,6 +824,19 @@ const LegajoTable: React.FC = () => {
             />
           </div>
         </Box>
+
+        {/* Active Filters Bar - LEG-03 CA-5 */}
+        <ActiveFiltersBar
+          filters={apiFilters}
+          totalResults={totalCount}
+          onRemoveFilter={handleRemoveFilter}
+          onClearAll={handleClearAllFilters}
+          jefeZonalNames={jefeZonalNames}
+          directorNames={directorNames}
+          equipoTrabajoNames={equipoTrabajoNames}
+          equipoCentroVidaNames={equipoCentroVidaNames}
+        />
+
         <div style={{ height: 600, width: "100%" }}>
           <DataGrid
             rows={rows}

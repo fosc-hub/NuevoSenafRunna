@@ -89,14 +89,6 @@ export const fetchLegajos = async (
       queryParams.urgencia = String(params.urgencia)
     }
 
-    if (params.fecha_apertura_desde) {
-      queryParams.fecha_apertura_desde = params.fecha_apertura_desde
-    }
-
-    if (params.fecha_apertura_hasta) {
-      queryParams.fecha_apertura_hasta = params.fecha_apertura_hasta
-    }
-
     if (params.ordering) {
       queryParams.ordering = params.ordering
     }
@@ -120,6 +112,31 @@ export const fetchLegajos = async (
 
     if (params.tiene_demanda_pi !== undefined) {
       queryParams.tiene_demanda_pi = String(params.tiene_demanda_pi)
+    }
+
+    // Add numeric filters
+    if (params.id__gt !== undefined && params.id__gt !== null) {
+      queryParams.id__gt = String(params.id__gt)
+    }
+    if (params.id__lt !== undefined && params.id__lt !== null) {
+      queryParams.id__lt = String(params.id__lt)
+    }
+    if (params.id__gte !== undefined && params.id__gte !== null) {
+      queryParams.id__gte = String(params.id__gte)
+    }
+    if (params.id__lte !== undefined && params.id__lte !== null) {
+      queryParams.id__lte = String(params.id__lte)
+    }
+
+    // Add date filters
+    if (params.fecha_apertura__gte) {
+      queryParams.fecha_apertura__gte = params.fecha_apertura__gte
+    }
+    if (params.fecha_apertura__lte) {
+      queryParams.fecha_apertura__lte = params.fecha_apertura__lte
+    }
+    if (params.fecha_apertura__ultimos_dias !== undefined && params.fecha_apertura__ultimos_dias !== null) {
+      queryParams.fecha_apertura__ultimos_dias = String(params.fecha_apertura__ultimos_dias)
     }
 
     console.log("Fetching legajos with params:", queryParams)

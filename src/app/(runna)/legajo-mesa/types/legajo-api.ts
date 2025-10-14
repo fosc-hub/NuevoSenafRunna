@@ -76,3 +76,178 @@ export interface LegajosQueryParams {
   tiene_alertas?: boolean
   zona__nombre__icontains?: string
 }
+
+// ============================================
+// Types for GET /api/legajos/{id}/ - Legajo Detail
+// ============================================
+
+// Persona nested data
+export interface PersonaDetailData {
+  id: number
+  nombre: string
+  nombre_autopercibido: string | null
+  apellido: string
+  fecha_nacimiento: string | null // ISO date string
+  edad_aproximada: number | null
+  edad_calculada: string | number | null
+  nacionalidad: string // e.g., "ARGENTINA"
+  dni: number | null
+  situacion_dni: string | null // e.g., "EN_TRAMITE", etc.
+  genero: string // e.g., "MASCULINO", "FEMENINO", etc.
+  telefono: number | null
+  observaciones: string | null
+  fecha_defuncion: string | null // ISO date string
+  adulto: boolean
+  nnya: boolean
+  deleted: boolean
+}
+
+// Legajo basic info (nested in detail response)
+export interface LegajoBasicInfo {
+  id: number
+  numero: string
+  fecha_apertura: string
+  urgencia: string | null
+  estado: string
+  ultima_actualizacion: string
+}
+
+// Localidad info
+export interface LocalidadInfo {
+  id: number
+  calle: string
+  tipo_calle: string
+  casa_nro: number | null
+  piso_depto: number | null
+  lote: number | null
+  mza: number | null
+  referencia_geo: string | null
+  geolocalizacion: string | null
+  localidad: number
+  localidad_nombre: string
+  barrio: number | null
+  barrio_nombre: string | null
+  cpc: number | null
+  cpc_nombre: string | null
+}
+
+// Localizacion actual
+export interface LocalizacionActual {
+  id: number
+  localizacion: LocalidadInfo
+  principal: boolean
+}
+
+// Zona info
+export interface ZonaInfo {
+  id: number
+  nombre: string
+  codigo: string | null
+}
+
+// User info
+export interface UserInfo {
+  id: number
+  username?: string
+  nombre_completo: string
+  nivel?: string | null
+}
+
+// Asignacion
+export interface AsignacionActiva {
+  id: number
+  tipo_responsabilidad: string
+  zona: ZonaInfo
+  user_responsable: UserInfo
+  local_centro_vida: any | null
+  esta_activo: boolean
+  recibido: boolean
+  fecha_asignacion: string
+  enviado_por: UserInfo
+  recibido_por: UserInfo
+  comentarios: string | null
+}
+
+// Medida
+export interface MedidaInfo {
+  id: number
+  numero: string
+  fecha_apertura: string
+  urgencia: string | null
+  estado: string
+  ultima_actualizacion: string
+  tipo_medida?: string
+}
+
+// Demandas relacionadas
+export interface DemandasRelacionadas {
+  resultados: any[]
+  resumen: {
+    total_demandas: number
+    activas: number
+    cerradas: number
+  }
+}
+
+// Historial cambios
+export interface HistorialCambio {
+  tabla: string
+  registro_id: number
+  fecha_cambio: string | null
+  usuario: UserInfo
+  accion: string | null
+  campos_modificados: any[]
+}
+
+// Responsables
+export interface Responsables {
+  equipo_tecnico_centro_vida?: {
+    user_id: number
+    nombre_completo: string
+    tipo_responsabilidad: string
+    local: any | null
+  }
+  [key: string]: any
+}
+
+// Permisos
+export interface PermisosUsuario {
+  puede_editar: boolean
+  puede_agregar_documentos: boolean
+  puede_tomar_medidas: boolean
+  puede_asignar_zonas: boolean
+  puede_ver_notas_aval: boolean
+  puede_ver_historial: boolean
+  puede_reasignar: boolean
+}
+
+// Metadata
+export interface MetadataInfo {
+  ultima_actualizacion: string
+  consultado_por: UserInfo
+  timestamp_consulta: string
+}
+
+// Main legajo detail response (updated to match actual API)
+export interface LegajoDetailResponse {
+  legajo: LegajoBasicInfo
+  persona: PersonaDetailData
+  localizacion_actual: LocalizacionActual | null
+  asignaciones_activas: AsignacionActiva[]
+  medidas_activas: MedidaInfo[]
+  historial_medidas: MedidaInfo[]
+  plan_trabajo: any | null
+  oficios: any[]
+  demandas_relacionadas: DemandasRelacionadas
+  documentos: any[]
+  historial_asignaciones: any[]
+  historial_cambios: HistorialCambio[]
+  responsables: Responsables
+  permisos_usuario: PermisosUsuario
+  metadata: MetadataInfo
+}
+
+// Query parameters for GET /api/legajos/{id}/
+export interface LegajoDetailQueryParams {
+  include_history?: boolean // Incluir historial de cambios (simple_history)
+}

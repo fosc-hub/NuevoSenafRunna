@@ -11,7 +11,8 @@ import SecurityIcon from "@mui/icons-material/Security"
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom"
 import GavelIcon from "@mui/icons-material/Gavel"
 import { useRouter } from "next/navigation"
-import { getLegajoById } from "../legajo-mesa/mock-data/legajos-service"
+import { fetchLegajoDetail } from "../legajo-mesa/api/legajos-api-service"
+import type { LegajoDetailResponse } from "../legajo-mesa/types/legajo-api"
 import { Intervencion, Legajo } from "./[id]/medida/[medidaId]/types/legajo"
 import { AddIntervencionDialog, NewIntervencion } from "./[id]/medida/[medidaId]/components/dialogs/add-intervencion-dialog"
 import { AttachmentDialog } from "./[id]/medida/[medidaId]/components/dialogs/attachement-dialog"
@@ -46,16 +47,147 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   const router = useRouter()
 
   useEffect(() => {
-    const loadLegajoData = () => {
+    const loadLegajoData = async () => {
       if (params.id) {
         try {
           setIsLoading(true)
-          const data = getLegajoById(params.id)
-          if (data) {
-            setLegajoData(data as any)
-          } else {
-            setError(`No se encontró el legajo con ID ${params.id}`)
+          setError(null)
+
+          // Call the real API to fetch legajo detail
+          const response = await fetchLegajoDetail(Number(params.id), {
+            include_history: false, // Set to true if you want to include history
+          })
+
+          console.log("Raw API Response:", response)
+
+          // Transform API response to match the Legajo interface
+          // Helper function to safely convert any value to string
+          const safeToString = (value: any, defaultValue: string = "N/A"): string => {
+            if (value === null || value === undefined) return defaultValue
+            if (typeof value === 'string') return value
+            if (typeof value === 'number') return String(value)
+            if (typeof value === 'object') {
+              console.warn("Attempted to render object as string:", value)
+              return defaultValue
+            }
+            return String(value)
           }
+
+          // Extract localizacion information
+          let ubicacionStr = "N/A"
+          let localidadNombre = "N/A"
+
+          if (response.localizacion_actual?.localizacion) {
+            const loc = response.localizacion_actual.localizacion
+            // Build address string
+            const addressParts: string[] = []
+            if (loc.tipo_calle && loc.calle) {
+              addressParts.push(`${loc.tipo_calle} ${loc.calle}`)
+            }
+            if (loc.casa_nro) {
+              addressParts.push(`N° ${loc.casa_nro}`)
+            }
+            if (loc.piso_depto) {
+              addressParts.push(`Piso ${loc.piso_depto}`)
+            }
+            if (loc.barrio_nombre) {
+              addressParts.push(loc.barrio_nombre)
+            }
+
+            ubicacionStr = addressParts.length > 0 ? addressParts.join(", ") : "N/A"
+            localidadNombre = loc.localidad_nombre || "N/A"
+          }
+
+          // Extract equipo interviniente from asignaciones_activas
+          let equipoInterviniente = "N/A"
+          let zonaAsignada = "N/A"
+          if (response.asignaciones_activas && response.asignaciones_activas.length > 0) {
+            const asignacion = response.asignaciones_activas[0]
+            equipoInterviniente = asignacion.user_responsable?.nombre_completo || "N/A"
+            zonaAsignada = asignacion.zona?.nombre || "N/A"
+          }
+
+          // Get prioridad from legajo
+          const prioridad = (response.legajo?.urgencia as "ALTA" | "MEDIA" | "BAJA") || "MEDIA"
+
+          // Process medidas_activas
+          const medidasActivas = Array.isArray(response.medidas_activas) ? response.medidas_activas : []
+          const historialMedidas = Array.isArray(response.historial_medidas) ? response.historial_medidas : []
+
+          // Create medida_activa object from first active medida if available
+          let medidaActiva = {
+            tipo: "MPI" as const,
+            estado: "ACTIVA" as const,
+            fecha_apertura: response.legajo?.fecha_apertura || new Date().toISOString(),
+            grupo_actuante: equipoInterviniente,
+            juzgado: "N/A",
+            nro_sac: "N/A",
+            respuesta_enviada: false,
+          }
+
+          if (medidasActivas.length > 0) {
+            const primeraMediada = medidasActivas[0]
+            medidaActiva = {
+              ...medidaActiva,
+              fecha_apertura: primeraMediada.fecha_apertura || medidaActiva.fecha_apertura,
+              estado: (primeraMediada.estado as "ACTIVA") || "ACTIVA",
+              tipo: (primeraMediada.tipo_medida as "MPI" | "MPE" | "MPJ") || "MPI",
+            }
+          }
+
+          // Format fecha_apertura for display
+          let fechaAperturaFormatted = new Date().toISOString()
+          try {
+            if (response.legajo?.fecha_apertura) {
+              const date = new Date(response.legajo.fecha_apertura)
+              if (!isNaN(date.getTime())) {
+                fechaAperturaFormatted = date.toLocaleDateString("es-AR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
+              }
+            }
+          } catch (error) {
+            console.error("Error formatting fecha_apertura:", error)
+          }
+
+          const transformedData: Legajo = {
+            id: params.id,
+            numero_legajo: response.legajo?.numero || `L-${params.id}`,
+            fecha_apertura: fechaAperturaFormatted,
+            persona_principal: {
+              nombre: response.persona?.nombre || "N/A",
+              apellido: response.persona?.apellido || "N/A",
+              dni: response.persona?.dni ? String(response.persona.dni) : "N/A",
+              edad: response.persona?.edad_aproximada ||
+                    (response.persona?.edad_calculada ? Number(response.persona.edad_calculada) : 0),
+              alias: response.persona?.nombre_autopercibido || undefined,
+              telefono: response.persona?.telefono ? String(response.persona.telefono) : undefined,
+            },
+            ubicacion: ubicacionStr,
+            localidad: { nombre: localidadNombre },
+            equipo_interviniente: equipoInterviniente,
+            prioridad: prioridad,
+            medida_activa: medidaActiva,
+            situaciones_criticas: {
+              BP: false,
+              RSA: false,
+              DCS: false,
+              SCP: false,
+            },
+            intervenciones: [], // TODO: Parse from historial_cambios or other source
+            historial_medidas: {
+              MPI: historialMedidas.filter(m => m.tipo_medida === "MPI"),
+              MPE: historialMedidas.filter(m => m.tipo_medida === "MPE"),
+              MPJ: historialMedidas.filter(m => m.tipo_medida === "MPJ"),
+            },
+          }
+
+          console.log("Transformed legajo data:", transformedData)
+
+
+          setLegajoData(transformedData)
         } catch (err) {
           console.error("Error loading legajo data:", err)
           setError("Error al cargar los datos del legajo. Por favor, intente nuevamente.")

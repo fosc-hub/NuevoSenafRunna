@@ -13,6 +13,51 @@ import type {
 } from "../types/legajo-api"
 
 /**
+ * Helper function to safely parse JSON from serialized fields
+ * @param value Serialized string or already parsed object
+ * @param defaultValue Default value if parsing fails
+ * @returns Parsed object or default value
+ */
+const safeParse = <T>(value: any, defaultValue: T): T => {
+  if (!value) return defaultValue
+  if (typeof value !== "string") return value as T
+
+  try {
+    return JSON.parse(value) as T
+  } catch (error) {
+    console.warn("Failed to parse JSON:", value, error)
+    return defaultValue
+  }
+}
+
+/**
+ * Parse legajo response to deserialize string fields
+ * @param legajo Raw legajo from API
+ * @returns Legajo with parsed fields
+ */
+const parseLegajoResponse = (legajo: any): LegajoApiResponse => {
+  return {
+    ...legajo,
+    medidas_activas: safeParse(legajo.medidas_activas, []),
+    actividades_activas: safeParse(legajo.actividades_activas, []),
+    oficios: safeParse(legajo.oficios, []),
+    indicadores: safeParse(legajo.indicadores, {
+      demanda_pi_count: 0,
+      oficios_por_tipo: {},
+      medida_andarivel: null,
+      pt_actividades: {
+        pendientes: 0,
+        en_progreso: 0,
+        vencidas: 0,
+        realizadas: 0,
+      },
+      alertas: [],
+    }),
+    acciones_disponibles: safeParse(legajo.acciones_disponibles, []),
+  }
+}
+
+/**
  * Fetch legajos with pagination and filters
  * @param params Query parameters for filtering and pagination
  * @returns Paginated legajos response
@@ -56,14 +101,43 @@ export const fetchLegajos = async (
       queryParams.ordering = params.ordering
     }
 
+    // Add boolean filters
+    if (params.tiene_medidas_activas !== undefined) {
+      queryParams.tiene_medidas_activas = String(params.tiene_medidas_activas)
+    }
+
+    if (params.tiene_oficios !== undefined) {
+      queryParams.tiene_oficios = String(params.tiene_oficios)
+    }
+
+    if (params.tiene_plan_trabajo !== undefined) {
+      queryParams.tiene_plan_trabajo = String(params.tiene_plan_trabajo)
+    }
+
+    if (params.tiene_alertas !== undefined) {
+      queryParams.tiene_alertas = String(params.tiene_alertas)
+    }
+
+    if (params.tiene_demanda_pi !== undefined) {
+      queryParams.tiene_demanda_pi = String(params.tiene_demanda_pi)
+    }
+
     console.log("Fetching legajos with params:", queryParams)
 
     // Make API call - Django requires trailing slash
-    const response = await get<PaginatedLegajosResponse>("legajos/", queryParams)
+    const response = await get<any>("legajos/", queryParams)
 
-    console.log("Legajos response:", response)
+    console.log("Legajos response (raw):", response)
 
-    return response
+    // Parse serialized fields in each legajo
+    const parsedResponse: PaginatedLegajosResponse = {
+      ...response,
+      results: response.results.map(parseLegajoResponse),
+    }
+
+    console.log("Legajos response (parsed):", parsedResponse)
+
+    return parsedResponse
   } catch (error: any) {
     console.error("Error fetching legajos:", error)
     console.error("Error details:", {

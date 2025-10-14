@@ -7,6 +7,7 @@ import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemT
 import FilterList from "@mui/icons-material/FilterList"
 import SearchIcon from "@mui/icons-material/Search"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
+import RegistroLegajoModal from "@/components/forms/RegistroLegajoModal"
 
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
@@ -26,10 +27,12 @@ interface ButtonsProps {
   handleNuevoRegistro: () => void
   onFilterChange: (filters: FilterState) => void
   onSearch?: () => void
+  onLegajoCreated?: (data: any) => void
 }
 
-const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFilterChange, onSearch }) => {
+const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFilterChange, onSearch, onLegajoCreated }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [isRegistroModalOpen, setIsRegistroModalOpen] = useState(false)
   const [filterState, setFilterState] = useState<FilterState>({
     envio_de_respuesta: null,
     estado_demanda: null,
@@ -64,6 +67,19 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
     onFilterChange(newState)
   }
 
+  const handleNuevoLegajo = () => {
+    setIsRegistroModalOpen(true)
+  }
+
+  const handleLegajoCreated = (data: any) => {
+    onLegajoCreated?.(data)
+    setIsRegistroModalOpen(false)
+  }
+
+  const handleCloseRegistroModal = () => {
+    setIsRegistroModalOpen(false)
+  }
+
   return (
     <div className="flex gap-4">
       {isLoading ? (
@@ -74,16 +90,13 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
         </>
       ) : (
         <>
-          <Link href="/nuevolegajo" passHref>
-            <Button
-              component="a"
-              variant="contained"
-              onClick={handleNuevoRegistro}
-              sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" } }}
-            >
-              + Nuevo Legajo
-            </Button>
-          </Link>
+          <Button
+            variant="contained"
+            onClick={handleNuevoLegajo}
+            sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" } }}
+          >
+            + Nuevo Legajo
+          </Button>
 
           <Button
             onClick={handleFilterClick}
@@ -305,6 +318,13 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
               </List>
             </Box>
           </Popover>
+
+          {/* Registro Legajo Modal */}
+          <RegistroLegajoModal
+            open={isRegistroModalOpen}
+            onClose={handleCloseRegistroModal}
+            onSuccess={handleLegajoCreated}
+          />
         </>
       )}
     </div>

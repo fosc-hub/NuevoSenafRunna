@@ -13,8 +13,60 @@ export interface NnyaData {
   fecha_nacimiento: string
 }
 
+// Semáforo de vencimiento para oficios
+export type SemaforoEstado = "verde" | "amarillo" | "rojo"
+
+// Oficio con semáforo de vencimiento
+export interface OficioConSemaforo {
+  id: number
+  tipo: "Ratificación" | "Pedido" | "Orden" | "Otros"
+  vencimiento: string // ISO date string
+  semaforo: SemaforoEstado
+  estado: string
+  numero?: string
+}
+
+// Indicadores de actividades del Plan de Trabajo
+export interface ActividadesPTIndicadores {
+  pendientes: number
+  en_progreso: number
+  vencidas: number
+  realizadas: number
+}
+
+// Estado del andarivel de medidas
+export type AndarielEstado = "Intervención" | "Aval" | "Informe Jurídico" | "Ratificación"
+
+// Indicadores consolidados del legajo
+export interface IndicadoresLegajo {
+  demanda_pi_count: number
+  oficios_por_tipo: {
+    [key: string]: number // e.g., "Ratificación": 2, "Pedido": 1
+  }
+  medida_andarivel: AndarielEstado | null
+  pt_actividades: ActividadesPTIndicadores
+  alertas: string[] // Lista de mensajes de alerta
+}
+
+// Medida activa básica
+export interface MedidaActivaBasica {
+  id: number
+  tipo: string
+  estado: string
+  etapa: string
+  fecha_apertura: string
+}
+
+// Actividad activa básica
+export interface ActividadActivaBasica {
+  id: number
+  descripcion: string
+  estado: string
+  fecha_vencimiento: string | null
+}
+
 // Main Legajo interface matching actual API response
-// Note: Most fields are returned as strings (serialized representations)
+// Updated to parse serialized fields
 export interface LegajoApiResponse {
   id: number
   numero: string
@@ -27,11 +79,11 @@ export interface LegajoApiResponse {
   director: string | null // Serialized director name
   equipo_trabajo: string | null // Serialized team name
   user_responsable: string | null // Serialized user name
-  medidas_activas: string // Serialized list
-  actividades_activas: string // Serialized list
-  oficios: string // Serialized list
-  indicadores: string // Serialized object
-  acciones_disponibles: string // Serialized list
+  medidas_activas: MedidaActivaBasica[] // Parsed from serialized list
+  actividades_activas: ActividadActivaBasica[] // Parsed from serialized list
+  oficios: OficioConSemaforo[] // Parsed from serialized list
+  indicadores: IndicadoresLegajo // Parsed from serialized object
+  acciones_disponibles: string[] // Parsed from serialized list
 }
 
 // Paginated response structure

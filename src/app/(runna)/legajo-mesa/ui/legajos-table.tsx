@@ -31,7 +31,17 @@ import AsignarModal from "../../../../components/asignarModal"
 import { fetchLegajos, updateLegajoPrioridad } from "../api/legajos-api-service"
 import type { LegajoApiResponse, PaginatedLegajosResponse } from "../types/legajo-api"
 import LegajoButtons from "./legajos-buttons"
-import { exportDemandasToExcel } from "./legajos-service"
+import { exportLegajosToExcel } from "./legajos-service"
+import LegajoFilters, { type LegajoFiltersState } from "./legajos-filters"
+import {
+  ChipDemandaPI,
+  ChipsOficios,
+  AndarielMedidas,
+  ContadoresPT,
+  AlertasChip,
+} from "../components/indicadores-chips"
+import ActionMenu from "../components/action-menu"
+import { useUserPermissions } from "../hooks/useUserPermissions"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
@@ -74,6 +84,7 @@ const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
 const LegajoTable: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const permissions = useUserPermissions()
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -87,13 +98,14 @@ const LegajoTable: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const [apiFilters, setApiFilters] = useState<{
-    zona: number | null
-    urgencia: string | null
-    search: string | null
-  }>({
+  const [apiFilters, setApiFilters] = useState<LegajoFiltersState & { search: string | null }>({
     zona: null,
     urgencia: null,
+    tiene_medidas_activas: null,
+    tiene_oficios: null,
+    tiene_plan_trabajo: null,
+    tiene_alertas: null,
+    tiene_demanda_pi: null,
     search: null,
   })
 
@@ -111,15 +123,30 @@ const LegajoTable: React.FC = () => {
         page_size: paginationModel.pageSize,
       }
 
-      // Add filters if they exist
+      // Add all filters if they exist
       if (apiFilters.zona !== null) {
         queryParams.zona = apiFilters.zona
       }
-      if (apiFilters.urgencia !== null && apiFilters.urgencia.trim() !== "") {
+      if (apiFilters.urgencia !== null) {
         queryParams.urgencia = apiFilters.urgencia
       }
       if (apiFilters.search !== null && apiFilters.search.trim() !== "") {
         queryParams.search = apiFilters.search
+      }
+      if (apiFilters.tiene_medidas_activas !== null) {
+        queryParams.tiene_medidas_activas = apiFilters.tiene_medidas_activas
+      }
+      if (apiFilters.tiene_oficios !== null) {
+        queryParams.tiene_oficios = apiFilters.tiene_oficios
+      }
+      if (apiFilters.tiene_plan_trabajo !== null) {
+        queryParams.tiene_plan_trabajo = apiFilters.tiene_plan_trabajo
+      }
+      if (apiFilters.tiene_alertas !== null) {
+        queryParams.tiene_alertas = apiFilters.tiene_alertas
+      }
+      if (apiFilters.tiene_demanda_pi !== null) {
+        queryParams.tiene_demanda_pi = apiFilters.tiene_demanda_pi
       }
 
       const response = await fetchLegajos(queryParams)
@@ -338,13 +365,63 @@ const LegajoTable: React.FC = () => {
         ),
       },
       {
+        field: "indicadores_pi",
+        headerName: "PI",
+        width: 80,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => (
+          <ChipDemandaPI count={params.row.indicadores?.demanda_pi_count || 0} />
+        ),
+      },
+      {
+        field: "indicadores_oficios_semaforo",
+        headerName: "Oficios",
+        width: 150,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => <ChipsOficios oficios={params.row.oficios || []} />,
+      },
+      {
+        field: "indicadores_medidas",
+        headerName: "Andarivel Medidas",
+        width: 180,
+        renderCell: (params) => <AndarielMedidas estado={params.row.indicadores?.medida_andarivel || null} />,
+      },
+      {
+        field: "indicadores_pt",
+        headerName: "Plan de Trabajo",
+        width: 200,
+        renderCell: (params) => (
+          <ContadoresPT
+            actividades={
+              params.row.indicadores?.pt_actividades || {
+                pendientes: 0,
+                en_progreso: 0,
+                vencidas: 0,
+                realizadas: 0,
+              }
+            }
+          />
+        ),
+      },
+      {
+        field: "indicadores_alertas",
+        headerName: "Alertas",
+        width: 80,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => <AlertasChip alertas={params.row.indicadores?.alertas || []} />,
+      },
+      {
         field: "actions",
         headerName: "Acciones",
-        width: 120,
+        width: 180,
         sortable: false,
         filterable: false,
         renderCell: (params) => (
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            {/* Quick action buttons */}
             <Tooltip title="Ver detalles">
               <IconButton
                 size="small"
@@ -358,18 +435,43 @@ const LegajoTable: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="Asignar">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleOpenAsignarModal(params.row.id)
-                }}
-                sx={{ color: "secondary.main" }}
-              >
-                <PersonAdd fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {/* CA-3: Hide "Asignar" button for Level 2 users (Equipo Técnico) */}
+            {permissions.canAssign && (
+              <Tooltip title="Asignar">
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleOpenAsignarModal(params.row.id)
+                  }}
+                  sx={{ color: "secondary.main" }}
+                >
+                  <PersonAdd fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {/* Action Menu with more options */}
+            <ActionMenu
+              legajoId={params.row.id}
+              demandaId={params.row.indicadores?.demanda_pi_count > 0 ? params.row.id : null} // TODO: Get real demanda_id
+              tieneMedidas={params.row.medidas_activas_count > 0}
+              tieneOficios={params.row.oficios_count > 0}
+              tienePlanTrabajo={
+                (params.row.indicadores?.pt_actividades?.pendientes || 0) +
+                (params.row.indicadores?.pt_actividades?.en_progreso || 0) +
+                (params.row.indicadores?.pt_actividades?.vencidas || 0) +
+                (params.row.indicadores?.pt_actividades?.realizadas || 0) >
+                0
+              }
+              onViewDetail={handleOpenModal}
+              onAssign={handleOpenAsignarModal}
+              userPermissions={{
+                canAssign: permissions.canAssign,
+                canEdit: permissions.canEdit,
+                canSendNotification: permissions.canSendNotification,
+              }}
+            />
           </Box>
         ),
       },
@@ -377,7 +479,7 @@ const LegajoTable: React.FC = () => {
 
     // Add more columns for larger screens
     if (!isMobile) {
-      baseColumns.push(
+      const additionalColumns: GridColDef[] = [
         {
           field: "zona",
           headerName: "Zona",
@@ -395,12 +497,6 @@ const LegajoTable: React.FC = () => {
           headerName: "Profesional",
           width: 150,
           renderCell: (params) => <Typography variant="body2">{params.value || "Sin asignar"}</Typography>,
-        },
-        {
-          field: "jefe_zonal",
-          headerName: "Jefe Zonal",
-          width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
         },
         {
           field: "fecha_apertura",
@@ -423,13 +519,25 @@ const LegajoTable: React.FC = () => {
             }
           },
         },
-      )
+      ]
+
+      // CA-2: Only show judicial data columns for users with permission
+      if (permissions.canViewJudicialData) {
+        additionalColumns.splice(3, 0, {
+          field: "jefe_zonal",
+          headerName: "Jefe Zonal",
+          width: 150,
+          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
+        })
+      }
+
+      baseColumns.push(...additionalColumns)
     }
 
     return baseColumns
   }
 
-  const columns = useMemo(() => getColumns(), [isMobile])
+  const columns = useMemo(() => getColumns(), [isMobile, permissions])
 
   const rows =
     legajosData?.results.map((legajo: LegajoApiResponse) => {
@@ -461,26 +569,26 @@ const LegajoTable: React.FC = () => {
       const zonaValue = typeof legajo.zona === "string"
         ? legajo.zona
         : legajo.zona && typeof legajo.zona === "object" && (legajo.zona as any).nombre
-        ? (legajo.zona as any).nombre
-        : null
+          ? (legajo.zona as any).nombre
+          : null
 
       const equipoTrabajoValue = typeof legajo.equipo_trabajo === "string"
         ? legajo.equipo_trabajo
         : legajo.equipo_trabajo && typeof legajo.equipo_trabajo === "object" && (legajo.equipo_trabajo as any).nombre
-        ? (legajo.equipo_trabajo as any).nombre
-        : null
+          ? (legajo.equipo_trabajo as any).nombre
+          : null
 
       const userResponsableValue = typeof legajo.user_responsable === "string"
         ? legajo.user_responsable
         : legajo.user_responsable && typeof legajo.user_responsable === "object" && (legajo.user_responsable as any).nombre_completo
-        ? (legajo.user_responsable as any).nombre_completo
-        : null
+          ? (legajo.user_responsable as any).nombre_completo
+          : null
 
       const jefeZonalValue = typeof legajo.jefe_zonal === "string"
         ? legajo.jefe_zonal
         : legajo.jefe_zonal && typeof legajo.jefe_zonal === "object" && (legajo.jefe_zonal as any).nombre_completo
-        ? (legajo.jefe_zonal as any).nombre_completo
-        : null
+          ? (legajo.jefe_zonal as any).nombre_completo
+          : null
 
       return {
         id: legajo.id,
@@ -497,13 +605,16 @@ const LegajoTable: React.FC = () => {
         profesional_asignado: userResponsableValue,
         jefe_zonal: jefeZonalValue,
         fecha_apertura: legajo.fecha_apertura,
+        // Add indicadores and oficios for new visual components
+        indicadores: legajo.indicadores,
+        oficios: legajo.oficios,
       }
     }) || []
 
   // Add this function to handle Excel export
   const handleExportXlsx = () => {
     // Export to Excel with current table data
-    exportDemandasToExcel(rows)
+    exportLegajosToExcel(rows)
 
     // Show success message
     toast.success("Archivo Excel generado correctamente", {
@@ -528,9 +639,27 @@ const LegajoTable: React.FC = () => {
           </Typography>
           <div className="flex gap-4 relative z-10">
             <LegajoButtons
-              onSearch={() => console.log("Searching...")}
-              onFilter={() => console.log("Filters applied")}
-              onNewLegajo={() => console.log("Creating new legajo")}
+              isLoading={isLoading}
+              handleNuevoRegistro={() => { }}
+              onFilterChange={(filters) => {
+                // Handle filter changes if needed
+                console.log('Filter changes:', filters)
+              }}
+              onSearch={() => {
+                // Handle search if needed
+                console.log('Search triggered')
+              }}
+              onLegajoCreated={(data) => {
+                console.log('Legajo created:', data)
+                // Refresh the data
+                loadLegajos()
+              }}
+            />
+            <LegajoFilters
+              onFilterChange={(newFilters) => {
+                setApiFilters((prev) => ({ ...prev, ...newFilters }))
+                setPaginationModel((prev) => ({ ...prev, page: 0 }))
+              }}
             />
           </div>
         </Box>

@@ -1,0 +1,893 @@
+# MED-02c: Adjuntos y Validaciones Avanzadas
+
+**Fecha de Creación:** 2025-10-11
+**Sprint:** TBD
+**Estimación:** 5 puntos (Pequeño-Mediano)
+**Prioridad:** Alta
+**Estado:** Documentada
+**Dependencias:** MED-02a (Modelo TIntervencionMedida debe existir)
+
+---
+
+## Historia de Usuario
+
+**Como** Equipo Técnico
+**Quiero** adjuntar documentos y archivos a las intervenciones
+**Para** respaldar la información registrada con evidencia documental
+
+---
+
+## Alcance de MED-02c
+
+Esta sub-story se enfoca **exclusivamente** en:
+- ✅ Crear modelo TIntervencionAdjunto
+- ✅ Ampliar migración o crear migración 0042
+- ✅ Serializer para adjuntos con validaciones
+- ✅ Actions en ViewSet: subir, listar, eliminar adjuntos
+- ✅ Validaciones: extensión permitida, tamaño máximo
+- ✅ Endpoints POST, GET, DELETE para adjuntos
+- ✅ Tests de adjuntos y validaciones de archivos (5-6 tests)
+- ❌ NO incluye modelos base (ver MED-02a)
+- ❌ NO incluye transiciones (ver MED-02b)
+
+---
+
+## Modelo a Implementar
+
+### TIntervencionAdjunto
+
+**Ubicación:** `runna/infrastructure/models/medida/TIntervencionAdjunto.py`
+
+```python
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
+
+CustomUser = get_user_model()
+
+
+def validate_file_size(file):
+    """Validar que el archivo no exceda 10MB"""
+    max_size_mb = 10
+    if file.size > max_size_mb * 1024 * 1024:
+        raise ValidationError(
+            f'El tamaño máximo permitido es {max_size_mb}MB. '
+            f'El archivo tiene {file.size / (1024 * 1024):.2f}MB'
+        )
+
+
+class TIntervencionAdjunto(models.Model):
+    """Adjuntos de una intervención (documentos, actas, respaldos)"""
+
+    TIPO_MODELO = 'MODELO'
+    TIPO_ACTA = 'ACTA'
+    TIPO_RESPALDO = 'RESPALDO'
+    TIPO_INFORME = 'INFORME'
+
+    TIPO_CHOICES = [
+        (TIPO_MODELO, 'Modelo'),
+        (TIPO_ACTA, 'Acta'),
+        (TIPO_RESPALDO, 'Documentación Respaldatoria'),
+        (TIPO_INFORME, 'Informe Ampliatorio'),
+    ]
+
+    # Extensiones permitidas
+    EXTENSIONES_PERMITIDAS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+
+    intervencion = models.ForeignKey(
+        'TIntervencionMedida',
+        on_delete=models.CASCADE,
+        related_name='adjuntos',
+        help_text="Intervención a la que pertenece este adjunto"
+    )
+
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        help_text="Tipo de documento adjunto"
+    )
+
+    archivo = models.FileField(
+        upload_to='intervenciones/%Y/%m/',
+        help_text="Archivo adjunto",
+        validators=[
+            FileExtensionValidator(allowed_extensions=EXTENSIONES_PERMITIDAS),
+            validate_file_size
+        ]
+    )
+
+    nombre_original = models.CharField(
+        max_length=255,
+        help_text="Nombre original del archivo subido"
+    )
+
+    tamaño_bytes = models.IntegerField(
+        help_text="Tamaño del archivo en bytes"
+    )
+
+    extension = models.CharField(
+        max_length=10,
+        help_text="Extensión del archivo (pdf, doc, jpg, etc.)"
+    )
+
+    descripcion = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="Descripción opcional del documento"
+    )
+
+    subido_por = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text="Usuario que subió el archivo"
+    )
+
+    fecha_subida = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Fecha y hora de subida"
+    )
+
+    class Meta:
+        app_label = 'infrastructure'
+        db_table = 't_intervencion_adjunto'
+        verbose_name = _('Adjunto de Intervención')
+        verbose_name_plural = _('Adjuntos de Intervenciones')
+        ordering = ['fecha_subida']
+
+    def __str__(self):
+        return f"{self.nombre_original} ({self.get_tipo_display()})"
+
+    def save(self, *args, **kwargs):
+        """Override save para extraer metadata del archivo"""
+        if self.archivo:
+            # Extraer nombre original
+            if not self.nombre_original:
+                self.nombre_original = self.archivo.name
+
+            # Extraer tamaño
+            self.tamaño_bytes = self.archivo.size
+
+            # Extraer extensión
+            import os
+            self.extension = os.path.splitext(self.nombre_original)[1][1:].lower()
+
+        super().save(*args, **kwargs)
+
+    @property
+    def tamaño_mb(self):
+        """Tamaño del archivo en MB"""
+        return round(self.tamaño_bytes / (1024 * 1024), 2)
+
+    @property
+    def url_descarga(self):
+        """URL para descargar el archivo"""
+        return self.archivo.url if self.archivo else None
+```
+
+---
+
+## Migración 0042
+
+**Archivo:** `runna/infrastructure/migrations/0042_crear_modelo_adjunto.py`
+
+**Operación:**
+- Crear tabla `t_intervencion_adjunto`
+
+```python
+# Generated by Django X.X on 2025-10-11
+
+from django.conf import settings
+import django.core.validators
+from django.db import migrations, models
+import django.db.models.deletion
+import infrastructure.models.medida.TIntervencionAdjunto
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('infrastructure', '0041_crear_modelos_intervencion'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='TIntervencionAdjunto',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('tipo', models.CharField(choices=[('MODELO', 'Modelo'), ('ACTA', 'Acta'), ('RESPALDO', 'Documentación Respaldatoria'), ('INFORME', 'Informe Ampliatorio')], help_text='Tipo de documento adjunto', max_length=20)),
+                ('archivo', models.FileField(help_text='Archivo adjunto', upload_to='intervenciones/%Y/%m/', validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']), infrastructure.models.medida.TIntervencionAdjunto.validate_file_size])),
+                ('nombre_original', models.CharField(help_text='Nombre original del archivo subido', max_length=255)),
+                ('tamaño_bytes', models.IntegerField(help_text='Tamaño del archivo en bytes')),
+                ('extension', models.CharField(help_text='Extensión del archivo (pdf, doc, jpg, etc.)', max_length=10)),
+                ('descripcion', models.CharField(blank=True, help_text='Descripción opcional del documento', max_length=500, null=True)),
+                ('fecha_subida', models.DateTimeField(auto_now_add=True, help_text='Fecha y hora de subida')),
+                ('intervencion', models.ForeignKey(help_text='Intervención a la que pertenece este adjunto', on_delete=django.db.models.deletion.CASCADE, related_name='adjuntos', to='infrastructure.tintervencionmedida')),
+                ('subido_por', models.ForeignKey(help_text='Usuario que subió el archivo', null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'verbose_name': 'Adjunto de Intervención',
+                'verbose_name_plural': 'Adjuntos de Intervenciones',
+                'db_table': 't_intervencion_adjunto',
+                'ordering': ['fecha_subida'],
+            },
+        ),
+    ]
+```
+
+---
+
+## Serializers
+
+### TIntervencionAdjuntoSerializer
+
+**Ubicación:** `runna/api/serializers/TIntervencionAdjuntoSerializer.py`
+
+```python
+from rest_framework import serializers
+from infrastructure.models import TIntervencionAdjunto
+
+
+class TIntervencionAdjuntoSerializer(serializers.ModelSerializer):
+    """Serializer para adjuntos de intervención"""
+
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    tamaño_mb = serializers.ReadOnlyField()
+    url_descarga = serializers.ReadOnlyField(source='url_descarga')
+    subido_por_detalle = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = TIntervencionAdjunto
+        fields = [
+            'id', 'intervencion', 'tipo', 'tipo_display',
+            'archivo', 'nombre_original', 'tamaño_bytes', 'tamaño_mb',
+            'extension', 'descripcion', 'url_descarga',
+            'subido_por_detalle', 'fecha_subida'
+        ]
+        read_only_fields = [
+            'id', 'nombre_original', 'tamaño_bytes', 'extension',
+            'subido_por_detalle', 'fecha_subida'
+        ]
+
+    def get_subido_por_detalle(self, obj):
+        if obj.subido_por:
+            return {
+                'id': obj.subido_por.id,
+                'nombre_completo': f"{obj.subido_por.first_name} {obj.subido_por.last_name}".strip(),
+                'username': obj.subido_por.username
+            }
+        return None
+
+    def validate_archivo(self, value):
+        """Validaciones adicionales del archivo"""
+        # Validar extensión (adicional a FileExtensionValidator)
+        import os
+        extension = os.path.splitext(value.name)[1][1:].lower()
+
+        if extension not in TIntervencionAdjunto.EXTENSIONES_PERMITIDAS:
+            raise serializers.ValidationError(
+                f"Solo se permiten archivos: {', '.join(TIntervencionAdjunto.EXTENSIONES_PERMITIDAS)}"
+            )
+
+        # Validar tamaño (adicional a validate_file_size)
+        max_size_mb = 10
+        if value.size > max_size_mb * 1024 * 1024:
+            raise serializers.ValidationError(
+                f"El tamaño máximo permitido es {max_size_mb}MB. "
+                f"El archivo tiene {value.size / (1024 * 1024):.2f}MB"
+            )
+
+        return value
+```
+
+---
+
+### Actualizar TIntervencionMedidaSerializer
+
+**Ubicación:** `runna/api/serializers/TIntervencionMedidaSerializer.py`
+
+Agregar campo de adjuntos:
+
+```python
+class TIntervencionMedidaSerializer(serializers.ModelSerializer):
+    # ... campos existentes ...
+
+    # Agregar nested serializer para adjuntos
+    adjuntos = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = TIntervencionMedida
+        fields = [
+            # ... campos existentes ...
+            'adjuntos',  # Agregar al final
+        ]
+
+    def get_adjuntos(self, obj):
+        """Retornar adjuntos de la intervención"""
+        adjuntos = obj.adjuntos.all()
+        return TIntervencionAdjuntoSerializer(adjuntos, many=True).data
+```
+
+---
+
+## ViewSet Actions
+
+### Agregar Actions en TIntervencionMedidaViewSet
+
+**Ubicación:** `runna/api/views/TIntervencionMedidaView.py`
+
+```python
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+
+from infrastructure.models import TIntervencionAdjunto
+from api.serializers import TIntervencionAdjuntoSerializer
+
+
+class TIntervencionMedidaViewSet(BaseViewSet):
+    # ... código existente ...
+
+    @action(detail=True, methods=['post'], url_path='adjuntos',
+            parser_classes=[MultiPartParser, FormParser])
+    def subir_adjunto(self, request, medida_pk=None, pk=None):
+        """
+        POST /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/
+
+        Subir adjunto a la intervención
+
+        Validaciones:
+        - Usuario tiene permisos para editar intervención
+        - Archivo cumple con extensión y tamaño permitidos
+        """
+        intervencion = self.get_object()
+
+        # Verificar permisos
+        if not intervencion.puede_editar(request.user):
+            return Response(
+                {
+                    'error': 'PERMISO_DENEGADO',
+                    'detalle': 'No tiene permisos para agregar adjuntos a esta intervención'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Validar que se envió archivo
+        if 'archivo' not in request.FILES:
+            return Response(
+                {
+                    'error': 'ARCHIVO_REQUERIDO',
+                    'detalle': 'Debe enviar un archivo en el campo "archivo"'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Crear adjunto
+        data = request.data.copy()
+        data['intervencion'] = intervencion.id
+
+        serializer = TIntervencionAdjuntoSerializer(data=data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError as e:
+            # Manejar errores de validación personalizados
+            if 'archivo' in e.detail:
+                error_msg = str(e.detail['archivo'][0])
+                if 'extensión' in error_msg.lower() or 'extension' in error_msg.lower():
+                    return Response(
+                        {
+                            'error': 'EXTENSION_INVALIDA',
+                            'detalle': error_msg,
+                            'extensiones_permitidas': TIntervencionAdjunto.EXTENSIONES_PERMITIDAS
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                elif 'tamaño' in error_msg.lower() or 'tamaño' in error_msg.lower():
+                    return Response(
+                        {
+                            'error': 'ARCHIVO_MUY_GRANDE',
+                            'detalle': error_msg,
+                            'tamaño_maximo_mb': 10
+                        },
+                        status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                    )
+            raise
+
+        # Guardar con usuario
+        adjunto = serializer.save(subido_por=request.user)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], url_path='adjuntos')
+    def listar_adjuntos(self, request, medida_pk=None, pk=None):
+        """
+        GET /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/
+
+        Listar adjuntos de una intervención
+
+        Query params opcionales:
+        - tipo: filtrar por tipo (MODELO, ACTA, RESPALDO, INFORME)
+        """
+        intervencion = self.get_object()
+        adjuntos = intervencion.adjuntos.all()
+
+        # Filtro opcional por tipo
+        tipo = request.query_params.get('tipo')
+        if tipo:
+            adjuntos = adjuntos.filter(tipo=tipo)
+
+        serializer = TIntervencionAdjuntoSerializer(adjuntos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], url_path='adjuntos/(?P<adjunto_id>[^/.]+)')
+    def eliminar_adjunto(self, request, medida_pk=None, pk=None, adjunto_id=None):
+        """
+        DELETE /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/{adjunto_id}/
+
+        Eliminar adjunto de la intervención
+
+        Validaciones:
+        - Usuario tiene permisos para editar intervención
+        - Adjunto pertenece a esta intervención
+        """
+        intervencion = self.get_object()
+
+        # Verificar permisos
+        if not intervencion.puede_editar(request.user):
+            return Response(
+                {
+                    'error': 'PERMISO_DENEGADO',
+                    'detalle': 'No tiene permisos para eliminar adjuntos de esta intervención'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Obtener adjunto
+        adjunto = get_object_or_404(
+            TIntervencionAdjunto,
+            id=adjunto_id,
+            intervencion=intervencion
+        )
+
+        # Eliminar archivo físico
+        if adjunto.archivo:
+            adjunto.archivo.delete(save=False)
+
+        # Eliminar registro
+        adjunto.delete()
+
+        return Response(
+            {'mensaje': 'Adjunto eliminado exitosamente'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+```
+
+---
+
+## Endpoints
+
+### POST /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/
+
+**Request:** Multipart form-data
+
+```
+tipo: ACTA
+archivo: (file upload)
+descripcion: "Acta de intervención domiciliaria" (opcional)
+```
+
+**Response 201 CREATED:**
+```json
+{
+  "id": 1,
+  "intervencion": 1,
+  "tipo": "ACTA",
+  "tipo_display": "Acta",
+  "archivo": "/media/intervenciones/2025/01/acta_intervencion.pdf",
+  "nombre_original": "acta_intervencion.pdf",
+  "tamaño_bytes": 245678,
+  "tamaño_mb": 0.23,
+  "extension": "pdf",
+  "descripcion": "Acta de intervención domiciliaria",
+  "url_descarga": "/media/intervenciones/2025/01/acta_intervencion.pdf",
+  "subido_por_detalle": {
+    "id": 5,
+    "nombre_completo": "María González",
+    "username": "mgonzalez"
+  },
+  "fecha_subida": "2025-01-20T11:00:00Z"
+}
+```
+
+**Response 400 BAD REQUEST** (extensión inválida):
+```json
+{
+  "error": "EXTENSION_INVALIDA",
+  "detalle": "Solo se permiten archivos: pdf, doc, docx, jpg, jpeg, png",
+  "extensiones_permitidas": ["pdf", "doc", "docx", "jpg", "jpeg", "png"]
+}
+```
+
+**Response 413 PAYLOAD TOO LARGE** (archivo muy grande):
+```json
+{
+  "error": "ARCHIVO_MUY_GRANDE",
+  "detalle": "El tamaño máximo permitido es 10MB. El archivo tiene 15.23MB",
+  "tamaño_maximo_mb": 10
+}
+```
+
+---
+
+### GET /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/
+
+**Query Params:**
+- `tipo` (opcional): MODELO, ACTA, RESPALDO, INFORME
+
+**Response 200 OK:**
+```json
+[
+  {
+    "id": 1,
+    "tipo": "ACTA",
+    "tipo_display": "Acta",
+    "nombre_original": "acta_intervencion.pdf",
+    "tamaño_mb": 0.23,
+    "url_descarga": "/media/intervenciones/2025/01/acta_intervencion.pdf",
+    "fecha_subida": "2025-01-20T11:00:00Z"
+  },
+  {
+    "id": 2,
+    "tipo": "RESPALDO",
+    "tipo_display": "Documentación Respaldatoria",
+    "nombre_original": "informe_escolar.pdf",
+    "tamaño_mb": 0.45,
+    "url_descarga": "/media/intervenciones/2025/01/informe_escolar.pdf",
+    "fecha_subida": "2025-01-20T11:15:00Z"
+  }
+]
+```
+
+**Filtrado por tipo:**
+```
+GET /api/medidas/1/intervenciones/1/adjuntos/?tipo=ACTA
+```
+
+---
+
+### DELETE /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/{adjunto_id}/
+
+**Response 204 NO CONTENT:**
+```json
+{
+  "mensaje": "Adjunto eliminado exitosamente"
+}
+```
+
+**Response 403 FORBIDDEN:**
+```json
+{
+  "error": "PERMISO_DENEGADO",
+  "detalle": "No tiene permisos para eliminar adjuntos de esta intervención"
+}
+```
+
+---
+
+## Tests Requeridos (5-6 tests)
+
+### Test Suite: Adjuntos
+
+**Archivo:** `runna/tests/test_intervencion_med02c_adjuntos.py`
+
+```python
+from django.test import TestCase
+from rest_framework.test import APIClient
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from infrastructure.models import (
+    TMedida, TIntervencionMedida, TIntervencionAdjunto
+)
+
+CustomUser = get_user_model()
+
+
+class IntervencionAdjuntosTestCase(TestCase):
+    """Tests de adjuntos y validaciones (MED-02c)"""
+
+    def setUp(self):
+        """Configurar datos de prueba"""
+        self.admin = CustomUser.objects.create_superuser(...)
+        self.et_user = CustomUser.objects.create_user(nivel_usuario='EQUIPOTECNICO', ...)
+
+        # Crear medida e intervención
+        self.medida = TMedida.objects.create(...)
+        self.intervencion = TIntervencionMedida.objects.create(
+            medida=self.medida,
+            estado='BORRADOR',
+            registrado_por=self.et_user,
+            ...
+        )
+
+        self.client = APIClient()
+
+    def test_subir_adjunto_pdf_exitoso(self):
+        """Se puede subir archivo PDF válido"""
+        self.client.force_authenticate(user=self.et_user)
+
+        # Crear archivo PDF mock
+        archivo = SimpleUploadedFile(
+            "acta_intervencion.pdf",
+            b"contenido del pdf",
+            content_type="application/pdf"
+        )
+
+        response = self.client.post(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/adjuntos/',
+            data={
+                'tipo': 'ACTA',
+                'archivo': archivo,
+                'descripcion': 'Acta de intervención'
+            },
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+
+        # Verificar respuesta
+        self.assertEqual(data['tipo'], 'ACTA')
+        self.assertEqual(data['nombre_original'], 'acta_intervencion.pdf')
+        self.assertEqual(data['extension'], 'pdf')
+        self.assertIn('url_descarga', data)
+
+        # Verificar en base de datos
+        adjunto = TIntervencionAdjunto.objects.first()
+        self.assertIsNotNone(adjunto)
+        self.assertEqual(adjunto.intervencion, self.intervencion)
+        self.assertEqual(adjunto.subido_por, self.et_user)
+
+    def test_validar_extension_invalida(self):
+        """Archivos con extensión no permitida son rechazados"""
+        self.client.force_authenticate(user=self.admin)
+
+        # Intentar subir archivo .exe
+        archivo = SimpleUploadedFile(
+            "malware.exe",
+            b"contenido ejecutable",
+            content_type="application/octet-stream"
+        )
+
+        response = self.client.post(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/adjuntos/',
+            data={
+                'tipo': 'RESPALDO',
+                'archivo': archivo
+            },
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('EXTENSION_INVALIDA', response.json()['error'])
+        self.assertIn('extensiones_permitidas', response.json())
+
+    def test_validar_tamaño_archivo_excedido(self):
+        """Archivos mayores a 10MB son rechazados"""
+        self.client.force_authenticate(user=self.admin)
+
+        # Crear archivo de 11MB (mock)
+        tamaño_11mb = 11 * 1024 * 1024
+        archivo = SimpleUploadedFile(
+            "archivo_grande.pdf",
+            b"x" * tamaño_11mb,
+            content_type="application/pdf"
+        )
+
+        response = self.client.post(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/adjuntos/',
+            data={
+                'tipo': 'INFORME',
+                'archivo': archivo
+            },
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, 413)
+        self.assertIn('ARCHIVO_MUY_GRANDE', response.json()['error'])
+
+    def test_listar_adjuntos_por_tipo(self):
+        """Adjuntos se pueden filtrar por tipo"""
+        self.client.force_authenticate(user=self.admin)
+
+        # Crear 3 adjuntos de diferentes tipos
+        TIntervencionAdjunto.objects.create(
+            intervencion=self.intervencion,
+            tipo='ACTA',
+            archivo='test.pdf',
+            nombre_original='acta.pdf',
+            tamaño_bytes=1000,
+            extension='pdf'
+        )
+        TIntervencionAdjunto.objects.create(
+            intervencion=self.intervencion,
+            tipo='ACTA',
+            archivo='test2.pdf',
+            nombre_original='acta2.pdf',
+            tamaño_bytes=2000,
+            extension='pdf'
+        )
+        TIntervencionAdjunto.objects.create(
+            intervencion=self.intervencion,
+            tipo='RESPALDO',
+            archivo='test3.pdf',
+            nombre_original='respaldo.pdf',
+            tamaño_bytes=3000,
+            extension='pdf'
+        )
+
+        # Filtrar solo ACTAs
+        response = self.client.get(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/adjuntos/?tipo=ACTA'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Verificar solo 2 ACTAs
+        self.assertEqual(len(data), 2)
+        self.assertTrue(all(adj['tipo'] == 'ACTA' for adj in data))
+
+    def test_eliminar_adjunto_exitoso(self):
+        """Usuario con permisos puede eliminar adjunto"""
+        self.client.force_authenticate(user=self.et_user)
+
+        # Crear adjunto
+        adjunto = TIntervencionAdjunto.objects.create(
+            intervencion=self.intervencion,
+            tipo='RESPALDO',
+            archivo='test.pdf',
+            nombre_original='test.pdf',
+            tamaño_bytes=1000,
+            extension='pdf'
+        )
+
+        response = self.client.delete(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/adjuntos/{adjunto.id}/'
+        )
+
+        self.assertEqual(response.status_code, 204)
+
+        # Verificar eliminación
+        self.assertFalse(TIntervencionAdjunto.objects.filter(id=adjunto.id).exists())
+
+    def test_adjuntos_conservan_version_al_editar(self):
+        """Adjuntos no se eliminan al editar intervención"""
+        self.client.force_authenticate(user=self.et_user)
+
+        # Crear adjunto
+        adjunto = TIntervencionAdjunto.objects.create(
+            intervencion=self.intervencion,
+            tipo='ACTA',
+            archivo='acta_v1.pdf',
+            nombre_original='acta_v1.pdf',
+            tamaño_bytes=1000,
+            extension='pdf'
+        )
+
+        # Editar intervención
+        response = self.client.patch(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/',
+            data={'intervencion_especifica': 'Descripción actualizada'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verificar adjunto sigue presente
+        self.assertTrue(TIntervencionAdjunto.objects.filter(id=adjunto.id).exists())
+
+        # Verificar adjunto aparece en GET
+        response = self.client.get(
+            f'/api/medidas/{self.medida.id}/intervenciones/{self.intervencion.id}/'
+        )
+        data = response.json()
+        self.assertIn('adjuntos', data)
+        self.assertEqual(len(data['adjuntos']), 1)
+```
+
+---
+
+## Criterios de Aceptación (MED-02c)
+
+### CA-2: Validaciones de Campos ✅
+
+- ✅ Validación en tiempo real de archivos (extensión, peso máximo 10MB)
+- ✅ Archivos solo permiten: PDF, DOC, DOCX, JPG, PNG
+
+### CA-10: Auditoría y Trazabilidad ✅
+
+- ✅ Sistema registra quién subió cada adjunto
+- ✅ Sistema registra fecha/hora de subida
+- ✅ Adjuntos conservan versión por cada guardado (no se eliminan al editar)
+
+---
+
+## Configuración de Media Files
+
+### settings.py
+
+Asegurar configuración de media files:
+
+```python
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+```
+
+### urls.py (development)
+
+Agregar serving de media files en desarrollo:
+
+```python
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    # ... rutas existentes ...
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+---
+
+## Actualizar __init__.py
+
+### infrastructure/models/__init__.py
+
+Agregar export de modelo:
+
+```python
+from .medida.TIntervencionAdjunto import TIntervencionAdjunto
+```
+
+### api/serializers/__init__.py
+
+Agregar export de serializer:
+
+```python
+from .TIntervencionAdjuntoSerializer import TIntervencionAdjuntoSerializer
+```
+
+---
+
+## Próximos Pasos
+
+Una vez completadas MED-02a, MED-02b y MED-02c:
+
+1. **MED-03**: Redacción de Nota de Aval por Director (Estado 3 → Estado 4)
+2. **MED-04**: Carga de Informe Jurídico por Legales (Estado 4 → Estado 5)
+3. **MED-05**: Ratificación Judicial (Estado 5 → Cierre)
+4. **PLTM-01**: Implementación completa de Plan de Trabajo
+5. **Integración LEG-04**: Mostrar intervenciones en detalle de legajo
+
+---
+
+## Actualizar Management Commands
+
+### setup_project.py
+
+Agregar migración 0042:
+```python
+call_command('migrate', '0042_crear_modelo_adjunto')
+```
+
+---
+
+**Fin de MED-02c: Adjuntos y Validaciones Avanzadas**

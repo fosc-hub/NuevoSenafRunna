@@ -1,4 +1,5 @@
 import ExcelExportService from "../../mesadeentrada/ui/excel-export-service"
+import type { IndicadoresLegajo, OficioConSemaforo } from "../types/legajo-api"
 
 /**
  * Format text with underscores for display
@@ -16,9 +17,70 @@ export const formatUnderscoreText = (text: any): string => {
 }
 
 /**
- * Export legajos data to Excel
+ * Format oficios with semaphore status for Excel
  */
-export const exportDemandasToExcel = (rows: any[]) => {
+const formatOficios = (oficios: OficioConSemaforo[]): string => {
+  if (!oficios || oficios.length === 0) return "Sin oficios"
+
+  // Group by type and get most critical semaphore
+  const oficiosPorTipo: { [key: string]: { count: number; semaforo: string } } = {}
+
+  oficios.forEach(oficio => {
+    if (!oficiosPorTipo[oficio.tipo]) {
+      oficiosPorTipo[oficio.tipo] = { count: 0, semaforo: oficio.semaforo }
+    }
+    oficiosPorTipo[oficio.tipo].count++
+
+    // Update to most critical semaphore (rojo > amarillo > verde)
+    if (oficio.semaforo === "rojo") {
+      oficiosPorTipo[oficio.tipo].semaforo = "rojo"
+    } else if (oficio.semaforo === "amarillo" && oficiosPorTipo[oficio.tipo].semaforo !== "rojo") {
+      oficiosPorTipo[oficio.tipo].semaforo = "amarillo"
+    }
+  })
+
+  return Object.entries(oficiosPorTipo)
+    .map(([tipo, data]) => `${tipo}: ${data.count} (${data.semaforo.toUpperCase()})`)
+    .join("; ")
+}
+
+/**
+ * Format medidas activas for Excel
+ */
+const formatMedidasActivas = (medidas: any[]): string => {
+  if (!medidas || medidas.length === 0) return "Sin medidas"
+
+  return medidas
+    .map(medida => `${medida.tipo_medida || "N/A"} - ${medida.estado || "N/A"}`)
+    .join("; ")
+}
+
+/**
+ * Format plan de trabajo activities for Excel
+ */
+const formatPlanTrabajo = (actividades: any): string => {
+  if (!actividades) return "Sin PT"
+
+  const { pendientes, en_progreso, vencidas, realizadas } = actividades
+  const total = pendientes + en_progreso + vencidas + realizadas
+
+  if (total === 0) return "Sin PT"
+
+  return `Total: ${total} (Pend: ${pendientes}, Progr: ${en_progreso}, Venc: ${vencidas}, Real: ${realizadas})`
+}
+
+/**
+ * Format alertas for Excel
+ */
+const formatAlertas = (alertas: string[]): string => {
+  if (!alertas || alertas.length === 0) return "Sin alertas"
+  return alertas.join("; ")
+}
+
+/**
+ * Export legajos data to Excel with indicators
+ */
+export const exportLegajosToExcel = (rows: any[]) => {
   // Define field mappings (raw field name -> display name)
   const fieldMappings = {
     id: "ID",
@@ -26,14 +88,23 @@ export const exportDemandasToExcel = (rows: any[]) => {
     nombre: "Nombre",
     dni: "DNI",
     prioridad: "Prioridad",
+    urgencia: "Urgencia",
     ultimaActualizacion: "Última Actualización",
     localidad: "Localidad",
+    zona: "Zona",
     zonaEquipo: "Zona/Equipo",
     estado_legajo: "Estado",
     tipo_legajo: "Tipo",
     profesional_asignado: "Profesional",
     fecha_apertura: "Fecha Apertura",
     adjuntos: "Cantidad de Adjuntos",
+    // Indicator fields
+    demanda_pi_count: "Cantidad Demandas PI",
+    oficios_resumen: "Oficios (Resumen)",
+    medidas_activas_resumen: "Medidas Activas",
+    medida_andarivel: "Andarivel de Medidas",
+    plan_trabajo_resumen: "Plan de Trabajo",
+    alertas_resumen: "Alertas",
   }
 
   // Define formatters for specific fields
@@ -41,7 +112,15 @@ export const exportDemandasToExcel = (rows: any[]) => {
     estado_legajo: (value: string) => formatUnderscoreText(value),
     tipo_legajo: (value: string) => formatUnderscoreText(value),
     prioridad: (value: string) => formatUnderscoreText(value),
+    urgencia: (value: string) => formatUnderscoreText(value),
     adjuntos: (value: any[]) => (Array.isArray(value) ? value.length : 0),
+    // Indicator formatters
+    demanda_pi_count: (value: any, row: any) => row.indicadores?.demanda_pi_count || 0,
+    oficios_resumen: (value: any, row: any) => formatOficios(row.oficios || []),
+    medidas_activas_resumen: (value: any, row: any) => formatMedidasActivas(row.medidas_activas || []),
+    medida_andarivel: (value: any, row: any) => row.indicadores?.medida_andarivel || "Sin medidas",
+    plan_trabajo_resumen: (value: any, row: any) => formatPlanTrabajo(row.indicadores?.pt_actividades),
+    alertas_resumen: (value: any, row: any) => formatAlertas(row.indicadores?.alertas || []),
   }
 
   // Format the data for export
@@ -54,3 +133,8 @@ export const exportDemandasToExcel = (rows: any[]) => {
     sheetName: "Legajos",
   })
 }
+
+/**
+ * @deprecated Use exportLegajosToExcel instead
+ */
+export const exportDemandasToExcel = exportLegajosToExcel

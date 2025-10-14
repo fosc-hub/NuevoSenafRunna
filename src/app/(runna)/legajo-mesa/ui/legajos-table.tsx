@@ -27,7 +27,7 @@ import {
 import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRounded } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
-import AsignarModal from "../../../../components/asignarModal"
+import AsignarLegajoModal from "../components/asignar-legajo-modal"
 import { fetchLegajos, updateLegajoPrioridad } from "../api/legajos-api-service"
 import type { LegajoApiResponse, PaginatedLegajosResponse } from "../types/legajo-api"
 import LegajoButtons from "./legajos-buttons"
@@ -736,10 +736,11 @@ const LegajoTable: React.FC = () => {
           )}
         </Box>
       </Modal>
-      <AsignarModal
+      <AsignarLegajoModal
         open={isAsignarModalOpen}
         onClose={handleCloseAsignarModal}
-        demandaId={selectedLegajoIdForAssignment}
+        legajoId={selectedLegajoIdForAssignment}
+        onAsignacionComplete={() => loadLegajos()}
       />
     </>
   )

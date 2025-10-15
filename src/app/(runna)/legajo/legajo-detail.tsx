@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import type React from "react"
 
-import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab, Menu, MenuItem, ListItemIcon, ListItemText, Divider, AlertTitle, Skeleton } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import ArticleIcon from "@mui/icons-material/Article"
 import AddIcon from "@mui/icons-material/Add"
@@ -10,18 +10,27 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 import SecurityIcon from "@mui/icons-material/Security"
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom"
 import GavelIcon from "@mui/icons-material/Gavel"
+import RefreshIcon from "@mui/icons-material/Refresh"
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { useRouter } from "next/navigation"
-import { fetchLegajoDetail } from "../legajo-mesa/api/legajos-api-service"
-import type { LegajoDetailResponse } from "../legajo-mesa/types/legajo-api"
-import { Intervencion, Legajo } from "./[id]/medida/[medidaId]/types/legajo"
+import { fetchLegajoDetail, updateLegajoDatosPersonales } from "../legajo-mesa/api/legajos-api-service"
+import type { LegajoDetailResponse, PersonaDetailData } from "../legajo-mesa/types/legajo-api"
 import { AddIntervencionDialog, NewIntervencion } from "./[id]/medida/[medidaId]/components/dialogs/add-intervencion-dialog"
 import { AttachmentDialog } from "./[id]/medida/[medidaId]/components/dialogs/attachement-dialog"
+import { EditDatosPersonalesDialog } from "./[id]/medida/[medidaId]/components/dialogs/edit-datos-personales-dialog"
 import { DatosPersonalesSection } from "./[id]/medida/[medidaId]/components/legajo/datos-personales-section"
-import { HistorialMedidasSection } from "./[id]/medida/[medidaId]/components/legajo/historial-medidas-section"
-import { IntervencionesSection } from "./[id]/medida/[medidaId]/components/legajo/intervenciones-section"
 import { LegajoHeader } from "./[id]/medida/[medidaId]/components/legajo/legajo-header"
-import { MedidaActivaCard } from "./[id]/medida/[medidaId]/components/legajo/medida-activa-card"
 import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[id]/medida/[medidaId]/components/navigation-breadcrumbs"
+// New components
+import { LocalizacionSection } from "./[id]/medida/[medidaId]/components/legajo/localizacion-section"
+import { AsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/asignaciones-section"
+import { OficiosSection } from "./[id]/medida/[medidaId]/components/legajo/oficios-section"
+import { DemandasSection } from "./[id]/medida/[medidaId]/components/legajo/demandas-section"
+import { DocumentosSection } from "./[id]/medida/[medidaId]/components/legajo/documentos-section"
+import { ResponsablesSection } from "./[id]/medida/[medidaId]/components/legajo/responsables-section"
+import { HistorialCambiosSection } from "./[id]/medida/[medidaId]/components/legajo/historial-cambios-section"
+import { PlanTrabajoSection } from "./[id]/medida/[medidaId]/components/legajo/plan-trabajo-section"
+import { HistorialAsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/historial-asignaciones-section"
 
 // Importar tipos
 
@@ -34,169 +43,57 @@ interface LegajoDetailProps {
 }
 
 export default function LegajoDetail({ params, onClose, isFullPage = false }: LegajoDetailProps) {
-  const [legajoData, setLegajoData] = useState<Legajo | null>(null)
+  const [legajoData, setLegajoData] = useState<LegajoDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(0)
   const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState("")
   const [openAddIntervencionDialog, setOpenAddIntervencionDialog] = useState(false)
+  const [openEditDatosDialog, setOpenEditDatosDialog] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const openMedidaMenu = Boolean(anchorEl)
 
   const router = useRouter()
 
-  useEffect(() => {
-    const loadLegajoData = async () => {
-      if (params.id) {
-        try {
-          setIsLoading(true)
-          setError(null)
+  const loadLegajoData = async () => {
+    if (params.id) {
+      try {
+        setIsLoading(true)
+        setError(null)
 
-          // Call the real API to fetch legajo detail
-          const response = await fetchLegajoDetail(Number(params.id), {
-            include_history: false, // Set to true if you want to include history
-          })
+        // Call the real API to fetch legajo detail
+        const response = await fetchLegajoDetail(Number(params.id), {
+          include_history: false, // Set to true if you want to include history
+        })
 
-          console.log("Raw API Response:", response)
+        console.log("Legajo Detail API Response:", response)
 
-          // Transform API response to match the Legajo interface
-          // Helper function to safely convert any value to string
-          const safeToString = (value: any, defaultValue: string = "N/A"): string => {
-            if (value === null || value === undefined) return defaultValue
-            if (typeof value === 'string') return value
-            if (typeof value === 'number') return String(value)
-            if (typeof value === 'object') {
-              console.warn("Attempted to render object as string:", value)
-              return defaultValue
-            }
-            return String(value)
+        // Use the response directly without transformation
+        setLegajoData(response)
+      } catch (err) {
+        console.error("Error loading legajo data:", err)
+        // Provide more detailed error messages
+        if (err instanceof Error) {
+          if (err.message.includes("404")) {
+            setError("No se encontró el legajo solicitado.")
+          } else if (err.message.includes("403")) {
+            setError("No tienes permisos para ver este legajo.")
+          } else if (err.message.includes("Network") || err.message.includes("fetch")) {
+            setError("Error de conexión. Verifica tu conexión a internet e intenta nuevamente.")
+          } else {
+            setError(`Error al cargar los datos: ${err.message}`)
           }
-
-          // Extract localizacion information
-          let ubicacionStr = "N/A"
-          let localidadNombre = "N/A"
-
-          if (response.localizacion_actual?.localizacion) {
-            const loc = response.localizacion_actual.localizacion
-            // Build address string
-            const addressParts: string[] = []
-            if (loc.tipo_calle && loc.calle) {
-              addressParts.push(`${loc.tipo_calle} ${loc.calle}`)
-            }
-            if (loc.casa_nro) {
-              addressParts.push(`N° ${loc.casa_nro}`)
-            }
-            if (loc.piso_depto) {
-              addressParts.push(`Piso ${loc.piso_depto}`)
-            }
-            if (loc.barrio_nombre) {
-              addressParts.push(loc.barrio_nombre)
-            }
-
-            ubicacionStr = addressParts.length > 0 ? addressParts.join(", ") : "N/A"
-            localidadNombre = loc.localidad_nombre || "N/A"
-          }
-
-          // Extract equipo interviniente from asignaciones_activas
-          let equipoInterviniente = "N/A"
-          let zonaAsignada = "N/A"
-          if (response.asignaciones_activas && response.asignaciones_activas.length > 0) {
-            const asignacion = response.asignaciones_activas[0]
-            equipoInterviniente = asignacion.user_responsable?.nombre_completo || "N/A"
-            zonaAsignada = asignacion.zona?.nombre || "N/A"
-          }
-
-          // Get prioridad from legajo
-          const prioridad = (response.legajo?.urgencia as "ALTA" | "MEDIA" | "BAJA") || "MEDIA"
-
-          // Process medidas_activas
-          const medidasActivas = Array.isArray(response.medidas_activas) ? response.medidas_activas : []
-          const historialMedidas = Array.isArray(response.historial_medidas) ? response.historial_medidas : []
-
-          // Create medida_activa object from first active medida if available
-          let medidaActiva = {
-            tipo: "MPI" as const,
-            estado: "ACTIVA" as const,
-            fecha_apertura: response.legajo?.fecha_apertura || new Date().toISOString(),
-            grupo_actuante: equipoInterviniente,
-            juzgado: "N/A",
-            nro_sac: "N/A",
-            respuesta_enviada: false,
-          }
-
-          if (medidasActivas.length > 0) {
-            const primeraMediada = medidasActivas[0]
-            medidaActiva = {
-              ...medidaActiva,
-              fecha_apertura: primeraMediada.fecha_apertura || medidaActiva.fecha_apertura,
-              estado: (primeraMediada.estado as "ACTIVA") || "ACTIVA",
-              tipo: (primeraMediada.tipo_medida as "MPI" | "MPE" | "MPJ") || "MPI",
-            }
-          }
-
-          // Format fecha_apertura for display
-          let fechaAperturaFormatted = new Date().toISOString()
-          try {
-            if (response.legajo?.fecha_apertura) {
-              const date = new Date(response.legajo.fecha_apertura)
-              if (!isNaN(date.getTime())) {
-                fechaAperturaFormatted = date.toLocaleDateString("es-AR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })
-              }
-            }
-          } catch (error) {
-            console.error("Error formatting fecha_apertura:", error)
-          }
-
-          const transformedData: Legajo = {
-            id: params.id,
-            numero_legajo: response.legajo?.numero || `L-${params.id}`,
-            fecha_apertura: fechaAperturaFormatted,
-            persona_principal: {
-              nombre: response.persona?.nombre || "N/A",
-              apellido: response.persona?.apellido || "N/A",
-              dni: response.persona?.dni ? String(response.persona.dni) : "N/A",
-              edad: response.persona?.edad_aproximada ||
-                    (response.persona?.edad_calculada ? Number(response.persona.edad_calculada) : 0),
-              alias: response.persona?.nombre_autopercibido || undefined,
-              telefono: response.persona?.telefono ? String(response.persona.telefono) : undefined,
-            },
-            ubicacion: ubicacionStr,
-            localidad: { nombre: localidadNombre },
-            equipo_interviniente: equipoInterviniente,
-            prioridad: prioridad,
-            medida_activa: medidaActiva,
-            situaciones_criticas: {
-              BP: false,
-              RSA: false,
-              DCS: false,
-              SCP: false,
-            },
-            intervenciones: [], // TODO: Parse from historial_cambios or other source
-            historial_medidas: {
-              MPI: historialMedidas.filter(m => m.tipo_medida === "MPI"),
-              MPE: historialMedidas.filter(m => m.tipo_medida === "MPE"),
-              MPJ: historialMedidas.filter(m => m.tipo_medida === "MPJ"),
-            },
-          }
-
-          console.log("Transformed legajo data:", transformedData)
-
-
-          setLegajoData(transformedData)
-        } catch (err) {
-          console.error("Error loading legajo data:", err)
+        } else {
           setError("Error al cargar los datos del legajo. Por favor, intente nuevamente.")
-        } finally {
-          setIsLoading(false)
         }
+      } finally {
+        setIsLoading(false)
       }
     }
+  }
 
+  useEffect(() => {
     loadLegajoData()
   }, [params.id])
 
@@ -237,11 +134,11 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   }
 
   const handleViewMoreInterventions = () => {
-    setActiveTab(2) // Switch to the Intervenciones tab
+    setActiveTab(0) // Switch to General tab (includes datos personales)
   }
 
   const handleViewAllPersonalData = () => {
-    setActiveTab(3) // Switch to the Datos Personales tab
+    setActiveTab(0) // Switch to General tab (includes datos personales)
   }
 
   const handleOpenAttachment = (fileName: string) => {
@@ -259,49 +156,33 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
     setOpenAddIntervencionDialog(true)
   }
 
-  const handleSaveIntervencion = (intervencion: NewIntervencion) => {
-    if (!legajoData) return
-
-    const now = new Date()
-    const formattedDate = now
-      .toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
-      .toUpperCase()
-    const formattedTime = now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }).toLowerCase()
-
-    let descripcion = intervencion.descripcion
-    if (intervencion.archivo) {
-      descripcion += ` Se adjunta ${intervencion.archivo.name}`
-    }
-
-    const newIntervencion: Intervencion = {
-      fecha: formattedDate,
-      descripcion: descripcion,
-      hora: formattedTime,
-    }
-
-    const updatedLegajoData = { ...legajoData }
-    updatedLegajoData.intervenciones = [newIntervencion, ...updatedLegajoData.intervenciones]
-    setLegajoData(updatedLegajoData)
+  const handleSaveIntervencion = (_intervencion: NewIntervencion) => {
+    // TODO: Implement intervencion saving via API
+    console.log("Save intervencion - to be implemented with API call")
     setOpenAddIntervencionDialog(false)
   }
-  const handleSituacionCriticaChange = (key: string, checked: boolean) => {
-    if (!legajoData) return
 
-    const updatedLegajoData = { ...legajoData }
-    updatedLegajoData.situaciones_criticas = {
-      ...updatedLegajoData.situaciones_criticas,
-      [key]: checked,
+  const handleEditDatosPersonales = () => {
+    setOpenEditDatosDialog(true)
+  }
+
+  const handleSaveDatosPersonales = async (updatedPersona: Partial<PersonaDetailData>) => {
+    if (!params.id) return
+
+    try {
+      // Call API to update datos personales
+      await updateLegajoDatosPersonales(Number(params.id), updatedPersona)
+
+      // Reload legajo data to reflect changes
+      await loadLegajoData()
+
+      setOpenEditDatosDialog(false)
+    } catch (error) {
+      console.error("Error saving datos personales:", error)
+      throw error // Let the dialog handle the error display
     }
-    setLegajoData(updatedLegajoData)
   }
 
-  const handleRespuestaEnviadaChange = (checked: boolean) => {
-    if (!legajoData) return
-
-    const updatedLegajoData = { ...legajoData }
-    updatedLegajoData.medida_activa.respuesta_enviada = checked
-    setLegajoData(updatedLegajoData)
-  }
   if (isLoading) {
     return (
       <Box
@@ -323,9 +204,25 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        {error}
-      </Alert>
+      <Box sx={{ m: 2 }}>
+        <Alert
+          severity="error"
+          icon={<ErrorOutlineIcon />}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={loadLegajoData}
+            >
+              Reintentar
+            </Button>
+          }
+        >
+          <AlertTitle>Error al cargar el legajo</AlertTitle>
+          {error}
+        </Alert>
+      </Box>
     )
   }
 
@@ -401,145 +298,58 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
               },
             }}
           >
-            <Tab label="Medidas Activas" />
-            <Tab label="Historial de Medidas" />
-            <Tab label="Intervenciones" />
-            <Tab label="Datos Personales" />
+            <Tab label="General" />
+            <Tab label="Asignaciones" />
+            <Tab label="Oficios" />
+            <Tab label="Demandas" />
+            <Tab label="Documentos" />
+            {legajoData.permisos_usuario?.puede_ver_historial && <Tab label="Auditoría" />}
           </Tabs>
         </Box>
 
+        {/* TAB 0: General (Datos Personales + Localización + Plan de Trabajo) */}
         {activeTab === 0 && (
           <>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "black" }}>
-                Medida activa (1)
-              </Typography>
-              <>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddIcon />}
-                  endIcon={<ArrowDropDownIcon />}
-                  onClick={handleTomarMedida}
-                  sx={{
-                    borderRadius: "8px",
-                    textTransform: "none",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                    "&:hover": {
-                      boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-                    },
-                  }}
-                >
-                  Tomar Medida
-                </Button>
-
-                <Menu
-                  anchorEl={anchorEl}
-                  open={openMedidaMenu}
-                  onClose={handleCloseMedidaMenu}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                >
-                  <MenuItem onClick={() => handleSelectMedidaType('MPI')}>
-                    <ListItemIcon>
-                      <SecurityIcon fontSize="small" color="primary" />
-                    </ListItemIcon>
-                    <ListItemText>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        Medida de Protección Integral (MPI)
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Protección integral de derechos
-                      </Typography>
-                    </ListItemText>
-                  </MenuItem>
-
-                  <MenuItem onClick={() => handleSelectMedidaType('MPE')}>
-                    <ListItemIcon>
-                      <FamilyRestroomIcon fontSize="small" color="secondary" />
-                    </ListItemIcon>
-                    <ListItemText>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        Medida de Protección Excepcional (MPE)
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Evaluación familiar y competencias parentales
-                      </Typography>
-                    </ListItemText>
-                  </MenuItem>
-
-                  <Divider />
-
-                  <MenuItem onClick={() => handleSelectMedidaType('MPJ')} disabled>
-                    <ListItemIcon>
-                      <GavelIcon fontSize="small" color="disabled" />
-                    </ListItemIcon>
-                    <ListItemText>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.disabled' }}>
-                        Medida de Protección Judicial (MPJ)
-                      </Typography>
-                      <Typography variant="caption" color="text.disabled">
-                        Próximamente disponible
-                      </Typography>
-                    </ListItemText>
-                  </MenuItem>
-                </Menu>
-              </>
-            </Box>
-
-            <MedidaActivaCard
-              legajoId={params.id}
-              medidaActiva={legajoData.medida_activa}
-              situacionesCriticas={legajoData.situaciones_criticas}
-              intervenciones={legajoData.intervenciones.slice(0, 3)}
-              onViewLastReport={handleViewLastReport}
-              onViewMoreInterventions={handleViewMoreInterventions}
-              onSituacionCriticaChange={handleSituacionCriticaChange}
-              onRespuestaEnviadaChange={handleRespuestaEnviadaChange}
-            />
+            <DatosPersonalesSection legajoData={legajoData} onEdit={handleEditDatosPersonales} />
+            <LocalizacionSection legajoData={legajoData} />
+            <PlanTrabajoSection legajoData={legajoData} />
           </>
         )}
 
-        {/* Historial de Medidas Section */}
+        {/* TAB 1: Asignaciones (Asignaciones Activas + Responsables + Historial) */}
         {activeTab === 1 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "black" }}>
-              Historial de Medidas
-            </Typography>
-
-            <HistorialMedidasSection legajoId={params.id} historialMedidas={legajoData.historial_medidas} />
+            <AsignacionesSection legajoData={legajoData} />
+            <ResponsablesSection legajoData={legajoData} />
+            <HistorialAsignacionesSection legajoData={legajoData} />
           </>
         )}
 
-        {/* Intervenciones Section */}
+        {/* TAB 2: Oficios */}
         {activeTab === 2 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "black" }}>
-              Historial de Intervenciones
-            </Typography>
-
-            <IntervencionesSection
-              intervenciones={legajoData.intervenciones}
-              onAddIntervencion={handleAddIntervencion}
-              onViewAttachment={handleOpenAttachment}
-            />
+            <OficiosSection legajoData={legajoData} />
           </>
         )}
 
-        {/* Datos Personales Section */}
+        {/* TAB 3: Demandas */}
         {activeTab === 3 && (
           <>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "black" }}>
-              Datos Personales Completos
-            </Typography>
+            <DemandasSection legajoData={legajoData} />
+          </>
+        )}
 
-            <DatosPersonalesSection legajoData={legajoData} />
+        {/* TAB 4: Documentos */}
+        {activeTab === 4 && (
+          <>
+            <DocumentosSection legajoData={legajoData} />
+          </>
+        )}
+
+        {/* TAB 5: Auditoría (Historial de Cambios) - Solo con permiso */}
+        {activeTab === 5 && legajoData.permisos_usuario?.puede_ver_historial && (
+          <>
+            <HistorialCambiosSection legajoData={legajoData} />
           </>
         )}
       </Box>
@@ -556,6 +366,13 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         open={openAddIntervencionDialog}
         onClose={() => setOpenAddIntervencionDialog(false)}
         onSave={handleSaveIntervencion}
+      />
+
+      <EditDatosPersonalesDialog
+        open={openEditDatosDialog}
+        persona={legajoData?.persona || null}
+        onClose={() => setOpenEditDatosDialog(false)}
+        onSave={handleSaveDatosPersonales}
       />
     </Box>
   )

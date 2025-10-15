@@ -238,3 +238,40 @@ export const updateLegajoPrioridad = async (
     throw error
   }
 }
+
+/**
+ * Update legajo datos personales (PATCH persona data via legajo endpoint)
+ * @param id Legajo ID
+ * @param datosPersonales Partial PersonaDetailData to update
+ * @returns Updated legajo detail
+ */
+export const updateLegajoDatosPersonales = async (
+  id: number,
+  datosPersonales: Record<string, any>
+): Promise<LegajoDetailResponse> => {
+  try {
+    // Import patch from apiService
+    const { patch } = await import("@/app/api/apiService")
+
+    // The backend expects persona data wrapped in "persona" key
+    const payload = {
+      persona: datosPersonales,
+    }
+
+    console.log(`Updating legajo ${id} datos personales:`, payload)
+
+    const response = await patch<LegajoDetailResponse>("/legajos", id, payload)
+
+    console.log("Update response:", response)
+
+    return response
+  } catch (error: any) {
+    console.error(`Error updating legajo ${id} datos personales:`, error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}

@@ -3,38 +3,47 @@
 import type React from "react"
 import { Box, Typography, Grid, Button, Paper, Chip } from "@mui/material"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
-
-interface Persona {
-  nombre: string
-  apellido: string
-  dni: string
-  edad: number
-  alias?: string
-}
-
-interface Profesional {
-  nombre: string
-}
-
-interface Localidad {
-  nombre: string
-}
+import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface LegajoHeaderProps {
-  legajoData: {
-    numero_legajo: string
-    fecha_apertura: string
-    persona_principal: Persona
-    profesional_asignado?: Profesional
-    ubicacion: string
-    localidad: Localidad
-    equipo_interviniente: string
-    prioridad: string
-  }
+  legajoData: LegajoDetailResponse
   onViewAllPersonalData: () => void
 }
 
 export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAllPersonalData }) => {
+  // Extract needed data from the backend response
+  const persona = legajoData.persona
+  const legajo = legajoData.legajo
+  const localizacion = legajoData.localizacion_actual?.localizacion
+  const asignacion = legajoData.asignaciones_activas?.[0]
+
+  // Build address string
+  const buildAddress = () => {
+    if (!localizacion) return "N/A"
+    const addressParts: string[] = []
+    if (localizacion.tipo_calle && localizacion.calle) {
+      addressParts.push(`${localizacion.tipo_calle} ${localizacion.calle}`)
+    }
+    if (localizacion.casa_nro) addressParts.push(`N° ${localizacion.casa_nro}`)
+    if (localizacion.piso_depto) addressParts.push(`Piso ${localizacion.piso_depto}`)
+    if (localizacion.barrio_nombre) addressParts.push(localizacion.barrio_nombre)
+    return addressParts.length > 0 ? addressParts.join(", ") : "N/A"
+  }
+
+  const formatFecha = (fecha: string | undefined) => {
+    if (!fecha) return "N/A"
+    try {
+      const date = new Date(fecha)
+      return date.toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    } catch {
+      return fecha
+    }
+  }
+
   return (
     <Paper
       elevation={2}
@@ -61,20 +70,20 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
           <Grid item xs={12} md={6}>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Legajo número: {legajoData.numero_legajo}
+                Legajo número: {legajo?.numero || "N/A"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Fecha de apertura: {legajoData.fecha_apertura}
+                Fecha de apertura: {formatFecha(legajo?.fecha_apertura)}
               </Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: { xs: "flex-start", md: "flex-end" } }}>
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                DNI: {legajoData.persona_principal.dni}
+                DNI: {persona?.dni || "N/A"}
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Demanda asignada a: {legajoData.profesional_asignado?.nombre || "Sin asignar"}
+                Profesional asignado: {asignacion?.user_responsable?.nombre_completo || "Sin asignar"}
               </Typography>
             </Box>
           </Grid>
@@ -86,20 +95,22 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
                   Nombre:
                 </Typography>
                 <Typography variant="body2">
-                  {`${legajoData.persona_principal.nombre} ${legajoData.persona_principal.apellido}`}
+                  {persona?.nombre} {persona?.apellido}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", mb: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
                   Alias:
                 </Typography>
-                <Typography variant="body2">{legajoData.persona_principal.alias || "N/A"}</Typography>
+                <Typography variant="body2">{persona?.nombre_autopercibido || "N/A"}</Typography>
               </Box>
               <Box sx={{ display: "flex" }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
                   Edad:
                 </Typography>
-                <Typography variant="body2">{legajoData.persona_principal.edad} años</Typography>
+                <Typography variant="body2">
+                  {persona?.edad_aproximada || persona?.edad_calculada || "N/A"} años
+                </Typography>
               </Box>
             </Box>
           </Grid>
@@ -110,19 +121,19 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
                 <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
                   Ubicación:
                 </Typography>
-                <Typography variant="body2">{legajoData.ubicacion}</Typography>
+                <Typography variant="body2">{buildAddress()}</Typography>
               </Box>
               <Box sx={{ display: "flex", mb: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
                   Localidad:
                 </Typography>
-                <Typography variant="body2">{legajoData.localidad.nombre}</Typography>
+                <Typography variant="body2">{localizacion?.localidad_nombre || "N/A"}</Typography>
               </Box>
               <Box sx={{ display: "flex" }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
                   Equipo:
                 </Typography>
-                <Typography variant="body2">{legajoData.equipo_interviniente}</Typography>
+                <Typography variant="body2">{asignacion?.user_responsable?.nombre_completo || "N/A"}</Typography>
               </Box>
             </Box>
           </Grid>
@@ -142,7 +153,7 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
         </Grid>
 
         <Box sx={{ ml: "auto", display: "flex", alignItems: "flex-start" }}>
-          {legajoData.prioridad === "ALTA" && (
+          {legajo?.urgencia === "ALTA" && (
             <Chip
               label="URGENTE"
               color="error"

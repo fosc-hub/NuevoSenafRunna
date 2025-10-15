@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Chip, Box, Tooltip, LinearProgress, Typography, Badge} from "@mui/material"
+import { Chip, Box, Tooltip, LinearProgress, Typography, Badge } from "@mui/material"
 import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
@@ -85,7 +85,7 @@ export const ChipsOficios: React.FC<{ oficios: OficioConSemaforo[] }> = ({ ofici
       case "rojo":
         return <ErrorIcon fontSize="small" />
       default:
-        return null
+        return undefined
     }
   }
 
@@ -129,8 +129,8 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
   }
 
   // Extract the estado string from object if needed
-  const estadoString: AndarielEstado = typeof estado === 'string' 
-    ? estado 
+  const estadoString: AndarielEstado = typeof estado === 'string'
+    ? estado
     : estado.etapa_nombre
 
   const etapas: AndarielEstado[] = ["Intervención", "Aval", "Informe Jurídico", "Ratificación"]
@@ -153,7 +153,7 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
   }
 
   // Build tooltip with additional info if available
-  const tooltipContent = typeof estado === 'object' 
+  const tooltipContent = typeof estado === 'object'
     ? `Etapa: ${estadoString} | Medida: ${estado.numero_medida} | Estado: ${estado.etapa_estado}`
     : `Etapa: ${estadoString}`
 

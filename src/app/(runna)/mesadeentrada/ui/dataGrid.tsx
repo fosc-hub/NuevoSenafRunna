@@ -965,7 +965,7 @@ const DemandaTableContent: React.FC = () => {
         }),
         codigosDemanda: demanda.codigos_demanda || [],
         localidad: demanda.localidad?.nombre || "N/A",
-        cpc: demanda.cpc.nombre || "N/A",
+        cpc: demanda.cpc?.nombre || "N/A",
         zonaEquipo: demanda.demanda_zona?.zona?.nombre || demanda.registrado_por_user_zona?.nombre || "N/A",
         usuario: demanda.registrado_por_user?.username || "N/A",
         areaSenaf: demanda.area_senaf || "N/A",

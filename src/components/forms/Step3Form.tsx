@@ -23,6 +23,13 @@ import type { DropdownData, FormData, NnyaData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
 import NNYACard from "./components/nnya/nnya-card"
+import { useDuplicateDetection } from "./hooks/useDuplicateDetection"
+import DuplicateDetectionModal from "./components/nnya/duplicate-detection-modal"
+import { vincularDemandaALegajo, crearLegajoConDuplicado } from "@/app/(runna)/legajo-mesa/api/legajo-duplicado-api-service"
+import type {
+  VincularDemandaRequest,
+  CrearConDuplicadoRequest,
+} from "@/app/(runna)/legajo-mesa/types/legajo-duplicado-types"
 
 interface Step3FormProps {
   dropdownData: DropdownData
@@ -45,23 +52,62 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
     name: "ninosAdolescentes",
   })
 
-  // Vinculacion state
+  // Vinculacion state (legacy - mantener para compatibilidad)
   const [vinculacionResults, setVinculacionResults] = useState<{
     demanda_ids: number[]
     match_descriptions: string[]
+    legajos?: any[]
   } | null>(null)
   const [openSnackbar, setOpenSnackbar] = useState(false)
 
-  // Use the hook from conexionesApi
+  // Use the hook from conexionesApi (legacy)
   const { buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
   // Memoizar la función handleVinculacionResults para evitar recreaciones innecesarias
-  const handleVinculacionResults = useCallback((results: { demanda_ids: number[]; match_descriptions: string[] }) => {
-    if (results.demanda_ids.length > 0) {
+  const handleVinculacionResults = useCallback((results: { demanda_ids: number[]; match_descriptions: string[]; legajos?: any[] }) => {
+    // Verificar si hay resultados en demanda_ids O en legajos
+    const hasDemandas = results.demanda_ids && results.demanda_ids.length > 0
+    const hasLegajos = results.legajos && results.legajos.length > 0
+
+    if (hasDemandas || hasLegajos) {
+      console.log('Vinculación detectada:', results)
       setVinculacionResults(results)
       setOpenSnackbar(true)
     }
   }, [])
+
+  // Duplicate detection state (LEG-01)
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
+  const [currentNnyaIndex, setCurrentNnyaIndex] = useState<number | null>(null)
+  const [isProcessingDuplicate, setIsProcessingDuplicate] = useState(false)
+
+  // Hook for duplicate detection
+  const {
+    hasDuplicates,
+    duplicatesFound,
+    maxAlertLevel,
+    isSearching,
+    searchDuplicates,
+    clearResults,
+  } = useDuplicateDetection({
+    autoSearch: false, // Manual search triggered by user input
+    debounceMs: 500,
+    onError: (error) => {
+      console.error("[LEG-01] Error en detección de duplicados:", error)
+    },
+  })
+
+  // Debug: Log cuando cambia el estado de duplicados
+  useEffect(() => {
+    if (hasDuplicates) {
+      console.log('[LEG-01] Duplicados detectados:', {
+        cantidad: duplicatesFound.length,
+        nivel: maxAlertLevel,
+        nnyaIndex: currentNnyaIndex,
+        modalOpen: duplicateModalOpen,
+      })
+    }
+  }, [hasDuplicates, duplicatesFound, maxAlertLevel, currentNnyaIndex, duplicateModalOpen])
 
   // Watch the entire ninosAdolescentes array instead of individual fields
   const watchedNnyas = useWatch({
@@ -102,13 +148,129 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
 
       // La función buscarCompleto ahora se encarga de validar los datos y aplicar el debounce
       buscarCompleto(nombreCompleto, dniValue, "", localizacionData, handleVinculacionResults, id)
+
+      // Trigger duplicate detection (LEG-01)
+      // Solo buscar si no está ya vinculado o marcado para skip
+      if (nombre && apellido && !readOnly && !nnya.legajo_existente_vinculado?.fue_vinculado && !nnya.skip_duplicate_check) {
+        // Guardar el índice del NNyA actual
+        setCurrentNnyaIndex(index)
+
+        const searchData = {
+          dni: dniValue > 0 ? dniValue : null,
+          nombre: nombre,
+          apellido: apellido,
+          fecha_nacimiento: nnya.fechaNacimiento ? nnya.fechaNacimiento.toISOString().split('T')[0] : null,
+          genero: nnya.genero || null,
+          nombre_autopercibido: null,
+        }
+
+        console.log(`[LEG-01] Buscando duplicados para NNyA ${index}:`, searchData)
+        searchDuplicates(searchData)
+      }
     })
   }, [
     fields,
     watchedNnyas,
     buscarCompleto,
     handleVinculacionResults,
+    searchDuplicates,
+    readOnly,
   ])
+
+  // Effect to show modal when duplicates are found
+  useEffect(() => {
+    if (hasDuplicates && !readOnly && !duplicateModalOpen && currentNnyaIndex !== null) {
+      setDuplicateModalOpen(true)
+    }
+  }, [hasDuplicates, readOnly, duplicateModalOpen, currentNnyaIndex])
+
+  /**
+   * Handler para vincular demanda a legajo existente
+   */
+  const handleVincularDemanda = async (legajoId: number, data: VincularDemandaRequest) => {
+    try {
+      setIsProcessingDuplicate(true)
+      const response = await vincularDemandaALegajo(legajoId, data)
+
+      // Update form with linked legajo info
+      if (currentNnyaIndex !== null) {
+        setValue(`ninosAdolescentes.${currentNnyaIndex}.legajo_existente_vinculado`, {
+          legajo_id: response.legajo_id,
+          legajo_numero: response.legajo_numero,
+          fue_vinculado: true,
+        })
+      }
+
+      // Close modal and clear
+      setDuplicateModalOpen(false)
+      clearResults()
+
+      // Show success notification
+      alert(`Demanda vinculada exitosamente al legajo ${response.legajo_numero}`)
+    } catch (error: any) {
+      console.error("Error al vincular demanda:", error)
+
+      if (error.response?.status === 403) {
+        alert("No tienes permisos para vincular a este legajo. Solicita acceso al responsable.")
+      } else {
+        alert(`Error al vincular demanda: ${error.message}`)
+      }
+    } finally {
+      setIsProcessingDuplicate(false)
+    }
+  }
+
+  /**
+   * Handler para crear nuevo legajo confirmando duplicado
+   */
+  const handleCrearNuevoLegajo = async (data: CrearConDuplicadoRequest) => {
+    try {
+      setIsProcessingDuplicate(true)
+      const response = await crearLegajoConDuplicado(data)
+
+      // Update form to indicate duplicate was acknowledged
+      if (currentNnyaIndex !== null) {
+        setValue(`ninosAdolescentes.${currentNnyaIndex}.skip_duplicate_check`, true)
+      }
+
+      // Close modal and clear
+      setDuplicateModalOpen(false)
+      clearResults()
+
+      // Show success notification
+      alert(`Nuevo legajo creado. Justificación registrada en auditoría.`)
+    } catch (error: any) {
+      console.error("Error al crear legajo con duplicado:", error)
+      alert(`Error al crear legajo: ${error.message}`)
+    } finally {
+      setIsProcessingDuplicate(false)
+    }
+  }
+
+  /**
+   * Handler para solicitar permisos sobre legajo de otra zona
+   */
+  const handleSolicitarPermisos = async (
+    legajoId: number,
+    requestData: { tipo: "acceso_temporal" | "transferencia"; motivo: string }
+  ) => {
+    try {
+      setIsProcessingDuplicate(true)
+
+      // TODO: Implement API call to request permissions
+      console.log("Solicitar permisos:", { legajoId, requestData })
+
+      alert(`Solicitud de ${requestData.tipo} enviada. Recibirás una notificación cuando sea procesada.`)
+
+      setDuplicateModalOpen(false)
+      clearResults()
+    } catch (error: any) {
+      console.error("Error al solicitar permisos:", error)
+      alert(`Error al solicitar permisos: ${error.message}`)
+    } finally {
+      setIsProcessingDuplicate(false)
+    }
+  }
 
   // Close the snackbar
   const handleCloseSnackbar = () => {
@@ -172,6 +334,9 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       },
       condicionesVulnerabilidad: [],
       vulneraciones: [],
+      // LEG-01: Initialize duplicate detection fields
+      legajo_existente_vinculado: null,
+      skip_duplicate_check: false,
     })
     setExpandedSections([...expandedSections, true])
   }
@@ -328,6 +493,27 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         vinculacionResults={vinculacionResults}
         currentDemandaId={id}
       />
+
+      {/* Duplicate Detection Modal (LEG-01) */}
+      {hasDuplicates && maxAlertLevel && (
+        <DuplicateDetectionModal
+          open={duplicateModalOpen}
+          onClose={() => {
+            setDuplicateModalOpen(false)
+            clearResults()
+          }}
+          matches={duplicatesFound}
+          maxAlertLevel={maxAlertLevel}
+          onVincular={handleVincularDemanda}
+          onCrearNuevo={handleCrearNuevoLegajo}
+          onSolicitarPermisos={handleSolicitarPermisos}
+          isProcessing={isProcessingDuplicate}
+          demandaData={{
+            tipo_demanda: "PROTECCION_INTEGRAL", // TODO: Get from form context
+            descripcion: undefined,
+          }}
+        />
+      )}
     </LocalizationProvider>
   )
 }

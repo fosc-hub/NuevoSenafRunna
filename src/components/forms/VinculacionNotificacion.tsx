@@ -10,6 +10,13 @@ import { useUser } from "@/utils/auth/userZustand"
 interface VinculacionResult {
   demanda_ids: number[]
   match_descriptions: string[]
+  legajos?: Array<{
+    id: number
+    numero: string
+    fecha_apertura: string
+    nnya: number
+    urgencia: string | null
+  }>
 }
 
 interface VinculacionNotificationProps {
@@ -38,20 +45,27 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
     user?.is_superuser ||
     user?.is_staff
 
-  // Verificar si alguna de las demandas encontradas es la misma que la actual
+  // Verificar si hay resultados (demandas o legajos)
   useEffect(() => {
-    if (vinculacionResults && vinculacionResults.demanda_ids.length > 0) {
-      // Obtener el ID actual de la demanda desde props o params
-      const actualDemandaId = currentDemandaId || params.id
-      // Convertir a número para comparación
-      const actualIdNum = actualDemandaId ? Number(actualDemandaId) : null
+    if (vinculacionResults) {
+      const hasDemandas = vinculacionResults.demanda_ids && vinculacionResults.demanda_ids.length > 0
+      const hasLegajos = vinculacionResults.legajos && vinculacionResults.legajos.length > 0
 
-      // Verificar si la demanda actual está en los resultados
-      // const isSameDemanda = actualIdNum && vinculacionResults.demanda_ids.includes(actualIdNum)
-      // Siempre mostrar la notificación, independientemente de si es la misma demanda o no
-      setShouldShow(true)
+      if (hasDemandas || hasLegajos) {
+        // Obtener el ID actual de la demanda desde props o params
+        const actualDemandaId = currentDemandaId || params.id
+        // Convertir a número para comparación
+        const actualIdNum = actualDemandaId ? Number(actualDemandaId) : null
+
+        // Verificar si la demanda actual está en los resultados
+        // const isSameDemanda = actualIdNum && vinculacionResults.demanda_ids.includes(actualIdNum)
+        // Siempre mostrar la notificación, independientemente de si es la misma demanda o no
+        setShouldShow(true)
+      } else {
+        setShouldShow(false)
+      }
     } else {
-      setShouldShow(true)
+      setShouldShow(false)
     }
   }, [vinculacionResults, currentDemandaId, params.id])
 
@@ -63,9 +77,20 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
   // Si no hay resultados o no se debe mostrar, no renderizar nada
   if (!vinculacionResults || !shouldShow) return null
 
+  // Verificar si hay algún resultado (demandas o legajos)
+  const hasDemandas = vinculacionResults.demanda_ids && vinculacionResults.demanda_ids.length > 0
+  const hasLegajos = vinculacionResults.legajos && vinculacionResults.legajos.length > 0
+
+  if (!hasDemandas && !hasLegajos) return null
+
   // Función para abrir la demanda en página completa
   const handleOpenDemanda = (demandaId: number) => {
     router.push(`/demanda/${demandaId}`)
+  }
+
+  // Función para abrir el legajo en página completa
+  const handleOpenLegajo = (legajoId: number) => {
+    router.push(`/legajo/${legajoId}`)
   }
 
   // Función para vincular demandas
@@ -107,33 +132,67 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
       anchorOrigin={{ vertical: "top", horizontal: "center" }}
     >
       <Alert onClose={onClose} severity="info" sx={{ width: "100%" }}>
-        <Typography variant="body2" gutterBottom>
-          Se encontraron coincidencias con demandas existentes:
+        <Typography variant="body2" gutterBottom fontWeight={600}>
+          Se encontraron coincidencias:
         </Typography>
-        {vinculacionResults.demanda_ids.map((demandaId, index) => (
-          <Box key={index} sx={{ mb: 1 }}>
-            <Typography variant="body2">
-              {vinculacionResults.match_descriptions[index]}
-              <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                <Button onClick={() => handleOpenDemanda(demandaId)} size="small" variant="outlined">
-                  Ver demanda
-                </Button>
-                {/* Mostrar botón de vincular solo si hay un ID de demanda actual */}
-                {(currentDemandaId || params.id) && (
-                  <Button
-                    onClick={() => handleVincularDemanda(demandaId)}
-                    size="small"
-                    variant="contained"
-                    color="primary"
-                    disabled={isVinculando}
-                  >
-                    {isVinculando ? "Vinculando..." : "Vincular"}
-                  </Button>
-                )}
-              </Box>
+
+        {/* Mostrar demandas existentes */}
+        {hasDemandas && (
+          <>
+            <Typography variant="caption" display="block" sx={{ mt: 1, mb: 0.5 }}>
+              Demandas:
             </Typography>
-          </Box>
-        ))}
+            {vinculacionResults.demanda_ids.map((demandaId, index) => (
+              <Box key={`demanda-${index}`} sx={{ mb: 1, ml: 1 }}>
+                <Typography variant="body2">
+                  {vinculacionResults.match_descriptions[index]}
+                  <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                    <Button onClick={() => handleOpenDemanda(demandaId)} size="small" variant="outlined">
+                      Ver demanda
+                    </Button>
+                    {/* Mostrar botón de vincular solo si hay un ID de demanda actual */}
+                    {(currentDemandaId || params.id) && (
+                      <Button
+                        onClick={() => handleVincularDemanda(demandaId)}
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        disabled={isVinculando}
+                      >
+                        {isVinculando ? "Vinculando..." : "Vincular"}
+                      </Button>
+                    )}
+                  </Box>
+                </Typography>
+              </Box>
+            ))}
+          </>
+        )}
+
+        {/* Mostrar legajos existentes */}
+        {hasLegajos && (
+          <>
+            <Typography variant="caption" display="block" sx={{ mt: 2, mb: 0.5 }}>
+              Legajos:
+            </Typography>
+            {vinculacionResults.legajos!.map((legajo, index) => (
+              <Box key={`legajo-${index}`} sx={{ mb: 1, ml: 1 }}>
+                <Typography variant="body2">
+                  <strong>Legajo {legajo.numero}</strong>
+                  {legajo.urgencia && ` - Urgencia: ${legajo.urgencia}`}
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Apertura: {new Date(legajo.fecha_apertura).toLocaleDateString('es-AR')}
+                  </Typography>
+                  <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                    <Button onClick={() => handleOpenLegajo(legajo.id)} size="small" variant="outlined">
+                      Ver legajo
+                    </Button>
+                  </Box>
+                </Typography>
+              </Box>
+            ))}
+          </>
+        )}
       </Alert>
     </Snackbar>
   )

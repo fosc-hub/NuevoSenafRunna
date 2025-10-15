@@ -31,6 +31,8 @@ import {
   Warning as WarningIcon,
   Link as LinkIcon,
   Gavel as GavelIcon,
+  CheckCircle as CheckCircleIcon,
+  FolderOpen as FolderOpenIcon,
 } from "@mui/icons-material"
 import type { Control, UseFormSetValue } from "react-hook-form"
 import TabPanel from "../tab-panel"
@@ -94,6 +96,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
   const age = calculateAge(watchedField.fechaNacimiento)
   const hasVulnerabilities = (watchedField.condicionesVulnerabilidad?.condicion_vulnerabilidad || []).length > 0
   const hasVulneraciones = (watchedField.vulneraciones || []).length > 0
+  const legajoVinculado = watchedField.legajo_existente_vinculado
 
   // Function to get initials from name and surname
   const getInitials = (name: string, surname: string) => {
@@ -204,6 +207,26 @@ const NNYACard: React.FC<NNYACardProps> = ({
                 variant="outlined"
                 sx={{ fontSize: "0.7rem" }}
               />
+            )}
+            {legajoVinculado && legajoVinculado.fue_vinculado && (
+              <Tooltip title={`Vinculado al legajo ${legajoVinculado.legajo_numero}`}>
+                <Chip
+                  icon={<CheckCircleIcon fontSize="small" />}
+                  label={`Legajo ${legajoVinculado.legajo_numero}`}
+                  size="small"
+                  color="success"
+                  variant="filled"
+                  sx={{
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    // TODO: Navigate to legajo detail
+                    window.open(`/legajo/${legajoVinculado.legajo_id}`, "_blank")
+                  }}
+                />
+              </Tooltip>
             )}
           </Box>
         }

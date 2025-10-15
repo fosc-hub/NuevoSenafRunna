@@ -99,6 +99,13 @@ export interface NnyaData {
   }
   condicionesVulnerabilidad: string[]
   vulneraciones: string[]
+  // LEG-01: Duplicate detection and legajo linking
+  legajo_existente_vinculado?: {
+    legajo_id: number
+    legajo_numero: string
+    fue_vinculado: boolean
+  } | null
+  skip_duplicate_check?: boolean
 }
 
 export interface FormData {

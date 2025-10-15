@@ -17,6 +17,7 @@ import dynamic from "next/dynamic"
 import { Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
 import axiosInstance from '@/app/api/utils/axiosInstance';
 import { useUser } from "@/utils/auth/userZustand"
+import { autorizarAdmisionYCrearLegajos } from "@/features/legajo/api/legajo-creation.service"
 
 // Dynamic import para evitar errores SSR con Next.js
 const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
@@ -210,13 +211,35 @@ export default function ActionButtons({
 
         console.log("Sending payload:", payload)
 
-        const response = await axiosInstance.put(`/evaluaciones/${demandaId}/autorizar/?autorizar=${action === "autorizar"}`, payload)
-        console.log("API Response:", response.data)
+        if (action === "autorizar") {
+          // LEG-02: Autorizar admisión y crear legajos automáticamente
+          const response = await autorizarAdmisionYCrearLegajos(demandaId, payload)
+          console.log("API Response:", response)
 
-        toast.success(`Solicitud ${action} enviada exitosamente`, {
-          position: "top-center",
-          autoClose: 3000,
-        })
+          // Show success message with legajos information
+          const legajosCreados = response.legajos_creados || []
+          if (legajosCreados.length > 0) {
+            const numeros = legajosCreados.map((l: any) => l.numero).join(', ')
+            toast.success(`Admisión autorizada. Legajos creados: ${numeros}`, {
+              position: "top-center",
+              autoClose: 5000,
+            })
+          } else {
+            toast.success("Admisión autorizada exitosamente", {
+              position: "top-center",
+              autoClose: 3000,
+            })
+          }
+        } else {
+          // No autorizar - no crea legajos
+          const response = await axiosInstance.put(`/evaluaciones/${demandaId}/autorizar/?autorizar=false`, payload)
+          console.log("API Response:", response.data)
+
+          toast.success("Solicitud no autorizar enviada exitosamente", {
+            position: "top-center",
+            autoClose: 3000,
+          })
+        }
       }
     } catch (error) {
       console.error(`Error in ${action}:`, error)

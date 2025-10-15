@@ -7,7 +7,7 @@ import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemT
 import FilterList from "@mui/icons-material/FilterList"
 import SearchIcon from "@mui/icons-material/Search"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
-import RegistroLegajoModal from "@/components/forms/RegistroLegajoModal"
+import CrearLegajoDialog from "@/features/legajo/components/crear-legajo/CrearLegajoDialog"
 
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
@@ -319,11 +319,10 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
             </Box>
           </Popover>
 
-          {/* Registro Legajo Modal */}
-          <RegistroLegajoModal
+          {/* Crear Legajo Dialog */}
+          <CrearLegajoDialog
             open={isRegistroModalOpen}
             onClose={handleCloseRegistroModal}
-            onSuccess={handleLegajoCreated}
           />
         </>
       )}

@@ -44,12 +44,12 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
 
   const { control, handleSubmit, watch, setValue, formState: { isValid } } = useForm({
     defaultValues: {
-      urgencia: null,
-      zona_trabajo_id: null,
-      user_responsable_trabajo_id: null,
-      local_centro_vida_id: null,
-      zona_centro_vida_id: null,
-      user_responsable_centro_vida_id: null,
+      urgencia: '',
+      zona_trabajo_id: '',
+      user_responsable_trabajo_id: '',
+      local_centro_vida_id: '',
+      zona_centro_vida_id: '',
+      user_responsable_centro_vida_id: '',
     },
   })
 
@@ -83,17 +83,18 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
   })
 
   const onSubmit = (data: any) => {
+    // Convertir strings vacíos a null y asegurar que los IDs sean números
     const asignacion: any = {
-      urgencia: data.urgencia,
-      zona_trabajo_id: data.zona_trabajo_id,
-      user_responsable_trabajo_id: data.user_responsable_trabajo_id,
+      urgencia: data.urgencia ? Number(data.urgencia) : null,
+      zona_trabajo_id: data.zona_trabajo_id ? Number(data.zona_trabajo_id) : null,
+      user_responsable_trabajo_id: data.user_responsable_trabajo_id ? Number(data.user_responsable_trabajo_id) : null,
       origen: 'Creación manual',
     }
 
     if (includeCentroVida) {
-      asignacion.local_centro_vida_id = data.local_centro_vida_id
-      asignacion.zona_centro_vida_id = data.zona_centro_vida_id
-      asignacion.user_responsable_centro_vida_id = data.user_responsable_centro_vida_id
+      asignacion.local_centro_vida_id = data.local_centro_vida_id ? Number(data.local_centro_vida_id) : null
+      asignacion.zona_centro_vida_id = data.zona_centro_vida_id ? Number(data.zona_centro_vida_id) : null
+      asignacion.user_responsable_centro_vida_id = data.user_responsable_centro_vida_id ? Number(data.user_responsable_centro_vida_id) : null
     }
 
     onComplete(asignacion)
@@ -159,8 +160,9 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
                     label="Zona *"
                     onChange={(e) => {
                       field.onChange(e)
-                      setZonaTrabajo(e.target.value as number)
-                      setValue('user_responsable_trabajo_id', null)
+                      const zonaId = e.target.value as number
+                      setZonaTrabajo(zonaId)
+                      setValue('user_responsable_trabajo_id', '')
                     }}
                   >
                     {zonas.map((z: any) => (
@@ -184,11 +186,20 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
                 <FormControl fullWidth required disabled={!zonaTrabajo || loadingUsuariosTrabajo}>
                   <InputLabel>Responsable *</InputLabel>
                   <Select {...field} label="Responsable *">
-                    {usuariosTrabajo.map((u: any) => (
-                      <MenuItem key={u.id} value={u.id}>
-                        {u.nombre_completo}
+                    {loadingUsuariosTrabajo ? (
+                      <MenuItem disabled>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        Cargando usuarios...
                       </MenuItem>
-                    ))}
+                    ) : usuariosTrabajo.length === 0 ? (
+                      <MenuItem disabled>No hay usuarios en esta zona</MenuItem>
+                    ) : (
+                      usuariosTrabajo.map((u: any) => (
+                        <MenuItem key={u.id} value={u.id}>
+                          {u.nombre_completo || `${u.first_name} ${u.last_name}` || u.username}
+                        </MenuItem>
+                      ))
+                    )}
                   </Select>
                 </FormControl>
               )}
@@ -227,9 +238,10 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
                         label="Zona Centro de Vida"
                         onChange={(e) => {
                           field.onChange(e)
-                          setZonaCentroVida(e.target.value as number)
-                          setValue('local_centro_vida_id', null)
-                          setValue('user_responsable_centro_vida_id', null)
+                          const zonaId = e.target.value as number
+                          setZonaCentroVida(zonaId)
+                          setValue('local_centro_vida_id', '')
+                          setValue('user_responsable_centro_vida_id', '')
                         }}
                       >
                         {zonas.map((z: any) => (
@@ -252,11 +264,15 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
                     <FormControl fullWidth required={includeCentroVida} disabled={!zonaCentroVida}>
                       <InputLabel>Local</InputLabel>
                       <Select {...field} label="Local">
-                        {locales.map((l: any) => (
-                          <MenuItem key={l.id} value={l.id}>
-                            {l.nombre}
-                          </MenuItem>
-                        ))}
+                        {locales.length === 0 ? (
+                          <MenuItem disabled>No hay locales en esta zona</MenuItem>
+                        ) : (
+                          locales.map((l: any) => (
+                            <MenuItem key={l.id} value={l.id}>
+                              {l.nombre}
+                            </MenuItem>
+                          ))
+                        )}
                       </Select>
                     </FormControl>
                   )}
@@ -272,11 +288,15 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
                     <FormControl fullWidth required={includeCentroVida} disabled={!zonaCentroVida}>
                       <InputLabel>Responsable</InputLabel>
                       <Select {...field} label="Responsable">
-                        {usuariosCentroVida.map((u: any) => (
-                          <MenuItem key={u.id} value={u.id}>
-                            {u.nombre_completo}
-                          </MenuItem>
-                        ))}
+                        {usuariosCentroVida.length === 0 ? (
+                          <MenuItem disabled>No hay usuarios en esta zona</MenuItem>
+                        ) : (
+                          usuariosCentroVida.map((u: any) => (
+                            <MenuItem key={u.id} value={u.id}>
+                              {u.nombre_completo || `${u.first_name} ${u.last_name}` || u.username}
+                            </MenuItem>
+                          ))
+                        )}
                       </Select>
                     </FormControl>
                   )}

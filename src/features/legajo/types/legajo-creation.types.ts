@@ -30,6 +30,11 @@ export interface CreateLegajoManualRequest {
   user_responsable_centro_vida_id?: number
 
   origen?: string
+
+  // ⚠️ WORKAROUND TEMPORAL: Backend incorrectamente requiere numero
+  // Según LEG-02, numero debería ser auto-generado, pero el serializer está mal configurado
+  // TODO: Remover cuando backend marque numero como read_only
+  numero?: string
 }
 
 /**
@@ -169,7 +174,9 @@ export interface ZonaInfo {
 export interface UserInfo {
   id: number
   username: string
-  nombre_completo: string
+  first_name?: string
+  last_name?: string
+  nombre_completo: string  // Campo calculado read-only en backend
   nivel?: string
 }
 

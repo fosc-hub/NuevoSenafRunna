@@ -23,10 +23,19 @@ export const createLegajo = async (
   data: CreateLegajoManualRequest
 ): Promise<CreateLegajoResponse> => {
   try {
-    console.log('Creating legajo with data:', data)
+    // ⚠️ WORKAROUND TEMPORAL: Agregar numero temporal al payload
+    // El backend incorrectamente requiere el campo numero en el request
+    // Según especificación LEG-02, numero debería ser auto-generado por el backend
+    // TODO: Remover cuando el backend corrija el serializer (numero debe ser read_only)
+    const payload = {
+      ...data,
+      numero: data.numero || `TEMP-${Date.now()}`,
+    }
+
+    console.log('Creating legajo with data:', payload)
 
     // Call API - create() already adds trailing slash
-    const response = await create<CreateLegajoResponse>('legajos', data)
+    const response = await create<CreateLegajoResponse>('legajos', payload)
 
     console.log('Legajo created successfully:', response)
 

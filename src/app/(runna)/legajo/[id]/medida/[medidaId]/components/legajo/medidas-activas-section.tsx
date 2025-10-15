@@ -99,6 +99,14 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
     }
   }
 
+  // Helper to safely extract string values from potential objects
+  const extractString = (value: any, fallback: string = ""): string => {
+    if (typeof value === 'string') return value
+    if (value && typeof value === 'object' && 'display' in value) return String(value.display)
+    if (value && typeof value === 'object' && 'nombre' in value) return String(value.nombre)
+    return fallback
+  }
+
   const getTipoColor = (tipo: string): "primary" | "success" | "warning" => {
     switch (tipo) {
       case "MPI":
@@ -268,77 +276,83 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {medidas.map((medida) => (
-              <TableRow key={medida.id} hover>
-                <TableCell>
-                  <Chip
-                    label={medida.tipo_medida || "N/A"}
-                    color={getTipoColor(medida.tipo_medida || "")}
-                    size="small"
-                    sx={{ fontWeight: "bold" }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {medida.numero_medida || "N/A"}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {medida.fecha_apertura ? formatFecha(medida.fecha_apertura) : "N/A"}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={medida.estado_vigencia || "N/A"}
-                    color={medida.estado_vigencia === "VIGENTE" ? "success" : "default"}
-                    size="small"
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell>
-                  {medida.urgencia ? (
+            {medidas.map((medida) => {
+              // Safely extract values
+              const tipoMedida = extractString(medida.tipo_medida, "N/A")
+              const numeroMedida = extractString(medida.numero_medida, "N/A")
+
+              return (
+                <TableRow key={medida.id} hover>
+                  <TableCell>
                     <Chip
-                      label={medida.urgencia.nombre}
-                      color={
-                        medida.urgencia.nombre === "ALTA"
-                          ? "error"
-                          : medida.urgencia.nombre === "MEDIA"
-                            ? "warning"
-                            : "info"
-                      }
+                      label={tipoMedida}
+                      color={getTipoColor(tipoMedida)}
                       size="small"
+                      sx={{ fontWeight: "bold" }}
                     />
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      N/A
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {numeroMedida}
                     </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {medida.duracion_dias} {medida.duracion_dias === 1 ? "día" : "días"}
-                  </Typography>
-                </TableCell>
-                <TableCell align="center">
-                  <Tooltip title="Ver detalle de medida">
-                    <IconButton
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {medida.fecha_apertura ? formatFecha(medida.fecha_apertura) : "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={medida.estado_vigencia || "N/A"}
+                      color={medida.estado_vigencia === "VIGENTE" ? "success" : "default"}
                       size="small"
-                      color="primary"
-                      sx={{
-                        backgroundColor: "rgba(25, 118, 210, 0.08)",
-                        "&:hover": {
-                          backgroundColor: "rgba(25, 118, 210, 0.15)",
-                        },
-                      }}
-                      onClick={() => handleNavigateToMedida(medida.id, medida.tipo_medida || "")}
-                    >
-                      <ChevronRightIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {medida.urgencia ? (
+                      <Chip
+                        label={medida.urgencia.nombre}
+                        color={
+                          medida.urgencia.nombre === "ALTA"
+                            ? "error"
+                            : medida.urgencia.nombre === "MEDIA"
+                              ? "warning"
+                              : "info"
+                        }
+                        size="small"
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        N/A
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {medida.duracion_dias} {medida.duracion_dias === 1 ? "día" : "días"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Ver detalle de medida">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        sx={{
+                          backgroundColor: "rgba(25, 118, 210, 0.08)",
+                          "&:hover": {
+                            backgroundColor: "rgba(25, 118, 210, 0.15)",
+                          },
+                        }}
+                        onClick={() => handleNavigateToMedida(medida.id, tipoMedida)}
+                      >
+                        <ChevronRightIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </TableContainer>

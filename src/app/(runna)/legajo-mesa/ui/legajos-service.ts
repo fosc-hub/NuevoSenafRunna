@@ -78,6 +78,30 @@ const formatAlertas = (alertas: string[]): string => {
 }
 
 /**
+ * Format medida andarivel for Excel
+ * Handles both string and object formats
+ */
+const formatMedidaAndarivel = (medidaAndarivel: any): string => {
+  if (!medidaAndarivel) return "Sin medidas"
+
+  // If it's a string, return it directly
+  if (typeof medidaAndarivel === 'string') return medidaAndarivel
+
+  // If it's an object, extract the etapa_nombre
+  if (typeof medidaAndarivel === 'object') {
+    if (medidaAndarivel.etapa_nombre) {
+      // Return etapa_nombre with additional info if available
+      const parts = [medidaAndarivel.etapa_nombre]
+      if (medidaAndarivel.numero_medida) parts.push(`(${medidaAndarivel.numero_medida})`)
+      if (medidaAndarivel.etapa_estado) parts.push(`- ${medidaAndarivel.etapa_estado}`)
+      return parts.join(' ')
+    }
+  }
+
+  return "Sin medidas"
+}
+
+/**
  * Export legajos data to Excel with indicators and filter metadata
  */
 export const exportLegajosToExcel = (rows: any[], filterMetadata?: { filters: any; totalCount: number }) => {
@@ -118,7 +142,7 @@ export const exportLegajosToExcel = (rows: any[], filterMetadata?: { filters: an
     demanda_pi_count: (_value: any, row: any) => row.indicadores?.demanda_pi_count || 0,
     oficios_resumen: (_value: any, row: any) => formatOficios(row.oficios || []),
     medidas_activas_resumen: (_value: any, row: any) => formatMedidasActivas(row.medidas_activas || []),
-    medida_andarivel: (_value: any, row: any) => row.indicadores?.medida_andarivel || "Sin medidas",
+    medida_andarivel: (_value: any, row: any) => formatMedidaAndarivel(row.indicadores?.medida_andarivel),
     plan_trabajo_resumen: (_value: any, row: any) => formatPlanTrabajo(row.indicadores?.pt_actividades),
     alertas_resumen: (_value: any, row: any) => formatAlertas(row.indicadores?.alertas || []),
   }

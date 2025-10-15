@@ -39,9 +39,13 @@ export type AndarielEstado = "Intervención" | "Aval" | "Informe Jurídico" | "R
 
 // Medida andarivel object structure
 export interface MedidaAndarivel {
-  etapa_nombre: AndarielEstado
-  etapa_estado: string
-  numero_medida: string
+  estado?: string // Estado general
+  etapa_id?: number // ID de la etapa
+  etapa_nombre: AndarielEstado // Nombre de la etapa
+  etapa_estado: string // Estado de la etapa
+  tipo_medida?: string // Tipo de medida (MPI, MPE, etc.)
+  tipo_medida_display?: string // Display del tipo de medida
+  numero_medida?: string // Número de medida
 }
 
 // Indicadores consolidados del legajo
@@ -165,13 +169,23 @@ export interface PersonaDetailData {
   deleted: boolean
 }
 
+// Estado object structure returned by API
+export interface LegajoEstadoInfo {
+  estado: string // "VIGENTE", "CERRADO", etc.
+  etapa_id: number
+  etapa_nombre: string // "Apertura de la Medida", etc.
+  etapa_estado: string // "PENDIENTE_REGISTRO_INTERVENCION", etc.
+  tipo_medida: string // "MPI", "MPE", "MPJ"
+  tipo_medida_display: string // "Medida de Protección Integral", etc.
+}
+
 // Legajo basic info (nested in detail response)
 export interface LegajoBasicInfo {
   id: number
   numero: string
   fecha_apertura: string
   urgencia: string | null
-  estado: string
+  estado: LegajoEstadoInfo | string // Can be object or string depending on API response
   ultima_actualizacion: string
 }
 

@@ -42,13 +42,34 @@ const convertMedidaToMedidaData = (
   medida: MedidaDetailResponse,
   legajo: LegajoDetailResponse
 ): MedidaData => {
+  // Helper function to safely extract string values
+  const extractString = (value: any, fallback: string = ""): string => {
+    if (typeof value === 'string') return value
+    if (value && typeof value === 'object' && 'display' in value) return String(value.display)
+    if (value && typeof value === 'object' && 'nombre' in value) return String(value.nombre)
+    return fallback
+  }
+
+  // Extract tipo_medida safely (should be string but API might return object)
+  const tipoMedida = typeof medida.tipo_medida === 'string'
+    ? medida.tipo_medida
+    : medida.tipo_medida_display || 'MPI'
+
+  // Extract numero_medida safely
+  const numeroMedida = extractString(medida.numero_medida, `M-${medida.id}`)
+
+  // Extract estado from etapa_actual safely
+  const estadoActual = medida.etapa_actual
+    ? extractString(medida.etapa_actual.estado_display || medida.etapa_actual.estado, "")
+    : ""
+
   const baseData = {
     id: String(medida.id),
-    tipo: medida.tipo_medida,
-    numero: medida.numero_medida,
+    tipo: tipoMedida as 'MPI' | 'MPE' | 'MPJ',
+    numero: numeroMedida,
     persona: {
       nombre: legajo.nnya ? `${legajo.nnya.apellido} ${legajo.nnya.nombre}` : "N/A",
-      dni: legajo.nnya?.dni || "N/A",
+      dni: legajo.nnya?.dni ? String(legajo.nnya.dni) : "N/A",
     },
     fecha_apertura: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
     ubicacion: "", // TODO: Get from legajo location data
@@ -63,7 +84,7 @@ const convertMedidaToMedidaData = (
     etapas: {
       apertura: {
         fecha: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
-        estado: medida.etapa_actual?.estado_display || "",
+        estado: estadoActual,
         equipo: "",
       },
       historial_seguimiento: [],
@@ -81,7 +102,7 @@ const convertMedidaToMedidaData = (
   }
 
   // Add type-specific data
-  if (medida.tipo_medida === "MPE") {
+  if (tipoMedida === "MPE") {
     return {
       ...baseData,
       tipo: "MPE" as const,
@@ -500,12 +521,19 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 // Extract estado safely as a string
                 const estado = medidaApiData.etapa_actual?.estado
                 const estadoString = typeof estado === 'string' ? estado : undefined
+                
+                // Extract numero_medida safely as a string
+                const numeroMedidaSafe = typeof medidaApiData.numero_medida === 'string' 
+                  ? medidaApiData.numero_medida 
+                  : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                    ? String(medidaApiData.numero_medida.display)
+                    : `M-${params.medidaId}`
 
                 return (
                   <Grid item xs={12}>
                     <NotaAvalSection
                       medidaId={Number(params.medidaId)}
-                      medidaNumero={medidaApiData.numero_medida}
+                      medidaNumero={numeroMedidaSafe}
                       estadoActual={estadoString}
                       userLevel={3} // TODO: Get from actual user context (3 or 4 for Director)
                       isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)

@@ -287,7 +287,17 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
               <Typography variant="body2" color="text.secondary">
                 Estado:
               </Typography>
-              <Typography variant="body1">{legajo?.estado || "N/A"}</Typography>
+              <Typography variant="body1">
+                {(() => {
+                  // Safely extract estado string from object or string
+                  if (!legajo?.estado) return "N/A"
+                  if (typeof legajo.estado === 'string') return legajo.estado
+                  if (typeof legajo.estado === 'object' && 'estado' in legajo.estado) {
+                    return legajo.estado.estado || "N/A"
+                  }
+                  return "N/A"
+                })()}
+              </Typography>
             </Grid>
 
             <Grid item xs={12} md={4}>

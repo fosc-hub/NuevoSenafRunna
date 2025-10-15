@@ -60,7 +60,7 @@ export const ChipsOficios: React.FC<{ oficios: OficioConSemaforo[] }> = ({ ofici
       acc[oficio.tipo] = []
     }
     acc[oficio.tipo].push(oficio)
-    return {}
+    return acc
   }, {} as Record<string, OficioConSemaforo[]>)
 
   const getSemaforoColor = (semaforo: SemaforoEstado) => {
@@ -129,15 +129,36 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
   }
 
   // Extract the estado string from object if needed
-  const estadoString: AndarielEstado = typeof estado === 'string'
-    ? estado
-    : estado.etapa_nombre
+  let estadoString: string
+  let estadoObj: MedidaAndarivel | null = null
+
+  if (typeof estado === 'string') {
+    estadoString = estado
+  } else if (typeof estado === 'object' && estado !== null) {
+    // Safely extract etapa_nombre, ensuring we handle all edge cases
+    if (estado.etapa_nombre) {
+      estadoString = String(estado.etapa_nombre)
+      estadoObj = estado
+    } else {
+      // If no etapa_nombre, fallback to showing generic message
+      return <Typography variant="body2" color="text.disabled">Sin medidas</Typography>
+    }
+  } else {
+    // Unexpected type, fallback
+    return <Typography variant="body2" color="text.disabled">Sin medidas</Typography>
+  }
 
   const etapas: AndarielEstado[] = ["Intervención", "Aval", "Informe Jurídico", "Ratificación"]
-  const etapaIndex = etapas.indexOf(estadoString)
+  const etapaIndex = etapas.indexOf(estadoString as AndarielEstado)
+
+  // If estado is not valid, show generic message
+  if (etapaIndex === -1) {
+    return <Typography variant="body2" color="text.secondary">{estadoString}</Typography>
+  }
+
   const progreso = ((etapaIndex + 1) / etapas.length) * 100
 
-  const getColorByEtapa = (etapa: AndarielEstado) => {
+  const getColorByEtapa = (etapa: string) => {
     switch (etapa) {
       case "Intervención":
         return "#3b82f6" // blue
@@ -153,9 +174,13 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
   }
 
   // Build tooltip with additional info if available
-  const tooltipContent = typeof estado === 'object'
-    ? `Etapa: ${estadoString} | Medida: ${estado.numero_medida} | Estado: ${estado.etapa_estado}`
-    : `Etapa: ${estadoString}`
+  let tooltipContent = `Etapa: ${estadoString}`
+  if (estadoObj) {
+    const parts = [`Etapa: ${estadoString}`]
+    if (estadoObj.numero_medida) parts.push(`Medida: ${String(estadoObj.numero_medida)}`)
+    if (estadoObj.etapa_estado) parts.push(`Estado: ${String(estadoObj.etapa_estado)}`)
+    tooltipContent = parts.join(' | ')
+  }
 
   return (
     <Tooltip title={tooltipContent}>

@@ -20,6 +20,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import DownloadIcon from "@mui/icons-material/Download"
 import AddIcon from "@mui/icons-material/Add"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { useUser } from "@/utils/auth/userZustand"
 
 interface DocumentosSectionProps {
   legajoData: LegajoDetailResponse
@@ -28,6 +29,11 @@ interface DocumentosSectionProps {
 export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData }) => {
   const documentos = legajoData.documentos || []
   const permisos = legajoData.permisos_usuario
+  const { user } = useUser()
+
+  // Admins (is_superuser o is_staff) tienen acceso completo
+  const isAdmin = user?.is_superuser || user?.is_staff
+  const puedeAgregarDocumentos = isAdmin || permisos?.puede_agregar_documentos
 
   const formatFecha = (fecha: string) => {
     try {
@@ -83,7 +89,7 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData
           )}
         </Box>
 
-        {permisos?.puede_agregar_documentos && (
+        {puedeAgregarDocumentos && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -109,7 +115,7 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData
           <Typography variant="body1" color="text.secondary">
             No hay documentos adjuntos para este legajo.
           </Typography>
-          {permisos?.puede_agregar_documentos && (
+          {puedeAgregarDocumentos && (
             <Button
               variant="outlined"
               startIcon={<AddIcon />}

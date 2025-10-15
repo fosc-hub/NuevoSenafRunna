@@ -3,7 +3,6 @@ import { useState, useEffect } from "react"
 import { CircularProgress, Typography, IconButton, Box, Alert, Grid } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { useRouter } from "next/navigation"
-import { getLegajoById, type Legajo } from "../../../legajo-mesa/mock-data/legajos-service"
 import { MedidaData } from "./[medidaId]/types/medidas"
 import { AddTaskDialog, NewTask } from "./[medidaId]/components/dialogs/add-task-dialog"
 import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[medidaId]/components/navigation-breadcrumbs"
@@ -20,7 +19,11 @@ import { CierreSection } from "./[medidaId]/components/medida/cierre-section"
 import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-informe-section"
 import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-dialog"
 
-// Importar tipos
+// API imports
+import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
+import { getMedidaDetail } from "../../../legajo-mesa/api/medidas-api-service"
+import type { LegajoDetailResponse } from "../../../legajo-mesa/types/legajo-api"
+import type { MedidaDetailResponse } from "../../../legajo-mesa/types/medida-api"
 
 interface MedidaDetailProps {
   params: {
@@ -31,28 +34,26 @@ interface MedidaDetailProps {
   isFullPage?: boolean
 }
 
-// Mock data for the measure details
-const getMedidaData = (legajoId: string, medidaId?: string, tipo: 'MPI' | 'MPE' = 'MPI'): MedidaData => {
-  if (tipo === 'MPE') {
-    return getMPEMedidaData(legajoId, medidaId)
-  }
-  return getMPIMedidaData(legajoId, medidaId)
-}
-
-const getMPIMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
-  return {
-    id: medidaId || "123456",
-    tipo: "MPI" as const,
-    numero: "123456",
+/**
+ * Convert API medida response to MedidaData format for rendering
+ */
+const convertMedidaToMedidaData = (
+  medida: MedidaDetailResponse,
+  legajo: LegajoDetailResponse
+): MedidaData => {
+  const baseData = {
+    id: String(medida.id),
+    tipo: medida.tipo_medida,
+    numero: medida.numero_medida,
     persona: {
-      nombre: "Martínez Alejandro",
-      dni: "44890094",
+      nombre: legajo.nnya ? `${legajo.nnya.apellido} ${legajo.nnya.nombre}` : "N/A",
+      dni: legajo.nnya?.dni || "N/A",
     },
-    fecha_apertura: "09/09/23",
-    ubicacion: "Institución Nro. 1",
+    fecha_apertura: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+    ubicacion: "", // TODO: Get from legajo location data
     direccion: "",
-    juzgado: "",
-    nro_sac: "",
+    juzgado: medida.juzgado?.nombre || "",
+    nro_sac: medida.nro_sac || "",
     origen_demanda: "",
     motivo: "",
     actores_intervinientes: "",
@@ -60,200 +61,86 @@ const getMPIMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
     articulacion: "",
     etapas: {
       apertura: {
-        fecha: "09/09/23",
-        estado: "",
+        fecha: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+        estado: medida.etapa_actual?.estado_display || "",
         equipo: "",
       },
-      plan_accion: [
-        {
-          estado: true,
-          tarea: "MPI",
-          fecha: "12/08/21",
-          objetivo: "Dato 2",
-          plazo: "Dato3",
-        },
-        {
-          estado: true,
-          tarea: "MPI",
-          fecha: "12/08/21",
-          objetivo: "Dato 2",
-          plazo: "Dato3",
-        },
-        {
-          estado: false,
-          tarea: "MPI",
-          fecha: "12/09/21",
-          objetivo: "Dato 2",
-          plazo: "Dato3",
-        },
-      ],
-      historial_seguimiento: [
-        {
-          fecha: "2 JUL 24",
-          descripcion: "Se registra denuncia anónima",
-          hora: "11:45 am",
-        },
-        {
-          fecha: "3 JUL 24",
-          descripcion: "Envío de respuesta",
-          hora: "12:40 am",
-        },
-        {
-          fecha: "4 JUL 24",
-          descripcion: "Se adjunta FotoDNI.pdf",
-          hora: "10:34 am",
-        },
-        {
-          fecha: "4 JUL 24",
-          descripcion: "Se adjunta PartidaNacimiento.pdf",
-          hora: "12:45 am",
-        },
-      ],
+      historial_seguimiento: [],
       cierre: {
-        fecha: "09/09/23",
-        estado: "",
+        fecha: medida.fecha_cierre ? new Date(medida.fecha_cierre).toLocaleDateString("es-AR") : "",
+        estado: medida.estado_vigencia === "CERRADA" ? "Cerrado" : "",
         equipo: "",
       },
     },
     ultimo_informe: {
-      fecha: "12/09/21",
-      autor: "Juzgado nro. 2, Córdoba",
-      archivo: "Informe.pdf",
+      fecha: "",
+      autor: "",
+      archivo: "",
     },
   }
-}
 
-const getMPEMedidaData = (legajoId: string, medidaId?: string): MedidaData => {
-  return {
-    id: medidaId || "654321",
-    tipo: "MPE" as const,
-    numero: "654321",
-    persona: {
-      nombre: "Juan Martín Perez",
-      dni: "33445566",
-    },
-    fecha_apertura: "15/10/23",
-    ubicacion: "Residencia 1",
-    direccion: "Av. Colón 1234, Córdoba",
-    juzgado: "juzgado 1",
-    nro_sac: "345",
-    origen_demanda: "educacion",
-    motivo: "Evaluación de competencias parentales",
-    actores_intervinientes: "Familia González, Equipo interdisciplinario",
-    equipos: "Zona 1",
-    articulacion: "Juzgado, SENAF, Centro de Salud",
-    // MPE specific fields
-    fecha: "22/12/2024",
-    fecha_resguardo: "12/12/2025",
-    lugar_resguardo: "Residencia",
-    zona_trabajo: "Zona 1",
-    zona_centro_vida: "Zona 1",
-    articulacion_local: true,
-    numero_sac: "345",
-    articulacion_area_local: true,
-    estados: {
-      inicial: true,
-      apertura: true,
-      innovacion: 0,
-      prorroga: 0,
-      cambio_lugar: 0,
-      seguimiento_intervencion: true,
-      cese: false,
-      post_cese: false,
-    },
-    progreso: {
-      iniciada: 10,
-      en_seguimiento: 80,
-      cierre: 10,
-      total: 65,
-    },
-    etapas: {
-      apertura: {
-        fecha: "15/10/23",
-        estado: "Completada",
-        equipo: "Equipo de Evaluación Familiar",
+  // Add type-specific data
+  if (medida.tipo_medida === "MPE") {
+    return {
+      ...baseData,
+      tipo: "MPE" as const,
+      fecha: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+      fecha_resguardo: "",
+      lugar_resguardo: "",
+      zona_trabajo: "",
+      zona_centro_vida: "",
+      articulacion_local: false,
+      numero_sac: medida.nro_sac || "",
+      articulacion_area_local: false,
+      estados: {
+        inicial: true,
+        apertura: true,
+        innovacion: 0,
+        prorroga: 0,
+        cambio_lugar: 0,
+        seguimiento_intervencion: true,
+        cese: false,
+        post_cese: false,
       },
-      plan_evaluacion: [
-        {
-          estado: true,
-          tarea: "Entrevista inicial familiar",
-          fecha: "20/10/23",
-          objetivo: "Establecer rapport y recopilar información inicial",
-          plazo: "30 días",
-        },
-        {
-          estado: true,
-          tarea: "Evaluación psicológica de adultos",
-          fecha: "25/10/23",
-          objetivo: "Evaluar competencias parentales",
-          plazo: "45 días",
-        },
-        {
-          estado: false,
-          tarea: "Visita domiciliaria",
-          fecha: "01/11/23",
-          objetivo: "Evaluar condiciones del hogar",
-          plazo: "60 días",
-        },
-      ],
-      evaluacion_familiar: {
-        estado: "En curso",
-        fecha_inicio: "15/10/23",
-        fecha_finalizacion: "",
-        equipo_evaluador: "Lic. Ana Rodríguez, Dr. Carlos López",
-        observaciones: "Familia colaborativa, muestra interés en el proceso de evaluación",
+      progreso: {
+        iniciada: 10,
+        en_seguimiento: 80,
+        cierre: 10,
+        total: 65,
       },
-      legajos_afectados: [
-        {
-          numero_legajo: "789012",
-          nombre_nnya: "González Sofía",
-          relacion: "Hija",
+      etapas: {
+        ...baseData.etapas,
+        plan_evaluacion: [],
+        evaluacion_familiar: {
+          estado: "En curso",
+          fecha_inicio: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+          fecha_finalizacion: "",
+          equipo_evaluador: "",
+          observaciones: "",
         },
-        {
-          numero_legajo: "789013",
-          nombre_nnya: "González Mateo",
-          relacion: "Hijo",
-        },
-      ],
-      historial_seguimiento: [
-        {
-          fecha: "15 OCT 23",
-          descripcion: "Inicio de evaluación familiar",
-          hora: "09:00 am",
-        },
-        {
-          fecha: "20 OCT 23",
-          descripcion: "Primera entrevista familiar realizada",
-          hora: "14:30 pm",
-        },
-        {
-          fecha: "25 OCT 23",
-          descripcion: "Evaluación psicológica completada",
-          hora: "10:15 am",
-        },
-      ],
-      cierre: {
-        fecha: "",
-        estado: "",
-        equipo: "",
+        legajos_afectados: [],
       },
-    },
-    familia_evaluada: {
-      grupo_familiar: "Familia nuclear compuesta por madre, padre y dos hijos menores",
-      contexto_socioeconomico: "Nivel socioeconómico medio, ambos padres trabajan",
-      dinamicas_familiares: "Relaciones familiares estables, comunicación abierta",
-    },
-    ultimo_informe: {
-      fecha: "25/10/23",
-      autor: "Equipo de Evaluación Familiar",
-      archivo: "Informe_Evaluacion_Parcial.pdf",
-    },
+      familia_evaluada: {
+        grupo_familiar: "",
+        contexto_socioeconomico: "",
+        dinamicas_familiares: "",
+      },
+    }
+  } else {
+    return {
+      ...baseData,
+      tipo: "MPI" as const,
+      etapas: {
+        ...baseData.etapas,
+        plan_accion: [],
+      },
+    }
   }
 }
 
 export default function MedidaDetail({ params, onClose, isFullPage = false }: MedidaDetailProps) {
   const [medidaData, setMedidaData] = useState<MedidaData | null>(null)
-  const [legajoData, setLegajoData] = useState<Legajo | null>(null)
+  const [legajoData, setLegajoData] = useState<LegajoDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [openAddTaskDialog, setOpenAddTaskDialog] = useState(false)
@@ -263,46 +150,75 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
     objetivo: "",
     plazo: "",
   })
-  const [activeStep, setActiveStep] = useState(1) // 0: Apertura, 1: Plan de acción, 2: Cierre
+  const [activeStep, setActiveStep] = useState(1)
   const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState("")
 
   const router = useRouter()
 
   useEffect(() => {
-    const loadData = () => {
-      if (params.id) {
-        try {
-          setIsLoading(true)
-          // Load legajo data
-          const legajo = getLegajoById(params.id)
-          if (legajo) {
-            setLegajoData(legajo)
+    const loadData = async () => {
+      if (!params.id || !params.medidaId) {
+        setError("Faltan parámetros requeridos")
+        setIsLoading(false)
+        return
+      }
 
-            // Load medida data - for now default to MPI, later we'll determine from legajo
-            const medidaTipo = params.medidaId === 'mpe' ? 'MPE' : 'MPI'
-            const medida = getMedidaData(params.id, params.medidaId, medidaTipo)
-            setMedidaData(medida)
+      // Validate medidaId is numeric
+      const medidaIdNum = Number(params.medidaId)
+      if (isNaN(medidaIdNum)) {
+        setError(
+          `ID de medida inválido: "${params.medidaId}". Debe ser un número, no el tipo de medida (MPI, MPE, MPJ).`
+        )
+        setIsLoading(false)
+        return
+      }
 
-            // Determine active step based on data
-            if (medida.etapas.cierre.estado) {
-              setActiveStep(2)
-            } else if (medida.tipo === 'MPI' && 'plan_accion' in medida.etapas && medida.etapas.plan_accion.length > 0) {
-              setActiveStep(1)
-            } else if (medida.tipo === 'MPE' && 'plan_evaluacion' in medida.etapas && medida.etapas.plan_evaluacion.length > 0) {
-              setActiveStep(1)
-            } else {
-              setActiveStep(0)
-            }
-          } else {
-            setError(`No se encontró el legajo con ID ${params.id}`)
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // Fetch legajo data from API
+        const legajoIdNum = Number(params.id)
+        const legajo = await fetchLegajoDetail(legajoIdNum)
+        setLegajoData(legajo)
+
+        // Fetch medida data from API
+        const medida = await getMedidaDetail(medidaIdNum)
+
+        // Convert to MedidaData format
+        const convertedData = convertMedidaToMedidaData(medida, legajo)
+        setMedidaData(convertedData)
+
+        // Determine active step based on data
+        if (medida.estado_vigencia === "CERRADA") {
+          setActiveStep(2)
+        } else if (medida.etapa_actual) {
+          // Map estado to step
+          const estadoMap: Record<string, number> = {
+            PENDIENTE_REGISTRO_INTERVENCION: 0,
+            PENDIENTE_APROBACION_REGISTRO: 1,
+            PENDIENTE_NOTA_AVAL: 1,
+            PENDIENTE_INFORME_JURIDICO: 1,
+            PENDIENTE_RATIFICACION_JUDICIAL: 1,
           }
-        } catch (err) {
-          console.error("Error loading data:", err)
-          setError("Error al cargar los datos. Por favor, intente nuevamente.")
-        } finally {
-          setIsLoading(false)
+          setActiveStep(estadoMap[medida.etapa_actual.estado] ?? 1)
+        } else {
+          setActiveStep(0)
         }
+      } catch (err: any) {
+        console.error("Error loading data:", err)
+
+        // Better error messages
+        if (err?.response?.status === 404) {
+          setError(`No se encontró la medida con ID ${params.medidaId} para el legajo ${params.id}`)
+        } else if (err?.message) {
+          setError(`Error al cargar los datos: ${err.message}`)
+        } else {
+          setError("Error al cargar los datos. Por favor, intente nuevamente.")
+        }
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -322,10 +238,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
   const handleEditTask = (index: number) => {
     if (medidaData) {
-      let task;
-      if (medidaData.tipo === 'MPI' && 'plan_accion' in medidaData.etapas) {
+      let task
+      if (medidaData.tipo === "MPI" && "plan_accion" in medidaData.etapas) {
         task = medidaData.etapas.plan_accion[index]
-      } else if (medidaData.tipo === 'MPE' && 'plan_evaluacion' in medidaData.etapas) {
+      } else if (medidaData.tipo === "MPE" && "plan_evaluacion" in medidaData.etapas) {
         task = medidaData.etapas.plan_evaluacion[index]
       }
 
@@ -352,12 +268,12 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
     if (editingTaskIndex !== null) {
       // Update existing task
-      if (medidaData.tipo === 'MPI' && 'plan_accion' in updatedMedidaData.etapas) {
+      if (medidaData.tipo === "MPI" && "plan_accion" in updatedMedidaData.etapas) {
         updatedMedidaData.etapas.plan_accion[editingTaskIndex] = {
           ...updatedMedidaData.etapas.plan_accion[editingTaskIndex],
           ...task,
         }
-      } else if (medidaData.tipo === 'MPE' && 'plan_evaluacion' in updatedMedidaData.etapas) {
+      } else if (medidaData.tipo === "MPE" && "plan_evaluacion" in updatedMedidaData.etapas) {
         updatedMedidaData.etapas.plan_evaluacion[editingTaskIndex] = {
           ...updatedMedidaData.etapas.plan_evaluacion[editingTaskIndex],
           ...task,
@@ -371,9 +287,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
         fecha: new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" }),
       }
 
-      if (medidaData.tipo === 'MPI' && 'plan_accion' in updatedMedidaData.etapas) {
+      if (medidaData.tipo === "MPI" && "plan_accion" in updatedMedidaData.etapas) {
         updatedMedidaData.etapas.plan_accion.push(newTask)
-      } else if (medidaData.tipo === 'MPE' && 'plan_evaluacion' in updatedMedidaData.etapas) {
+      } else if (medidaData.tipo === "MPE" && "plan_evaluacion" in updatedMedidaData.etapas) {
         updatedMedidaData.etapas.plan_evaluacion.push(newTask)
       }
     }
@@ -447,9 +363,25 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        {error}
-      </Alert>
+      <Box sx={{ m: 4 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Typography variant="body2" color="text.secondary">
+          Asegúrate de que:
+        </Typography>
+        <ul>
+          <li>
+            <Typography variant="body2">El ID de la medida sea numérico (no "mpe", "mpi" o "mpj")</Typography>
+          </li>
+          <li>
+            <Typography variant="body2">La medida exista en el sistema</Typography>
+          </li>
+          <li>
+            <Typography variant="body2">La medida pertenezca al legajo {params.id}</Typography>
+          </li>
+        </ul>
+      </Box>
     )
   }
 
@@ -512,7 +444,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           </Box>
         )}
 
-        {medidaData.tipo === 'MPE' ? (
+        {medidaData.tipo === "MPE" ? (
           <>
             <MPEHeader
               medidaData={medidaData}
@@ -542,7 +474,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
               {/* Plan de acción Section - Only for MPI */}
               <Grid item xs={12} md={8}>
-                {medidaData.tipo === 'MPI' && 'plan_accion' in medidaData.etapas && (
+                {medidaData.tipo === "MPI" && "plan_accion" in medidaData.etapas && (
                   <PlanAccionSection
                     tasks={medidaData.etapas.plan_accion}
                     isActive={activeStep === 1}

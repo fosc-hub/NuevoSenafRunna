@@ -19,6 +19,7 @@ import {
 import HistoryIcon from "@mui/icons-material/History"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { useUser } from "@/utils/auth/userZustand"
 
 interface HistorialCambiosSectionProps {
   legajoData: LegajoDetailResponse
@@ -27,6 +28,11 @@ interface HistorialCambiosSectionProps {
 export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = ({ legajoData }) => {
   const historial = legajoData.historial_cambios || []
   const permisos = legajoData.permisos_usuario
+  const { user } = useUser()
+
+  // Admins (is_superuser o is_staff) tienen acceso completo
+  const isAdmin = user?.is_superuser || user?.is_staff
+  const puedeVerHistorial = isAdmin || permisos?.puede_ver_historial
 
   const formatFecha = (fecha: string | null) => {
     if (!fecha) return "N/A"
@@ -54,7 +60,7 @@ export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = (
   }
 
   // Check if user has permission to view historial
-  if (!permisos?.puede_ver_historial) {
+  if (!puedeVerHistorial) {
     return (
       <Paper
         elevation={2}

@@ -15,9 +15,11 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { useRouter } from "next/navigation"
 import { fetchLegajoDetail, updateLegajoDatosPersonales } from "../legajo-mesa/api/legajos-api-service"
 import type { LegajoDetailResponse, PersonaDetailData } from "../legajo-mesa/types/legajo-api"
+import { useUser } from "@/utils/auth/userZustand"
 import { AddIntervencionDialog, NewIntervencion } from "./[id]/medida/[medidaId]/components/dialogs/add-intervencion-dialog"
 import { AttachmentDialog } from "./[id]/medida/[medidaId]/components/dialogs/attachement-dialog"
 import { EditDatosPersonalesDialog } from "./[id]/medida/[medidaId]/components/dialogs/edit-datos-personales-dialog"
+import { CrearMedidaDialog } from "./[id]/medida/[medidaId]/components/dialogs/crear-medida-dialog"
 import { DatosPersonalesSection } from "./[id]/medida/[medidaId]/components/legajo/datos-personales-section"
 import { LegajoHeader } from "./[id]/medida/[medidaId]/components/legajo/legajo-header"
 import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[id]/medida/[medidaId]/components/navigation-breadcrumbs"
@@ -31,6 +33,7 @@ import { ResponsablesSection } from "./[id]/medida/[medidaId]/components/legajo/
 import { HistorialCambiosSection } from "./[id]/medida/[medidaId]/components/legajo/historial-cambios-section"
 import { PlanTrabajoSection } from "./[id]/medida/[medidaId]/components/legajo/plan-trabajo-section"
 import { HistorialAsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/historial-asignaciones-section"
+import { MedidasActivasSection } from "./[id]/medida/[medidaId]/components/legajo/medidas-activas-section"
 
 // Importar tipos
 
@@ -51,10 +54,16 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   const [selectedAttachment, setSelectedAttachment] = useState("")
   const [openAddIntervencionDialog, setOpenAddIntervencionDialog] = useState(false)
   const [openEditDatosDialog, setOpenEditDatosDialog] = useState(false)
+  const [openCrearMedidaDialog, setOpenCrearMedidaDialog] = useState(false)
+  const [medidasRefreshTrigger, setMedidasRefreshTrigger] = useState(0)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const openMedidaMenu = Boolean(anchorEl)
 
   const router = useRouter()
+  const { user } = useUser()
+
+  // Admins (is_superuser o is_staff) tienen acceso completo
+  const isAdmin = user?.is_superuser || user?.is_staff
 
   const loadLegajoData = async () => {
     if (params.id) {
@@ -68,6 +77,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         })
 
         console.log("Legajo Detail API Response:", response)
+        console.log("Permisos del usuario:", response.permisos_usuario)
 
         // Use the response directly without transformation
         setLegajoData(response)
@@ -113,15 +123,16 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
     handleCloseMedidaMenu()
     console.log(`Creating ${type} medida`)
 
-    // Navigate to the appropriate medida page
-    if (type === 'MPE') {
-      router.push(`/legajo/${params.id}/medida/mpe`)
-    } else if (type === 'MPI') {
-      router.push(`/legajo/${params.id}/medida/medida-detail`)
-    } else if (type === 'MPJ') {
-      // For now, just show a message - you can implement MPJ later
-      console.log('MPJ functionality not implemented yet')
-    }
+    // Open the crear medida dialog
+    setOpenCrearMedidaDialog(true)
+  }
+
+  const handleCrearMedidaSuccess = async () => {
+    // Trigger refresh of medidas section
+    setMedidasRefreshTrigger(prev => prev + 1)
+
+    // Also reload legajo data
+    await loadLegajoData()
   }
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -303,14 +314,20 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
             <Tab label="Oficios" />
             <Tab label="Demandas" />
             <Tab label="Documentos" />
-            {legajoData.permisos_usuario?.puede_ver_historial && <Tab label="Auditoría" />}
+            {(isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && <Tab label="Auditoría" />}
           </Tabs>
         </Box>
 
-        {/* TAB 0: General (Datos Personales + Localización + Plan de Trabajo) */}
+        {/* TAB 0: General (Datos Personales + Medidas Activas + Localización + Plan de Trabajo) */}
         {activeTab === 0 && (
           <>
             <DatosPersonalesSection legajoData={legajoData} onEdit={handleEditDatosPersonales} />
+            <MedidasActivasSection
+              legajoData={legajoData}
+              onAddMedida={() => setOpenCrearMedidaDialog(true)}
+              showAddButton={isAdmin || legajoData.permisos_usuario?.puede_tomar_medidas || false}
+              refreshTrigger={medidasRefreshTrigger}
+            />
             <LocalizacionSection legajoData={legajoData} />
             <PlanTrabajoSection legajoData={legajoData} />
           </>
@@ -346,8 +363,8 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
           </>
         )}
 
-        {/* TAB 5: Auditoría (Historial de Cambios) - Solo con permiso */}
-        {activeTab === 5 && legajoData.permisos_usuario?.puede_ver_historial && (
+        {/* TAB 5: Auditoría (Historial de Cambios) - Solo con permiso o admin */}
+        {activeTab === 5 && (isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && (
           <>
             <HistorialCambiosSection legajoData={legajoData} />
           </>
@@ -373,6 +390,13 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         persona={legajoData?.persona || null}
         onClose={() => setOpenEditDatosDialog(false)}
         onSave={handleSaveDatosPersonales}
+      />
+
+      <CrearMedidaDialog
+        open={openCrearMedidaDialog}
+        legajoId={Number(params.id)}
+        onClose={() => setOpenCrearMedidaDialog(false)}
+        onSuccess={handleCrearMedidaSuccess}
       />
     </Box>
   )

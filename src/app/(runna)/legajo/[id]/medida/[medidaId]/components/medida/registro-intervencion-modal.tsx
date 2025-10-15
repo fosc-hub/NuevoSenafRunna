@@ -30,9 +30,12 @@ import {
     StepLabel,
     Chip,
     Alert,
-    LinearProgress
+    LinearProgress,
+    CircularProgress,
+    FormHelperText,
+    Snackbar
 } from "@mui/material"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import CloseIcon from "@mui/icons-material/Close"
 import DownloadIcon from "@mui/icons-material/Download"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
@@ -45,46 +48,69 @@ import PersonIcon from "@mui/icons-material/Person"
 import BusinessIcon from "@mui/icons-material/Business"
 import DescriptionIcon from "@mui/icons-material/Description"
 import UploadFileIcon from "@mui/icons-material/UploadFile"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
+import { useRegistroIntervencion } from "../../hooks/useRegistroIntervencion"
 
 interface RegistroIntervencionModalProps {
     open: boolean
     onClose: () => void
+    medidaId: number
+    intervencionId?: number // If editing existing intervención
+    legajoData?: {
+        numero: string
+        persona_nombre: string
+        persona_apellido: string
+        zona_nombre: string
+    }
+    onSaved?: () => void // Callback after successful save
 }
 
 export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps> = ({
     open,
-    onClose
+    onClose,
+    medidaId,
+    intervencionId,
+    legajoData,
+    onSaved
 }) => {
-    const [activeStep, setActiveStep] = useState(0)
-    const [formData, setFormData] = useState({
-        legajo: "",
-        fechaIntervencion: "12/12/2025",
-        nombre: "",
-        apellido: "",
-        zonaUder: "",
-        origenDemanda: "",
-        tipoDispositivo: "",
-        dispositivo: "",
-        motivoIntervencion: "",
-        submotivo: "",
-        categoriaIntervencion: "",
-        intervencion: "",
-        estado: "",
-        detalles: ""
+    // ============================================================================
+    // HOOK - Registro Intervención
+    // ============================================================================
+    const {
+        formData,
+        updateField,
+        intervencion,
+        currentEstado,
+        isLoading,
+        isSaving,
+        error,
+        validationErrors,
+        clearErrors,
+        guardarBorrador,
+        tiposDispositivo,
+        motivos,
+        subMotivos,
+        categorias,
+        isLoadingCatalogs,
+        adjuntos,
+        isLoadingAdjuntos,
+        uploadAdjuntoFile,
+        deleteAdjuntoFile,
+        isUploadingAdjunto,
+        canEdit,
+    } = useRegistroIntervencion({
+        medidaId,
+        intervencionId,
+        autoLoadCatalogs: true,
     })
 
-    const [uploadedFiles, setUploadedFiles] = useState<string[]>([
-        "Uploaded File Name",
-        "Uploaded File Name",
-        "Uploaded File Name",
-        "Uploaded File Name",
-        "Uploaded File Name"
-    ])
-
-    const [notificacionesPermitidas, setNotificacionesPermitidas] = useState("Si")
-    const [informesPermitidos, setInformesPermitidos] = useState("Si")
-    const [actaPermitida, setActaPermitida] = useState("Si")
+    // ============================================================================
+    // LOCAL STATE
+    // ============================================================================
+    const [activeStep, setActiveStep] = useState(0)
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+    const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
     const steps = [
         'Información Básica',
@@ -94,10 +120,19 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
         'Configuración Adicional'
     ]
 
-    const handleInputChange = (field: string, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }))
-    }
+    // ============================================================================
+    // EFFECTS
+    // ============================================================================
+    useEffect(() => {
+        if (open) {
+            clearErrors()
+            setPendingFiles([])
+        }
+    }, [open, clearErrors])
 
+    // ============================================================================
+    // HANDLERS
+    // ============================================================================
     const handleNext = () => {
         setActiveStep((prevStep) => prevStep + 1)
     }
@@ -110,11 +145,47 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
         setActiveStep(step)
     }
 
+    const handleSave = async () => {
+        const result = await guardarBorrador()
+        if (result) {
+            setShowSuccessMessage(true)
+            if (onSaved) {
+                onSaved()
+            }
+            // Close after short delay to show success message
+            setTimeout(() => {
+                onClose()
+            }, 1500)
+        }
+    }
+
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files
+        if (files) {
+            setPendingFiles((prev) => [...prev, ...Array.from(files)])
+        }
+    }
+
+    const handleFileUpload = async (file: File, tipo: string) => {
+        await uploadAdjuntoFile(file, tipo)
+    }
+
+    const handleRemovePendingFile = (index: number) => {
+        setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+    }
+
     const getStepContent = (step: number) => {
         switch (step) {
             case 0:
                 return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {/* Error Alert */}
+                        {error && (
+                            <Alert severity="error" onClose={clearErrors}>
+                                {error}
+                            </Alert>
+                        )}
+
                         <Card elevation={2} sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <PersonIcon sx={{ color: 'primary.main', mr: 1 }} />
@@ -125,43 +196,48 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
                                 <TextField
                                     label="Código"
-                                    value="Autogenerado"
+                                    value={intervencion?.codigo_intervencion || "Autogenerado"}
                                     disabled
                                     variant="outlined"
-                                    helperText="Este código se genera automáticamente"
+                                    helperText="Este código se genera automáticamente al guardar"
                                 />
                                 <TextField
                                     label="Fecha de intervención"
                                     type="date"
-                                    value="2025-12-12"
-                                    onChange={(e) => handleInputChange('fechaIntervencion', e.target.value)}
+                                    value={formData.fecha_intervencion}
+                                    onChange={(e) => updateField('fecha_intervencion', e.target.value)}
                                     InputLabelProps={{ shrink: true }}
                                     required
+                                    disabled={!canEdit}
+                                    error={!!validationErrors.fecha_intervencion}
+                                    helperText={validationErrors.fecha_intervencion}
                                 />
                                 <TextField
                                     label="Legajo"
-                                    value={formData.legajo}
-                                    onChange={(e) => handleInputChange('legajo', e.target.value)}
+                                    value={legajoData?.numero || intervencion?.legajo_numero || ""}
+                                    disabled
                                     variant="outlined"
-                                    required
-                                    placeholder="Ingrese el número de legajo"
+                                    helperText="Datos del legajo (autocompletado)"
                                 />
                                 <Box />
                                 <TextField
                                     label="Nombre"
-                                    value={formData.nombre}
-                                    onChange={(e) => handleInputChange('nombre', e.target.value)}
+                                    value={legajoData?.persona_nombre || intervencion?.persona_nombre || ""}
+                                    disabled
                                     variant="outlined"
-                                    required
-                                    placeholder="Ingrese el nombre"
                                 />
                                 <TextField
                                     label="Apellido"
-                                    value={formData.apellido}
-                                    onChange={(e) => handleInputChange('apellido', e.target.value)}
+                                    value={legajoData?.persona_apellido || intervencion?.persona_apellido || ""}
+                                    disabled
                                     variant="outlined"
-                                    required
-                                    placeholder="Ingrese el apellido"
+                                />
+                                <TextField
+                                    label="Zona/UDER"
+                                    value={legajoData?.zona_nombre || intervencion?.zona_nombre || ""}
+                                    disabled
+                                    variant="outlined"
+                                    sx={{ gridColumn: { md: 'span 2' } }}
                                 />
                             </Box>
                         </Card>
@@ -170,60 +246,30 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <BusinessIcon sx={{ color: 'primary.main', mr: 1 }} />
                                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                    Información Institucional
+                                    Tipo de Dispositivo
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                <FormControl fullWidth required>
-                                    <InputLabel>Zona/UDER</InputLabel>
+                                <FormControl fullWidth>
+                                    <InputLabel>Tipo de dispositivo (opcional)</InputLabel>
                                     <Select
-                                        value={formData.zonaUder}
-                                        onChange={(e) => handleInputChange('zonaUder', e.target.value)}
-                                        label="Zona/UDER"
+                                        value={formData.tipo_dispositivo_id || ''}
+                                        onChange={(e) => updateField('tipo_dispositivo_id', e.target.value ? Number(e.target.value) : null)}
+                                        label="Tipo de dispositivo (opcional)"
+                                        disabled={!canEdit || isLoadingCatalogs}
                                     >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="zona1">Zona 1</MenuItem>
-                                        <MenuItem value="zona2">Zona 2</MenuItem>
+                                        <MenuItem value="">Sin especificar</MenuItem>
+                                        {tiposDispositivo.map((tipo) => (
+                                            <MenuItem key={tipo.id} value={tipo.id}>
+                                                {tipo.nombre}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
-                                </FormControl>
-
-                                <FormControl fullWidth required>
-                                    <InputLabel>Origen de la demanda</InputLabel>
-                                    <Select
-                                        value={formData.origenDemanda}
-                                        onChange={(e) => handleInputChange('origenDemanda', e.target.value)}
-                                        label="Origen de la demanda"
-                                    >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="judicial">Judicial</MenuItem>
-                                        <MenuItem value="administrativo">Administrativo</MenuItem>
-                                    </Select>
-                                </FormControl>
-
-                                <FormControl fullWidth required>
-                                    <InputLabel>Tipo de dispositivo</InputLabel>
-                                    <Select
-                                        value={formData.tipoDispositivo}
-                                        onChange={(e) => handleInputChange('tipoDispositivo', e.target.value)}
-                                        label="Tipo de dispositivo"
-                                    >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="residencia">Residencia</MenuItem>
-                                        <MenuItem value="hogar">Hogar</MenuItem>
-                                    </Select>
-                                </FormControl>
-
-                                <FormControl fullWidth required>
-                                    <InputLabel>Dispositivo</InputLabel>
-                                    <Select
-                                        value={formData.dispositivo}
-                                        onChange={(e) => handleInputChange('dispositivo', e.target.value)}
-                                        label="Dispositivo"
-                                    >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="dispositivo1">Dispositivo 1</MenuItem>
-                                        <MenuItem value="dispositivo2">Dispositivo 2</MenuItem>
-                                    </Select>
+                                    {intervencion?.tipo_dispositivo_detalle && (
+                                        <FormHelperText>
+                                            Actual: {intervencion.tipo_dispositivo_detalle}
+                                        </FormHelperText>
+                                    )}
                                 </FormControl>
                             </Box>
                         </Card>
@@ -233,6 +279,13 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
             case 1:
                 return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {/* Error Alert */}
+                        {error && (
+                            <Alert severity="error" onClose={clearErrors}>
+                                {error}
+                            </Alert>
+                        )}
+
                         <Card elevation={2} sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <DescriptionIcon sx={{ color: 'primary.main', mr: 1 }} />
@@ -241,81 +294,125 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 3 }}>
-                                <FormControl fullWidth required>
+                                <FormControl fullWidth required error={!!validationErrors.motivo_id}>
                                     <InputLabel>Motivo de Intervención</InputLabel>
                                     <Select
-                                        value={formData.motivoIntervencion}
-                                        onChange={(e) => handleInputChange('motivoIntervencion', e.target.value)}
+                                        value={formData.motivo_id || ''}
+                                        onChange={(e) => updateField('motivo_id', Number(e.target.value))}
                                         label="Motivo de Intervención"
+                                        disabled={!canEdit || isLoadingCatalogs}
                                     >
                                         <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="vulneracion">Vulneración de derechos</MenuItem>
-                                        <MenuItem value="seguimiento">Seguimiento</MenuItem>
+                                        {motivos.map((motivo) => (
+                                            <MenuItem key={motivo.id} value={motivo.id}>
+                                                {motivo.nombre}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
+                                    {validationErrors.motivo_id && (
+                                        <FormHelperText>{validationErrors.motivo_id}</FormHelperText>
+                                    )}
+                                    {intervencion?.motivo_detalle && (
+                                        <FormHelperText>Actual: {intervencion.motivo_detalle}</FormHelperText>
+                                    )}
                                 </FormControl>
 
-                                <FormControl fullWidth required>
-                                    <InputLabel>Submotivo</InputLabel>
+                                <FormControl fullWidth>
+                                    <InputLabel>Submotivo (opcional)</InputLabel>
                                     <Select
-                                        value={formData.submotivo}
-                                        onChange={(e) => handleInputChange('submotivo', e.target.value)}
-                                        label="Submotivo"
+                                        value={formData.sub_motivo_id || ''}
+                                        onChange={(e) => updateField('sub_motivo_id', e.target.value ? Number(e.target.value) : null)}
+                                        label="Submotivo (opcional)"
+                                        disabled={!canEdit || !formData.motivo_id || isLoadingCatalogs}
                                     >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="submotivo1">Submotivo 1</MenuItem>
-                                        <MenuItem value="submotivo2">Submotivo 2</MenuItem>
+                                        <MenuItem value="">Sin especificar</MenuItem>
+                                        {subMotivos.map((submotivo) => (
+                                            <MenuItem key={submotivo.id} value={submotivo.id}>
+                                                {submotivo.nombre}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
+                                    {!formData.motivo_id && (
+                                        <FormHelperText>Seleccione primero un motivo</FormHelperText>
+                                    )}
+                                    {intervencion?.sub_motivo_detalle && (
+                                        <FormHelperText>Actual: {intervencion.sub_motivo_detalle}</FormHelperText>
+                                    )}
                                 </FormControl>
 
-                                <FormControl fullWidth required>
+                                <FormControl fullWidth required error={!!validationErrors.categoria_intervencion_id}>
                                     <InputLabel>Categoría de intervención</InputLabel>
                                     <Select
-                                        value={formData.categoriaIntervencion}
-                                        onChange={(e) => handleInputChange('categoriaIntervencion', e.target.value)}
+                                        value={formData.categoria_intervencion_id || ''}
+                                        onChange={(e) => updateField('categoria_intervencion_id', Number(e.target.value))}
                                         label="Categoría de intervención"
+                                        disabled={!canEdit || isLoadingCatalogs}
                                     >
                                         <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="categoria1">Categoría 1</MenuItem>
-                                        <MenuItem value="categoria2">Categoría 2</MenuItem>
+                                        {categorias.map((categoria) => (
+                                            <MenuItem key={categoria.id} value={categoria.id}>
+                                                {categoria.nombre}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
+                                    {validationErrors.categoria_intervencion_id && (
+                                        <FormHelperText>{validationErrors.categoria_intervencion_id}</FormHelperText>
+                                    )}
+                                    {intervencion?.categoria_intervencion_detalle && (
+                                        <FormHelperText>Actual: {intervencion.categoria_intervencion_detalle}</FormHelperText>
+                                    )}
                                 </FormControl>
 
-                                <FormControl fullWidth required>
-                                    <InputLabel>Intervención</InputLabel>
-                                    <Select
-                                        value={formData.intervencion}
-                                        onChange={(e) => handleInputChange('intervencion', e.target.value)}
-                                        label="Intervención"
-                                    >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="intervencion1">Intervención 1</MenuItem>
-                                        <MenuItem value="intervencion2">Intervención 2</MenuItem>
-                                    </Select>
-                                </FormControl>
-
-                                <FormControl fullWidth required sx={{ gridColumn: { md: 'span 2' } }}>
-                                    <InputLabel>Estado</InputLabel>
-                                    <Select
-                                        value={formData.estado}
-                                        onChange={(e) => handleInputChange('estado', e.target.value)}
+                                {/* Estado (read-only) */}
+                                {intervencion && (
+                                    <TextField
                                         label="Estado"
-                                    >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        <MenuItem value="activo">Activo</MenuItem>
-                                        <MenuItem value="cerrado">Cerrado</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                        value={intervencion.estado_display}
+                                        disabled
+                                        variant="outlined"
+                                        helperText="El estado cambia según el flujo de aprobación"
+                                    />
+                                )}
                             </Box>
 
                             <TextField
-                                label="Detalles de la intervención"
+                                label="Intervención específica"
+                                multiline
+                                rows={3}
+                                fullWidth
+                                value={formData.intervencion_especifica}
+                                onChange={(e) => updateField('intervencion_especifica', e.target.value)}
+                                placeholder="Descripción específica de la intervención realizada..."
+                                required
+                                disabled={!canEdit}
+                                error={!!validationErrors.intervencion_especifica}
+                                helperText={validationErrors.intervencion_especifica || "Obligatorio"}
+                                sx={{ mb: 2 }}
+                            />
+
+                            <TextField
+                                label="Descripción detallada"
                                 multiline
                                 rows={4}
                                 fullWidth
-                                value={formData.detalles}
-                                onChange={(e) => handleInputChange('detalles', e.target.value)}
-                                placeholder="Ingrese los detalles de la intervención..."
-                                helperText="Proporcione una descripción detallada de la intervención realizada"
+                                value={formData.descripcion_detallada}
+                                onChange={(e) => updateField('descripcion_detallada', e.target.value)}
+                                placeholder="Descripción adicional o contexto de la intervención..."
+                                disabled={!canEdit}
+                                helperText="Opcional - Proporcione contexto adicional si es necesario"
+                                sx={{ mb: 2 }}
+                            />
+
+                            <TextField
+                                label="Motivo de vulneraciones"
+                                multiline
+                                rows={3}
+                                fullWidth
+                                value={formData.motivo_vulneraciones}
+                                onChange={(e) => updateField('motivo_vulneraciones', e.target.value)}
+                                placeholder="Descripción de vulneraciones de derechos detectadas..."
+                                disabled={!canEdit}
+                                helperText="Opcional - Describa las vulneraciones de derechos si aplica"
                             />
                         </Card>
                     </Box>
@@ -332,128 +429,185 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                 </Typography>
                             </Box>
 
-                            <Alert severity="info" sx={{ mb: 3 }}>
-                                <Typography variant="body2">
-                                    Descargar modelo de apertura de MPE. Recuerde que luego de completarlo debe adjuntarlo firmado.
-                                </Typography>
-                            </Alert>
-
-                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                                <Button
-                                    variant="contained"
-                                    startIcon={<DownloadIcon />}
-                                    size="large"
-                                    sx={{ textTransform: "none", borderRadius: 2 }}
-                                >
-                                    Descargar Modelo MPE
-                                </Button>
-                            </Box>
-
-                            <Paper
-                                sx={{
-                                    border: '2px dashed #2196f3',
-                                    borderRadius: 2,
-                                    p: 4,
-                                    textAlign: 'center',
-                                    mb: 3,
-                                    backgroundColor: 'rgba(33, 150, 243, 0.02)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(33, 150, 243, 0.05)',
-                                        borderColor: '#1976d2'
-                                    }
-                                }}
-                            >
-                                <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                                <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                                    Arrastra archivos aquí
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    o{" "}
-                                    <Button variant="text" sx={{ textTransform: "none", fontWeight: 600 }}>
-                                        selecciona archivos
-                                    </Button>
-                                </Typography>
-                                <Chip
-                                    label="Solo archivos .jpg, .png, .pdf - Máximo 5MB"
-                                    size="small"
-                                    color="primary"
-                                    variant="outlined"
-                                />
-                            </Paper>
-
-                            {uploadedFiles.length > 0 && (
-                                <Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                                        Archivos subidos ({uploadedFiles.length})
+                            {!intervencion && (
+                                <Alert severity="warning" sx={{ mb: 3 }}>
+                                    <Typography variant="body2">
+                                        Primero debe guardar la intervención como borrador para poder subir adjuntos.
                                     </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                                        {uploadedFiles.map((fileName, index) => (
-                                            <Paper
-                                                key={index}
-                                                elevation={1}
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    p: 2,
-                                                    borderRadius: 2,
-                                                    backgroundColor: 'rgba(76, 175, 80, 0.05)',
-                                                    border: '1px solid rgba(76, 175, 80, 0.2)'
-                                                }}
-                                            >
-                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                    <AttachFileIcon sx={{ color: 'success.main', mr: 1 }} />
-                                                    <Box>
-                                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                            {fileName}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            1.1 KB • Subido correctamente
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                                <IconButton size="small" color="error">
-                                                    <CloseIcon fontSize="small" />
-                                                </IconButton>
-                                            </Paper>
-                                        ))}
-                                    </Box>
-                                </Box>
+                                </Alert>
                             )}
 
-                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                                <Button
-                                    variant="outlined"
-                                    sx={{ textTransform: "none", borderRadius: 2 }}
-                                >
-                                    Limpiar archivos
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    sx={{ textTransform: "none", borderRadius: 2 }}
-                                    disabled={uploadedFiles.length === 0}
-                                >
-                                    Confirmar archivos
-                                </Button>
-                            </Box>
-                        </Card>
+                            {intervencion && (
+                                <>
+                                    <Alert severity="info" sx={{ mb: 3 }}>
+                                        <Typography variant="body2">
+                                            Adjunte los documentos relacionados con la intervención (modelos, actas, respaldos, informes).
+                                        </Typography>
+                                    </Alert>
 
-                        <Card elevation={2} sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    Fotocopia del DNI
-                                </Typography>
-                                <Chip label="12/12/2025" size="small" color="primary" variant="outlined" />
-                            </Box>
-                            <Button
-                                variant="contained"
-                                fullWidth
-                                sx={{ textTransform: "none", borderRadius: 2 }}
-                            >
-                                Adjuntar DNI
-                            </Button>
+                                    <Paper
+                                        component="label"
+                                        sx={{
+                                            border: '2px dashed #2196f3',
+                                            borderRadius: 2,
+                                            p: 4,
+                                            textAlign: 'center',
+                                            mb: 3,
+                                            backgroundColor: 'rgba(33, 150, 243, 0.02)',
+                                            cursor: intervencion && canEdit ? 'pointer' : 'not-allowed',
+                                            transition: 'all 0.2s ease',
+                                            opacity: intervencion && canEdit ? 1 : 0.5,
+                                            '&:hover': intervencion && canEdit ? {
+                                                backgroundColor: 'rgba(33, 150, 243, 0.05)',
+                                                borderColor: '#1976d2'
+                                            } : {}
+                                        }}
+                                    >
+                                        <input
+                                            type="file"
+                                            hidden
+                                            multiple
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={handleFileSelect}
+                                            disabled={!intervencion || !canEdit}
+                                        />
+                                        <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                                        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                                            Arrastra archivos aquí o haz clic para seleccionar
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                            {isUploadingAdjunto ? "Subiendo archivo..." : "Selecciona los archivos a adjuntar"}
+                                        </Typography>
+                                        <Chip
+                                            label="Solo archivos .jpg, .png, .pdf - Máximo 10MB"
+                                            size="small"
+                                            color="primary"
+                                            variant="outlined"
+                                        />
+                                    </Paper>
+
+                                    {/* Pending files to upload */}
+                                    {pendingFiles.length > 0 && (
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                                                Archivos pendientes de subir ({pendingFiles.length})
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                                                {pendingFiles.map((file, index) => (
+                                                    <Paper
+                                                        key={index}
+                                                        elevation={1}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            p: 2,
+                                                            borderRadius: 2,
+                                                            backgroundColor: 'rgba(255, 152, 0, 0.05)',
+                                                            border: '1px solid rgba(255, 152, 0, 0.2)'
+                                                        }}
+                                                    >
+                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            <AttachFileIcon sx={{ color: 'warning.main', mr: 1 }} />
+                                                            <Box>
+                                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                                    {file.name}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    {(file.size / 1024).toFixed(2)} KB • Pendiente
+                                                                </Typography>
+                                                            </Box>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                                            <Button
+                                                                size="small"
+                                                                variant="outlined"
+                                                                onClick={() => handleFileUpload(file, 'RESPALDO')}
+                                                                disabled={isUploadingAdjunto}
+                                                            >
+                                                                Subir
+                                                            </Button>
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => handleRemovePendingFile(index)}
+                                                                disabled={isUploadingAdjunto}
+                                                            >
+                                                                <CloseIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Box>
+                                                    </Paper>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {/* Already uploaded files */}
+                                    {isLoadingAdjuntos ? (
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                            <CircularProgress />
+                                        </Box>
+                                    ) : adjuntos.length > 0 ? (
+                                        <Box>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                                                Archivos subidos ({adjuntos.length})
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                                                {adjuntos.map((adjunto) => (
+                                                    <Paper
+                                                        key={adjunto.id}
+                                                        elevation={1}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            p: 2,
+                                                            borderRadius: 2,
+                                                            backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                                                            border: '1px solid rgba(76, 175, 80, 0.2)'
+                                                        }}
+                                                    >
+                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            <AttachFileIcon sx={{ color: 'success.main', mr: 1 }} />
+                                                            <Box>
+                                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                                    {adjunto.nombre_archivo}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    {(adjunto.tamano_bytes / 1024).toFixed(2)} KB • {adjunto.tipo}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                                            <IconButton
+                                                                size="small"
+                                                                href={adjunto.archivo}
+                                                                target="_blank"
+                                                                color="primary"
+                                                            >
+                                                                <DownloadIcon fontSize="small" />
+                                                            </IconButton>
+                                                            {canEdit && (
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={() => deleteAdjuntoFile(adjunto.id)}
+                                                                >
+                                                                    <CloseIcon fontSize="small" />
+                                                                </IconButton>
+                                                            )}
+                                                        </Box>
+                                                    </Paper>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                    ) : (
+                                        <Alert severity="info">
+                                            No hay archivos adjuntos aún.
+                                        </Alert>
+                                    )}
+                                </>
+                            )}
                         </Card>
                     </Box>
                 )
@@ -475,174 +629,89 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
             case 4:
                 return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {/* Informes ampliatorios */}
-                        <Card elevation={2}>
-                            <Accordion>
-                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                        Informes ampliatorios
-                                    </Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ mb: 2 }}>
-                                            ¿Es posible enviar informes ampliatorios?
-                                        </Typography>
-                                        <RadioGroup
-                                            row
-                                            value={informesPermitidos}
-                                            onChange={(e) => setInformesPermitidos(e.target.value)}
-                                            sx={{ mb: 2 }}
-                                        >
-                                            <FormControlLabel value="Si" control={<Radio />} label="Sí" />
-                                            <FormControlLabel value="No" control={<Radio />} label="No" />
-                                        </RadioGroup>
-
-                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                                            <Button variant="contained" sx={{ textTransform: "none", borderRadius: 2 }}>
-                                                Agregar Informes
-                                            </Button>
-                                        </Box>
-
-                                        {[1, 2].map((num) => (
-                                            <Card key={num} variant="outlined" sx={{ mb: 1 }}>
-                                                <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        <EmailIcon sx={{ color: 'primary.main', mr: 2 }} />
-                                                        <Box>
-                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                                Informe {num}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                Documento adjunto
-                                                            </Typography>
-                                                        </Box>
-                                                    </Box>
-                                                    <IconButton>
-                                                        <CloudUploadIcon />
-                                                    </IconButton>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </Box>
-                                </AccordionDetails>
-                            </Accordion>
-                        </Card>
-
-                        {/* Notificaciones */}
-                        <Card elevation={2}>
-                            <Accordion>
-                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                        Notificaciones
-                                    </Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ mb: 2 }}>
-                                            ¿Es posible enviar notificaciones?
-                                        </Typography>
-                                        <RadioGroup
-                                            row
-                                            value={notificacionesPermitidas}
-                                            onChange={(e) => setNotificacionesPermitidas(e.target.value)}
-                                            sx={{ mb: 2 }}
-                                        >
-                                            <FormControlLabel value="Si" control={<Radio />} label="Sí" />
-                                            <FormControlLabel value="No" control={<Radio />} label="No" />
-                                        </RadioGroup>
-
-                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                                            <Button variant="contained" sx={{ textTransform: "none", borderRadius: 2 }}>
-                                                Agregar notificaciones
-                                            </Button>
-                                        </Box>
-
-                                        {[1, 2].map((num) => (
-                                            <Card key={num} variant="outlined" sx={{ mb: 1 }}>
-                                                <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        <EmailIcon sx={{ color: 'primary.main', mr: 2 }} />
-                                                        <Box>
-                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                                Notificación {num}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                Documento adjunto
-                                                            </Typography>
-                                                        </Box>
-                                                    </Box>
-                                                    <IconButton>
-                                                        <CloudUploadIcon />
-                                                    </IconButton>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </Box>
-                                </AccordionDetails>
-                            </Accordion>
-                        </Card>
-
-                        {/* Acta */}
-                        <Card elevation={2}>
-                            <Accordion>
-                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                        Acta
-                                    </Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ mb: 2 }}>
-                                            ¿Es posible adjuntar acta?
-                                        </Typography>
-                                        <RadioGroup
-                                            row
-                                            value={actaPermitida}
-                                            onChange={(e) => setActaPermitida(e.target.value)}
-                                            sx={{ mb: 2 }}
-                                        >
-                                            <FormControlLabel value="Si" control={<Radio />} label="Sí" />
-                                            <FormControlLabel value="No" control={<Radio />} label="No" />
-                                        </RadioGroup>
-
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                            <Typography variant="body2">Fecha:</Typography>
-                                            <Chip label="12/12/2025" size="small" color="primary" variant="outlined" />
-                                        </Box>
-
-                                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                                            <Button variant="contained" sx={{ textTransform: "none", borderRadius: 2 }}>
-                                                Adjuntar acta de puesta en conocimiento al NNyA
-                                            </Button>
-                                            <Button variant="contained" sx={{ textTransform: "none", borderRadius: 2 }}>
-                                                Adjuntar acta de resguardo
-                                            </Button>
-                                        </Box>
-                                    </Box>
-                                </AccordionDetails>
-                            </Accordion>
-                        </Card>
-
-                        {/* Motivo de vulneraciones */}
                         <Card elevation={2} sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                                Motivo de vulneraciones
+                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+                                Configuración Adicional
                             </Typography>
-                            <Button
-                                variant="contained"
-                                fullWidth
-                                size="large"
-                                startIcon={<SendIcon />}
-                                sx={{
-                                    textTransform: "none",
-                                    borderRadius: 2,
-                                    py: 1.5,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Enviar a la dirección
-                            </Button>
+
+                            {/* Informes ampliatorios */}
+                            <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                                    Informes ampliatorios
+                                </Typography>
+                                <FormControl component="fieldset">
+                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                        ¿Se requieren informes ampliatorios?
+                                    </Typography>
+                                    <RadioGroup
+                                        row
+                                        value={formData.requiere_informes_ampliatorios ? "Si" : "No"}
+                                        onChange={(e) => updateField('requiere_informes_ampliatorios', e.target.value === "Si")}
+                                    >
+                                        <FormControlLabel value="Si" control={<Radio />} label="Sí" disabled={!canEdit} />
+                                        <FormControlLabel value="No" control={<Radio />} label="No" disabled={!canEdit} />
+                                    </RadioGroup>
+                                </FormControl>
+                                <Alert severity="info" sx={{ mt: 2 }}>
+                                    Los informes ampliatorios se pueden adjuntar en la sección de documentos
+                                </Alert>
+                            </Box>
+
+                            <Divider sx={{ my: 3 }} />
+
+                            {/* Estado actual y acciones */}
+                            {intervencion && (
+                                <Box>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                                        Estado actual
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                        <Chip
+                                            label={intervencion.estado_display}
+                                            color={
+                                                intervencion.estado === 'APROBADO' ? 'success' :
+                                                intervencion.estado === 'ENVIADO' ? 'info' :
+                                                intervencion.estado === 'RECHAZADO' ? 'error' :
+                                                'default'
+                                            }
+                                            sx={{ fontWeight: 600 }}
+                                        />
+                                        {intervencion.fecha_envio && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Enviado: {new Date(intervencion.fecha_envio).toLocaleString('es-AR')}
+                                            </Typography>
+                                        )}
+                                    </Box>
+
+                                    {intervencion.observaciones_jz && (
+                                        <Alert severity="warning" sx={{ mb: 2 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                                Observaciones del Jefe Zonal:
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {intervencion.observaciones_jz}
+                                            </Typography>
+                                        </Alert>
+                                    )}
+
+                                    {/* Metadata */}
+                                    <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
+                                        <Typography variant="caption" color="text.secondary" display="block">
+                                            Registrado por: {intervencion.registrado_por_detalle}
+                                        </Typography>
+                                        {intervencion.aprobado_por_detalle && (
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Aprobado por: {intervencion.aprobado_por_detalle}
+                                            </Typography>
+                                        )}
+                                        {intervencion.rechazado_por_detalle && (
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Rechazado por: {intervencion.rechazado_por_detalle}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            )}
                         </Card>
                     </Box>
                 )
@@ -756,7 +825,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
             <DialogActions sx={{ px: 4, py: 2, borderTop: '1px solid #e0e0e0', justifyContent: 'space-between' }}>
                 <Box>
                     <Button
-                        disabled={activeStep === 0}
+                        disabled={activeStep === 0 || isSaving}
                         onClick={handleBack}
                         sx={{ textTransform: "none", borderRadius: 2 }}
                     >
@@ -764,34 +833,50 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                     </Button>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    {/* Loading indicator */}
+                    {(isLoading || isSaving) && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={20} />
+                            <Typography variant="caption" color="text.secondary">
+                                {isLoading ? "Cargando..." : "Guardando..."}
+                            </Typography>
+                        </Box>
+                    )}
+
+                    {/* Save button always available (not just on last step) */}
+                    {canEdit && (
+                        <Button
+                            variant="outlined"
+                            startIcon={<SaveIcon />}
+                            onClick={handleSave}
+                            disabled={isSaving || isLoading}
+                            sx={{ textTransform: "none", borderRadius: 2 }}
+                        >
+                            {intervencionId ? "Actualizar" : "Guardar Borrador"}
+                        </Button>
+                    )}
+
+                    {/* Next/Finish button */}
                     {activeStep === steps.length - 1 ? (
-                        <>
-                            <Button
-                                variant="outlined"
-                                startIcon={<SaveIcon />}
-                                sx={{ textTransform: "none", borderRadius: 2 }}
-                            >
-                                Guardar Borrador
-                            </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<SaveIcon />}
-                                size="large"
-                                sx={{
-                                    textTransform: "none",
-                                    borderRadius: 2,
-                                    px: 4,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Guardar Intervención
-                            </Button>
-                        </>
+                        <Button
+                            variant="contained"
+                            onClick={onClose}
+                            disabled={isSaving || isLoading}
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                                px: 4,
+                                fontWeight: 600,
+                            }}
+                        >
+                            Finalizar
+                        </Button>
                     ) : (
                         <Button
                             variant="contained"
                             onClick={handleNext}
+                            disabled={isSaving || isLoading}
                             sx={{ textTransform: "none", borderRadius: 2, px: 4 }}
                         >
                             Siguiente
@@ -799,6 +884,23 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                     )}
                 </Box>
             </DialogActions>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={showSuccessMessage}
+                autoHideDuration={3000}
+                onClose={() => setShowSuccessMessage(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setShowSuccessMessage(false)}
+                    severity="success"
+                    sx={{ width: '100%' }}
+                    icon={<CheckCircleIcon />}
+                >
+                    Intervención guardada exitosamente
+                </Alert>
+            </Snackbar>
         </Dialog>
     )
 } 

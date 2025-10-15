@@ -19,12 +19,30 @@ import type {
  */
 export const getUrgencias = async (): Promise<UrgenciaVulneracion[]> => {
   try {
-    // Adjust endpoint according to actual API
-    // Possible endpoints: urgencia-vulneracion, urgencias, catalogo/urgencias
-    const response = await get<UrgenciaVulneracion[]>('urgencia-vulneracion/')
+    // ⚠️ ADVERTENCIA: No existe un endpoint específico para catálogo de urgencias en API
+    // /api/vulneracion/ retorna TVulneracion[] (vulneraciones de demandas), NO catálogos
+    //
+    // Opciones:
+    // 1. Crear endpoint backend: /api/urgencias/ o /api/catalogo/urgencias/
+    // 2. Usar datos mock temporales
+    // 3. Obtener de /api/registro-demanda-form-dropdowns/
 
-    console.log('Urgencias fetched:', response)
-    return response
+    console.warn('⚠️ Endpoint de urgencias no existe - usando datos mock temporales')
+
+    // MOCK DATA TEMPORAL - Reemplazar cuando exista el endpoint real
+    const mockUrgencias: UrgenciaVulneracion[] = [
+      { id: 1, nombre: 'Baja', descripcion: 'Urgencia baja' },
+      { id: 2, nombre: 'Media', descripcion: 'Urgencia media' },
+      { id: 3, nombre: 'Alta', descripcion: 'Urgencia alta' },
+      { id: 4, nombre: 'Muy Alta', descripcion: 'Urgencia muy alta' },
+    ]
+
+    return mockUrgencias
+
+    // Descomentar cuando exista el endpoint real:
+    // const response = await get<UrgenciaVulneracion[]>('urgencias/')
+    // console.log('Urgencias fetched:', response)
+    // return response
   } catch (error) {
     console.error('Error fetching urgencias:', error)
     // Return empty array on error
@@ -59,14 +77,40 @@ export const getZonasDisponibles = async (): Promise<ZonaInfo[]> => {
  */
 export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> => {
   try {
-    // Adjust endpoint and query params according to actual API
-    // Possible approaches:
-    // 1. GET /api/usuarios/?zona={zonaId}
-    // 2. GET /api/zonas/{zonaId}/usuarios/
-    const response = await get<UserInfo[]>('usuarios/', { zona: zonaId })
+    // Endpoint: /api/users-zonas/?zona={zonaId}
+    // Retorna: { id, user: <user_id>, zona, jefe, director, legal }
+    // NOTA: 'user' es solo el ID, NO el objeto completo
 
-    console.log(`Users for zona ${zonaId} fetched:`, response)
-    return response
+    interface UserZonaResponse {
+      id: number
+      user: number  // ← Solo el ID del usuario
+      zona: number
+      jefe: boolean
+      director: boolean
+      legal: boolean
+      localidad: number | null
+    }
+
+    // 1. Obtener relaciones users-zonas
+    const userZonas = await get<UserZonaResponse[]>('users-zonas/', { zona: zonaId })
+
+    console.log(`UserZonas for zona ${zonaId}:`, userZonas)
+
+    if (userZonas.length === 0) {
+      return []
+    }
+
+    // 2. Extraer IDs de usuarios
+    const userIds = userZonas.map(uz => uz.user)
+
+    // 3. Obtener todos los usuarios del sistema
+    const allUsers = await get<UserInfo[]>('users/')
+
+    // 4. Filtrar solo los usuarios que están en la zona
+    const usersInZona = allUsers.filter(user => userIds.includes(user.id))
+
+    console.log(`Users for zona ${zonaId} fetched:`, usersInZona)
+    return usersInZona
   } catch (error) {
     console.error(`Error fetching users for zona ${zonaId}:`, error)
     return []
@@ -81,8 +125,8 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
  */
 export const getLocalesCentroVida = async (zonaId: number): Promise<LocalCentroVida[]> => {
   try {
-    // Adjust endpoint according to actual API
-    const response = await get<LocalCentroVida[]>('local-centro-vida/', { zona: zonaId })
+    // Endpoint correcto: /api/locales-centro-vida/?zona={zonaId}
+    const response = await get<LocalCentroVida[]>('locales-centro-vida/', { zona: zonaId })
 
     console.log(`Locales for zona ${zonaId} fetched:`, response)
     return response

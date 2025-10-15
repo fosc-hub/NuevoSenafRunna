@@ -30,11 +30,6 @@ export interface CreateLegajoManualRequest {
   user_responsable_centro_vida_id?: number
 
   origen?: string
-
-  // ⚠️ WORKAROUND TEMPORAL: Backend incorrectamente requiere numero
-  // Según LEG-02, numero debería ser auto-generado, pero el serializer está mal configurado
-  // TODO: Remover cuando backend marque numero como read_only
-  numero?: string
 }
 
 /**

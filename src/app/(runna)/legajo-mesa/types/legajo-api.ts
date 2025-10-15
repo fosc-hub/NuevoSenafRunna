@@ -37,13 +37,20 @@ export interface ActividadesPTIndicadores {
 // Estado del andarivel de medidas
 export type AndarielEstado = "Intervención" | "Aval" | "Informe Jurídico" | "Ratificación"
 
+// Medida andarivel object structure
+export interface MedidaAndarivel {
+  etapa_nombre: AndarielEstado
+  etapa_estado: string
+  numero_medida: string
+}
+
 // Indicadores consolidados del legajo
 export interface IndicadoresLegajo {
   demanda_pi_count: number
   oficios_por_tipo: {
     [key: string]: number // e.g., "Ratificación": 2, "Pedido": 1
   }
-  medida_andarivel: AndarielEstado | null
+  medida_andarivel: MedidaAndarivel | AndarielEstado | null
   pt_actividades: ActividadesPTIndicadores
   alertas: string[] // Lista de mensajes de alerta
 }

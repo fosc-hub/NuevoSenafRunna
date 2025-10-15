@@ -52,6 +52,39 @@ export interface EtapaMedida {
   observaciones: string | null
 }
 
+// ============================================================================
+// NOTA DE AVAL (MED-03)
+// ============================================================================
+
+/**
+ * Decisión del Director sobre la intervención
+ */
+export type TNotaAvalDecision = 'APROBADO' | 'OBSERVADO'
+
+/**
+ * Información del usuario (para campos _detalle)
+ */
+export interface UserDetailInfo {
+  id: number
+  nombre_completo: string
+  username?: string
+  email?: string
+}
+
+/**
+ * Nota de Aval básica (para inclusión en medida)
+ */
+export interface NotaAvalInfo {
+  id: number
+  decision: TNotaAvalDecision
+  decision_display: string
+  emitido_por_detalle: string | UserDetailInfo // Can be string or object
+  fecha_emision: string // ISO datetime
+  comentarios: string | null
+  fue_aprobado: boolean
+  fue_observado: boolean
+}
+
 // Response de medida completa (GET /api/medidas/{id}/)
 export interface MedidaDetailResponse {
   id: number
@@ -82,6 +115,9 @@ export interface MedidaDetailResponse {
       edad_calculada: number | null
     }
   }
+  // MED-03: Nota de Aval
+  nota_aval_actual?: NotaAvalInfo | null // Nota de aval más reciente
+  notas_aval_historial?: NotaAvalInfo[] // Historial completo de notas de aval (para casos con múltiples observaciones)
 }
 
 // Response de medida básica (en listados)

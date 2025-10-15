@@ -17,6 +17,7 @@ import {
   Card,
   CardContent,
   IconButton,
+  Tooltip,
 } from "@mui/material"
 import HistoryIcon from "@mui/icons-material/History"
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline"
@@ -364,7 +365,7 @@ export const HistorialAsignacionesSection: React.FC<HistorialAsignacionesSection
                           Comentarios:
                         </Typography>
                         <Typography variant="body2" sx={{ fontStyle: "italic", color: "text.secondary" }}>
-                          "{asignacion.comentarios}"
+                          &quot;{asignacion.comentarios}&quot;
                         </Typography>
                       </Grid>
                     )}

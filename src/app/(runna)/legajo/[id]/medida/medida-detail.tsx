@@ -18,6 +18,7 @@ import { HistorialSeguimientoSection } from "./[medidaId]/components/medida/hist
 import { CierreSection } from "./[medidaId]/components/medida/cierre-section"
 import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-informe-section"
 import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-dialog"
+import { NotaAvalSection } from "./[medidaId]/components/medida/nota-aval-section"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
@@ -140,6 +141,7 @@ const convertMedidaToMedidaData = (
 
 export default function MedidaDetail({ params, onClose, isFullPage = false }: MedidaDetailProps) {
   const [medidaData, setMedidaData] = useState<MedidaData | null>(null)
+  const [medidaApiData, setMedidaApiData] = useState<MedidaDetailResponse | null>(null)
   const [legajoData, setLegajoData] = useState<LegajoDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -185,6 +187,14 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
         // Fetch medida data from API
         const medida = await getMedidaDetail(medidaIdNum)
+
+        // Debug: Log the etapa_actual structure
+        console.log('medida.etapa_actual:', medida.etapa_actual)
+        console.log('medida.etapa_actual.estado type:', typeof medida.etapa_actual?.estado)
+        console.log('medida.etapa_actual.estado value:', medida.etapa_actual?.estado)
+
+        // Store the API response
+        setMedidaApiData(medida)
 
         // Convert to MedidaData format
         const convertedData = convertMedidaToMedidaData(medida, legajo)
@@ -372,7 +382,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
         </Typography>
         <ul>
           <li>
-            <Typography variant="body2">El ID de la medida sea numérico (no "mpe", "mpi" o "mpj")</Typography>
+            <Typography variant="body2">El ID de la medida sea numérico (no &quot;mpe&quot;, &quot;mpi&quot; o &quot;mpj&quot;)</Typography>
           </li>
           <li>
             <Typography variant="body2">La medida exista en el sistema</Typography>
@@ -484,6 +494,29 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                   />
                 )}
               </Grid>
+
+              {/* Nota de Aval Section (MED-03) - TEMPORALMENTE DESHABILITADO PARA DEBUG */}
+              {false && medidaApiData && (() => {
+                // Extract estado safely as a string
+                const estado = medidaApiData.etapa_actual?.estado
+                const estadoString = typeof estado === 'string' ? estado : undefined
+
+                return (
+                  <Grid item xs={12}>
+                    <NotaAvalSection
+                      medidaId={Number(params.medidaId)}
+                      medidaNumero={medidaApiData.numero_medida}
+                      estadoActual={estadoString}
+                      userLevel={3} // TODO: Get from actual user context (3 or 4 for Director)
+                      isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)
+                      onNotaAvalCreated={() => {
+                        // Refetch medida data to update estado
+                        window.location.reload() // Simple reload for now, can be improved with proper refetch
+                      }}
+                    />
+                  </Grid>
+                )
+              })()}
 
               {/* Historial de seguimiento Section */}
               <Grid item xs={12} md={4}>

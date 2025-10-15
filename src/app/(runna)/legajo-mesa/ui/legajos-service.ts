@@ -127,7 +127,7 @@ export const exportLegajosToExcel = (rows: any[], filterMetadata?: { filters: an
   const formattedData = ExcelExportService.formatDataForExport(rows, fieldMappings, formatters)
 
   // Add filter metadata as additional information
-  let metadataRows: any[] = []
+  const metadataRows: any[] = []
   if (filterMetadata && filterMetadata.filters) {
     const { filters, totalCount } = filterMetadata
     metadataRows.push({})

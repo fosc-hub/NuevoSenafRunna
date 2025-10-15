@@ -15,6 +15,7 @@ import type {
   OficioConSemaforo,
   SemaforoEstado,
   AndarielEstado,
+  MedidaAndarivel,
 } from "../types/legajo-api"
 
 /**
@@ -122,13 +123,18 @@ export const ChipsOficios: React.FC<{ oficios: OficioConSemaforo[] }> = ({ ofici
 /**
  * Andarivel de Medidas - Barra de progreso visual
  */
-export const AndarielMedidas: React.FC<{ estado: AndarielEstado | null }> = ({ estado }) => {
+export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstado | null }> = ({ estado }) => {
   if (!estado) {
     return <Typography variant="body2" color="text.disabled">Sin medidas</Typography>
   }
 
+  // Extract the estado string from object if needed
+  const estadoString: AndarielEstado = typeof estado === 'string' 
+    ? estado 
+    : estado.etapa_nombre
+
   const etapas: AndarielEstado[] = ["Intervención", "Aval", "Informe Jurídico", "Ratificación"]
-  const etapaIndex = etapas.indexOf(estado)
+  const etapaIndex = etapas.indexOf(estadoString)
   const progreso = ((etapaIndex + 1) / etapas.length) * 100
 
   const getColorByEtapa = (etapa: AndarielEstado) => {
@@ -146,8 +152,13 @@ export const AndarielMedidas: React.FC<{ estado: AndarielEstado | null }> = ({ e
     }
   }
 
+  // Build tooltip with additional info if available
+  const tooltipContent = typeof estado === 'object' 
+    ? `Etapa: ${estadoString} | Medida: ${estado.numero_medida} | Estado: ${estado.etapa_estado}`
+    : `Etapa: ${estadoString}`
+
   return (
-    <Tooltip title={`Etapa: ${estado}`}>
+    <Tooltip title={tooltipContent}>
       <Box sx={{ width: "100%", minWidth: 120 }}>
         <LinearProgress
           variant="determinate"
@@ -157,13 +168,13 @@ export const AndarielMedidas: React.FC<{ estado: AndarielEstado | null }> = ({ e
             borderRadius: 4,
             backgroundColor: "#e5e7eb",
             "& .MuiLinearProgress-bar": {
-              backgroundColor: getColorByEtapa(estado),
+              backgroundColor: getColorByEtapa(estadoString),
               borderRadius: 4,
             },
           }}
         />
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", mt: 0.5, display: "block" }}>
-          {estado}
+          {estadoString}
         </Typography>
       </Box>
     </Tooltip>

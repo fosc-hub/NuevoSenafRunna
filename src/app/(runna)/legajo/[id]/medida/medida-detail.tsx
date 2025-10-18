@@ -20,6 +20,7 @@ import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-info
 import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-dialog"
 import { NotaAvalSection } from "./[medidaId]/components/medida/nota-aval-section"
 import { InformeJuridicoSection } from "./[medidaId]/components/medida/informe-juridico-section"
+import { RatificacionJudicialSection } from "./[medidaId]/components/medida/ratificacion-judicial-section"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
@@ -570,6 +571,38 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                       isEquipoLegal={true} // TODO: Get from actual user context (user.nivel 3 or 4 + flag legal=true)
                       isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)
                       onInformeEnviado={() => {
+                        // Refetch medida data to update estado
+                        window.location.reload() // Simple reload for now, can be improved with proper refetch
+                      }}
+                    />
+                  </Grid>
+                )
+              })()}
+
+              {/* Ratificación Judicial Section (MED-05) */}
+              {medidaApiData && (() => {
+                // Extract estado safely as a string
+                const estado = medidaApiData.etapa_actual?.estado
+                const estadoString = typeof estado === 'string' ? estado : undefined
+
+                // Extract numero_medida safely as a string
+                const numeroMedidaSafe = typeof medidaApiData.numero_medida === 'string'
+                  ? medidaApiData.numero_medida
+                  : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                    ? String(medidaApiData.numero_medida.display)
+                    : `M-${params.medidaId}`
+
+                return (
+                  <Grid item xs={12}>
+                    <RatificacionJudicialSection
+                      medidaId={Number(params.medidaId)}
+                      medidaNumero={numeroMedidaSafe}
+                      estadoActual={estadoString}
+                      userLevel={3} // TODO: Get from actual user context
+                      isEquipoLegal={true} // TODO: Get from actual user context (user.nivel 3 or 4 + flag legal=true)
+                      isJZ={false} // TODO: Get from actual user context (user.nivel >= 3 and JZ role)
+                      isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)
+                      onRatificacionRegistrada={() => {
                         // Refetch medida data to update estado
                         window.location.reload() // Simple reload for now, can be improved with proper refetch
                       }}

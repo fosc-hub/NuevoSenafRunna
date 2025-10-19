@@ -44,6 +44,19 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
     }
   }
 
+  const calcularDiasDesdeApertura = (fechaApertura: string | undefined) => {
+    if (!fechaApertura) return 0
+    try {
+      const fecha = new Date(fechaApertura)
+      const hoy = new Date()
+      const diffTime = Math.abs(hoy.getTime() - fecha.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays
+    } catch {
+      return 0
+    }
+  }
+
   return (
     <Paper
       elevation={2}
@@ -74,6 +87,9 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Fecha de apertura: {formatFecha(legajo?.fecha_apertura)}
+              </Typography>
+              <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500, mt: 0.5 }}>
+                Días desde apertura: {calcularDiasDesdeApertura(legajo?.fecha_apertura)} días
               </Typography>
             </Box>
           </Grid>

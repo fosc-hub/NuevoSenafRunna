@@ -25,7 +25,7 @@ import {
   GridToolbarContainer,
   GridToolbarFilterButton,
 } from "@mui/x-data-grid"
-import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRounded } from "@mui/icons-material"
+import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRounded, Info } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import AsignarLegajoModal from "../components/asignar-legajo-modal"
@@ -70,6 +70,26 @@ const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
       >
         Exportar Excel
       </Button>
+      <Tooltip
+        title={
+          <Box sx={{ p: 0.5 }}>
+            <Typography variant="caption" sx={{ display: "block", fontWeight: 600, mb: 0.5 }}>
+              Ordenamiento Multi-columna
+            </Typography>
+            <Typography variant="caption" sx={{ display: "block" }}>
+              • Click en encabezado: ordena por una columna
+            </Typography>
+            <Typography variant="caption" sx={{ display: "block" }}>
+              • Ctrl/Cmd + Click: agrega columna al ordenamiento
+            </Typography>
+          </Box>
+        }
+        placement="right"
+      >
+        <IconButton size="small" sx={{ ml: 1 }}>
+          <Info fontSize="small" />
+        </IconButton>
+      </Tooltip>
       <IconButton
         size="small"
         sx={{
@@ -592,7 +612,7 @@ const LegajoTable: React.FC = () => {
             {/* Action Menu with more options */}
             <ActionMenu
               legajoId={params.row.id}
-              demandaId={params.row.indicadores?.demanda_pi_count > 0 ? params.row.id : null} // TODO: Get real demanda_id
+              demandaId={params.row.indicadores?.demanda_pi_id || null}
               tieneMedidas={params.row.medidas_activas_count > 0}
               tieneOficios={params.row.oficios_count > 0}
               tienePlanTrabajo={

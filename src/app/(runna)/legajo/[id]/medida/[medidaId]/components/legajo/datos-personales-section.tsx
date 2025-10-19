@@ -49,6 +49,19 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
     return genero.charAt(0) + genero.slice(1).toLowerCase()
   }
 
+  const calcularDiasDesdeApertura = (fechaApertura: string | null | undefined) => {
+    if (!fechaApertura) return "N/A"
+    try {
+      const fecha = new Date(fechaApertura)
+      const hoy = new Date()
+      const diffTime = Math.abs(hoy.getTime() - fecha.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays
+    } catch {
+      return "N/A"
+    }
+  }
+
   return (
     <Paper
       elevation={2}
@@ -281,6 +294,15 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
                 Fecha de apertura:
               </Typography>
               <Typography variant="body1">{formatFecha(legajo?.fecha_apertura)}</Typography>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Typography variant="body2" color="text.secondary">
+                Días desde apertura:
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 500, color: "primary.main" }}>
+                {calcularDiasDesdeApertura(legajo?.fecha_apertura)} días
+              </Typography>
             </Grid>
 
             <Grid item xs={12} md={4}>

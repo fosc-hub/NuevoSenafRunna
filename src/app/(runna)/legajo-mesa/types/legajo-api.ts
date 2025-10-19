@@ -51,6 +51,7 @@ export interface MedidaAndarivel {
 // Indicadores consolidados del legajo
 export interface IndicadoresLegajo {
   demanda_pi_count: number
+  demanda_pi_id?: number | null // ID de la demanda PI relacionada para deep-linking
   oficios_por_tipo: {
     [key: string]: number // e.g., "Ratificación": 2, "Pedido": 1
   }

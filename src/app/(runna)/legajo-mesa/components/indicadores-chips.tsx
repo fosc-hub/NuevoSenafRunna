@@ -17,6 +17,16 @@ import type {
   AndarielEstado,
   MedidaAndarivel,
 } from "../types/legajo-api"
+import {
+  SEMAFORO_COLORS,
+  ANDARIVEL_COLORS,
+  PT_STATE_COLORS,
+  PROGRESS_BAR_COLORS,
+  getSemaforoColor,
+  getAndarielColor,
+  getPTStateColor,
+  calculateSemaforo,
+} from "../config/legajo-theme"
 
 /**
  * Chip para mostrar contador de Demandas PI
@@ -63,19 +73,6 @@ export const ChipsOficios: React.FC<{ oficios: OficioConSemaforo[] }> = ({ ofici
     return acc
   }, {} as Record<string, OficioConSemaforo[]>)
 
-  const getSemaforoColor = (semaforo: SemaforoEstado) => {
-    switch (semaforo) {
-      case "verde":
-        return "success"
-      case "amarillo":
-        return "warning"
-      case "rojo":
-        return "error"
-      default:
-        return "default"
-    }
-  }
-
   const getSemaforoIcon = (semaforo: SemaforoEstado) => {
     switch (semaforo) {
       case "verde":
@@ -100,17 +97,23 @@ export const ChipsOficios: React.FC<{ oficios: OficioConSemaforo[] }> = ({ ofici
         }, "verde" as SemaforoEstado)
 
         const tooltipText = `${tipo}: ${oficiosTipo.length} oficio${oficiosTipo.length > 1 ? "s" : ""}`
+        const colors = getSemaforoColor(semaforoMasCritico)
 
         return (
           <Tooltip key={tipo} title={tooltipText}>
             <Chip
               label={tipo.substring(0, 3).toUpperCase()}
               size="small"
-              color={getSemaforoColor(semaforoMasCritico)}
               icon={getSemaforoIcon(semaforoMasCritico)}
               sx={{
                 fontWeight: "500",
                 fontSize: "0.75rem",
+                bgcolor: colors.bg,
+                color: colors.text,
+                border: `1px solid ${colors.border}`,
+                "& .MuiChip-icon": {
+                  color: colors.icon,
+                },
               }}
             />
           </Tooltip>
@@ -157,21 +160,7 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
   }
 
   const progreso = ((etapaIndex + 1) / etapas.length) * 100
-
-  const getColorByEtapa = (etapa: string) => {
-    switch (etapa) {
-      case "Intervención":
-        return "#3b82f6" // blue
-      case "Aval":
-        return "#8b5cf6" // purple
-      case "Informe Jurídico":
-        return "#f59e0b" // amber
-      case "Ratificación":
-        return "#10b981" // green
-      default:
-        return "#6b7280" // gray
-    }
-  }
+  const colors = getAndarielColor(estadoString as AndarielEstado)
 
   // Build tooltip with additional info if available
   let tooltipContent = `Etapa: ${estadoString}`
@@ -193,12 +182,21 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
             borderRadius: 4,
             backgroundColor: "#e5e7eb",
             "& .MuiLinearProgress-bar": {
-              backgroundColor: getColorByEtapa(estadoString),
+              backgroundColor: colors.border,
               borderRadius: 4,
             },
           }}
         />
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", mt: 0.5, display: "block" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: "0.7rem",
+            mt: 0.5,
+            display: "block",
+            color: colors.text,
+            fontWeight: 500,
+          }}
+        >
           {estadoString}
         </Typography>
       </Box>
@@ -224,6 +222,11 @@ export const ContadoresPT: React.FC<{
     return <Typography variant="body2" color="text.disabled">Sin PT</Typography>
   }
 
+  const pendientesColors = getPTStateColor("pendientes")
+  const enProgresoColors = getPTStateColor("en_progreso")
+  const vencidasColors = getPTStateColor("vencidas")
+  const realizadasColors = getPTStateColor("realizadas")
+
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
       {actividades.pendientes > 0 && (
@@ -232,8 +235,9 @@ export const ContadoresPT: React.FC<{
             label={actividades.pendientes}
             size="small"
             sx={{
-              bgcolor: "#f3f4f6",
-              color: "#6b7280",
+              bgcolor: pendientesColors.bg,
+              color: pendientesColors.text,
+              border: `1px solid ${pendientesColors.border}`,
               fontWeight: "bold",
               minWidth: 30,
             }}
@@ -246,8 +250,10 @@ export const ContadoresPT: React.FC<{
           <Chip
             label={actividades.en_progreso}
             size="small"
-            color="primary"
             sx={{
+              bgcolor: enProgresoColors.bg,
+              color: enProgresoColors.text,
+              border: `1px solid ${enProgresoColors.border}`,
               fontWeight: "bold",
               minWidth: 30,
             }}
@@ -260,11 +266,16 @@ export const ContadoresPT: React.FC<{
           <Chip
             label={actividades.vencidas}
             size="small"
-            color="error"
             icon={<WarningIcon fontSize="small" />}
             sx={{
+              bgcolor: vencidasColors.bg,
+              color: vencidasColors.text,
+              border: `1px solid ${vencidasColors.border}`,
               fontWeight: "bold",
               minWidth: 30,
+              "& .MuiChip-icon": {
+                color: vencidasColors.icon,
+              },
             }}
           />
         </Tooltip>
@@ -275,8 +286,10 @@ export const ContadoresPT: React.FC<{
           <Chip
             label={actividades.realizadas}
             size="small"
-            color="success"
             sx={{
+              bgcolor: realizadasColors.bg,
+              color: realizadasColors.text,
+              border: `1px solid ${realizadasColors.border}`,
               fontWeight: "bold",
               minWidth: 30,
             }}

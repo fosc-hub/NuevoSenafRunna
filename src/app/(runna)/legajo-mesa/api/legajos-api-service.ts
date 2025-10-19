@@ -139,6 +139,58 @@ export const fetchLegajos = async (
       queryParams.fecha_apertura__ultimos_dias = String(params.fecha_apertura__ultimos_dias)
     }
 
+    // Add responsable filters
+    if (params.jefe_zonal !== undefined && params.jefe_zonal !== null) {
+      queryParams.jefe_zonal = String(params.jefe_zonal)
+    }
+    if (params.director !== undefined && params.director !== null) {
+      queryParams.director = String(params.director)
+    }
+    if (params.equipo_trabajo !== undefined && params.equipo_trabajo !== null) {
+      queryParams.equipo_trabajo = String(params.equipo_trabajo)
+    }
+    if (params.equipo_centro_vida !== undefined && params.equipo_centro_vida !== null) {
+      queryParams.equipo_centro_vida = String(params.equipo_centro_vida)
+    }
+
+    // Advanced filters (LEG-03 CA-3)
+    if (params.demanda_estado) {
+      queryParams.demanda_estado = params.demanda_estado
+    }
+
+    // Array parameters for multi-select filters
+    if (params.medida_tipo && params.medida_tipo.length > 0) {
+      queryParams.medida_tipo = params.medida_tipo.join(",")
+    }
+
+    if (params.oficio_tipo && params.oficio_tipo.length > 0) {
+      queryParams.oficio_tipo = params.oficio_tipo.join(",")
+    }
+
+    if (params.oficios_proximos_vencer !== undefined && params.oficios_proximos_vencer !== null) {
+      queryParams.oficios_proximos_vencer = String(params.oficios_proximos_vencer)
+    }
+
+    if (params.oficios_vencidos !== undefined) {
+      queryParams.oficios_vencidos = String(params.oficios_vencidos)
+    }
+
+    if (params.pt_pendientes !== undefined) {
+      queryParams.pt_pendientes = String(params.pt_pendientes)
+    }
+
+    if (params.pt_en_progreso !== undefined) {
+      queryParams.pt_en_progreso = String(params.pt_en_progreso)
+    }
+
+    if (params.pt_vencidas !== undefined) {
+      queryParams.pt_vencidas = String(params.pt_vencidas)
+    }
+
+    if (params.etapa_medida) {
+      queryParams.etapa_medida = params.etapa_medida
+    }
+
     console.log("Fetching legajos with params:", queryParams)
 
     // Make API call - Django requires trailing slash

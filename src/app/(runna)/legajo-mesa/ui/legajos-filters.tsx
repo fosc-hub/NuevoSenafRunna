@@ -20,11 +20,12 @@ import {
   InputLabel,
 } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
-import { Check, AlertCircle, FileText, Clock, Shield, Calendar, Hash, Users } from "lucide-react"
+import { Check, AlertCircle, FileText, Clock, Shield, Calendar, Hash, Users, Filter } from "lucide-react"
 import { get } from "@/app/api/apiService"
 import DateRangeFilter from "../components/filters/DateRangeFilter"
 import NumericFilter from "../components/filters/NumericFilter"
 import ResponsableFilter from "../components/filters/ResponsableFilter"
+import AdvancedFiltersPanel from "../components/filters/AdvancedFiltersPanel"
 import { useFilterOptions } from "../hooks/useFilterOptions"
 
 // Interfaz para los filtros de legajos
@@ -50,6 +51,16 @@ export interface LegajoFiltersState {
   director?: number | null
   equipo_trabajo?: number | null
   equipo_centro_vida?: number | null
+  // Advanced filters (LEG-03 CA-3)
+  demanda_estado?: "ACTIVA" | "CERRADA" | "DERIVADA" | null
+  medida_tipo?: string[]
+  oficio_tipo?: string[]
+  oficios_proximos_vencer?: number | null
+  oficios_vencidos?: boolean | null
+  pt_pendientes?: boolean | null
+  pt_en_progreso?: boolean | null
+  pt_vencidas?: boolean | null
+  etapa_medida?: "Intervención" | "Aval" | "Informe Jurídico" | "Ratificación" | null
 }
 
 interface LegajoFiltersProps {
@@ -67,6 +78,7 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
   const [dateAnchorEl, setDateAnchorEl] = useState<null | HTMLElement>(null)
   const [numericAnchorEl, setNumericAnchorEl] = useState<null | HTMLElement>(null)
   const [responsableAnchorEl, setResponsableAnchorEl] = useState<null | HTMLElement>(null)
+  const [advancedAnchorEl, setAdvancedAnchorEl] = useState<null | HTMLElement>(null)
   const [zonas, setZonas] = useState<Zona[]>([])
   const filterOptions = useFilterOptions()
   const [filterState, setFilterState] = useState<LegajoFiltersState>({
@@ -88,6 +100,15 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
     director: null,
     equipo_trabajo: null,
     equipo_centro_vida: null,
+    demanda_estado: null,
+    medida_tipo: [],
+    oficio_tipo: [],
+    oficios_proximos_vencer: null,
+    oficios_vencidos: null,
+    pt_pendientes: null,
+    pt_en_progreso: null,
+    pt_vencidas: null,
+    etapa_medida: null,
   })
 
   // Fetch zonas on component mount
@@ -166,6 +187,24 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
       director: null,
       equipo_trabajo: null,
       equipo_centro_vida: null,
+      demanda_estado: null,
+      medida_tipo: [],
+      oficio_tipo: [],
+      oficios_proximos_vencer: null,
+      oficios_vencidos: null,
+      pt_pendientes: null,
+      pt_en_progreso: null,
+      pt_vencidas: null,
+      etapa_medida: null,
+    }
+    setFilterState(newState)
+    onFilterChange(newState)
+  }
+
+  const handleAdvancedFilter = (advancedFilters: Partial<LegajoFiltersState>) => {
+    const newState = {
+      ...filterState,
+      ...advancedFilters,
     }
     setFilterState(newState)
     onFilterChange(newState)
@@ -388,6 +427,72 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
               filterState.equipo_trabajo,
               filterState.equipo_centro_vida,
             ].filter((v) => v !== null).length}
+          </Box>
+        )}
+      </Button>
+
+      {/* Advanced Filters Button */}
+      <Button
+        onClick={(e) => setAdvancedAnchorEl(e.currentTarget)}
+        variant="outlined"
+        size="small"
+        className="flex items-center gap-2 px-4 py-2 bg-white"
+        sx={{
+          border: "1px solid rgba(0, 0, 0, 0.12)",
+          boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
+          borderRadius: "4px",
+          "&:hover": {
+            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+          },
+          ...((filterState.demanda_estado ||
+            (filterState.medida_tipo && filterState.medida_tipo.length > 0) ||
+            (filterState.oficio_tipo && filterState.oficio_tipo.length > 0) ||
+            filterState.oficios_proximos_vencer ||
+            filterState.oficios_vencidos ||
+            filterState.pt_pendientes ||
+            filterState.pt_en_progreso ||
+            filterState.pt_vencidas ||
+            filterState.etapa_medida) && {
+            borderColor: "primary.main",
+            backgroundColor: "primary.50",
+          }),
+        }}
+      >
+        <Filter className="h-4 w-4" />
+        <span>Avanzados</span>
+        {(filterState.demanda_estado ||
+          (filterState.medida_tipo && filterState.medida_tipo.length > 0) ||
+          (filterState.oficio_tipo && filterState.oficio_tipo.length > 0) ||
+          filterState.oficios_proximos_vencer ||
+          filterState.oficios_vencidos ||
+          filterState.pt_pendientes ||
+          filterState.pt_en_progreso ||
+          filterState.pt_vencidas ||
+          filterState.etapa_medida) && (
+          <Box
+            component="span"
+            sx={{
+              ml: 1,
+              px: 0.75,
+              py: 0.25,
+              borderRadius: "10px",
+              backgroundColor: "primary.main",
+              color: "white",
+              fontSize: "0.75rem",
+              fontWeight: "bold",
+            }}
+          >
+            {[
+              filterState.demanda_estado,
+              filterState.medida_tipo && filterState.medida_tipo.length > 0,
+              filterState.oficio_tipo && filterState.oficio_tipo.length > 0,
+              filterState.oficios_proximos_vencer,
+              filterState.oficios_vencidos,
+              filterState.pt_pendientes,
+              filterState.pt_en_progreso,
+              filterState.pt_vencidas,
+              filterState.etapa_medida,
+            ].filter((v) => v).length}
           </Box>
         )}
       </Button>
@@ -661,6 +766,46 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
           onApply={handleResponsableFilter}
           onClose={() => setResponsableAnchorEl(null)}
           filterOptions={filterOptions}
+        />
+      </Popover>
+
+      {/* Advanced Filters Popover */}
+      <Popover
+        id="advanced-filter-menu"
+        open={Boolean(advancedAnchorEl)}
+        anchorEl={advancedAnchorEl}
+        onClose={() => setAdvancedAnchorEl(null)}
+        elevation={4}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        sx={{
+          "& .MuiPopover-paper": {
+            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+            borderRadius: "8px",
+            marginTop: "4px",
+          },
+        }}
+      >
+        <AdvancedFiltersPanel
+          filters={{
+            demanda_estado: filterState.demanda_estado || null,
+            medida_tipo: filterState.medida_tipo || [],
+            oficio_tipo: filterState.oficio_tipo || [],
+            oficios_proximos_vencer: filterState.oficios_proximos_vencer || null,
+            oficios_vencidos: filterState.oficios_vencidos || null,
+            pt_pendientes: filterState.pt_pendientes || null,
+            pt_en_progreso: filterState.pt_en_progreso || null,
+            pt_vencidas: filterState.pt_vencidas || null,
+            etapa_medida: filterState.etapa_medida || null,
+          }}
+          onApply={handleAdvancedFilter}
+          onClose={() => setAdvancedAnchorEl(null)}
         />
       </Popover>
     </>

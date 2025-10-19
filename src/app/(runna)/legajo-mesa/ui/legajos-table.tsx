@@ -21,6 +21,7 @@ import {
   DataGrid,
   type GridColDef,
   type GridPaginationModel,
+  type GridSortModel,
   GridToolbarContainer,
   GridToolbarFilterButton,
 } from "@mui/x-data-grid"
@@ -45,6 +46,7 @@ import { useUserPermissions } from "../hooks/useUserPermissions"
 import LegajoSearchBar from "../components/search/LegajoSearchBar"
 import ActiveFiltersBar from "../components/search/ActiveFiltersBar"
 import { useFilterOptions } from "../hooks/useFilterOptions"
+import { getPriorityColor } from "../config/legajo-theme"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
@@ -93,6 +95,7 @@ const LegajoTable: React.FC = () => {
     page: 0,
     pageSize: 10,
   })
+  const [sortModel, setSortModel] = useState<GridSortModel>([])
   const [totalCount, setTotalCount] = useState(0)
   const [selectedLegajoId, setSelectedLegajoId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -139,7 +142,7 @@ const LegajoTable: React.FC = () => {
 
   useEffect(() => {
     loadLegajos()
-  }, [paginationModel.page, paginationModel.pageSize, apiFilters])
+  }, [paginationModel.page, paginationModel.pageSize, apiFilters, sortModel])
 
   const loadLegajos = async () => {
     try {
@@ -214,6 +217,19 @@ const LegajoTable: React.FC = () => {
       }
       if (apiFilters.equipo_centro_vida !== undefined && apiFilters.equipo_centro_vida !== null) {
         queryParams.equipo_centro_vida = apiFilters.equipo_centro_vida
+      }
+
+      // Add sorting (multi-column support)
+      if (sortModel.length > 0) {
+        // Convert GridSortModel to Django ordering format
+        // Multiple columns: "field1,-field2,field3"
+        const ordering = sortModel
+          .map((sort) => {
+            const prefix = sort.sort === "desc" ? "-" : ""
+            return `${prefix}${sort.field}`
+          })
+          .join(",")
+        queryParams.ordering = ordering
       }
 
       const response = await fetchLegajos(queryParams)
@@ -380,49 +396,56 @@ const LegajoTable: React.FC = () => {
         field: "prioridad",
         headerName: "Prioridad",
         width: 150,
-        renderCell: (params) => (
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-              "& select": {
+        renderCell: (params) => {
+          const prioridadValue = params.value as "ALTA" | "MEDIA" | "BAJA" | null
+          const colors = getPriorityColor(prioridadValue)
+
+          return (
+            <Box
+              sx={{
                 width: "100%",
-                padding: "8px",
-                border: "1px solid #e0e0e0",
-                borderRadius: "4px",
-                backgroundColor: "#fff",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                cursor: "pointer",
-                outline: "none",
-                fontSize: "0.875rem",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  borderColor: "#bdbdbd",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                display: "flex",
+                justifyContent: "center",
+                "& select": {
+                  width: "100%",
+                  padding: "8px",
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: "4px",
+                  backgroundColor: colors.bg,
+                  color: colors.text,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  cursor: "pointer",
+                  outline: "none",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    borderColor: colors.border,
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  },
+                  "&:focus": {
+                    borderColor: colors.border,
+                    boxShadow: `0 0 0 2px ${colors.bg}`,
+                  },
                 },
-                "&:focus": {
-                  borderColor: "#2196f3",
-                  boxShadow: "0 0 0 2px rgba(33,150,243,0.2)",
-                },
-              },
-            }}
-          >
-            <select
-              value={formatPrioridadValue(params.value)}
-              onChange={(e) => {
-                e.stopPropagation()
-                handlePrioridadChange(params.row.id, e.target.value)
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              {params.value === null && <option value="">Seleccionar</option>}
-              <option value="ALTA">Alta</option>
-              <option value="MEDIA">Media</option>
-              <option value="BAJA">Baja</option>
-            </select>
-          </Box>
-        ),
+              <select
+                value={formatPrioridadValue(params.value)}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  handlePrioridadChange(params.row.id, e.target.value)
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {params.value === null && <option value="">Seleccionar</option>}
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </select>
+            </Box>
+          )
+        },
       },
       {
         field: "ultimaActualizacion",
@@ -843,7 +866,10 @@ const LegajoTable: React.FC = () => {
             columns={columns}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
-            pageSizeOptions={[5, 10, 25, 50]}
+            sortModel={sortModel}
+            onSortModelChange={(newModel) => setSortModel(newModel)}
+            sortingMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 100]}
             rowCount={totalCount}
             paginationMode="server"
             loading={isLoading || isUpdating}

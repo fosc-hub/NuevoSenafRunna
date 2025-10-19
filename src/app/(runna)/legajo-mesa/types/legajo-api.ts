@@ -142,6 +142,17 @@ export interface LegajosQueryParams {
   tiene_plan_trabajo?: boolean
   tiene_alertas?: boolean
   zona__nombre__icontains?: string
+
+  // Advanced filters (LEG-03 CA-3)
+  demanda_estado?: "ACTIVA" | "CERRADA" | "DERIVADA" // Estado de demanda
+  medida_tipo?: string[] // Tipo de medida: ["MPI", "MPE", "MPJ"]
+  oficio_tipo?: string[] // Tipo de oficio multi-select
+  oficios_proximos_vencer?: number // Días para vencimiento (ej: 3, 7, 15)
+  oficios_vencidos?: boolean // Oficios vencidos
+  pt_pendientes?: boolean // Actividades PT pendientes
+  pt_en_progreso?: boolean // Actividades PT en progreso
+  pt_vencidas?: boolean // Actividades PT vencidas
+  etapa_medida?: AndarielEstado // Estado del andarivel de medidas
 }
 
 // ============================================

@@ -24,6 +24,7 @@ import { PlanAccionModal } from "../plan-accion-modal"
 
 interface PlanTrabajoTabProps {
     medidaData: any
+    planTrabajoId: number
 }
 
 interface Actividad {
@@ -65,7 +66,7 @@ const mockActividades: Actividad[] = [
     }
 ]
 
-const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData }) => {
+const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, planTrabajoId }) => {
     const [page, setPage] = useState(0)
     const [rowsPerPage, setRowsPerPage] = useState(5)
     const [actividades] = useState<Actividad[]>(mockActividades)
@@ -255,6 +256,11 @@ const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData }) => {
             <PlanAccionModal
                 open={planAccionModalOpen}
                 onClose={() => setPlanAccionModalOpen(false)}
+                planTrabajoId={planTrabajoId}
+                onSuccess={() => {
+                    // TODO: Reload activities list after successful creation
+                    console.log('Activity created successfully')
+                }}
             />
         </>
     )

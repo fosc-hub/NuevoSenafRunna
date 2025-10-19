@@ -172,6 +172,304 @@ paths:
               schema:
                 $ref: '#/components/schemas/TActividad'
           description: ''
+  /api/actividades/:
+    get:
+      operationId: actividades_list
+      description: Retrieve a list of activities with optional filtering.
+      parameters:
+      - in: query
+        name: actor
+        schema:
+          type: string
+          enum:
+          - ADULTOS_INSTITUCION
+          - EQUIPOS_RESIDENCIALES
+          - EQUIPO_LEGAL
+          - EQUIPO_TECNICO
+        description: |-
+          Actor asignado (autocompleta desde tipo_actividad)
+
+          * `EQUIPO_TECNICO` - Equipo Técnico
+          * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
+          * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
+          * `EQUIPO_LEGAL` - Equipo de Legales
+      - in: query
+        name: es_borrador
+        schema:
+          type: boolean
+      - in: query
+        name: estado
+        schema:
+          type: string
+          enum:
+          - CANCELADA
+          - EN_PROGRESO
+          - PENDIENTE
+          - REALIZADA
+          - VENCIDA
+        description: |-
+          Estado actual de la actividad
+
+          * `PENDIENTE` - Pendiente
+          * `EN_PROGRESO` - En Progreso
+          * `REALIZADA` - Realizada
+          * `CANCELADA` - Cancelada
+          * `VENCIDA` - Vencida
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: origen
+        schema:
+          type: string
+          enum:
+          - DEMANDA_OFICIO
+          - DEMANDA_PI
+          - MANUAL
+          - OFICIO
+        description: |-
+          Origen de la actividad
+
+          * `MANUAL` - Creación Manual
+          * `DEMANDA_PI` - Demanda - Petición de Informe
+          * `DEMANDA_OFICIO` - Demanda - Carga de Oficios
+          * `OFICIO` - Oficio Judicial
+      - in: query
+        name: plan_trabajo
+        schema:
+          type: integer
+      - in: query
+        name: responsable_principal
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - actividades
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+    post:
+      operationId: actividades_create
+      description: Create a new activity in a plan de trabajo.
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+  /api/actividades/{id}/:
+    get:
+      operationId: actividades_retrieve
+      description: Retrieve a single activity by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+    put:
+      operationId: actividades_update
+      description: |-
+        ViewSet para actividades del plan de trabajo (PLTM-01).
+
+        Endpoints:
+        - GET /actividades/ - Listar actividades
+        - POST /actividades/ - Crear actividad
+        - GET /actividades/{id}/ - Detalle de actividad
+        - PATCH /actividades/{id}/ - Actualizar actividad
+        - DELETE /actividades/{id}/ - Cancelar actividad (soft delete)
+        - POST /actividades/{id}/adjuntos/ - Agregar adjunto
+        - POST /actividades/marcar-vencidas/ - Auto-marcar vencidas (admin only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+    patch:
+      operationId: actividades_partial_update
+      description: Partially update an activity.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTActividadPlanTrabajo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTActividadPlanTrabajo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTActividadPlanTrabajo'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+    delete:
+      operationId: actividades_destroy
+      description: Cancel an activity (soft delete with motivo_cancelacion required).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/actividades/{id}/adjuntos/:
+    post:
+      operationId: actividades_adjuntos_create
+      description: Add an attachment to an existing activity.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TAdjuntoActividad'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TAdjuntoActividad'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TAdjuntoActividad'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TAdjuntoActividad'
+          description: ''
+  /api/actividades/marcar-vencidas/:
+    post:
+      operationId: actividades_marcar_vencidas_create
+      description: Auto-mark overdue activities as VENCIDA (admin only).
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TActividadPlanTrabajo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        count:
+          content:
+            application/json:
+              schema:
+                type: integer
+          description: ''
   /api/auditoria-demanda-zona/{id}:
     get:
       operationId: auditoria_demanda_zona_retrieve
@@ -6031,6 +6329,73 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/tipos-actividad/:
+    get:
+      operationId: tipos_actividad_list
+      description: Retrieve a list of activity types with optional filtering by actor
+        and active status.
+      parameters:
+      - in: query
+        name: activo
+        schema:
+          type: boolean
+      - in: query
+        name: actor
+        schema:
+          type: string
+          enum:
+          - ADULTOS_INSTITUCION
+          - EQUIPOS_RESIDENCIALES
+          - EQUIPO_LEGAL
+          - EQUIPO_TECNICO
+        description: |-
+          Actor responsable de esta categoría de actividad
+
+          * `EQUIPO_TECNICO` - Equipo Técnico
+          * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
+          * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
+          * `EQUIPO_LEGAL` - Equipo de Legales
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      tags:
+      - tipos-actividad
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TTipoActividad'
+          description: ''
+  /api/tipos-actividad/{id}/:
+    get:
+      operationId: tipos_actividad_retrieve
+      description: Retrieve a single activity type by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Tipo de Actividad.
+        required: true
+      tags:
+      - tipos-actividad
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTipoActividad'
+          description: ''
   /api/token/:
     post:
       operationId: token_create
@@ -6566,6 +6931,32 @@ components:
         * `CREATE` - Create
         * `UPDATE` - Update
         * `DELETE` - Delete
+    ActorEnum:
+      enum:
+      - EQUIPO_TECNICO
+      - EQUIPOS_RESIDENCIALES
+      - ADULTOS_INSTITUCION
+      - EQUIPO_LEGAL
+      type: string
+      description: |-
+        * `EQUIPO_TECNICO` - Equipo Técnico
+        * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
+        * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
+        * `EQUIPO_LEGAL` - Equipo de Legales
+    AdjuntosTiposEnum:
+      enum:
+      - ACTA_COMPROMISO
+      - EVIDENCIA
+      - INFORME
+      - FOTO
+      - OTRO
+      type: string
+      description: |-
+        * `ACTA_COMPROMISO` - Acta Compromiso
+        * `EVIDENCIA` - Evidencia
+        * `INFORME` - Informe
+        * `FOTO` - Fotografía
+        * `OTRO` - Otro
     BeneficiosGestionadosEnum:
       enum:
       - BOLETO_DE_COLECTIVO
@@ -7541,6 +7932,18 @@ components:
         * `PENSIONADO` - Pensionado
         * `AMA_DE_CASA` - Ama de Casa
         * `OTRO` - Otro
+    OrigenEnum:
+      enum:
+      - MANUAL
+      - DEMANDA_PI
+      - DEMANDA_OFICIO
+      - OFICIO
+      type: string
+      description: |-
+        * `MANUAL` - Creación Manual
+        * `DEMANDA_PI` - Demanda - Petición de Informe
+        * `DEMANDA_OFICIO` - Demanda - Carga de Oficios
+        * `OFICIO` - Oficio Judicial
     PaginatedLegajoListList:
       type: object
       required:
@@ -7747,6 +8150,169 @@ components:
           nullable: true
         demanda:
           type: integer
+    PatchedTActividadPlanTrabajo:
+      type: object
+      description: Serializer para actividades del plan de trabajo (PLTM-01).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        plan_trabajo:
+          type: integer
+          description: Plan de trabajo al que pertenece esta actividad
+        tipo_actividad:
+          type: integer
+          description: Tipo de actividad (catálogo configurable)
+        tipo_actividad_info:
+          allOf:
+          - $ref: '#/components/schemas/TTipoActividad'
+          readOnly: true
+        subactividad:
+          type: string
+          description: Detalle específico de la subactividad
+          maxLength: 200
+        actor:
+          type: string
+        actor_display:
+          type: string
+          readOnly: true
+        fecha_planificacion:
+          type: string
+          format: date
+          description: Fecha planificada para realizar la actividad
+        fecha_inicio_real:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Fecha real de inicio (cuando pasa a EN_PROGRESO)
+        fecha_finalizacion_real:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Fecha real de finalización (cuando pasa a REALIZADA)
+        estado:
+          allOf:
+          - $ref: '#/components/schemas/TActividadPlanTrabajoEstadoEnum'
+          description: |-
+            Estado actual de la actividad
+
+            * `PENDIENTE` - Pendiente
+            * `EN_PROGRESO` - En Progreso
+            * `REALIZADA` - Realizada
+            * `CANCELADA` - Cancelada
+            * `VENCIDA` - Vencida
+        estado_display:
+          type: string
+          readOnly: true
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción detallada de la actividad
+        responsable_principal:
+          type: integer
+          description: Usuario responsable principal de la actividad
+        responsable_principal_info:
+          allOf:
+          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+        responsables_secundarios:
+          type: array
+          items:
+            type: integer
+          description: Usuarios colaboradores adicionales
+        responsables_secundarios_info:
+          type: array
+          items:
+            $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+        referentes_externos:
+          type: string
+          nullable: true
+          description: 'Contactos externos: institución, persona, teléfono (JSON o
+            texto libre)'
+        origen:
+          allOf:
+          - $ref: '#/components/schemas/OrigenEnum'
+          description: |-
+            Origen de la actividad
+
+            * `MANUAL` - Creación Manual
+            * `DEMANDA_PI` - Demanda - Petición de Informe
+            * `DEMANDA_OFICIO` - Demanda - Carga de Oficios
+            * `OFICIO` - Oficio Judicial
+        origen_display:
+          type: string
+          readOnly: true
+        es_borrador:
+          type: boolean
+          description: Si es True, la actividad está en modo borrador
+        usuario_creacion:
+          type: integer
+          readOnly: true
+          description: Usuario que creó la actividad
+        usuario_creacion_info:
+          allOf:
+          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Timestamp de creación
+        usuario_modificacion:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Último usuario que modificó la actividad
+        fecha_modificacion:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Última modificación del registro
+        motivo_cancelacion:
+          type: string
+          nullable: true
+          description: Motivo de cancelación de la actividad
+        fecha_cancelacion:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp de cancelación
+        usuario_cancelacion:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Usuario que canceló la actividad
+        esta_vencida:
+          type: boolean
+          readOnly: true
+        dias_restantes:
+          type: integer
+          readOnly: true
+        adjuntos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TAdjuntoActividad'
+          readOnly: true
+        adjuntos_archivos:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
+        adjuntos_tipos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdjuntosTiposEnum'
+          writeOnly: true
+        adjuntos_descripciones:
+          type: array
+          items:
+            type: string
+          writeOnly: true
     PatchedTCalificacionDemanda:
       type: object
       properties:
@@ -8579,6 +9145,208 @@ components:
           type: string
           format: uri
           nullable: true
+    TActividadPlanTrabajo:
+      type: object
+      description: Serializer para actividades del plan de trabajo (PLTM-01).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        plan_trabajo:
+          type: integer
+          description: Plan de trabajo al que pertenece esta actividad
+        tipo_actividad:
+          type: integer
+          description: Tipo de actividad (catálogo configurable)
+        tipo_actividad_info:
+          allOf:
+          - $ref: '#/components/schemas/TTipoActividad'
+          readOnly: true
+        subactividad:
+          type: string
+          description: Detalle específico de la subactividad
+          maxLength: 200
+        actor:
+          type: string
+        actor_display:
+          type: string
+          readOnly: true
+        fecha_planificacion:
+          type: string
+          format: date
+          description: Fecha planificada para realizar la actividad
+        fecha_inicio_real:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Fecha real de inicio (cuando pasa a EN_PROGRESO)
+        fecha_finalizacion_real:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Fecha real de finalización (cuando pasa a REALIZADA)
+        estado:
+          allOf:
+          - $ref: '#/components/schemas/TActividadPlanTrabajoEstadoEnum'
+          description: |-
+            Estado actual de la actividad
+
+            * `PENDIENTE` - Pendiente
+            * `EN_PROGRESO` - En Progreso
+            * `REALIZADA` - Realizada
+            * `CANCELADA` - Cancelada
+            * `VENCIDA` - Vencida
+        estado_display:
+          type: string
+          readOnly: true
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción detallada de la actividad
+        responsable_principal:
+          type: integer
+          description: Usuario responsable principal de la actividad
+        responsable_principal_info:
+          allOf:
+          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+        responsables_secundarios:
+          type: array
+          items:
+            type: integer
+          description: Usuarios colaboradores adicionales
+        responsables_secundarios_info:
+          type: array
+          items:
+            $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+        referentes_externos:
+          type: string
+          nullable: true
+          description: 'Contactos externos: institución, persona, teléfono (JSON o
+            texto libre)'
+        origen:
+          allOf:
+          - $ref: '#/components/schemas/OrigenEnum'
+          description: |-
+            Origen de la actividad
+
+            * `MANUAL` - Creación Manual
+            * `DEMANDA_PI` - Demanda - Petición de Informe
+            * `DEMANDA_OFICIO` - Demanda - Carga de Oficios
+            * `OFICIO` - Oficio Judicial
+        origen_display:
+          type: string
+          readOnly: true
+        es_borrador:
+          type: boolean
+          description: Si es True, la actividad está en modo borrador
+        usuario_creacion:
+          type: integer
+          readOnly: true
+          description: Usuario que creó la actividad
+        usuario_creacion_info:
+          allOf:
+          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Timestamp de creación
+        usuario_modificacion:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Último usuario que modificó la actividad
+        fecha_modificacion:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Última modificación del registro
+        motivo_cancelacion:
+          type: string
+          nullable: true
+          description: Motivo de cancelación de la actividad
+        fecha_cancelacion:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp de cancelación
+        usuario_cancelacion:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Usuario que canceló la actividad
+        esta_vencida:
+          type: boolean
+          readOnly: true
+        dias_restantes:
+          type: integer
+          readOnly: true
+        adjuntos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TAdjuntoActividad'
+          readOnly: true
+        adjuntos_archivos:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
+        adjuntos_tipos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdjuntosTiposEnum'
+          writeOnly: true
+        adjuntos_descripciones:
+          type: array
+          items:
+            type: string
+          writeOnly: true
+      required:
+      - actor_display
+      - adjuntos
+      - dias_restantes
+      - esta_vencida
+      - estado_display
+      - fecha_cancelacion
+      - fecha_creacion
+      - fecha_finalizacion_real
+      - fecha_inicio_real
+      - fecha_modificacion
+      - fecha_planificacion
+      - id
+      - origen_display
+      - plan_trabajo
+      - responsable_principal
+      - responsable_principal_info
+      - responsables_secundarios_info
+      - subactividad
+      - tipo_actividad
+      - tipo_actividad_info
+      - usuario_cancelacion
+      - usuario_creacion
+      - usuario_creacion_info
+      - usuario_modificacion
+    TActividadPlanTrabajoEstadoEnum:
+      enum:
+      - PENDIENTE
+      - EN_PROGRESO
+      - REALIZADA
+      - CANCELADA
+      - VENCIDA
+      type: string
+      description: |-
+        * `PENDIENTE` - Pendiente
+        * `EN_PROGRESO` - En Progreso
+        * `REALIZADA` - Realizada
+        * `CANCELADA` - Cancelada
+        * `VENCIDA` - Vencida
     TActividadTipo:
       type: object
       properties:
@@ -8604,6 +9372,61 @@ components:
           type: string
           format: uri
           nullable: true
+    TAdjuntoActividad:
+      type: object
+      description: Serializer para adjuntos de actividades.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tipo_adjunto:
+          allOf:
+          - $ref: '#/components/schemas/TipoAdjunto39aEnum'
+          description: |-
+            Tipo de documento adjunto
+
+            * `ACTA_COMPROMISO` - Acta Compromiso
+            * `EVIDENCIA` - Evidencia
+            * `INFORME` - Informe
+            * `FOTO` - Fotografía
+            * `OTRO` - Otro
+        tipo_adjunto_display:
+          type: string
+          readOnly: true
+        archivo:
+          type: string
+          format: uri
+          description: Archivo adjunto (PDF, JPG, PNG, DOC, DOCX)
+        archivo_url:
+          type: string
+          readOnly: true
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción del adjunto
+          maxLength: 255
+        fecha_carga:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Timestamp de carga del archivo
+        usuario_carga:
+          type: integer
+          readOnly: true
+          description: Usuario que subió el archivo
+        usuario_carga_info:
+          allOf:
+          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          readOnly: true
+      required:
+      - archivo
+      - archivo_url
+      - fecha_carga
+      - id
+      - tipo_adjunto
+      - tipo_adjunto_display
+      - usuario_carga
+      - usuario_carga_info
     TBarrio:
       type: object
       properties:
@@ -8846,6 +9669,32 @@ components:
       - codigo
       - demanda
       - tipo_codigo
+    TCustomUserSerializerSimple:
+      type: object
+      description: Simplified user serializer for nested use
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima de 150 caracteres. Solo puede
+            estar formado por letras, números y los caracteres @/./+/-/_.
+        full_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Dirección de email
+      required:
+      - email
+      - full_name
+      - id
+      - username
     TCustomUserZona:
       type: object
       properties:
@@ -11447,6 +12296,56 @@ components:
       required:
       - id
       - nombre
+    TTipoActividad:
+      type: object
+      description: Serializer para tipos de actividad (catálogo).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/ActorEnum'
+          description: |-
+            Actor responsable de esta categoría de actividad
+
+            * `EQUIPO_TECNICO` - Equipo Técnico
+            * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
+            * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
+            * `EQUIPO_LEGAL` - Equipo de Legales
+        actor_display:
+          type: string
+          readOnly: true
+        nombre:
+          type: string
+          description: 'Nombre del tipo de actividad (ej: ''Visita domiciliaria'')'
+          maxLength: 100
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción detallada del tipo de actividad
+        requiere_evidencia:
+          type: boolean
+          description: Si es True, cerrar la actividad exige adjuntos obligatorios
+        activo:
+          type: boolean
+          description: Indica si este tipo está disponible para selección
+        orden:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: Orden de visualización en listas
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - actor
+      - actor_display
+      - fecha_creacion
+      - id
+      - nombre
     TValoracion:
       type: object
       properties:
@@ -11627,6 +12526,20 @@ components:
       required:
       - id
       - nombre
+    TipoAdjunto39aEnum:
+      enum:
+      - ACTA_COMPROMISO
+      - EVIDENCIA
+      - INFORME
+      - FOTO
+      - OTRO
+      type: string
+      description: |-
+        * `ACTA_COMPROMISO` - Acta Compromiso
+        * `EVIDENCIA` - Evidencia
+        * `INFORME` - Informe
+        * `FOTO` - Fotografía
+        * `OTRO` - Otro
     TipoCalleEnum:
       enum:
       - CALLE

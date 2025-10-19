@@ -31,7 +31,6 @@ interface AttachmentUploadProps {
 }
 
 export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
-  files,
   onChange,
   requiereEvidencia = false
 }) => {

@@ -21,7 +21,8 @@ import { AttachmentUpload } from './AttachmentUpload'
 import { actividadService } from '../../services/actividadService'
 import type { CreateActividadRequest } from '../../types/actividades'
 
-const actividadSchema = z.object({
+// Schema for final submission (all validations required)
+const actividadSchemaFinal = z.object({
   tipo_actividad: z.number().min(1, 'El tipo de actividad es requerido'),
   subactividad: z.string().min(1, 'La subactividad es requerida'),
   fecha_planificacion: z.date().min(new Date(1900, 0, 1), 'La fecha es requerida'),
@@ -35,7 +36,22 @@ const actividadSchema = z.object({
   adjuntos_descripciones: z.array(z.string()).optional()
 })
 
-type ActividadFormData = z.infer<typeof actividadSchema>
+// Schema for draft (relaxed validation - only tipo required)
+const actividadSchemaDraft = z.object({
+  tipo_actividad: z.number().min(1, 'El tipo de actividad es requerido'),
+  subactividad: z.string().optional(),
+  fecha_planificacion: z.date().optional(),
+  descripcion: z.string().optional(),
+  responsable_principal: z.number().optional(),
+  responsables_secundarios: z.array(z.number()).optional(),
+  referentes_externos: z.string().optional(),
+  es_borrador: z.boolean().optional(),
+  adjuntos_archivos: z.array(z.instanceof(File)).optional(),
+  adjuntos_tipos: z.array(z.string()).optional(),
+  adjuntos_descripciones: z.array(z.string()).optional()
+})
+
+type ActividadFormData = z.infer<typeof actividadSchemaFinal>
 
 interface ActorTabContentProps {
   actor: string
@@ -54,14 +70,17 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
 }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isDraft, setIsDraft] = useState(false)
 
   const {
     control,
     handleSubmit,
     watch,
+    trigger,
     formState: { errors }
   } = useForm<ActividadFormData>({
-    resolver: zodResolver(actividadSchema),
+    resolver: zodResolver(isDraft ? actividadSchemaDraft : actividadSchemaFinal),
+    mode: 'onChange',
     defaultValues: {
       tipo_actividad: 0,
       subactividad: '',
@@ -76,6 +95,27 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
 
   const selectedTipo = watch('tipo_actividad')
 
+  const [adjuntosTipos, setAdjuntosTipos] = useState<string[]>([])
+  const [adjuntosDescripciones, setAdjuntosDescripciones] = useState<string[]>([])
+
+  const handleDraftSubmit = async () => {
+    setIsDraft(true)
+    // Trigger validation with draft schema
+    const isValid = await trigger()
+    if (isValid) {
+      handleSubmit(onSubmit)()
+    }
+  }
+
+  const handleFinalSubmit = async () => {
+    setIsDraft(false)
+    // Trigger validation with final schema
+    const isValid = await trigger()
+    if (isValid) {
+      handleSubmit(onSubmit)()
+    }
+  }
+
   const onSubmit = async (data: ActividadFormData) => {
     setLoading(true)
     setError(null)
@@ -85,7 +125,12 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
         ...data,
         plan_trabajo: planTrabajoId,
         origen: 'MANUAL',
-        fecha_planificacion: data.fecha_planificacion.toISOString().split('T')[0]
+        fecha_planificacion: data.fecha_planificacion?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+        subactividad: data.subactividad || '',
+        responsable_principal: data.responsable_principal || 0,
+        es_borrador: isDraft,
+        adjuntos_tipos: adjuntosTipos,
+        adjuntos_descripciones: adjuntosDescripciones
       })
 
       onSuccess?.()
@@ -225,34 +270,33 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
         render={({ field }) => (
           <AttachmentUpload
             files={field.value || []}
-            onChange={field.onChange}
+            onChange={(files, tipos, descripciones) => {
+              field.onChange(files)
+              if (tipos) setAdjuntosTipos(tipos)
+              if (descripciones) setAdjuntosDescripciones(descripciones)
+            }}
             requiereEvidencia={selectedTipo ? false : false} // TODO: Get from tipo
           />
         )}
       />
 
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Controller
-          name="es_borrador"
-          control={control}
-          render={({ field }) => (
-            <Button
-              type="submit"
-              variant="outlined"
-              disabled={loading}
-              onClick={() => field.onChange(true)}
-            >
-              Guardar como Borrador
-            </Button>
-          )}
-        />
+        <Button
+          variant="outlined"
+          disabled={loading}
+          onClick={handleDraftSubmit}
+          sx={{ textTransform: 'none' }}
+        >
+          💾 Guardar como Borrador
+        </Button>
 
         <Button
-          type="submit"
           variant="contained"
           disabled={loading}
+          onClick={handleFinalSubmit}
+          sx={{ textTransform: 'none' }}
         >
-          {loading ? 'Guardando...' : 'Guardar Actividad'}
+          {loading ? 'Guardando...' : '✅ Guardar Actividad'}
         </Button>
       </Box>
     </Box>

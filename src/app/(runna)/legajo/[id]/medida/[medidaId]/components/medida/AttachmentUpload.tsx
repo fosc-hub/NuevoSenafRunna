@@ -25,7 +25,7 @@ interface FileWithType {
 
 interface AttachmentUploadProps {
   files: File[]
-  onChange: (files: File[]) => void
+  onChange: (files: File[], tipos?: string[], descripciones?: string[]) => void
   requiereEvidencia?: boolean
 }
 
@@ -51,21 +51,37 @@ export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
         tipo: requiereEvidencia ? 'EVIDENCIA' : 'OTRO',
         descripcion: ''
       }))
-      setFilesWithMetadata([...filesWithMetadata, ...newFiles])
-      onChange([...files, ...Array.from(event.target.files)])
+      const updatedFilesWithMetadata = [...filesWithMetadata, ...newFiles]
+      setFilesWithMetadata(updatedFilesWithMetadata)
+      updateParent(updatedFilesWithMetadata)
     }
   }
 
   const handleRemoveFile = (index: number) => {
     const newFilesWithMetadata = filesWithMetadata.filter((_, i) => i !== index)
     setFilesWithMetadata(newFilesWithMetadata)
-    onChange(newFilesWithMetadata.map(f => f.file))
+    updateParent(newFilesWithMetadata)
   }
 
   const handleTipoChange = (index: number, tipo: string) => {
     const newFilesWithMetadata = [...filesWithMetadata]
     newFilesWithMetadata[index].tipo = tipo
     setFilesWithMetadata(newFilesWithMetadata)
+    updateParent(newFilesWithMetadata)
+  }
+
+  const handleDescripcionChange = (index: number, descripcion: string) => {
+    const newFilesWithMetadata = [...filesWithMetadata]
+    newFilesWithMetadata[index].descripcion = descripcion
+    setFilesWithMetadata(newFilesWithMetadata)
+    updateParent(newFilesWithMetadata)
+  }
+
+  const updateParent = (filesData: FileWithType[]) => {
+    const files = filesData.map(f => f.file)
+    const tipos = filesData.map(f => f.tipo)
+    const descripciones = filesData.map(f => f.descripcion)
+    onChange(files, tipos, descripciones)
   }
 
   return (
@@ -96,33 +112,41 @@ export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
           {filesWithMetadata.map((fileData, index) => (
             <ListItem
               key={index}
-              secondaryAction={
+              sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 1, flexDirection: 'column', alignItems: 'stretch', p: 2 }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box sx={{ flex: 1, mr: 2 }}>
+                  <ListItemText
+                    primary={fileData.file.name}
+                    secondary={`${(fileData.file.size / 1024).toFixed(2)} KB`}
+                  />
+                </Box>
+                <FormControl size="small" sx={{ minWidth: 180, mr: 1 }}>
+                  <InputLabel>Tipo</InputLabel>
+                  <Select
+                    value={fileData.tipo}
+                    onChange={(e) => handleTipoChange(index, e.target.value)}
+                    label="Tipo"
+                  >
+                    {tiposAdjunto.map((tipo) => (
+                      <MenuItem key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
                 <IconButton edge="end" onClick={() => handleRemoveFile(index)} color="error">
                   <DeleteIcon />
                 </IconButton>
-              }
-              sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 1 }}
-            >
-              <Box sx={{ flex: 1, mr: 2 }}>
-                <ListItemText
-                  primary={fileData.file.name}
-                  secondary={`${(fileData.file.size / 1024).toFixed(2)} KB`}
-                />
               </Box>
-              <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel>Tipo</InputLabel>
-                <Select
-                  value={fileData.tipo}
-                  onChange={(e) => handleTipoChange(index, e.target.value)}
-                  label="Tipo"
-                >
-                  {tiposAdjunto.map((tipo) => (
-                    <MenuItem key={tipo.value} value={tipo.value}>
-                      {tipo.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                size="small"
+                label="Descripción (opcional)"
+                value={fileData.descripcion}
+                onChange={(e) => handleDescripcionChange(index, e.target.value)}
+                placeholder="Agregar una descripción del archivo"
+              />
             </ListItem>
           ))}
         </List>

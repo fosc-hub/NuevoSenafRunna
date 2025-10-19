@@ -408,5 +408,3 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
         </>
     )
 }
-
-export { PlanTrabajoTab }

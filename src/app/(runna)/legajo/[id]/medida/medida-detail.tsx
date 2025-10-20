@@ -21,6 +21,7 @@ import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-di
 import { NotaAvalSection } from "./[medidaId]/components/medida/nota-aval-section"
 import { InformeJuridicoSection } from "./[medidaId]/components/medida/informe-juridico-section"
 import { RatificacionJudicialSection } from "./[medidaId]/components/medida/ratificacion-judicial-section"
+import { UnifiedWorkflowTab } from "./[medidaId]/components/medida/unified-workflow-tab"
 import { useUser } from "@/utils/auth/userZustand"
 
 // API imports
@@ -525,26 +526,35 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               Etapas de la medida
             </Typography>
 
-            <Grid container spacing={3}>
-              {/* Apertura Section */}
-              <Grid item xs={12} md={4}>
-                <AperturaSection
-                  data={medidaData.etapas.apertura}
-                  isActive={activeStep === 0}
-                  isCompleted={activeStep >= 0}
-                  onViewForm={handleViewForm}
-                  medidaId={Number(params.medidaId)}
-                  legajoData={legajoData ? {
-                    numero: legajoData.numero,
-                    persona_nombre: legajoData.persona.nombre,
-                    persona_apellido: legajoData.persona.apellido,
-                    zona_nombre: legajoData.zona?.nombre || ""
-                  } : undefined}
-                />
-              </Grid>
+            {/* Use UnifiedWorkflowTab for MPI workflow stepper */}
+            {medidaApiData && (
+              <UnifiedWorkflowTab
+                medidaData={{
+                  id: medidaApiData.id,
+                  tipo_medida: medidaApiData.tipo_medida_display || "MPI",
+                  numero_medida: typeof medidaApiData.numero_medida === 'string'
+                    ? medidaApiData.numero_medida
+                    : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                      ? String(medidaApiData.numero_medida.display)
+                      : `M-${params.medidaId}`,
+                  estado: typeof medidaApiData.etapa_actual?.estado === 'string'
+                    ? medidaApiData.etapa_actual.estado
+                    : undefined,
+                  fecha_apertura: medidaApiData.fecha_apertura,
+                }}
+                legajoData={legajoData ? {
+                  numero: legajoData.numero,
+                  persona_nombre: legajoData.nnya?.nombre || "",
+                  persona_apellido: legajoData.nnya?.apellido || "",
+                  zona_nombre: legajoData.zona?.nombre || ""
+                } : undefined}
+                workflowPhase="apertura"
+              />
+            )}
 
-              {/* Plan de acción Section - Only for MPI */}
-              <Grid item xs={12} md={8}>
+            {/* Plan de acción Section - Only for MPI (outside stepper) */}
+            <Grid container spacing={3} sx={{ mt: 3 }}>
+              <Grid item xs={12}>
                 {medidaData.tipo === "MPI" && "plan_accion" in medidaData.etapas && (
                   <PlanAccionSection
                     tasks={medidaData.etapas.plan_accion}
@@ -555,99 +565,6 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                   />
                 )}
               </Grid>
-
-              {/* Nota de Aval Section (MED-03) */}
-              {medidaApiData && (() => {
-                // Extract estado safely as a string
-                const estado = medidaApiData.etapa_actual?.estado
-                const estadoString = typeof estado === 'string' ? estado : undefined
-
-                // Extract numero_medida safely as a string
-                const numeroMedidaSafe = typeof medidaApiData.numero_medida === 'string'
-                  ? medidaApiData.numero_medida
-                  : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
-                    ? String(medidaApiData.numero_medida.display)
-                    : `M-${params.medidaId}`
-
-                return (
-                  <Grid item xs={12}>
-                    <NotaAvalSection
-                      medidaId={Number(params.medidaId)}
-                      medidaNumero={numeroMedidaSafe}
-                      estadoActual={estadoString}
-                      userLevel={userLevel}
-                      isSuperuser={isSuperuser}
-                      onNotaAvalCreated={() => {
-                        // Refetch medida data to update estado
-                        window.location.reload() // Simple reload for now, can be improved with proper refetch
-                      }}
-                    />
-                  </Grid>
-                )
-              })()}
-
-              {/* Informe Jurídico Section (MED-04) */}
-              {medidaApiData && (() => {
-                // Extract estado safely as a string
-                const estado = medidaApiData.etapa_actual?.estado
-                const estadoString = typeof estado === 'string' ? estado : undefined
-
-                // Extract numero_medida safely as a string
-                const numeroMedidaSafe = typeof medidaApiData.numero_medida === 'string'
-                  ? medidaApiData.numero_medida
-                  : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
-                    ? String(medidaApiData.numero_medida.display)
-                    : `M-${params.medidaId}`
-
-                return (
-                  <Grid item xs={12}>
-                    <InformeJuridicoSection
-                      medidaId={Number(params.medidaId)}
-                      medidaNumero={numeroMedidaSafe}
-                      estadoActual={estadoString}
-                      userLevel={userLevel}
-                      isEquipoLegal={isEquipoLegal}
-                      isSuperuser={isSuperuser}
-                      onInformeEnviado={() => {
-                        // Refetch medida data to update estado
-                        window.location.reload() // Simple reload for now, can be improved with proper refetch
-                      }}
-                    />
-                  </Grid>
-                )
-              })()}
-
-              {/* Ratificación Judicial Section (MED-05) */}
-              {medidaApiData && (() => {
-                // Extract estado safely as a string
-                const estado = medidaApiData.etapa_actual?.estado
-                const estadoString = typeof estado === 'string' ? estado : undefined
-
-                // Extract numero_medida safely as a string
-                const numeroMedidaSafe = typeof medidaApiData.numero_medida === 'string'
-                  ? medidaApiData.numero_medida
-                  : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
-                    ? String(medidaApiData.numero_medida.display)
-                    : `M-${params.medidaId}`
-
-                return (
-                  <Grid item xs={12}>
-                    <RatificacionJudicialSection
-                      medidaId={Number(params.medidaId)}
-                      medidaNumero={numeroMedidaSafe}
-                      estadoActual={estadoString}
-                      userLevel={userLevel}
-                      isEquipoLegal={isEquipoLegal}
-                      isJZ={isJZ}
-                      isSuperuser={isSuperuser}
-                      onRatificacionRegistrada={() => {
-                        // Refetch medida data to update estado
-                        window.location.reload() // Simple reload for now, can be improved with proper refetch
-                      }}
-                    />
-                  </Grid>
-                )
-              })()}
 
               {/* Historial de seguimiento Section */}
               <Grid item xs={12} md={4}>

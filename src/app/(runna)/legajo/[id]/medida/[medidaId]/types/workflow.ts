@@ -373,3 +373,50 @@ export interface User {
   zona_id?: number
   permissions?: string[]
 }
+
+// ============================================================================
+// STEP PROGRESS & STATUS (for Workflow Stepper UX)
+// ============================================================================
+
+/**
+ * Step status for visual indication
+ * - completed: Step finished successfully (green, checkmark)
+ * - current: Currently active step (blue, in progress)
+ * - pending: Not started yet but unlocked (gray)
+ * - locked: Cannot access until previous step completed (gray, locked icon)
+ */
+export type StepStatus = "completed" | "current" | "pending" | "locked"
+
+/**
+ * Progress information for a workflow step
+ */
+export interface StepProgress {
+  /** Progress percentage (0-100) */
+  percentage: number
+
+  /** Number of completed required fields/actions */
+  completedFields?: number
+
+  /** Total number of required fields/actions */
+  totalFields?: number
+
+  /** Current estado for this step (BORRADOR, ENVIADO, APROBADO, etc.) */
+  estado?: string
+}
+
+/**
+ * Navigation state for stepper
+ */
+export interface StepNavigationState {
+  /** Currently active step index (0-based) */
+  activeStep: number
+
+  /** Array of completion status for each step */
+  completedSteps: boolean[]
+
+  /** Can navigate to next step */
+  canContinue: boolean
+
+  /** Can navigate to previous step */
+  canGoBack: boolean
+}

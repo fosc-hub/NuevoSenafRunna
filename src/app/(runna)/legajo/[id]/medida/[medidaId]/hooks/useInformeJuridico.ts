@@ -8,6 +8,7 @@ import {
   getInformesJuridicosByMedida,
   getInformeJuridicoDetail,
   createInformeJuridico,
+  updateInformeJuridico,
   enviarInformeJuridico,
   uploadAdjuntoInformeJuridico,
   getAdjuntosInformeJuridico,
@@ -56,6 +57,7 @@ interface UseInformeJuridicoReturn {
 
   // CRUD operations
   createNewInforme: (data: CreateInformeJuridicoRequest) => Promise<InformeJuridicoResponse>
+  updateInforme: (data: Partial<CreateInformeJuridicoRequest>) => Promise<InformeJuridicoResponse>
   refetchInforme: () => Promise<void>
 
   // Adjunto operations
@@ -224,6 +226,41 @@ export const useInformeJuridico = (
   )
 
   /**
+   * Update existing informe jurídico
+   */
+  const updateInforme = useCallback(
+    async (data: Partial<CreateInformeJuridicoRequest>): Promise<InformeJuridicoResponse> => {
+      if (!informeJuridico) {
+        throw new Error("No hay informe jurídico para actualizar")
+      }
+
+      if (informeJuridico.enviado) {
+        throw new Error("No se puede modificar un informe ya enviado")
+      }
+
+      try {
+        setIsLoadingInforme(true)
+        setInformeError(null)
+
+        const updatedInforme = await updateInformeJuridico(medidaId, informeJuridico.id, data)
+
+        // Refetch to get complete data
+        await fetchInforme()
+
+        return updatedInforme
+      } catch (error: any) {
+        console.error("Error updating informe jurídico:", error)
+        const errorMsg = error.message || "Error al actualizar informe jurídico"
+        setInformeError(errorMsg)
+        throw new Error(errorMsg)
+      } finally {
+        setIsLoadingInforme(false)
+      }
+    },
+    [medidaId, informeJuridico, fetchInforme]
+  )
+
+  /**
    * Refetch informe jurídico
    */
   const refetchInforme = useCallback(async () => {
@@ -374,6 +411,7 @@ export const useInformeJuridico = (
 
     // CRUD operations
     createNewInforme,
+    updateInforme,
     refetchInforme,
 
     // Adjunto operations

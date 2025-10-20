@@ -114,9 +114,20 @@ export function useRatificacionJudicial({
       )
       setRatificacion(ratificacionActiva)
     } catch (err: any) {
-      const errorMessage = err.message || "Error al cargar ratificación judicial"
-      setError(errorMessage)
-      console.error("Error fetching ratificación:", err)
+      // 404 is not an error - it just means no ratificación exists yet
+      const is404 = err?.response?.status === 404 || err?.message?.includes('404')
+
+      if (is404) {
+        // No ratificación exists yet - this is a valid state, not an error
+        setRatificacion(null)
+        setError(null)
+        console.log("No ratificación found for medida", medidaId, "- user can create one")
+      } else {
+        // Actual error
+        const errorMessage = err.message || "Error al cargar ratificación judicial"
+        setError(errorMessage)
+        console.error("Error fetching ratificación:", err)
+      }
     } finally {
       setIsLoading(false)
     }

@@ -10,6 +10,7 @@
  * - GET  /api/medidas/{medida_pk}/ratificacion/historial/ → Historial completo
  */
 
+import { get } from "@/app/api/apiService"
 import type {
   RatificacionJudicial,
   CreateRatificacionJudicialRequest,
@@ -17,50 +18,6 @@ import type {
   RatificacionAdjunto,
 } from "../types/ratificacion-judicial-api"
 import { buildRatificacionFormData } from "../types/ratificacion-judicial-api"
-
-// ============================================================================
-// BASE URL CONFIGURATION
-// ============================================================================
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null
-  return localStorage.getItem("access_token")
-}
-
-/**
- * Build auth headers
- */
-function getAuthHeaders(): HeadersInit {
-  const token = getAuthToken()
-  return {
-    Authorization: token ? `Bearer ${token}` : "",
-  }
-}
-
-/**
- * Handle API response
- */
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    const errorMessage =
-      errorData.detail ||
-      errorData.message ||
-      `Error ${response.status}: ${response.statusText}`
-    throw new Error(errorMessage)
-  }
-
-  return response.json()
-}
 
 // ============================================================================
 // API FUNCTIONS
@@ -79,17 +36,26 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function getRatificacion(
   medidaId: number
 ): Promise<RatificacionJudicial[]> {
-  const url = `${API_BASE_URL}/api/medidas/${medidaId}/ratificacion/`
+  try {
+    console.log(`Fetching ratificación for medida ${medidaId}`)
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-    },
-  })
+    // Make API call using apiService
+    const response = await get<RatificacionJudicial[]>(
+      `medidas/${medidaId}/ratificacion/`
+    )
 
-  return handleResponse<RatificacionJudicial[]>(response)
+    console.log("Ratificación retrieved:", response)
+
+    return response
+  } catch (error: any) {
+    console.error(`Error fetching ratificación for medida ${medidaId}:`, error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
 }
 
 /**
@@ -112,21 +78,38 @@ export async function createRatificacion(
   medidaId: number,
   data: CreateRatificacionJudicialRequest
 ): Promise<RatificacionJudicial> {
-  const url = `${API_BASE_URL}/api/medidas/${medidaId}/ratificacion/`
+  try {
+    console.log(`Creating ratificación for medida ${medidaId}:`, data)
 
-  // Build FormData (multipart/form-data)
-  const formData = buildRatificacionFormData(data)
+    // Build FormData (multipart/form-data)
+    const formData = buildRatificacionFormData(data)
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      // NO incluir Content-Type - fetch lo establece automáticamente con boundary
-      ...getAuthHeaders(),
-    },
-    body: formData,
-  })
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
 
-  return handleResponse<RatificacionJudicial>(response)
+    // Make API call using axiosInstance
+    const response = await axiosInstance.post<RatificacionJudicial>(
+      `medidas/${medidaId}/ratificacion/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+
+    console.log("Ratificación created successfully:", response.data)
+
+    return response.data
+  } catch (error: any) {
+    console.error(`Error creating ratificación for medida ${medidaId}:`, error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
 }
 
 /**
@@ -142,17 +125,26 @@ export async function createRatificacion(
 export async function getRatificacionHistorial(
   medidaId: number
 ): Promise<RatificacionJudicialHistorial> {
-  const url = `${API_BASE_URL}/api/medidas/${medidaId}/ratificacion/historial/`
+  try {
+    console.log(`Fetching ratificación historial for medida ${medidaId}`)
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-    },
-  })
+    // Make API call using apiService
+    const response = await get<RatificacionJudicialHistorial>(
+      `medidas/${medidaId}/ratificacion/historial/`
+    )
 
-  return handleResponse<RatificacionJudicialHistorial>(response)
+    console.log("Ratificación historial retrieved:", response)
+
+    return response
+  } catch (error: any) {
+    console.error(`Error fetching ratificación historial for medida ${medidaId}:`, error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
 }
 
 // ============================================================================
@@ -171,12 +163,25 @@ export async function getRatificacionHistorial(
 export async function getRatificacionActiva(
   medidaId: number
 ): Promise<RatificacionJudicial | null> {
-  const ratificaciones = await getRatificacion(medidaId)
+  try {
+    const response = await getRatificacion(medidaId)
 
-  // Filtrar solo activas (debería haber máximo 1)
-  const activa = ratificaciones.find((r) => r.activo)
+    // Backend can return either an array or a single object
+    // Handle both cases
+    if (Array.isArray(response)) {
+      // If it's an array, find the active one
+      const activa = response.find((r) => r.activo)
+      return activa || null
+    } else if (response && typeof response === 'object') {
+      // If it's a single object, return it if it's active
+      return (response as RatificacionJudicial).activo ? response as RatificacionJudicial : null
+    }
 
-  return activa || null
+    return null
+  } catch (error) {
+    console.error("Error getting ratificación activa:", error)
+    return null
+  }
 }
 
 /**

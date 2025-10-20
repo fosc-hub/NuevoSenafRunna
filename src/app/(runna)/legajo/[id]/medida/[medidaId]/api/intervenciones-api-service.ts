@@ -264,15 +264,17 @@ export const enviarIntervencion = async (
   try {
     console.log(`Enviando intervención: medida ${medidaId}, intervención ${intervencionId}`)
 
+    // Import axiosInstance at the top of the file if not already imported
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
     // Make API call - Uses PATCH with no body
-    const response = await update<EnviarIntervencionResponse>(
-      `medidas/${medidaId}/intervenciones/${intervencionId}/enviar`,
-      {}
+    const response = await axiosInstance.patch<EnviarIntervencionResponse>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/enviar/`
     )
 
-    console.log("Intervención enviada successfully:", response)
+    console.log("Intervención enviada successfully:", response.data)
 
-    return response
+    return response.data
   } catch (error: any) {
     console.error(
       `Error enviando intervención: medida ${medidaId}, intervención ${intervencionId}`,
@@ -303,15 +305,17 @@ export const aprobarIntervencion = async (
   try {
     console.log(`Aprobando intervención: medida ${medidaId}, intervención ${intervencionId}`)
 
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
     // Make API call - Uses POST with no body
-    const response = await create<AprobarIntervencionResponse>(
-      `medidas/${medidaId}/intervenciones/${intervencionId}/aprobar`,
-      {}
+    const response = await axiosInstance.post<AprobarIntervencionResponse>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/aprobar/`
     )
 
-    console.log("Intervención aprobada successfully:", response)
+    console.log("Intervención aprobada successfully:", response.data)
 
-    return response
+    return response.data
   } catch (error: any) {
     console.error(
       `Error aprobando intervención: medida ${medidaId}, intervención ${intervencionId}`,
@@ -347,15 +351,18 @@ export const rechazarIntervencion = async (
       data
     )
 
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
     // Make API call - Uses POST with observaciones_jz
-    const response = await create<RechazarIntervencionResponse>(
-      `medidas/${medidaId}/intervenciones/${intervencionId}/rechazar`,
-      data as any
+    const response = await axiosInstance.post<RechazarIntervencionResponse>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/rechazar/`,
+      data
     )
 
-    console.log("Intervención rechazada successfully:", response)
+    console.log("Intervención rechazada successfully:", response.data)
 
-    return response
+    return response.data
   } catch (error: any) {
     console.error(
       `Error rechazando intervención: medida ${medidaId}, intervención ${intervencionId}`,

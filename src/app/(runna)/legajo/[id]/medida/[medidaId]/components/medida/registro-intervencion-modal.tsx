@@ -99,6 +99,14 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
         deleteAdjuntoFile,
         isUploadingAdjunto,
         canEdit,
+        enviar,
+        aprobar,
+        rechazar,
+        isEnviando,
+        isAprobando,
+        isRechazando,
+        canEnviar,
+        canAprobarOrRechazar,
     } = useRegistroIntervencion({
         medidaId,
         intervencionId,
@@ -111,6 +119,21 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
     const [activeStep, setActiveStep] = useState(0)
     const [showSuccessMessage, setShowSuccessMessage] = useState(false)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
+
+    // Rejection dialog state
+    const [rechazarDialogOpen, setRechazarDialogOpen] = useState(false)
+    const [observaciones, setObservaciones] = useState("")
+
+    // Snackbar state
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean
+        message: string
+        severity: 'success' | 'error' | 'info'
+    }>({
+        open: false,
+        message: '',
+        severity: 'success'
+    })
 
     const steps = [
         'Información Básica',
@@ -172,6 +195,126 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
 
     const handleRemovePendingFile = (index: number) => {
         setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+    }
+
+    // State transition handlers
+    const handleEnviar = async () => {
+        try {
+            // If no intervencionId, save first
+            if (!intervencionId) {
+                setSnackbar({
+                    open: true,
+                    message: 'Guardando intervención antes de enviar...',
+                    severity: 'info'
+                })
+                const saved = await guardarBorrador()
+                if (!saved) {
+                    setSnackbar({
+                        open: true,
+                        message: 'Debe guardar la intervención antes de enviar a aprobación',
+                        severity: 'error'
+                    })
+                    return
+                }
+                // Wait a moment for state to update
+                await new Promise(resolve => setTimeout(resolve, 500))
+            }
+
+            const result = await enviar()
+            if (result) {
+                setSnackbar({
+                    open: true,
+                    message: 'Intervención enviada a aprobación exitosamente',
+                    severity: 'success'
+                })
+                if (onSaved) {
+                    onSaved()
+                }
+                setTimeout(() => {
+                    onClose()
+                }, 1500)
+            }
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: 'Error al enviar la intervención',
+                severity: 'error'
+            })
+        }
+    }
+
+    const handleAprobar = async () => {
+        try {
+            const result = await aprobar()
+            if (result) {
+                setSnackbar({
+                    open: true,
+                    message: 'Intervención aprobada exitosamente',
+                    severity: 'success'
+                })
+                if (onSaved) {
+                    onSaved()
+                }
+                setTimeout(() => {
+                    onClose()
+                }, 1500)
+            }
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: 'Error al aprobar la intervención',
+                severity: 'error'
+            })
+        }
+    }
+
+    const handleRechazarClick = () => {
+        setRechazarDialogOpen(true)
+    }
+
+    const handleRechazarConfirm = async () => {
+        if (!observaciones.trim()) {
+            setSnackbar({
+                open: true,
+                message: 'Debe ingresar observaciones para rechazar',
+                severity: 'error'
+            })
+            return
+        }
+
+        try {
+            const result = await rechazar(observaciones)
+            if (result) {
+                setSnackbar({
+                    open: true,
+                    message: 'Intervención rechazada. Se notificará al equipo técnico.',
+                    severity: 'success'
+                })
+                setRechazarDialogOpen(false)
+                setObservaciones("")
+                if (onSaved) {
+                    onSaved()
+                }
+                setTimeout(() => {
+                    onClose()
+                }, 1500)
+            }
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: 'Error al rechazar la intervención',
+                severity: 'error'
+            })
+        }
+    }
+
+    const handleRechazarCancel = () => {
+        setRechazarDialogOpen(false)
+        setObservaciones("")
+    }
+
+    const handleSnackbarClose = () => {
+        setSnackbar({ ...snackbar, open: false })
     }
 
     const getStepContent = (step: number) => {
@@ -857,6 +1000,59 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                         </Button>
                     )}
 
+                    {/* State transition buttons */}
+                    {/* Enviar a Aprobación - Show for new interventions or BORRADOR state */}
+                    {(!intervencion || (canEnviar && currentEstado === 'BORRADOR')) && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<SendIcon />}
+                            onClick={handleEnviar}
+                            disabled={isEnviando || isSaving || isLoading}
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                                px: 3
+                            }}
+                        >
+                            {isEnviando ? "Enviando..." : "Enviar a Aprobación"}
+                        </Button>
+                    )}
+
+                    {/* Aprobar - Only for ENVIADO state */}
+                    {canAprobarOrRechazar && currentEstado === 'ENVIADO' && (
+                        <>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<CheckCircleIcon />}
+                                onClick={handleAprobar}
+                                disabled={isAprobando || isRechazando || isLoading}
+                                sx={{
+                                    textTransform: "none",
+                                    borderRadius: 2,
+                                    px: 3
+                                }}
+                            >
+                                {isAprobando ? "Aprobando..." : "Aprobar"}
+                            </Button>
+
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                onClick={handleRechazarClick}
+                                disabled={isAprobando || isRechazando || isLoading}
+                                sx={{
+                                    textTransform: "none",
+                                    borderRadius: 2,
+                                    px: 3
+                                }}
+                            >
+                                Rechazar
+                            </Button>
+                        </>
+                    )}
+
                     {/* Next/Finish button */}
                     {activeStep === steps.length - 1 ? (
                         <Button
@@ -899,6 +1095,84 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                     icon={<CheckCircleIcon />}
                 >
                     Intervención guardada exitosamente
+                </Alert>
+            </Snackbar>
+
+            {/* Rejection Dialog */}
+            <Dialog
+                open={rechazarDialogOpen}
+                onClose={handleRechazarCancel}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    fontWeight: 600,
+                    fontSize: '1.25rem',
+                    color: 'error.main',
+                    borderBottom: '1px solid #e0e0e0'
+                }}>
+                    Rechazar Intervención
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3 }}>
+                    <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        Ingrese las observaciones o motivos del rechazo. Esta información será enviada al equipo técnico.
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Observaciones *"
+                        value={observaciones}
+                        onChange={(e) => setObservaciones(e.target.value)}
+                        placeholder="Describa los motivos del rechazo..."
+                        required
+                        error={observaciones.trim() === '' && rechazarDialogOpen}
+                        helperText={observaciones.trim() === '' ? "Las observaciones son obligatorias" : ""}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2
+                            }
+                        }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #e0e0e0' }}>
+                    <Button
+                        onClick={handleRechazarCancel}
+                        disabled={isRechazando}
+                        sx={{ textTransform: 'none', borderRadius: 2 }}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleRechazarConfirm}
+                        disabled={isRechazando || observaciones.trim() === ''}
+                        sx={{ textTransform: 'none', borderRadius: 2, px: 3 }}
+                    >
+                        {isRechazando ? "Rechazando..." : "Confirmar Rechazo"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* State Transition Snackbar */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={handleSnackbarClose}
+                    severity={snackbar.severity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
                 </Alert>
             </Snackbar>
         </Dialog>

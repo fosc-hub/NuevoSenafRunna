@@ -41,6 +41,7 @@ import {
   Warning as WarningIcon,
   Add as AddIcon,
   Send as SendIcon,
+  Edit as EditIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Email as EmailIcon,
@@ -146,6 +147,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
   // ============================================================================
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editMode, setEditMode] = useState(false)
   const [sendConfirmOpen, setSendConfirmOpen] = useState(false)
 
   // ============================================================================
@@ -165,6 +167,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     tieneInformeOficial,
     cantidadAcuses,
     createNewInforme,
+    updateInforme,
     uploadAdjunto,
     deleteAdjunto,
     sendInforme,
@@ -185,16 +188,29 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
   // ============================================================================
 
   /**
-   * Handle create informe
+   * Handle create/update informe
    */
-  const handleCreateInforme = async (data: CreateInformeJuridicoRequest) => {
+  const handleSaveInforme = async (data: CreateInformeJuridicoRequest) => {
     try {
-      await createNewInforme(data)
+      if (editMode) {
+        await updateInforme(data)
+      } else {
+        await createNewInforme(data)
+      }
       setDialogOpen(false)
+      setEditMode(false)
     } catch (error) {
-      console.error("Error creating informe:", error)
+      console.error("Error saving informe:", error)
       // Error is already shown in dialog
     }
+  }
+
+  /**
+   * Handle edit button click
+   */
+  const handleEditClick = () => {
+    setEditMode(true)
+    setDialogOpen(true)
   }
 
   /**
@@ -321,25 +337,75 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
           }
           subheader={`Elaborado por: ${extractUserName(informeJuridico.elaborado_por_detalle)}`}
           action={
-            canModify &&
-            canSend && (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<SendIcon />}
-                onClick={() => setSendConfirmOpen(true)}
-                sx={{
-                  backgroundColor: "#4f3ff0",
-                  "&:hover": { backgroundColor: "#3a2cc2" },
-                }}
-              >
-                Enviar Informe
-              </Button>
+            canModify && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                {/* Edit button - visible if not sent */}
+                {!isEnviado && (
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<EditIcon />}
+                    onClick={handleEditClick}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      borderColor: "#4f3ff0",
+                      color: "#4f3ff0",
+                      "&:hover": {
+                        borderColor: "#3a2cc2",
+                        backgroundColor: "rgba(79, 63, 240, 0.04)",
+                      },
+                    }}
+                  >
+                    Editar
+                  </Button>
+                )}
+                {/* Send button - visible if not sent, disabled if missing informe oficial */}
+                {!isEnviado && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<SendIcon />}
+                    onClick={() => setSendConfirmOpen(true)}
+                    disabled={!canSend}
+                    sx={{
+                      backgroundColor: "#4f3ff0",
+                      "&:hover": { backgroundColor: "#3a2cc2" },
+                      "&.Mui-disabled": {
+                        backgroundColor: "#e0e0e0",
+                        color: "#9e9e9e",
+                      },
+                    }}
+                    title={
+                      !tieneInformeOficial
+                        ? "Debe adjuntar el informe oficial antes de enviar"
+                        : ""
+                    }
+                  >
+                    Enviar Informe
+                  </Button>
+                )}
+              </Box>
             )
           }
         />
         <CardContent>
           <Grid container spacing={3}>
+            {/* Warning if missing informe oficial */}
+            {!isEnviado && !tieneInformeOficial && canModify && (
+              <Grid item xs={12}>
+                <Alert severity="warning" icon={<WarningIcon />}>
+                  <Typography variant="body2">
+                    <strong>Falta adjuntar el informe oficial</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    Debe adjuntar el documento de informe jurídico oficial (tipo INFORME) antes de poder enviar.
+                    Desplácese hacia abajo para gestionar adjuntos.
+                  </Typography>
+                </Alert>
+              </Grid>
+            )}
+
             {/* Notificaciones Institucionales */}
             <Grid item xs={12}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
@@ -451,13 +517,28 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     <Box>
       {hasInforme ? renderInforme() : renderEmpty()}
 
-      {/* Create Dialog */}
+      {/* Create/Edit Dialog */}
       <InformeJuridicoDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSubmit={handleCreateInforme}
+        onClose={() => {
+          setDialogOpen(false)
+          setEditMode(false)
+        }}
+        onSubmit={handleSaveInforme}
         isLoading={isLoadingInforme}
         medidaNumero={medidaNumero}
+        editMode={editMode}
+        initialData={
+          editMode && informeJuridico
+            ? {
+                observaciones: informeJuridico.observaciones || "",
+                instituciones_notificadas: informeJuridico.instituciones_notificadas,
+                fecha_notificaciones: informeJuridico.fecha_notificaciones,
+                medio_notificacion: informeJuridico.medio_notificacion,
+                destinatarios: informeJuridico.destinatarios,
+              }
+            : undefined
+        }
       />
 
       {/* Send Confirmation Dialog */}

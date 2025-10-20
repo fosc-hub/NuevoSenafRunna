@@ -21,6 +21,7 @@ import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-di
 import { NotaAvalSection } from "./[medidaId]/components/medida/nota-aval-section"
 import { InformeJuridicoSection } from "./[medidaId]/components/medida/informe-juridico-section"
 import { RatificacionJudicialSection } from "./[medidaId]/components/medida/ratificacion-judicial-section"
+import { useUser } from "@/utils/auth/userZustand"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
@@ -182,6 +183,16 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const [selectedAttachment, setSelectedAttachment] = useState("")
 
   const router = useRouter()
+
+  // Get user data from Zustand store
+  const { user } = useUser()
+
+  // Calculate user permissions
+  const isSuperuser = user?.is_superuser || false
+  const isDirector = user?.zonas?.some(z => z.director) || false
+  const userLevel = isDirector ? 3 : undefined
+  const isJZ = user?.zonas?.some(z => z.jefe) || false
+  const isEquipoLegal = false // TODO: Add legal flag to user zonas data
 
   useEffect(() => {
     const loadData = async () => {
@@ -527,8 +538,8 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 )}
               </Grid>
 
-              {/* Nota de Aval Section (MED-03) - TEMPORALMENTE DESHABILITADO PARA DEBUG */}
-              {false && medidaApiData && (() => {
+              {/* Nota de Aval Section (MED-03) */}
+              {medidaApiData && (() => {
                 // Extract estado safely as a string
                 const estado = medidaApiData.etapa_actual?.estado
                 const estadoString = typeof estado === 'string' ? estado : undefined
@@ -546,8 +557,8 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                       medidaId={Number(params.medidaId)}
                       medidaNumero={numeroMedidaSafe}
                       estadoActual={estadoString}
-                      userLevel={3} // TODO: Get from actual user context (3 or 4 for Director)
-                      isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)
+                      userLevel={userLevel}
+                      isSuperuser={isSuperuser}
                       onNotaAvalCreated={() => {
                         // Refetch medida data to update estado
                         window.location.reload() // Simple reload for now, can be improved with proper refetch
@@ -576,9 +587,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                       medidaId={Number(params.medidaId)}
                       medidaNumero={numeroMedidaSafe}
                       estadoActual={estadoString}
-                      userLevel={3} // TODO: Get from actual user context
-                      isEquipoLegal={true} // TODO: Get from actual user context (user.nivel 3 or 4 + flag legal=true)
-                      isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)
+                      userLevel={userLevel}
+                      isEquipoLegal={isEquipoLegal}
+                      isSuperuser={isSuperuser}
                       onInformeEnviado={() => {
                         // Refetch medida data to update estado
                         window.location.reload() // Simple reload for now, can be improved with proper refetch
@@ -607,10 +618,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                       medidaId={Number(params.medidaId)}
                       medidaNumero={numeroMedidaSafe}
                       estadoActual={estadoString}
-                      userLevel={3} // TODO: Get from actual user context
-                      isEquipoLegal={true} // TODO: Get from actual user context (user.nivel 3 or 4 + flag legal=true)
-                      isJZ={false} // TODO: Get from actual user context (user.nivel >= 3 and JZ role)
-                      isSuperuser={true} // TODO: Get from actual user context (user.is_superuser)
+                      userLevel={userLevel}
+                      isEquipoLegal={isEquipoLegal}
+                      isJZ={isJZ}
+                      isSuperuser={isSuperuser}
                       onRatificacionRegistrada={() => {
                         // Refetch medida data to update estado
                         window.location.reload() // Simple reload for now, can be improved with proper refetch

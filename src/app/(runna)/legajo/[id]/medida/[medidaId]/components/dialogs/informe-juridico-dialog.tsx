@@ -56,6 +56,8 @@ interface InformeJuridicoDialogProps {
   onSubmit: (data: CreateInformeJuridicoRequest) => Promise<void>
   isLoading?: boolean
   medidaNumero?: string
+  editMode?: boolean // If true, dialog is in edit mode
+  initialData?: CreateInformeJuridicoRequest // Initial data for edit mode
 }
 
 // ============================================================================
@@ -80,16 +82,27 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
   onSubmit,
   isLoading = false,
   medidaNumero,
+  editMode = false,
+  initialData,
 }) => {
   // ============================================================================
   // STATE
   // ============================================================================
 
   const [formData, setFormData] = useState<CreateInformeJuridicoRequest>(
-    getInitialFormData()
+    initialData || getInitialFormData()
   )
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // Update form data when initialData changes (for edit mode)
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData(initialData)
+    } else {
+      setFormData(getInitialFormData())
+    }
+  }, [initialData, open])
 
   // ============================================================================
   // HANDLERS
@@ -204,7 +217,7 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
           borderColor: "divider",
         }}
       >
-        Crear Informe Jurídico
+        {editMode ? "Editar Informe Jurídico" : "Crear Informe Jurídico"}
         {medidaNumero && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Medida: {medidaNumero}

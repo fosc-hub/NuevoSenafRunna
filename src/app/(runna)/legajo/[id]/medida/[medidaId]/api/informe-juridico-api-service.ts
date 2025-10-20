@@ -177,6 +177,54 @@ export const createInformeJuridico = async (
   }
 }
 
+/**
+ * Update an existing informe jurídico
+ * PATCH /api/medidas/{medida_id}/informe-juridico/{id}/
+ *
+ * Validaciones:
+ * - Solo Equipo Legal puede actualizar
+ * - Solo se puede actualizar si el informe no ha sido enviado (enviado=False)
+ * - Campos actualizables: observaciones, instituciones_notificadas, fecha_notificaciones, medio_notificacion, destinatarios
+ *
+ * @param medidaId ID de la medida
+ * @param informeJuridicoId ID del informe jurídico
+ * @param data Datos a actualizar (parcial)
+ * @returns Informe jurídico actualizado
+ */
+export const updateInformeJuridico = async (
+  medidaId: number,
+  informeJuridicoId: number,
+  data: Partial<CreateInformeJuridicoRequest>
+): Promise<InformeJuridicoResponse> => {
+  try {
+    console.log(`Updating informe jurídico: medida ${medidaId}, informe ${informeJuridicoId}`, data)
+
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
+    // Make API call - Uses PATCH
+    const response = await axiosInstance.patch<InformeJuridicoResponse>(
+      `medidas/${medidaId}/informe-juridico/${informeJuridicoId}/`,
+      data
+    )
+
+    console.log("Informe jurídico updated successfully:", response.data)
+
+    return response.data
+  } catch (error: any) {
+    console.error(
+      `Error updating informe jurídico: medida ${medidaId}, informe ${informeJuridicoId}`,
+      error
+    )
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
 // ============================================================================
 // ENVIAR INFORME JURÍDICO (Transición Estado 4 → 5)
 // ============================================================================
@@ -206,32 +254,23 @@ export const enviarInformeJuridico = async (
   try {
     console.log(`Enviando informe jurídico for medida ${medidaId}`)
 
-    // Make API call using fetch directly for custom endpoint
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api'
-    const url = `${baseURL}/medidas/${medidaId}/informe-juridico/enviar/`
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
 
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: 'include', // Include cookies for authentication
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+    // Make API call - Uses POST with no body
+    const response = await axiosInstance.post<EnviarInformeJuridicoResponse>(
+      `medidas/${medidaId}/informe-juridico/enviar/`
+    )
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || errorData.mensaje || `HTTP error! status: ${response.status}`)
-    }
+    console.log("Informe jurídico enviado successfully:", response.data)
 
-    const data = await response.json()
-
-    console.log("Informe jurídico enviado successfully:", data)
-
-    return data
+    return response.data
   } catch (error: any) {
     console.error(`Error enviando informe jurídico for medida ${medidaId}:`, error)
     console.error("Error details:", {
       message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
     })
     throw error
   }
@@ -289,31 +328,29 @@ export const uploadAdjuntoInformeJuridico = async (
       formData.append("descripcion", descripcion)
     }
 
-    // Make API call using fetch directly (apiService may not support FormData)
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api'
-    const url = `${baseURL}/medidas/${medidaId}/informe-juridico/adjuntos/`
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
 
-    const response = await fetch(url, {
-      method: "POST",
-      body: formData,
-      credentials: 'include', // Include cookies for authentication
-      // Don't set Content-Type header - browser will set it with boundary
-    })
+    // Make API call using axiosInstance
+    const response = await axiosInstance.post<AdjuntoInformeJuridico>(
+      `medidas/${medidaId}/informe-juridico/adjuntos/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
-    }
+    console.log("Adjunto uploaded successfully:", response.data)
 
-    const data = await response.json()
-
-    console.log("Adjunto uploaded successfully:", data)
-
-    return data
+    return response.data
   } catch (error: any) {
     console.error(`Error uploading adjunto: medida ${medidaId}`, error)
     console.error("Error details:", {
       message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
     })
     throw error
   }
@@ -388,19 +425,13 @@ export const deleteAdjuntoInformeJuridico = async (
       `Deleting adjunto informe jurídico: medida ${medidaId}, adjunto ${adjuntoId}`
     )
 
-    // Make API call using custom endpoint structure
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api'
-    const url = `${baseURL}/medidas/${medidaId}/informe-juridico/adjuntos/${adjuntoId}/`
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
 
-    const response = await fetch(url, {
-      method: "DELETE",
-      credentials: 'include', // Include cookies for authentication
-    })
-
-    if (!response.ok && response.status !== 204) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
-    }
+    // Make API call using axiosInstance
+    await axiosInstance.delete(
+      `medidas/${medidaId}/informe-juridico/adjuntos/${adjuntoId}/`
+    )
 
     console.log("Adjunto informe jurídico deleted successfully")
   } catch (error: any) {
@@ -410,6 +441,8 @@ export const deleteAdjuntoInformeJuridico = async (
     )
     console.error("Error details:", {
       message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
     })
     throw error
   }

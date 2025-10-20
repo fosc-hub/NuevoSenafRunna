@@ -1,3 +1,14 @@
+/**
+ * @deprecated This component has been replaced by PlanTrabajoTab
+ *
+ * MPI now uses the same enhanced PlanTrabajoTab component as MPE for better code reuse
+ * and consistent UX across all medida types.
+ *
+ * @see PlanTrabajoTab in mpe-tabs/plan-trabajo-tab.tsx
+ *
+ * Migration: Replace <PlanAccionSection> with <PlanTrabajoTab planTrabajoId={...} medidaData={...} />
+ */
+
 "use client"
 
 import type React from "react"

@@ -10,7 +10,7 @@ import { MedidaHeader } from "./[medidaId]/components/medida/medida-header"
 import { MPEHeader } from "./[medidaId]/components/medida/mpe-header"
 import { MPETabs } from "./[medidaId]/components/medida/mpe-tabs"
 import { AperturaSection } from "./[medidaId]/components/medida/apertura-section"
-import { PlanAccionSection } from "./[medidaId]/components/medida/plan-accion-section"
+import { PlanTrabajoTab } from "./[medidaId]/components/medida/mpe-tabs/plan-trabajo-tab"
 import { PlanEvaluacionSection } from "./[medidaId]/components/medida/plan-evaluacion-section"
 import { EvaluacionFamiliarSection } from "./[medidaId]/components/medida/evaluacion-familiar-section"
 import { LegajosAfectadosSection } from "./[medidaId]/components/medida/legajos-afectados-section"
@@ -552,16 +552,25 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               />
             )}
 
-            {/* Plan de acción Section - Only for MPI (outside stepper) */}
+            {/* Plan de acción/trabajo Section - For both MPI and MPE (outside stepper) */}
             <Grid container spacing={3} sx={{ mt: 3 }}>
               <Grid item xs={12}>
-                {medidaData.tipo === "MPI" && "plan_accion" in medidaData.etapas && (
-                  <PlanAccionSection
-                    tasks={medidaData.etapas.plan_accion}
-                    isActive={activeStep === 1}
-                    onAddTask={handleAddTask}
-                    onViewTaskDetails={(index) => console.log(`View task details for index ${index}`)}
-                    onEditTask={handleEditTask}
+                {medidaData.tipo === "MPI" && medidaApiData?.plan_trabajo_id && (
+                  <PlanTrabajoTab
+                    medidaData={{
+                      id: medidaApiData.id,
+                      tipo_medida: medidaApiData.tipo_medida_display || "MPI",
+                      numero_medida: typeof medidaApiData.numero_medida === 'string'
+                        ? medidaApiData.numero_medida
+                        : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                          ? String(medidaApiData.numero_medida.display)
+                          : `M-${medidaApiData.id}`,
+                      estado: typeof medidaApiData.etapa_actual?.estado === 'string'
+                        ? medidaApiData.etapa_actual.estado
+                        : medidaApiData.etapa_actual?.estado_display || "",
+                      fecha_apertura: medidaApiData.fecha_apertura,
+                    }}
+                    planTrabajoId={medidaApiData.plan_trabajo_id}
                   />
                 )}
               </Grid>

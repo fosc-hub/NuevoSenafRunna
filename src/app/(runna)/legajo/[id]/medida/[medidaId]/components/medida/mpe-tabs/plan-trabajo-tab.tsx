@@ -30,8 +30,13 @@ import { PlanAccionModal } from "../plan-accion-modal"
 import { ActividadDetailModal } from "../ActividadDetailModal"
 import { EditActividadModal } from "../EditActividadModal"
 import { CancelActividadModal } from "../CancelActividadModal"
+import { ActividadStatistics } from "../ActividadStatistics"
+import { ResponsablesAvatarGroup } from "../ResponsablesAvatarGroup"
+import { DeadlineIndicator } from "../DeadlineIndicator"
+import { QuickFilterChips } from "../QuickFilterChips"
 import { actividadService } from "../../../services/actividadService"
 import type { TActividadPlanTrabajo, ActividadFilters } from "../../../types/actividades"
+import AttachFileIcon from "@mui/icons-material/AttachFile"
 
 interface PlanTrabajoTabProps {
     medidaData: any
@@ -130,6 +135,9 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
     return (
         <>
             <Box sx={{ p: 3 }}>
+                {/* Statistics Dashboard */}
+                <ActividadStatistics actividades={actividades} />
+
                 <Paper elevation={2} sx={{ borderRadius: 2 }}>
                     {/* Header with Filters */}
                     <Box sx={{ p: 3, pb: 2 }}>
@@ -146,6 +154,12 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                 Agregar actividad
                             </Button>
                         </Box>
+
+                        {/* Quick Filter Chips */}
+                        <QuickFilterChips
+                            activeFilters={filters}
+                            onFilterChange={setFilters}
+                        />
 
                         {/* Filters */}
                         <Grid container spacing={2}>
@@ -196,9 +210,12 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
 
                     {/* Table */}
                     <TableContainer>
-                        <Table>
+                        <Table sx={{ '& .MuiTableRow-root:hover': { backgroundColor: 'rgba(0, 0, 0, 0.02)' } }}>
                             <TableHead>
-                                <TableRow sx={{ backgroundColor: 'primary.main' }}>
+                                <TableRow sx={{
+                                    backgroundColor: 'primary.main',
+                                    '& .MuiTableCell-root': { position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'primary.main' }
+                                }}>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
                                         Tipo / Subactividad
                                     </TableCell>
@@ -206,7 +223,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                         Actor
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
-                                        Responsable
+                                        Responsables
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
                                         Fecha Plan.
@@ -215,7 +232,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                         Estado
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
-                                        Días Restantes
+                                        Plazo
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem', textAlign: 'center' }}>
                                         Acciones
@@ -229,7 +246,24 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                     </TableRow>
                                 ) : !actividades || actividades.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center">No hay actividades</TableCell>
+                                        <TableCell colSpan={7} align="center">
+                                            <Box sx={{ py: 8, textAlign: 'center' }}>
+                                                <Typography variant="h6" color="text.secondary" gutterBottom>
+                                                    No hay actividades en el plan de trabajo
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                                    Comienza agregando tu primera actividad
+                                                </Typography>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={() => setPlanAccionModalOpen(true)}
+                                                    sx={{ textTransform: 'none', borderRadius: 2 }}
+                                                >
+                                                    Agregar primera actividad
+                                                </Button>
+                                            </Box>
+                                        </TableCell>
                                     </TableRow>
                                 ) : (
                                     actividades.map((actividad) => (
@@ -238,15 +272,16 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                             hover
                                             sx={{
                                                 backgroundColor: actividad.esta_vencida && actividad.estado === 'PENDIENTE'
-                                                    ? 'rgba(211, 47, 47, 0.08)'
+                                                    ? 'rgba(211, 47, 47, 0.05)'
                                                     : actividad.es_borrador
-                                                    ? 'rgba(237, 108, 2, 0.08)'
+                                                    ? 'rgba(237, 108, 2, 0.05)'
                                                     : 'transparent',
                                                 borderLeft: actividad.esta_vencida && actividad.estado === 'PENDIENTE'
                                                     ? '4px solid #d32f2f'
                                                     : actividad.es_borrador
                                                     ? '4px solid #ed6c02'
-                                                    : '4px solid transparent'
+                                                    : '4px solid transparent',
+                                                transition: 'all 0.2s'
                                             }}
                                         >
                                             <TableCell>
@@ -258,30 +293,59 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                         <Typography variant="caption" color="text.secondary">
                                                             {actividad.subactividad}
                                                         </Typography>
+                                                        {actividad.descripcion && (
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
+                                                                {actividad.descripcion.length > 50
+                                                                    ? `${actividad.descripcion.substring(0, 50)}...`
+                                                                    : actividad.descripcion}
+                                                            </Typography>
+                                                        )}
                                                     </Box>
-                                                    {actividad.esta_vencida && actividad.estado === 'PENDIENTE' && (
-                                                        <Chip
-                                                            label="VENCIDA"
-                                                            size="small"
-                                                            color="error"
-                                                            sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                                                        />
-                                                    )}
-                                                    {actividad.es_borrador && (
-                                                        <Chip
-                                                            label="BORRADOR"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            color="warning"
-                                                            sx={{ fontWeight: 500, fontSize: '0.7rem' }}
-                                                        />
-                                                    )}
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
+                                                        {actividad.esta_vencida && actividad.estado === 'PENDIENTE' && (
+                                                            <Chip
+                                                                label="VENCIDA"
+                                                                size="small"
+                                                                color="error"
+                                                                sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                                                            />
+                                                        )}
+                                                        {actividad.es_borrador && (
+                                                            <Chip
+                                                                label="BORRADOR"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                color="warning"
+                                                                sx={{ fontWeight: 500, fontSize: '0.7rem' }}
+                                                            />
+                                                        )}
+                                                        {actividad.adjuntos && actividad.adjuntos.length > 0 && (
+                                                            <Chip
+                                                                icon={<AttachFileIcon fontSize="small" />}
+                                                                label={actividad.adjuntos.length}
+                                                                size="small"
+                                                                variant="outlined"
+                                                                sx={{ fontSize: '0.7rem' }}
+                                                            />
+                                                        )}
+                                                    </Box>
                                                 </Box>
                                             </TableCell>
-                                            <TableCell>{actividad.actor_display}</TableCell>
-                                            <TableCell>{actividad.responsable_principal_info.full_name}</TableCell>
                                             <TableCell>
-                                                {new Date(actividad.fecha_planificacion).toLocaleDateString('es-ES')}
+                                                <Typography variant="body2">
+                                                    {actividad.actor_display}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <ResponsablesAvatarGroup
+                                                    responsablePrincipal={actividad.responsable_principal_info}
+                                                    responsablesSecundarios={actividad.responsables_secundarios_info}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {new Date(actividad.fecha_planificacion).toLocaleDateString('es-ES')}
+                                                </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <Chip
@@ -295,36 +359,27 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                <Chip
-                                                    label={actividad.esta_vencida
-                                                        ? `Vencida hace ${Math.abs(actividad.dias_restantes)} días`
-                                                        : actividad.dias_restantes <= 3 && actividad.estado === 'PENDIENTE'
-                                                        ? `⚠️ ${actividad.dias_restantes} días`
-                                                        : `${actividad.dias_restantes} días`
-                                                    }
-                                                    color={actividad.esta_vencida
-                                                        ? 'error'
-                                                        : actividad.dias_restantes <= 3 && actividad.estado === 'PENDIENTE'
-                                                        ? 'warning'
-                                                        : 'default'
-                                                    }
-                                                    size="small"
-                                                    sx={{
-                                                        fontWeight: (actividad.esta_vencida || actividad.dias_restantes <= 3) && actividad.estado === 'PENDIENTE'
-                                                            ? 600
-                                                            : 400
-                                                    }}
+                                                <DeadlineIndicator
+                                                    diasRestantes={actividad.dias_restantes}
+                                                    estaVencida={actividad.esta_vencida}
+                                                    estado={actividad.estado}
+                                                    fechaPlanificacion={actividad.fecha_planificacion}
                                                 />
                                             </TableCell>
                                             <TableCell sx={{ textAlign: 'center' }}>
-                                                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                                                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
                                                     <IconButton
                                                         size="small"
                                                         onClick={() => handleViewDetail(actividad)}
+                                                        title="Ver detalle"
                                                         sx={{
                                                             backgroundColor: 'rgba(156, 39, 176, 0.1)',
                                                             color: 'primary.main',
-                                                            '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.2)' }
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                                                                transform: 'scale(1.1)'
+                                                            },
+                                                            transition: 'all 0.2s'
                                                         }}
                                                     >
                                                         <VisibilityIcon fontSize="small" />
@@ -333,11 +388,21 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                         size="small"
                                                         onClick={() => handleEdit(actividad)}
                                                         disabled={actividad.estado === 'REALIZADA' || actividad.estado === 'CANCELADA'}
+                                                        title={actividad.estado === 'REALIZADA' || actividad.estado === 'CANCELADA'
+                                                            ? 'No se puede editar'
+                                                            : 'Editar'}
                                                         sx={{
                                                             backgroundColor: 'rgba(156, 39, 176, 0.1)',
                                                             color: 'primary.main',
-                                                            '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.2)' },
-                                                            '&:disabled': { backgroundColor: 'rgba(0, 0, 0, 0.05)' }
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                                                                transform: 'scale(1.1)'
+                                                            },
+                                                            '&:disabled': {
+                                                                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                                                                color: 'rgba(0, 0, 0, 0.26)'
+                                                            },
+                                                            transition: 'all 0.2s'
                                                         }}
                                                     >
                                                         <EditIcon fontSize="small" />
@@ -346,9 +411,20 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                         size="small"
                                                         onClick={() => handleCancelActividad(actividad)}
                                                         disabled={actividad.estado === 'REALIZADA' || actividad.estado === 'CANCELADA'}
-                                                        color="error"
+                                                        title={actividad.estado === 'REALIZADA' || actividad.estado === 'CANCELADA'
+                                                            ? 'No se puede cancelar'
+                                                            : 'Cancelar'}
                                                         sx={{
-                                                            '&:disabled': { backgroundColor: 'rgba(0, 0, 0, 0.05)' }
+                                                            color: 'error.main',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                                                transform: 'scale(1.1)'
+                                                            },
+                                                            '&:disabled': {
+                                                                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                                                                color: 'rgba(0, 0, 0, 0.26)'
+                                                            },
+                                                            transition: 'all 0.2s'
                                                         }}
                                                     >
                                                         <CancelIcon fontSize="small" />

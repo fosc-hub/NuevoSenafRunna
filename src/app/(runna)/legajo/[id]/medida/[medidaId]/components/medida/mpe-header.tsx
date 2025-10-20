@@ -24,6 +24,8 @@ interface MPEHeaderProps {
         numero_sac: string
         equipos: string
         articulacion_area_local: boolean
+        urgencia?: string
+        estado_actual?: string
     }
     estados: {
         inicial: boolean
@@ -77,9 +79,30 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
 
             {/* Estado de Medida Section */}
             <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
-                    Estado de Medida
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main" }}>
+                        Estado de Medida
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                        {medidaData.urgencia && (
+                            <Chip
+                                label={`Urgencia: ${medidaData.urgencia}`}
+                                color="error"
+                                size="small"
+                                sx={{ fontWeight: 500 }}
+                            />
+                        )}
+                        {medidaData.estado_actual && (
+                            <Chip
+                                label={medidaData.estado_actual}
+                                color="info"
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontWeight: 500 }}
+                            />
+                        )}
+                    </Box>
+                </Box>
 
                 {/* Status Chips */}
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>

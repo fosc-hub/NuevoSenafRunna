@@ -73,8 +73,10 @@ export interface BaseMedidaData {
   fecha_apertura: string
   ubicacion: string
   direccion: string
-  juzgado: string
-  nro_sac: string
+  juzgado?: string
+  nro_sac?: string
+  urgencia?: string
+  estado_actual?: string
   origen_demanda: string
   motivo: string
   actores_intervinientes: string

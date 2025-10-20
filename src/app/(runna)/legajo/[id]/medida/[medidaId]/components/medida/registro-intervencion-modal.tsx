@@ -267,7 +267,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                     </Select>
                                     {intervencion?.tipo_dispositivo_detalle && (
                                         <FormHelperText>
-                                            Actual: {intervencion.tipo_dispositivo_detalle}
+                                            Actual: {intervencion.tipo_dispositivo_detalle.nombre}
                                         </FormHelperText>
                                     )}
                                 </FormControl>
@@ -313,7 +313,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                         <FormHelperText>{validationErrors.motivo_id}</FormHelperText>
                                     )}
                                     {intervencion?.motivo_detalle && (
-                                        <FormHelperText>Actual: {intervencion.motivo_detalle}</FormHelperText>
+                                        <FormHelperText>Actual: {intervencion.motivo_detalle.nombre}</FormHelperText>
                                     )}
                                 </FormControl>
 
@@ -336,7 +336,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                         <FormHelperText>Seleccione primero un motivo</FormHelperText>
                                     )}
                                     {intervencion?.sub_motivo_detalle && (
-                                        <FormHelperText>Actual: {intervencion.sub_motivo_detalle}</FormHelperText>
+                                        <FormHelperText>Actual: {intervencion.sub_motivo_detalle.nombre}</FormHelperText>
                                     )}
                                 </FormControl>
 
@@ -359,7 +359,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                         <FormHelperText>{validationErrors.categoria_intervencion_id}</FormHelperText>
                                     )}
                                     {intervencion?.categoria_intervencion_detalle && (
-                                        <FormHelperText>Actual: {intervencion.categoria_intervencion_detalle}</FormHelperText>
+                                        <FormHelperText>Actual: {intervencion.categoria_intervencion_detalle.nombre}</FormHelperText>
                                     )}
                                 </FormControl>
 
@@ -697,16 +697,16 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                                     {/* Metadata */}
                                     <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
                                         <Typography variant="caption" color="text.secondary" display="block">
-                                            Registrado por: {intervencion.registrado_por_detalle}
+                                            Registrado por: {intervencion.registrado_por_detalle?.nombre_completo || intervencion.registrado_por_detalle?.username || 'N/A'}
                                         </Typography>
                                         {intervencion.aprobado_por_detalle && (
                                             <Typography variant="caption" color="text.secondary" display="block">
-                                                Aprobado por: {intervencion.aprobado_por_detalle}
+                                                Aprobado por: {intervencion.aprobado_por_detalle.nombre_completo || intervencion.aprobado_por_detalle.username}
                                             </Typography>
                                         )}
                                         {intervencion.rechazado_por_detalle && (
                                             <Typography variant="caption" color="text.secondary" display="block">
-                                                Rechazado por: {intervencion.rechazado_por_detalle}
+                                                Rechazado por: {intervencion.rechazado_por_detalle.nombre_completo || intervencion.rechazado_por_detalle.username}
                                             </Typography>
                                         )}
                                     </Box>
@@ -861,7 +861,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                     {activeStep === steps.length - 1 ? (
                         <Button
                             variant="contained"
-                            onClick={onClose}
+                            onClick={handleSave}
                             disabled={isSaving || isLoading}
                             sx={{
                                 textTransform: "none",

@@ -76,8 +76,10 @@ const convertMedidaToMedidaData = (
     fecha_apertura: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
     ubicacion: "", // TODO: Get from legajo location data
     direccion: "",
-    juzgado: medida.juzgado?.nombre || "",
-    nro_sac: medida.nro_sac || "",
+    juzgado: medida.juzgado?.nombre || undefined,
+    nro_sac: medida.nro_sac || undefined,
+    urgencia: medida.urgencia?.nombre || undefined,
+    estado_actual: medida.etapa_actual?.estado_display || undefined,
     origen_demanda: "",
     motivo: "",
     actores_intervinientes: "",
@@ -502,6 +504,13 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                   isActive={activeStep === 0}
                   isCompleted={activeStep >= 0}
                   onViewForm={handleViewForm}
+                  medidaId={Number(params.medidaId)}
+                  legajoData={legajoData ? {
+                    numero: legajoData.numero,
+                    persona_nombre: legajoData.persona.nombre,
+                    persona_apellido: legajoData.persona.apellido,
+                    zona_nombre: legajoData.zona?.nombre || ""
+                  } : undefined}
                 />
               </Grid>
 

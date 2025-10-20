@@ -22,6 +22,8 @@ interface MedidaHeaderProps {
     direccion?: string
     juzgado?: string
     nro_sac?: string
+    urgencia?: string
+    estado_actual?: string
   }
   isActive: boolean
   onViewPersonalData?: () => void
@@ -52,7 +54,7 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
       <Box sx={{ pl: 2, py: 1 }}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 {medidaData.tipo}: {medidaData.numero}
               </Typography>
@@ -60,8 +62,25 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
                 label={isActive ? "ACTIVA" : "CERRADA"}
                 color={isActive ? "primary" : "default"}
                 size="small"
-                sx={{ ml: 2, fontWeight: 500 }}
+                sx={{ fontWeight: 500 }}
               />
+              {medidaData.urgencia && (
+                <Chip
+                  label={`Urgencia: ${medidaData.urgencia}`}
+                  color="error"
+                  size="small"
+                  sx={{ fontWeight: 500 }}
+                />
+              )}
+              {medidaData.estado_actual && (
+                <Chip
+                  label={medidaData.estado_actual}
+                  color="info"
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontWeight: 500 }}
+                />
+              )}
             </Box>
           </Grid>
 
@@ -131,19 +150,23 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
                 {medidaData.direccion || "No especificada"}
               </Typography>
 
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <Typography component="span" sx={{ fontWeight: "bold" }}>
-                  Juzgado:
-                </Typography>{" "}
-                {medidaData.juzgado || "No especificado"}
-              </Typography>
+              {medidaData.juzgado && (
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Typography component="span" sx={{ fontWeight: "bold" }}>
+                    Juzgado:
+                  </Typography>{" "}
+                  {medidaData.juzgado}
+                </Typography>
+              )}
 
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <Typography component="span" sx={{ fontWeight: "bold" }}>
-                  Nro. SAC:
-                </Typography>{" "}
-                {medidaData.nro_sac || "No especificado"}
-              </Typography>
+              {medidaData.nro_sac && (
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Typography component="span" sx={{ fontWeight: "bold" }}>
+                    Nro. SAC:
+                  </Typography>{" "}
+                  {medidaData.nro_sac}
+                </Typography>
+              )}
             </Box>
           </Grid>
 

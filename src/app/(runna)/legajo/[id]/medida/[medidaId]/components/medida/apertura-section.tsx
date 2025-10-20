@@ -18,9 +18,16 @@ interface AperturaSectionProps {
   isActive: boolean
   isCompleted: boolean
   onViewForm: () => void
+  medidaId: number
+  legajoData?: {
+    numero: string
+    persona_nombre: string
+    persona_apellido: string
+    zona_nombre: string
+  }
 }
 
-export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive, isCompleted, onViewForm }) => {
+export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive, isCompleted, onViewForm, medidaId, legajoData }) => {
   const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
 
   return (
@@ -79,6 +86,8 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive
       <RegistroIntervencionModal
         open={registroModalOpen}
         onClose={() => setRegistroModalOpen(false)}
+        medidaId={medidaId}
+        legajoData={legajoData}
       />
     </>
   )

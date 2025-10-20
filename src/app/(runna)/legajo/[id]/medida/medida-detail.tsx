@@ -497,7 +497,25 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               estados={medidaData.estados}
               progreso={medidaData.progreso}
             />
-            <MPETabs medidaData={medidaData} />
+            <MPETabs
+              medidaData={{
+                ...medidaData,
+                estado: medidaApiData?.etapa_actual?.estado,
+                numero_medida: typeof medidaApiData?.numero_medida === 'string'
+                  ? medidaApiData.numero_medida
+                  : (medidaApiData?.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                    ? String(medidaApiData.numero_medida.display)
+                    : `M-${medidaData.id}`,
+                plan_trabajo_id: medidaApiData?.plan_trabajo_id
+              }}
+              legajoData={legajoData ? {
+                numero: legajoData.numero,
+                persona_nombre: legajoData.nnya?.nombre || "",
+                persona_apellido: legajoData.nnya?.apellido || "",
+                zona_nombre: legajoData.zona?.nombre || ""
+              } : undefined}
+              planTrabajoId={medidaApiData?.plan_trabajo_id}
+            />
           </>
         ) : (
           <>

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Box, Tabs, Tab, Paper } from "@mui/material"
-import { AperturaTab } from "./mpe-tabs/apertura-tab"
+import { AperturaTabUnified as AperturaTab } from "./mpe-tabs/apertura-tab"
 import { InnovacionTab } from "./mpe-tabs/innovacion-tab"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
@@ -13,9 +13,16 @@ import { InformesMensualesTable } from "./informes-mensuales-table"
 
 interface MPETabsProps {
     medidaData: any
+    legajoData?: {
+        numero: string
+        persona_nombre: string
+        persona_apellido: string
+        zona_nombre: string
+    }
+    planTrabajoId?: number
 }
 
-export const MPETabs: React.FC<MPETabsProps> = ({ medidaData }) => {
+export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, legajoData, planTrabajoId }) => {
     const [activeTab, setActiveTab] = useState(0)
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -51,11 +58,19 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData }) => {
 
             {/* Tab Content */}
             <Box>
-                {activeTab === 0 && <AperturaTab medidaData={medidaData} />}
-                {activeTab === 1 && <InnovacionTab medidaData={medidaData} />}
-                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} />}
-                {activeTab === 3 && <PlanTrabajoTab medidaData={medidaData} />}
-                {activeTab === 4 && <CeseTab medidaData={medidaData} />}
+                {activeTab === 0 && <AperturaTab medidaData={medidaData} legajoData={legajoData} />}
+                {activeTab === 1 && <InnovacionTab medidaData={medidaData} legajoData={legajoData} />}
+                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} legajoData={legajoData} />}
+                {activeTab === 3 && (
+                    planTrabajoId ? (
+                        <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
+                    ) : (
+                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                            No hay Plan de Trabajo asociado a esta medida.
+                        </Box>
+                    )
+                )}
+                {activeTab === 4 && <CeseTab medidaData={medidaData} legajoData={legajoData} />}
                 {activeTab === 5 && (
                     <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
                         Contenido de Post cese - En desarrollo

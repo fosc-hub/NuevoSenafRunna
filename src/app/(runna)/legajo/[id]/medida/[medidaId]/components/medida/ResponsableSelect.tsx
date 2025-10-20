@@ -53,7 +53,14 @@ export const ResponsableSelect: React.FC<ResponsableSelectProps> = ({
     setLoading(true)
     try {
       const data = await get<User[]>('users/?is_active=true')
-      setUsers(data)
+      // Add full_name property by combining first_name and last_name
+      const usersWithFullName = data.map(user => ({
+        ...user,
+        full_name: user.first_name || user.last_name
+          ? `${user.first_name} ${user.last_name}`.trim()
+          : user.username
+      }))
+      setUsers(usersWithFullName)
     } catch (error) {
       console.error('Error loading users:', error)
     } finally {

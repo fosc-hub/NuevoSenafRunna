@@ -118,6 +118,8 @@ export interface MedidaDetailResponse {
   // MED-03: Nota de Aval
   nota_aval_actual?: NotaAvalInfo | null // Nota de aval más reciente
   notas_aval_historial?: NotaAvalInfo[] // Historial completo de notas de aval (para casos con múltiples observaciones)
+  // PLTM-01: Plan de Trabajo
+  plan_trabajo_id?: number | null // ID del plan de trabajo asociado (MPE/MPJ)
 }
 
 // Response de medida básica (en listados)

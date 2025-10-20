@@ -253,14 +253,14 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
           <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1 }}>
             <Typography variant="caption" color="text.secondary">
               Creada por {actividad.usuario_creacion_info.full_name} el{' '}
-              {new Date(actividad.fecha_creacion).toLocaleDateString('es-ES', {
+              {new Date(actividad.fecha_creacion).toLocaleString('es-ES', {
                 dateStyle: 'medium',
                 timeStyle: 'short'
               })}
             </Typography>
             {actividad.fecha_modificacion !== actividad.fecha_creacion && (
               <Typography variant="caption" color="text.secondary" display="block">
-                Última modificación: {new Date(actividad.fecha_modificacion).toLocaleDateString('es-ES', {
+                Última modificación: {new Date(actividad.fecha_modificacion).toLocaleString('es-ES', {
                   dateStyle: 'medium',
                   timeStyle: 'short'
                 })}

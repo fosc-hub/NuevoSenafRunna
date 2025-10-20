@@ -166,19 +166,19 @@ export interface IntervencionResponse {
 
   // Tipo de dispositivo (write + read)
   tipo_dispositivo_id?: number | null // writeOnly - para enviar
-  tipo_dispositivo_detalle: string // readOnly - lo que retorna
+  tipo_dispositivo_detalle: { id: number; nombre: string } | null // readOnly - lo que retorna
 
   // Motivo (write + read)
   motivo_id: number // writeOnly - para enviar
-  motivo_detalle: string // readOnly - lo que retorna
+  motivo_detalle: { id: number; nombre: string } // readOnly - lo que retorna
 
   // Sub-motivo (write + read)
   sub_motivo_id?: number | null // writeOnly - para enviar
-  sub_motivo_detalle: string // readOnly - lo que retorna
+  sub_motivo_detalle: { id: number; nombre: string } | null // readOnly - lo que retorna
 
   // Categoría (write + read)
   categoria_intervencion_id: number // writeOnly - para enviar
-  categoria_intervencion_detalle: string // readOnly - lo que retorna
+  categoria_intervencion_detalle: { id: number; nombre: string } // readOnly - lo que retorna
 
   // Intervención específica
   intervencion_especifica: string
@@ -192,9 +192,9 @@ export interface IntervencionResponse {
   fecha_rechazo: string | null // ISO datetime
 
   // Usuarios que realizaron acciones
-  registrado_por_detalle: string
-  aprobado_por_detalle: string
-  rechazado_por_detalle: string
+  registrado_por_detalle: { id: number; nombre_completo: string; username: string } | null
+  aprobado_por_detalle: { id: number; nombre_completo: string; username: string } | null
+  rechazado_por_detalle: { id: number; nombre_completo: string; username: string } | null
 
   // Observaciones del JZ (MED-02b)
   observaciones_jz: string | null

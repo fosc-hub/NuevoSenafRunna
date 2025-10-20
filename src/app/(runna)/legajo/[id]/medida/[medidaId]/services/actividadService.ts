@@ -15,18 +15,18 @@ import type {
 
 export const actividadService = {
   // List activities with filters
-  async list(planTrabajoId: number, filters?: ActividadFilters): Promise<ActividadListResponse> {
+  async list(planTrabajoId: number, filters?: ActividadFilters): Promise<ActividadListResponse | TActividadPlanTrabajo[]> {
     const params = new URLSearchParams({
       plan_trabajo: planTrabajoId.toString(),
       ...Object.entries(filters || {}).reduce((acc, [key, value]) => {
-        if (value !== undefined && value !== null) {
+        if (value !== undefined && value !== null && value !== '') {
           acc[key] = String(value)
         }
         return acc
       }, {} as Record<string, string>)
     })
 
-    return get<ActividadListResponse>(`actividades/?${params.toString()}`)
+    return get<ActividadListResponse | TActividadPlanTrabajo[]>(`actividades/?${params.toString()}`)
   },
 
   // Get single activity

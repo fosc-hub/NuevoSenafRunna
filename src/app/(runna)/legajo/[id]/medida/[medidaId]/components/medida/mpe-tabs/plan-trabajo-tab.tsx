@@ -70,10 +70,23 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                 ...filters,
                 ordering: '-fecha_creacion'
             })
-            setActividades(response.results)
-            setTotalCount(response.count)
+
+            console.log('API Response:', response)
+
+            // Handle both paginated response and direct array response
+            if (Array.isArray(response)) {
+                // Direct array response
+                setActividades(response)
+                setTotalCount(response.length)
+            } else {
+                // Paginated response
+                setActividades(response.results || [])
+                setTotalCount(response.count || 0)
+            }
         } catch (error) {
             console.error('Error loading activities:', error)
+            setActividades([]) // Ensure actividades is always an array
+            setTotalCount(0)
         } finally {
             setLoading(false)
         }
@@ -214,7 +227,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                     <TableRow>
                                         <TableCell colSpan={7} align="center">Cargando...</TableCell>
                                     </TableRow>
-                                ) : actividades.length === 0 ? (
+                                ) : !actividades || actividades.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} align="center">No hay actividades</TableCell>
                                     </TableRow>

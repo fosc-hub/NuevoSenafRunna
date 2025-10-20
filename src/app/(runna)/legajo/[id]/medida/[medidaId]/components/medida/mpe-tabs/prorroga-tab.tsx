@@ -20,7 +20,11 @@ import { AgregarInformeJuridicoModal } from "../agregar-informe-juridico-modal"
 import { AdjuntarNotaModal } from "../adjuntar-nota-modal"
 import { CarouselStepper } from "../carousel-stepper"
 
-export const ProrrogaTab: React.FC = () => {
+interface ProrrogaTabProps {
+    medidaData: any
+}
+
+export const ProrrogaTab: React.FC<ProrrogaTabProps> = ({ medidaData }) => {
     const [ratificacionStatus, setRatificacionStatus] = useState<string>("ratificada")
     const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
     const [informeJuridicoModalOpen, setInformeJuridicoModalOpen] = useState<boolean>(false)
@@ -303,6 +307,14 @@ export const ProrrogaTab: React.FC = () => {
             <RegistroIntervencionModal
                 open={registroModalOpen}
                 onClose={() => setRegistroModalOpen(false)}
+                medidaId={medidaData?.id ? Number(medidaData.id) : undefined}
+                legajoData={medidaData ? {
+                    numero: medidaData.numero || '',
+                    persona_nombre: medidaData.persona?.nombre || '',
+                    persona_apellido: '',
+                    zona_nombre: medidaData.zona_trabajo || ''
+                } : undefined}
+                tipoMedida="MPE"
             />
 
             <AgregarInformeJuridicoModal

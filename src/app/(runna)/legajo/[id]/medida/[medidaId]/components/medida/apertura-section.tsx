@@ -139,6 +139,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive
         medidaId={medidaId}
         intervencionId={lastIntervencionId}
         legajoData={legajoData}
+        tipoMedida="MPI"
         onSaved={handleModalClose}
       />
     </>

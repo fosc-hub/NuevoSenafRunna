@@ -710,6 +710,14 @@ export const AperturaTab: React.FC<AperturaTabProps> = ({ medidaData }) => {
             <RegistroIntervencionModal
                 open={registroModalOpen}
                 onClose={() => setRegistroModalOpen(false)}
+                medidaId={medidaData?.id ? Number(medidaData.id) : undefined}
+                legajoData={medidaData ? {
+                    numero: medidaData.numero || '',
+                    persona_nombre: medidaData.persona?.nombre || '',
+                    persona_apellido: '',
+                    zona_nombre: medidaData.zona_trabajo || ''
+                } : undefined}
+                tipoMedida="MPE"
             />
 
             <NotificacionesModal

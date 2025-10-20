@@ -55,7 +55,7 @@ import { useRegistroIntervencion } from "../../hooks/useRegistroIntervencion"
 interface RegistroIntervencionModalProps {
     open: boolean
     onClose: () => void
-    medidaId: number
+    medidaId?: number // Made optional with validation
     intervencionId?: number // If editing existing intervención
     legajoData?: {
         numero: string
@@ -63,6 +63,7 @@ interface RegistroIntervencionModalProps {
         persona_apellido: string
         zona_nombre: string
     }
+    tipoMedida?: 'MPI' | 'MPE' | 'MPJ' // For dynamic title
     onSaved?: () => void // Callback after successful save
 }
 
@@ -72,6 +73,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
     medidaId,
     intervencionId,
     legajoData,
+    tipoMedida = 'MPE',
     onSaved
 }) => {
     // ============================================================================
@@ -108,7 +110,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
         canEnviar,
         canAprobarOrRechazar,
     } = useRegistroIntervencion({
-        medidaId,
+        medidaId: medidaId!,
         intervencionId,
         autoLoadCatalogs: true,
     })
@@ -117,6 +119,16 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
     // LOCAL STATE
     // ============================================================================
     const [activeStep, setActiveStep] = useState(0)
+    const [validationError, setValidationError] = useState<string | null>(null)
+
+    // Validate medidaId on mount
+    useEffect(() => {
+        if (open && !medidaId) {
+            setValidationError('Error: medidaId no está definido. No se pueden cargar las intervenciones.')
+        } else {
+            setValidationError(null)
+        }
+    }, [open, medidaId])
     const [showSuccessMessage, setShowSuccessMessage] = useState(false)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
@@ -889,7 +901,7 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white'
             }}>
-                Registro de Intervención MPE
+                Registro de Intervención {tipoMedida}
                 <IconButton
                     onClick={onClose}
                     sx={{
@@ -961,7 +973,13 @@ export const RegistroIntervencionModal: React.FC<RegistroIntervencionModalProps>
             </Box>
 
             <DialogContent sx={{ px: 4, py: 3, overflow: 'auto' }}>
-                {getStepContent(activeStep)}
+                {validationError ? (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {validationError}
+                    </Alert>
+                ) : (
+                    getStepContent(activeStep)
+                )}
             </DialogContent>
 
             {/* Footer Actions */}

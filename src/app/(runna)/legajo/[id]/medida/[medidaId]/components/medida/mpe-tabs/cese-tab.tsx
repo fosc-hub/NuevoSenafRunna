@@ -25,7 +25,11 @@ import { AdjuntarNotaModal } from "../adjuntar-nota-modal"
 import { FormularioDocumentoModal } from "../formulario-documento-modal"
 import { CarouselStepper } from "../carousel-stepper"
 
-export const CeseTab: React.FC = () => {
+interface CeseTabProps {
+    medidaData: any
+}
+
+export const CeseTab: React.FC<CeseTabProps> = ({ medidaData }) => {
     const [ratificacionStatus, setRatificacionStatus] = useState<string>("ratificada")
     const [modalOpen, setModalOpen] = useState<boolean>(false)
     const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
@@ -548,6 +552,14 @@ export const CeseTab: React.FC = () => {
             <RegistroIntervencionModal
                 open={registroModalOpen}
                 onClose={() => setRegistroModalOpen(false)}
+                medidaId={medidaData?.id ? Number(medidaData.id) : undefined}
+                legajoData={medidaData ? {
+                    numero: medidaData.numero || '',
+                    persona_nombre: medidaData.persona?.nombre || '',
+                    persona_apellido: '',
+                    zona_nombre: medidaData.zona_trabajo || ''
+                } : undefined}
+                tipoMedida="MPE"
             />
 
             <NotificacionesModal

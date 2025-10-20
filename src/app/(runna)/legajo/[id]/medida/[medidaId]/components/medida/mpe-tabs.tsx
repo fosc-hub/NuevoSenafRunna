@@ -53,9 +53,9 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData }) => {
             <Box>
                 {activeTab === 0 && <AperturaTab medidaData={medidaData} />}
                 {activeTab === 1 && <InnovacionTab medidaData={medidaData} />}
-                {activeTab === 2 && <ProrrogaTab />}
+                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} />}
                 {activeTab === 3 && <PlanTrabajoTab medidaData={medidaData} />}
-                {activeTab === 4 && <CeseTab />}
+                {activeTab === 4 && <CeseTab medidaData={medidaData} />}
                 {activeTab === 5 && (
                     <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
                         Contenido de Post cese - En desarrollo

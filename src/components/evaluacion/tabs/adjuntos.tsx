@@ -113,7 +113,10 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
           {adjuntos.map((file, index) => {
             const fileName = file.name || getFileName(file.archivo)
             const fileType = file.type || getFileType(fileName)
-            const fileUrl = file.url || `${baseUrl}${file.archivo}`
+            // Fix URL construction: check if archivo already has full URL
+            const fileUrl = file.url || (file.archivo.startsWith("http://") || file.archivo.startsWith("https://")
+              ? file.archivo
+              : `${baseUrl}${file.archivo}`)
             const fileDate = file.date || ""
 
             return (

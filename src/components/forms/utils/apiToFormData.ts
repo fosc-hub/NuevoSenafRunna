@@ -141,6 +141,9 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
 
         condicionesVulnerabilidad: adulto.condiciones_vulnerabilidad.map((cv: any) => cv.condicion_vulnerabilidad),
       })),
+
+    // Adjuntos (attachments)
+    adjuntos: apiData.adjuntos || [],
   }
 }
 

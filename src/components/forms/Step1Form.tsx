@@ -59,7 +59,12 @@ const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; 
 
   // Función para abrir el archivo en una nueva pestaña
   const openFile = (filePath: string) => {
-    window.open(`https://web-runna-v2legajos.up.railway.app${filePath}`, "_blank")
+    // If the path already includes the full URL, use it directly
+    // Otherwise, prepend the base URL
+    const url = filePath.startsWith("http://") || filePath.startsWith("https://")
+      ? filePath
+      : `https://web-runna-v2legajos.up.railway.app${filePath}`
+    window.open(url, "_blank")
   }
 
   // Función para eliminar un archivo nuevo

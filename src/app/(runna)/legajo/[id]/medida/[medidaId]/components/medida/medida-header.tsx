@@ -7,6 +7,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
 interface MedidaHeaderProps {
   medidaData: {
     tipo: string
+    tipo_display?: string  // Display name for the tipo
     numero: string
     fecha_apertura: string
     origen_demanda?: string
@@ -56,7 +57,7 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
           <Grid item xs={12}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {medidaData.tipo}: {medidaData.numero}
+                {medidaData.tipo_display || medidaData.tipo}: {medidaData.numero}
               </Typography>
               <Chip
                 label={isActive ? "ACTIVA" : "CERRADA"}

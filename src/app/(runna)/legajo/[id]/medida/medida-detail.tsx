@@ -70,6 +70,7 @@ const convertMedidaToMedidaData = (
   const baseData = {
     id: String(medida.id),
     tipo: tipoMedida as 'MPI' | 'MPE' | 'MPJ',
+    tipo_display: medida.tipo_medida_display,  // Add display name for proper header rendering
     numero: numeroMedida,
     persona: {
       nombre: legajo.nnya ? `${legajo.nnya.apellido} ${legajo.nnya.nombre}` : "N/A",

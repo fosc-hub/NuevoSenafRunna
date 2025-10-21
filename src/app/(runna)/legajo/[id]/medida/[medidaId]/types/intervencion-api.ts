@@ -76,17 +76,31 @@ export interface CategoriaIntervencion {
 // ============================================================================
 
 /**
+ * Usuario detalle (usado en subido_por_detalle)
+ */
+export interface UsuarioDetalle {
+  id: number
+  nombre_completo: string
+  username: string
+}
+
+/**
  * Adjunto de Intervención (MED-02c)
  */
 export interface AdjuntoIntervencion {
   id: number
   intervencion: number
   tipo: TipoAdjuntoIntervencion
+  tipo_display: string
   archivo: string // URL del archivo
-  nombre_archivo: string
-  tamano_bytes: number
+  nombre_original: string
+  tamaño_bytes: number
+  tamaño_mb: number
+  extension: string
+  descripcion?: string
+  url_descarga: string
+  subido_por_detalle?: UsuarioDetalle
   fecha_subida: string // ISO datetime
-  subido_por_detalle?: string
 }
 
 /**

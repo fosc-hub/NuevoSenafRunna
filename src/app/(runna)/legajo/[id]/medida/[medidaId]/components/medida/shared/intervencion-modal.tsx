@@ -339,14 +339,33 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         setPendingFiles((prev) => prev.filter((_, i) => i !== index))
     }
 
+    const handleDownloadFile = (file: FileItem) => {
+        if (file.url) {
+            // Use the same base URL approach as axiosInstance
+            // NEXT_PUBLIC_API_URL is like: http://localhost:8000/api or https://...railway.app/api
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-runna-v2legajos.up.railway.app/api'
+
+            // Extract base origin (remove /api suffix if present)
+            const baseOrigin = apiUrl.replace(/\/api\/?$/, '')
+
+            // Construct full URL
+            const downloadUrl = file.url.startsWith('http://') || file.url.startsWith('https://')
+                ? file.url
+                : `${baseOrigin}${file.url}`
+
+            // Open in new tab to trigger download
+            window.open(downloadUrl, '_blank')
+        }
+    }
+
     // Map adjuntos to FileItem format
     const mappedAdjuntos: FileItem[] = adjuntos.map(adj => ({
         id: adj.id,
-        nombre: adj.nombre_archivo,
-        tipo: adj.tipo,
-        url: adj.archivo,
+        nombre: adj.nombre_original,
+        tipo: adj.tipo_display || adj.tipo,
+        url: adj.url_descarga || adj.archivo,
         fecha_subida: adj.fecha_subida,
-        tamano: adj.tamano_bytes,
+        tamano: adj.tamaño_bytes,
     }))
 
     // ============================================================================
@@ -592,6 +611,7 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                         files={mappedAdjuntos}
                                         isLoading={isLoadingAdjuntos}
                                         onUpload={handleFileUpload}
+                                        onDownload={handleDownloadFile}
                                         onDelete={(fileId) => deleteAdjuntoFile(Number(fileId))}
                                         allowedTypes=".pdf,.jpg,.jpeg,.png"
                                         maxSizeInMB={10}

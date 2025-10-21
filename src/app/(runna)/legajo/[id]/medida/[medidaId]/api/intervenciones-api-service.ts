@@ -407,26 +407,23 @@ export const uploadAdjunto = async (
     formData.append("archivo", file)
     formData.append("tipo", tipo)
 
-    // Make API call - Note: apiService.create may not support FormData
-    // You may need to use fetch directly or extend apiService
-    const response = await fetch(
-      `/api/medidas/${medidaId}/intervenciones/${intervencionId}/adjuntos/`,
+    // Import axiosInstance to use the configured base URL
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
+    // Make API call using axiosInstance which includes the base URL
+    const response = await axiosInstance.post<AdjuntoIntervencion>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/adjuntos/`,
+      formData,
       {
-        method: "POST",
-        body: formData,
-        // Don't set Content-Type header - browser will set it with boundary
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     )
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+    console.log("Adjunto uploaded successfully:", response.data)
 
-    const data = await response.json()
-
-    console.log("Adjunto uploaded successfully:", data)
-
-    return data
+    return response.data
   } catch (error: any) {
     console.error(
       `Error uploading adjunto: medida ${medidaId}, intervención ${intervencionId}`,
@@ -434,6 +431,8 @@ export const uploadAdjunto = async (
     )
     console.error("Error details:", {
       message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
     })
     throw error
   }

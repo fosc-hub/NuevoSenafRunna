@@ -188,8 +188,8 @@ export const WizardModal: React.FC<WizardModalProps> = ({
             </Button>
           ))}
 
-          {/* Next Button */}
-          {!isLastStep && onNext && (
+          {/* Next Button - Only show if no primaryAction is provided */}
+          {!isLastStep && onNext && !primaryAction && (
             <Button
               onClick={onNext}
               endIcon={<NavigateNextIcon />}
@@ -200,7 +200,7 @@ export const WizardModal: React.FC<WizardModalProps> = ({
             </Button>
           )}
 
-          {/* Primary Action (usually on last step) */}
+          {/* Primary Action (can be used for any step, including "Siguiente") */}
           {primaryAction && (
             <Button
               onClick={primaryAction.onClick}

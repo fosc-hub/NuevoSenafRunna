@@ -243,7 +243,8 @@ function createPersonaEnfermedadesData(enfermedades: any[]): any[] {
 
       if (enfermedad.certificacion) cleanEnfermedad.certificacion = enfermedad.certificacion
       if (enfermedad.beneficios_gestionados) cleanEnfermedad.beneficios_gestionados = enfermedad.beneficios_gestionados
-      if (enfermedad.recibe_tratamiento === true) cleanEnfermedad.recibe_tratamiento = true
+      // Always include recibe_tratamiento as it's required by the API
+      cleanEnfermedad.recibe_tratamiento = enfermedad.recibe_tratamiento === true
       if (enfermedad.informacion_tratamiento) cleanEnfermedad.informacion_tratamiento = enfermedad.informacion_tratamiento
 
       return cleanEnfermedad

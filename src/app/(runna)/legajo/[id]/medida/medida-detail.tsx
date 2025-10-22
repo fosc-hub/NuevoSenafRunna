@@ -9,6 +9,7 @@ import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[medidaId]/compo
 import { MedidaHeader } from "./[medidaId]/components/medida/medida-header"
 import { MPEHeader } from "./[medidaId]/components/medida/mpe-header"
 import { MPETabs } from "./[medidaId]/components/medida/mpe-tabs"
+import { MPJTabs } from "./[medidaId]/components/medida/mpj-tabs"
 import { AperturaSection } from "./[medidaId]/components/medida/apertura-section"
 import { PlanTrabajoTab } from "./[medidaId]/components/medida/mpe-tabs/plan-trabajo-tab"
 import { PlanEvaluacionSection } from "./[medidaId]/components/medida/plan-evaluacion-section"
@@ -153,6 +154,15 @@ const convertMedidaToMedidaData = (
         grupo_familiar: "",
         contexto_socioeconomico: "",
         dinamicas_familiares: "",
+      },
+    }
+  } else if (tipoMedida === "MPJ") {
+    return {
+      ...baseData,
+      tipo: "MPJ" as const,
+      etapas: {
+        ...baseData.etapas,
+        plan_accion: [],
       },
     }
   } else {
@@ -500,6 +510,34 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               progreso={medidaData.progreso}
             />
             <MPETabs
+              medidaData={{
+                ...medidaData,
+                estado: medidaApiData?.etapa_actual?.estado,
+                numero_medida: typeof medidaApiData?.numero_medida === 'string'
+                  ? medidaApiData.numero_medida
+                  : (medidaApiData?.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                    ? String(medidaApiData.numero_medida.display)
+                    : `M-${medidaData.id}`,
+                plan_trabajo_id: medidaApiData?.plan_trabajo_id
+              }}
+              legajoData={legajoData ? {
+                numero: legajoData.numero,
+                persona_nombre: legajoData.nnya?.nombre || "",
+                persona_apellido: legajoData.nnya?.apellido || "",
+                zona_nombre: legajoData.zona?.nombre || ""
+              } : undefined}
+              planTrabajoId={medidaApiData?.plan_trabajo_id}
+            />
+          </>
+        ) : medidaData.tipo === "MPJ" ? (
+          <>
+            <MedidaHeader medidaData={medidaData} isActive={activeStep !== 2} onViewPersonalData={handleViewPersonalData} />
+
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Etapas de la medida
+            </Typography>
+
+            <MPJTabs
               medidaData={{
                 ...medidaData,
                 estado: medidaApiData?.etapa_actual?.estado,

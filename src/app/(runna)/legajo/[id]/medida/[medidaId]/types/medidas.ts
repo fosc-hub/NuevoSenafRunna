@@ -91,7 +91,7 @@ export interface MPIMedidaData extends BaseMedidaData {
   etapas: MPIEtapas
 }
 
-// MPE specific data  
+// MPE specific data
 export interface MPEMedidaData extends BaseMedidaData {
   tipo: 'MPE'
   etapas: MPEEtapas
@@ -127,8 +127,14 @@ export interface MPEMedidaData extends BaseMedidaData {
   }
 }
 
+// MPJ specific data
+export interface MPJMedidaData extends BaseMedidaData {
+  tipo: 'MPJ'
+  etapas: MPIEtapas // Same structure as MPI for now
+}
+
 // Union type for all medida data
-export type MedidaData = MPIMedidaData | MPEMedidaData
+export type MedidaData = MPIMedidaData | MPEMedidaData | MPJMedidaData
 
 // Legacy interface for backward compatibility
 export interface Etapas {

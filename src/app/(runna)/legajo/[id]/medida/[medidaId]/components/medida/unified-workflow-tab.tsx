@@ -157,7 +157,14 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     estadoActual
   )
 
-  const completedSteps = [step1Completed, step2Completed, step3Completed, step4Completed]
+  // MPI only has 3 steps (no Ratificación Judicial)
+  // MPE and MPJ have 4 steps
+  const isMPI = medidaData.tipo_medida === "MPI"
+  const totalSteps = isMPI ? 3 : 4
+
+  const completedSteps = isMPI
+    ? [step1Completed, step2Completed, step3Completed]
+    : [step1Completed, step2Completed, step3Completed, step4Completed]
 
   // ========== Progress Calculation ==========
   // Calculate progress based on actual data
@@ -188,7 +195,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
       content: (
         <WorkflowStepContent
           stepNumber={0}
-          totalSteps={4}
+          totalSteps={totalSteps}
           status={determineStepStatus(0, activeStep, step1Completed, true)}
           isFirst={true}
           isLast={false}
@@ -216,7 +223,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
       content: (
         <WorkflowStepContent
           stepNumber={1}
-          totalSteps={4}
+          totalSteps={totalSteps}
           status={determineStepStatus(1, activeStep, step2Completed, step1Completed)}
           isFirst={false}
           isLast={false}
@@ -245,12 +252,12 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
       content: (
         <WorkflowStepContent
           stepNumber={2}
-          totalSteps={4}
+          totalSteps={totalSteps}
           status={determineStepStatus(2, activeStep, step3Completed, step2Completed)}
           isFirst={false}
-          isLast={false}
+          isLast={isMPI}
           canContinue={step3Completed}
-          onContinue={() => setActiveStep(3)}
+          onContinue={isMPI ? undefined : () => setActiveStep(3)}
           onBack={() => setActiveStep(1)}
           showNavigation={true}
         >
@@ -263,7 +270,8 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         </WorkflowStepContent>
       ),
     },
-    {
+    // Step 4 only for MPE and MPJ (not MPI)
+    ...(!isMPI ? [{
       id: 4,
       label: getStepName(3),
       description: getStepDescription(3),
@@ -272,7 +280,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
       content: (
         <WorkflowStepContent
           stepNumber={3}
-          totalSteps={4}
+          totalSteps={totalSteps}
           status={determineStepStatus(3, activeStep, step4Completed, step3Completed)}
           isFirst={false}
           isLast={true}
@@ -289,7 +297,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
           />
         </WorkflowStepContent>
       ),
-    },
+    }] : []),
   ]
 
   // ========== Auto-navigate to first incomplete step on mount ==========

@@ -570,7 +570,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               <UnifiedWorkflowTab
                 medidaData={{
                   id: medidaApiData.id,
-                  tipo_medida: medidaApiData.tipo_medida_display || "MPI",
+                  tipo_medida: medidaApiData.tipo_medida || "MPI",
                   numero_medida: typeof medidaApiData.numero_medida === 'string'
                     ? medidaApiData.numero_medida
                     : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)

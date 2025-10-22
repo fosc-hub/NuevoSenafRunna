@@ -8,7 +8,9 @@
  * - Step 1 (Intervención): Completed when estado === "APROBADO"
  * - Step 2 (Nota Aval): Completed when nota exists with decision
  * - Step 3 (Informe Jurídico): Completed when estado === "ENVIADO"
- * - Step 4 (Ratificación): Completed when ratificación exists with PDF
+ * - Step 4 (Ratificación): Completed when ratificación exists with PDF (MPE/MPJ only, not MPI)
+ *
+ * Note: MPI has 3 steps (no Ratificación Judicial), MPE and MPJ have 4 steps
  */
 
 import type { StepStatus, StepProgress } from "../types/workflow"
@@ -326,6 +328,7 @@ export function validateStepIndex(
 
 /**
  * Get user-friendly step name
+ * Note: Step 4 (Ratificación Judicial) is only for MPE and MPJ, not MPI
  */
 export function getStepName(stepIndex: number): string {
   const stepNames = [
@@ -340,6 +343,7 @@ export function getStepName(stepIndex: number): string {
 
 /**
  * Get step description
+ * Note: Step 4 (Ratificación Judicial) is only for MPE and MPJ, not MPI
  */
 export function getStepDescription(stepIndex: number): string {
   const descriptions = [

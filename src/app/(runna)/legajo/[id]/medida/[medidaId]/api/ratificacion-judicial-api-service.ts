@@ -14,10 +14,14 @@ import { get } from "@/app/api/apiService"
 import type {
   RatificacionJudicial,
   CreateRatificacionJudicialRequest,
+  UpdateRatificacionJudicialRequest,
   RatificacionJudicialHistorial,
   RatificacionAdjunto,
 } from "../types/ratificacion-judicial-api"
-import { buildRatificacionFormData } from "../types/ratificacion-judicial-api"
+import {
+  buildRatificacionFormData,
+  buildUpdateRatificacionFormData,
+} from "../types/ratificacion-judicial-api"
 
 // ============================================================================
 // API FUNCTIONS
@@ -103,6 +107,61 @@ export async function createRatificacion(
     return response.data
   } catch (error: any) {
     console.error(`Error creating ratificación for medida ${medidaId}:`, error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
+/**
+ * PATCH /api/medidas/{medida_id}/ratificacion/
+ *
+ * Actualizar ratificación judicial existente.
+ * Solo permitido cuando decision === "PENDIENTE"
+ *
+ * Validaciones backend:
+ * - Ratificación debe existir y estar activa
+ * - Decisión debe ser "PENDIENTE" (no se puede modificar si es RATIFICADA/NO_RATIFICADA)
+ * - Usuario debe ser Equipo Legal o JZ
+ * - Validaciones de fechas (no futuras, notificación >= resolución)
+ *
+ * @param medidaId - ID de la medida
+ * @param data - Datos de ratificación a actualizar (campos opcionales)
+ * @returns Ratificación actualizada
+ * @throws Error si falla validación o request
+ */
+export async function updateRatificacion(
+  medidaId: number,
+  data: UpdateRatificacionJudicialRequest
+): Promise<RatificacionJudicial> {
+  try {
+    console.log(`Updating ratificación for medida ${medidaId}:`, data)
+
+    // Build FormData (multipart/form-data)
+    const formData = buildUpdateRatificacionFormData(data)
+
+    // Import axiosInstance
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
+    // Make API call using axiosInstance
+    const response = await axiosInstance.patch<RatificacionJudicial>(
+      `medidas/${medidaId}/ratificacion/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+
+    console.log("Ratificación updated successfully:", response.data)
+
+    return response.data
+  } catch (error: any) {
+    console.error(`Error updating ratificación for medida ${medidaId}:`, error)
     console.error("Error details:", {
       message: error?.message,
       response: error?.response?.data,
@@ -257,6 +316,7 @@ export const RatificacionJudicialAPI = {
   // Main endpoints
   getRatificacion,
   createRatificacion,
+  updateRatificacion,
   getHistorial: getRatificacionHistorial,
 
   // Helper functions

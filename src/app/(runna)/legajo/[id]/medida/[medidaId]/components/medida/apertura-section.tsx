@@ -20,6 +20,7 @@ interface AperturaSectionProps {
   isCompleted: boolean
   onViewForm: () => void
   medidaId: number
+  tipoMedida?: "MPI" | "MPE" | "MPJ"
   legajoData?: {
     numero: string
     persona_nombre: string
@@ -28,7 +29,7 @@ interface AperturaSectionProps {
   }
 }
 
-export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive, isCompleted, onViewForm, medidaId, legajoData }) => {
+export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive, isCompleted, onViewForm, medidaId, tipoMedida = "MPI", legajoData }) => {
   const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
   const [lastIntervencionId, setLastIntervencionId] = useState<number | undefined>(undefined)
   const [isLoadingIntervenciones, setIsLoadingIntervenciones] = useState<boolean>(false)
@@ -139,7 +140,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive
         medidaId={medidaId}
         intervencionId={lastIntervencionId}
         legajoData={legajoData}
-        tipoMedida="MPI"
+        tipoMedida={tipoMedida}
         onSaved={handleModalClose}
       />
     </>

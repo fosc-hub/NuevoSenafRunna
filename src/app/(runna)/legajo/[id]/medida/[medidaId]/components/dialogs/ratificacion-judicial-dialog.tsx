@@ -44,7 +44,11 @@ import {
   Description as DescriptionIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material"
-import type { CreateRatificacionJudicialRequest } from "../../types/ratificacion-judicial-api"
+import type {
+  CreateRatificacionJudicialRequest,
+  UpdateRatificacionJudicialRequest,
+  RatificacionJudicial,
+} from "../../types/ratificacion-judicial-api"
 import {
   DecisionJudicial,
   DECISION_JUDICIAL_LABELS,
@@ -58,9 +62,11 @@ import {
 interface RatificacionJudicialDialogProps {
   open: boolean
   onClose: () => void
-  onSubmit: (data: CreateRatificacionJudicialRequest) => Promise<void>
+  onSubmit: (data: CreateRatificacionJudicialRequest | UpdateRatificacionJudicialRequest) => Promise<void>
   isLoading?: boolean
   medidaNumero?: string
+  mode?: "create" | "edit"
+  initialData?: RatificacionJudicial | null
 }
 
 interface FormErrors {
@@ -76,17 +82,38 @@ interface FormErrors {
 
 export const RatificacionJudicialDialog: React.FC<
   RatificacionJudicialDialogProps
-> = ({ open, onClose, onSubmit, isLoading = false, medidaNumero }) => {
+> = ({
+  open,
+  onClose,
+  onSubmit,
+  isLoading = false,
+  medidaNumero,
+  mode = "create",
+  initialData = null,
+}) => {
   // ============================================================================
   // STATE
   // ============================================================================
 
-  const [formData, setFormData] = useState({
-    decision: DecisionJudicial.PENDIENTE,
-    fecha_resolucion: "",
-    fecha_notificacion: "",
-    observaciones: "",
-  })
+  // Initialize form data based on mode
+  const getInitialFormData = () => {
+    if (mode === "edit" && initialData) {
+      return {
+        decision: initialData.decision,
+        fecha_resolucion: initialData.fecha_resolucion,
+        fecha_notificacion: initialData.fecha_notificacion || "",
+        observaciones: initialData.observaciones || "",
+      }
+    }
+    return {
+      decision: DecisionJudicial.PENDIENTE,
+      fecha_resolucion: "",
+      fecha_notificacion: "",
+      observaciones: "",
+    }
+  }
+
+  const [formData, setFormData] = useState(getInitialFormData())
 
   const [files, setFiles] = useState<{
     archivo_resolucion_judicial: File | null
@@ -100,6 +127,26 @@ export const RatificacionJudicialDialog: React.FC<
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // Update form data when initialData changes (edit mode)
+  React.useEffect(() => {
+    if (open && mode === "edit" && initialData) {
+      setFormData({
+        decision: initialData.decision,
+        fecha_resolucion: initialData.fecha_resolucion,
+        fecha_notificacion: initialData.fecha_notificacion || "",
+        observaciones: initialData.observaciones || "",
+      })
+    } else if (open && mode === "create") {
+      // Reset to defaults for create mode
+      setFormData({
+        decision: DecisionJudicial.PENDIENTE,
+        fecha_resolucion: "",
+        fecha_notificacion: "",
+        observaciones: "",
+      })
+    }
+  }, [open, mode, initialData])
 
   // ============================================================================
   // HANDLERS
@@ -200,7 +247,8 @@ export const RatificacionJudicialDialog: React.FC<
     }
 
     // Validate archivo_resolucion_judicial
-    if (!files.archivo_resolucion_judicial) {
+    // En modo create es obligatorio, en edit es opcional (solo si se quiere reemplazar)
+    if (mode === "create" && !files.archivo_resolucion_judicial) {
       newErrors.archivo_resolucion_judicial =
         "El archivo de resolución judicial es obligatorio"
     }
@@ -220,23 +268,46 @@ export const RatificacionJudicialDialog: React.FC<
       return
     }
 
-    // Build request
-    const request: CreateRatificacionJudicialRequest = {
-      decision: formData.decision as DecisionJudicial,
-      fecha_resolucion: formData.fecha_resolucion,
-      fecha_notificacion: formData.fecha_notificacion || undefined,
-      observaciones: formData.observaciones || undefined,
-      archivo_resolucion_judicial: files.archivo_resolucion_judicial!,
-      archivo_cedula_notificacion:
-        files.archivo_cedula_notificacion || undefined,
-      archivo_acuse_recibo: files.archivo_acuse_recibo || undefined,
-    }
+    // Build request based on mode
+    if (mode === "create") {
+      const request: CreateRatificacionJudicialRequest = {
+        decision: formData.decision as DecisionJudicial,
+        fecha_resolucion: formData.fecha_resolucion,
+        fecha_notificacion: formData.fecha_notificacion || undefined,
+        observaciones: formData.observaciones || undefined,
+        archivo_resolucion_judicial: files.archivo_resolucion_judicial!,
+        archivo_cedula_notificacion:
+          files.archivo_cedula_notificacion || undefined,
+        archivo_acuse_recibo: files.archivo_acuse_recibo || undefined,
+      }
 
-    try {
-      await onSubmit(request)
-      handleClose()
-    } catch (error: any) {
-      setSubmitError(error.message || "Error al registrar ratificación")
+      try {
+        await onSubmit(request)
+        handleClose()
+      } catch (error: any) {
+        setSubmitError(error.message || "Error al registrar ratificación")
+      }
+    } else {
+      // Edit mode: solo incluir campos que cambiaron
+      const request: UpdateRatificacionJudicialRequest = {
+        decision: formData.decision as DecisionJudicial,
+        fecha_resolucion: formData.fecha_resolucion,
+        fecha_notificacion: formData.fecha_notificacion || undefined,
+        observaciones: formData.observaciones || undefined,
+        // Solo incluir archivos si se seleccionaron nuevos
+        archivo_resolucion_judicial:
+          files.archivo_resolucion_judicial || undefined,
+        archivo_cedula_notificacion:
+          files.archivo_cedula_notificacion || undefined,
+        archivo_acuse_recibo: files.archivo_acuse_recibo || undefined,
+      }
+
+      try {
+        await onSubmit(request)
+        handleClose()
+      } catch (error: any) {
+        setSubmitError(error.message || "Error al actualizar ratificación")
+      }
     }
   }
 
@@ -282,7 +353,9 @@ export const RatificacionJudicialDialog: React.FC<
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Registrar Ratificación Judicial
+              {mode === "create"
+                ? "Registrar Ratificación Judicial"
+                : "Editar Ratificación Judicial"}
             </Typography>
             {medidaNumero && (
               <Typography variant="body2" color="text.secondary">
@@ -371,11 +444,18 @@ export const RatificacionJudicialDialog: React.FC<
               Adjuntos
             </Typography>
 
-            {/* Archivo Resolución Judicial (Obligatorio) */}
+            {/* Archivo Resolución Judicial */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Resolución Judicial * (PDF)
+                Resolución Judicial {mode === "create" ? "*" : "(Opcional)"} (PDF)
               </Typography>
+              {mode === "edit" && initialData && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                  {initialData.adjuntos?.find(adj => adj.tipo_adjunto === "RESOLUCION_JUDICIAL")
+                    ? `Archivo actual: Resolución Judicial existente. Sube uno nuevo para reemplazarlo.`
+                    : "No hay archivo actual. Sube uno nuevo si deseas agregarlo."}
+                </Typography>
+              )}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Button
                   variant="outlined"
@@ -502,10 +582,10 @@ export const RatificacionJudicialDialog: React.FC<
           {isLoading ? (
             <>
               <CircularProgress size={20} sx={{ mr: 1 }} />
-              Registrando...
+              {mode === "create" ? "Registrando..." : "Actualizando..."}
             </>
           ) : (
-            "Registrar Ratificación"
+            mode === "create" ? "Registrar Ratificación" : "Actualizar Ratificación"
           )}
         </Button>
       </DialogActions>

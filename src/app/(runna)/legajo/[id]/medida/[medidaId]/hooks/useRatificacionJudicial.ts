@@ -23,6 +23,7 @@ import { useState, useEffect, useCallback } from "react"
 import type {
   RatificacionJudicial,
   CreateRatificacionJudicialRequest,
+  UpdateRatificacionJudicialRequest,
   RatificacionAdjunto,
   RatificacionJudicialHistorial,
 } from "../types/ratificacion-judicial-api"
@@ -66,6 +67,9 @@ interface UseRatificacionJudicialReturn {
   // Actions
   createRatificacion: (
     data: CreateRatificacionJudicialRequest
+  ) => Promise<void>
+  updateRatificacion: (
+    data: UpdateRatificacionJudicialRequest
   ) => Promise<void>
   refetch: () => Promise<void>
   fetchHistorial: () => Promise<void>
@@ -234,6 +238,54 @@ export function useRatificacionJudicial({
   )
 
   /**
+   * Update existing ratificación judicial
+   * Solo permitido cuando decision === "PENDIENTE"
+   *
+   * @param data - Ratificación data to update (partial)
+   * @throws Error if update fails or validation fails
+   */
+  const updateRatificacion = useCallback(
+    async (data: UpdateRatificacionJudicialRequest) => {
+      if (!medidaId) {
+        throw new Error("medidaId is required")
+      }
+
+      if (!ratificacion) {
+        throw new Error("No existe ratificación para actualizar")
+      }
+
+      if (!canModificarRatificacion(ratificacion)) {
+        throw new Error(
+          "No se puede modificar una ratificación con decisión final (RATIFICADA/NO_RATIFICADA)"
+        )
+      }
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const updatedRatificacion = await RatificacionJudicialAPI.updateRatificacion(
+          medidaId,
+          data
+        )
+
+        setRatificacion(updatedRatificacion)
+
+        // Re-fetch para asegurar datos actualizados
+        await fetchRatificacion()
+      } catch (err: any) {
+        const errorMessage =
+          err.message || "Error al actualizar ratificación judicial"
+        setError(errorMessage)
+        throw new Error(errorMessage)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [medidaId, ratificacion, fetchRatificacion]
+  )
+
+  /**
    * Refetch ratificación (útil después de operaciones externas)
    */
   const refetch = useCallback(async () => {
@@ -267,6 +319,7 @@ export function useRatificacionJudicial({
 
     // Actions
     createRatificacion,
+    updateRatificacion,
     refetch,
     fetchHistorial,
   }

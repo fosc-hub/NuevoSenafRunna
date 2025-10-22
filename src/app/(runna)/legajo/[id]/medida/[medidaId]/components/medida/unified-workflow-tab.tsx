@@ -209,6 +209,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             isCompleted={step1Completed}
             onViewForm={() => {}}
             medidaId={medidaData.id}
+            tipoMedida={medidaData.tipo_medida}
             legajoData={legajoData}
           />
         </WorkflowStepContent>

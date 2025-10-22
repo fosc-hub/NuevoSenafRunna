@@ -39,6 +39,7 @@ import {
   Cancel as CancelIcon,
   Warning as WarningIcon,
   Add as AddIcon,
+  Edit as EditIcon,
   Gavel as GavelIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
@@ -53,7 +54,10 @@ import {
   getDecisionColor,
 } from "../../types/ratificacion-judicial-api"
 import type { EstadoEtapa } from "@/app/(runna)/legajo-mesa/types/medida-api"
-import type { CreateRatificacionJudicialRequest } from "../../types/ratificacion-judicial-api"
+import type {
+  CreateRatificacionJudicialRequest,
+  UpdateRatificacionJudicialRequest,
+} from "../../types/ratificacion-judicial-api"
 import { DecisionJudicial } from "../../types/ratificacion-judicial-api"
 
 // ============================================================================
@@ -168,6 +172,7 @@ export const RatificacionJudicialSection: React.FC<
   // ============================================================================
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create")
 
   // ============================================================================
   // HOOKS
@@ -186,6 +191,7 @@ export const RatificacionJudicialSection: React.FC<
     canModify,
     tieneResolucionJudicial,
     createRatificacion,
+    updateRatificacion,
     refetch,
   } = useRatificacionJudicial({ medidaId })
 
@@ -219,6 +225,55 @@ export const RatificacionJudicialSection: React.FC<
       console.error("Error creating ratificación:", error)
       // Error is already shown in dialog
     }
+  }
+
+  /**
+   * Handle update ratificación
+   */
+  const handleUpdateRatificacion = async (
+    data: UpdateRatificacionJudicialRequest
+  ) => {
+    try {
+      await updateRatificacion(data)
+      setDialogOpen(false)
+
+      // Callback
+      if (onRatificacionRegistrada) {
+        onRatificacionRegistrada()
+      }
+    } catch (error) {
+      console.error("Error updating ratificación:", error)
+      // Error is already shown in dialog
+    }
+  }
+
+  /**
+   * Handle dialog submit (create or update based on mode)
+   */
+  const handleSubmit = async (
+    data: CreateRatificacionJudicialRequest | UpdateRatificacionJudicialRequest
+  ) => {
+    if (dialogMode === "create") {
+      await handleCreateRatificacion(data as CreateRatificacionJudicialRequest)
+    } else {
+      await handleUpdateRatificacion(data as UpdateRatificacionJudicialRequest)
+    }
+  }
+
+  /**
+   * Open dialog in create mode
+   */
+  const handleOpenCreateDialog = () => {
+    setDialogMode("create")
+    setDialogOpen(true)
+  }
+
+  /**
+   * Open dialog in edit mode
+   */
+  const handleOpenEditDialog = () => {
+    setDialogMode("edit")
+    setDialogOpen(true)
   }
 
   // ============================================================================
@@ -282,7 +337,7 @@ export const RatificacionJudicialSection: React.FC<
               variant="contained"
               size="large"
               startIcon={<AddIcon />}
-              onClick={() => setDialogOpen(true)}
+              onClick={handleOpenCreateDialog}
               sx={{
                 backgroundColor: "#4f3ff0",
                 "&:hover": { backgroundColor: "#3a2cc2" },
@@ -469,6 +524,28 @@ export const RatificacionJudicialSection: React.FC<
                     La resolución judicial aún está pendiente de decisión final.
                   </Typography>
                 </Alert>
+
+                {/* Edit Button - Only show if user can modify */}
+                {canModify && canManage && (
+                  <Box sx={{ mt: 2, textAlign: "center" }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={handleOpenEditDialog}
+                      sx={{
+                        borderColor: "#4f3ff0",
+                        color: "#4f3ff0",
+                        "&:hover": {
+                          borderColor: "#3a2cc2",
+                          backgroundColor: "rgba(79, 63, 240, 0.04)",
+                        },
+                        textTransform: "none",
+                      }}
+                    >
+                      Editar Ratificación
+                    </Button>
+                  </Box>
+                )}
               </Grid>
             )}
           </Grid>
@@ -493,13 +570,15 @@ export const RatificacionJudicialSection: React.FC<
     <Box>
       {hasRatificacion ? renderRatificacion() : renderEmpty()}
 
-      {/* Create Dialog */}
+      {/* Create/Edit Dialog */}
       <RatificacionJudicialDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSubmit={handleCreateRatificacion}
+        onSubmit={handleSubmit}
         isLoading={isLoading}
         medidaNumero={medidaNumero}
+        mode={dialogMode}
+        initialData={dialogMode === "edit" ? ratificacion : null}
       />
     </Box>
   )

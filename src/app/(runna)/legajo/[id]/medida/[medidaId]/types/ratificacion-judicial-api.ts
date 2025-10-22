@@ -120,6 +120,27 @@ export interface CreateRatificacionJudicialRequest {
 }
 
 /**
+ * Update Ratificación Judicial Request (Write - to API)
+ *
+ * PATCH solo permitido cuando decision === "PENDIENTE"
+ * Todos los campos son opcionales (solo actualizar lo que cambió)
+ * Los archivos son opcionales (solo se actualizan si se proveen nuevos)
+ */
+export interface UpdateRatificacionJudicialRequest {
+  // Campos de datos (JSON) - todos opcionales
+  decision?: DecisionJudicial
+  fecha_resolucion?: string // ISO date (YYYY-MM-DD)
+  fecha_notificacion?: string // ISO date (YYYY-MM-DD)
+  observaciones?: string
+
+  // Archivos (multipart files - writeOnly) - opcionales
+  // Si se proveen, reemplazan los existentes
+  archivo_resolucion_judicial?: File
+  archivo_cedula_notificacion?: File
+  archivo_acuse_recibo?: File
+}
+
+/**
  * Historial de Ratificaciones (activas + inactivas)
  */
 export interface RatificacionJudicialHistorial {
@@ -246,6 +267,56 @@ export function buildRatificacionFormData(
     "archivo_resolucion_judicial",
     request.archivo_resolucion_judicial
   )
+
+  if (request.archivo_cedula_notificacion) {
+    formData.append(
+      "archivo_cedula_notificacion",
+      request.archivo_cedula_notificacion
+    )
+  }
+
+  if (request.archivo_acuse_recibo) {
+    formData.append("archivo_acuse_recibo", request.archivo_acuse_recibo)
+  }
+
+  return formData
+}
+
+/**
+ * Build FormData for ratificacion update (PATCH)
+ * Solo incluye campos que se están actualizando
+ * Archivos son opcionales (solo se incluyen si se proveen nuevos)
+ */
+export function buildUpdateRatificacionFormData(
+  request: UpdateRatificacionJudicialRequest
+): FormData {
+  const formData = new FormData()
+
+  // Datos básicos - solo agregar si están presentes
+  if (request.decision !== undefined) {
+    formData.append("decision", request.decision)
+  }
+
+  if (request.fecha_resolucion !== undefined) {
+    formData.append("fecha_resolucion", request.fecha_resolucion)
+  }
+
+  // Datos opcionales
+  if (request.fecha_notificacion !== undefined) {
+    formData.append("fecha_notificacion", request.fecha_notificacion)
+  }
+
+  if (request.observaciones !== undefined) {
+    formData.append("observaciones", request.observaciones)
+  }
+
+  // Archivos (multipart) - solo si se proveen nuevos
+  if (request.archivo_resolucion_judicial) {
+    formData.append(
+      "archivo_resolucion_judicial",
+      request.archivo_resolucion_judicial
+    )
+  }
 
   if (request.archivo_cedula_notificacion) {
     formData.append(

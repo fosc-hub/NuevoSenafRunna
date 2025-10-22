@@ -33,6 +33,23 @@ import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
 
+// Mock data for Oficio functionality
+const TIPOS_OFICIO_MOCK = [
+  { id: "oficio_1", nombre: "Evaluación Psicológica Integral - 3 actividades, 8 acciones" },
+  { id: "oficio_2", nombre: "Visita Domiciliaria Completa - 4 actividades, 12 acciones" },
+  { id: "oficio_3", nombre: "Seguimiento Familiar - 2 actividades, 5 acciones" },
+  { id: "oficio_4", nombre: "Entrevista Socioambiental - 3 actividades, 7 acciones" },
+  { id: "oficio_5", nombre: "Informe Técnico Multidisciplinario - 5 actividades, 15 acciones" },
+]
+
+const TIPOS_MEDIDA_MOCK = [
+  { id: "mpi", nombre: "MPI" },
+  { id: "mpe", nombre: "MPE" },
+  { id: "mpj", nombre: "MPJ" },
+]
+
+const OFICIO_OPTION = { key: "oficio", value: "Oficio" }
+
 // Helper function to add a red asterisk to labels
 const RequiredLabel = ({ label }: { label: string }) => (
   <React.Fragment>
@@ -407,6 +424,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
 
   const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
   const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
+  const selectedObjetivoDemanda = useWatch({ control, name: "objetivo_de_demanda" })
 
   const createNewUser = useWatch({
     control,
@@ -781,29 +799,100 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 name="objetivo_de_demanda"
                 rules={{ required: "Este campo es obligatorio" }}
                 control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <Autocomplete
-                      disabled={readOnly}
-                      options={dropdownData.objetivo_de_demanda_choices || []}
-                      getOptionLabel={(option: any) => option.value || ""}
-                      value={dropdownData.objetivo_de_demanda_choices?.find((item: any) => item.key === field.value) || null}
-                      onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label={<RequiredLabel label="Objetivo de demanda" />}
-                          error={!!error}
-                          helperText={error?.message}
-                          size="medium"
-                        />
-                      )}
-                      size="medium"
-                    />
-                  </FormControl>
-                )}
+                render={({ field, fieldState: { error } }) => {
+                  // Combine API options with mock "Oficio" option
+                  const objetivoDemandaOptions = [
+                    ...(dropdownData.objetivo_de_demanda_choices || []),
+                    OFICIO_OPTION,
+                  ]
+
+                  return (
+                    <FormControl fullWidth error={!!error}>
+                      <Autocomplete
+                        disabled={readOnly}
+                        options={objetivoDemandaOptions}
+                        getOptionLabel={(option: any) => option.value || ""}
+                        value={objetivoDemandaOptions.find((item: any) => item.key === field.value) || null}
+                        onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label={<RequiredLabel label="Objetivo de demanda" />}
+                            error={!!error}
+                            helperText={error?.message}
+                            size="medium"
+                          />
+                        )}
+                        size="medium"
+                      />
+                    </FormControl>
+                  )
+                }}
               />
             </Grid>
+
+            {/* Conditional fields when "Oficio" is selected */}
+            {selectedObjetivoDemanda === "oficio" && (
+              <>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="tipo_oficio"
+                    rules={{ required: "Este campo es obligatorio cuando se selecciona Oficio" }}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={TIPOS_OFICIO_MOCK}
+                          getOptionLabel={(option: any) => option.nombre || ""}
+                          value={TIPOS_OFICIO_MOCK.find((item: any) => item.id === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Tipo de Oficio" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="medium"
+                            />
+                          )}
+                          size="medium"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="tipo_medida"
+                    rules={{ required: "Este campo es obligatorio cuando se selecciona Oficio" }}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error}>
+                        <Autocomplete
+                          disabled={readOnly}
+                          options={TIPOS_MEDIDA_MOCK}
+                          getOptionLabel={(option: any) => option.nombre || ""}
+                          value={TIPOS_MEDIDA_MOCK.find((item: any) => item.id === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={<RequiredLabel label="Tipo de medida" />}
+                              error={!!error}
+                              helperText={error?.message}
+                              size="medium"
+                            />
+                          )}
+                          size="medium"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+              </>
+            )}
           </Grid>
         </FormSection>
 

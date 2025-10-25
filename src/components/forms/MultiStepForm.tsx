@@ -20,6 +20,9 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { NavigateNext, NavigateBefore, Send, InfoOutlined, WarningAmber } from "@mui/icons-material"
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
+import { es } from "date-fns/locale"
 
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
@@ -407,7 +410,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
 
         <Box sx={{ p: 3 }}>
           {dropdownData && (
-            <>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
               {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
               {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
               {activeStep === 2 && (
@@ -418,7 +421,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
                   id={demandaId}
                 />
               )}
-            </>
+            </LocalizationProvider>
           )}
         </Box>
 

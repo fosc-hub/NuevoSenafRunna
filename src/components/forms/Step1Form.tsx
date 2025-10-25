@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useWatch } from "react-hook-form"
 import { type Control, Controller, useFieldArray, useController } from "react-hook-form"
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
-import { es } from "date-fns/locale"
 import { format, parse } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -471,7 +468,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+    <>
       <Box sx={{ maxWidth: "1200px", mx: "auto", p: 2 }}>
         <Paper elevation={0} sx={{ p: 3, mb: 4, borderRadius: "12px", bgcolor: "primary.light", color: "white" }}>
           <Typography variant="h5" gutterBottom>
@@ -1039,7 +1036,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
         vinculacionResults={vinculacionResults}
         currentDemandaId={id}
       />
-    </LocalizationProvider>
+    </>
   )
 }
 

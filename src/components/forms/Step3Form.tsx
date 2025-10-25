@@ -15,9 +15,6 @@ import {
   Paper,
   useTheme,
 } from "@mui/material"
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
-import { es } from "date-fns/locale"
 import { Add as AddIcon, Delete as DeleteIcon, ChildCare as ChildIcon } from "@mui/icons-material"
 import type { DropdownData, FormData, NnyaData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
@@ -368,7 +365,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+    <>
       <Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, display: "flex", alignItems: "center" }}>
@@ -514,7 +511,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
           }}
         />
       )}
-    </LocalizationProvider>
+    </>
   )
 }
 

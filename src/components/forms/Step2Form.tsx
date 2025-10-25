@@ -14,9 +14,6 @@ import {
   DialogTitle,
   Paper,
 } from "@mui/material"
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
-import { es } from "date-fns/locale"
 import { Add as AddIcon, Delete as DeleteIcon, Person as PersonIcon } from "@mui/icons-material"
 import type { DropdownData, FormData, AdultoData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
@@ -168,7 +165,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+    <>
       <Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, display: "flex", alignItems: "center" }}>
@@ -278,7 +275,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         vinculacionResults={vinculacionResults}
         currentDemandaId={id}
       />
-    </LocalizationProvider>
+    </>
   )
 }
 

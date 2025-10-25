@@ -230,20 +230,6 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
             />
           ))
         )}
-
-        {!readOnly && fields.length === 0 && (
-          <Box sx={{ textAlign: "center", mt: 4 }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={addAdultoConviviente}
-              size="large"
-              sx={{ borderRadius: "20px", px: 3 }}
-            >
-              Añadir Adulto
-            </Button>
-          </Box>
-        )}
       </Box>
 
       {/* Delete Confirmation Dialog */}

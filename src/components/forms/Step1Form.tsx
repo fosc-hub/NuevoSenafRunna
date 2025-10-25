@@ -591,7 +591,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
         </FormSection>
 
         {/* Sección de Datos del Remitente */}
-        <FormSection title="Datos del Remitente">
+        <FormSection title="Tipo de Organismo">
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Controller
@@ -609,7 +609,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label={<RequiredLabel label="Datos del remitente" />}
+                          label={<RequiredLabel label="Tipo de Organismo" />}
                           error={!!error}
                           helperText={error?.message}
                           size="medium"
@@ -642,7 +642,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label={<RequiredLabel label="Tipo de Institución" />}
+                            label={<RequiredLabel label="Organismo" />}
                             error={!!error}
                             helperText={error?.message}
                             size="medium"
@@ -897,7 +897,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
         </FormSection>
 
         {/* Sección de Motivos de Intervención */}
-        <FormSection title="Motivos de Intervención">
+        <FormSection title="Principal Motivo de Intervención">
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Controller

@@ -663,7 +663,7 @@ const DemandaTableContent: React.FC = () => {
       },
       {
         field: "score",
-        headerName: "Score",
+        headerName: "Nivel de Riesgo / Score",
         width: 80,
         renderCell: (params) => (
           <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>

@@ -512,6 +512,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
             <MPETabs
               medidaData={{
                 ...medidaData,
+                tipo_medida: medidaData.tipo,
                 estado: medidaApiData?.etapa_actual?.estado,
                 numero_medida: typeof medidaApiData?.numero_medida === 'string'
                   ? medidaApiData.numero_medida
@@ -540,6 +541,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
             <MPJTabs
               medidaData={{
                 ...medidaData,
+                tipo_medida: medidaData.tipo,
                 estado: medidaApiData?.etapa_actual?.estado,
                 numero_medida: typeof medidaApiData?.numero_medida === 'string'
                   ? medidaApiData.numero_medida

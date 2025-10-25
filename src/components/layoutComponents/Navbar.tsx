@@ -79,12 +79,12 @@ export default function Header() {
         <div className="flex space-x-2">
           <Link href="/mesadeentrada">
             <button className="bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded text-sm font-medium transition-colors">
-              Mesa de Entrada
+              Mesa de Entradas
             </button>
           </Link>
           <Link href="/legajo-mesa">
             <button className="bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded text-sm font-medium transition-colors">
-              Legajo Mesa
+              Bandeja de legajos
             </button>
           </Link>
         </div>

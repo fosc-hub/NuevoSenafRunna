@@ -1071,6 +1071,72 @@ const DemandaTableContent: React.FC = () => {
             rowCount={totalCount}
             paginationMode="server"
             loading={isLoading || updateCalificacion.isPending || updateDemandaZona.isPending}
+            localeText={{
+              // Toolbar
+              toolbarFilters: 'Filtros',
+              toolbarFiltersLabel: 'Mostrar filtros',
+              toolbarExport: 'Exportar',
+              toolbarColumns: 'Columnas',
+              toolbarDensity: 'Densidad',
+
+              // Filters
+              filterPanelAddFilter: 'Agregar filtro',
+              filterPanelRemoveAll: 'Eliminar todos',
+              filterPanelDeleteIconLabel: 'Eliminar',
+              filterPanelOperator: 'Operador',
+              filterPanelOperatorAnd: 'Y',
+              filterPanelOperatorOr: 'O',
+              filterPanelColumns: 'Columnas',
+              filterPanelInputLabel: 'Valor',
+              filterPanelInputPlaceholder: 'Filtrar valor',
+
+              // Filter operators
+              filterOperatorContains: 'contiene',
+              filterOperatorEquals: 'es igual',
+              filterOperatorStartsWith: 'comienza con',
+              filterOperatorEndsWith: 'termina con',
+              filterOperatorIs: 'es',
+              filterOperatorNot: 'no es',
+              filterOperatorAfter: 'es posterior',
+              filterOperatorOnOrAfter: 'es en o posterior',
+              filterOperatorBefore: 'es anterior',
+              filterOperatorOnOrBefore: 'es en o anterior',
+              filterOperatorIsEmpty: 'está vacío',
+              filterOperatorIsNotEmpty: 'no está vacío',
+              filterOperatorIsAnyOf: 'es cualquiera de',
+
+              // Pagination
+              MuiTablePagination: {
+                labelRowsPerPage: 'Filas por página:',
+                labelDisplayedRows: ({ from, to, count }) => `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`,
+              },
+
+              // Column menu
+              columnMenuLabel: 'Menú',
+              columnMenuShowColumns: 'Mostrar columnas',
+              columnMenuFilter: 'Filtro',
+              columnMenuHideColumn: 'Ocultar',
+              columnMenuUnsort: 'Desordenar',
+              columnMenuSortAsc: 'Ordenar ASC',
+              columnMenuSortDesc: 'Ordenar DESC',
+
+              // Column header
+              columnHeaderFiltersTooltipActive: (count) => count !== 1 ? `${count} filtros activos` : `${count} filtro activo`,
+              columnHeaderFiltersLabel: 'Mostrar filtros',
+              columnHeaderSortIconLabel: 'Ordenar',
+
+              // Rows
+              noRowsLabel: 'Sin filas',
+              noResultsOverlayLabel: 'No se encontraron resultados.',
+
+              // Footer
+              footerRowSelected: (count) => count !== 1
+                ? `${count.toLocaleString()} filas seleccionadas`
+                : `${count.toLocaleString()} fila seleccionada`,
+              footerTotalRows: 'Filas Totales:',
+              footerTotalVisibleRows: (visibleCount, totalCount) =>
+                `${visibleCount.toLocaleString()} de ${totalCount.toLocaleString()}`,
+            }}
             onRowClick={(params, event) => {
               const cellElement = event.target as HTMLElement
               if (

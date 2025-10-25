@@ -659,11 +659,10 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
               <Controller
                 name="institucion"
                 control={control}
-                rules={{ required: "Este campo es obligatorio" }}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={<RequiredLabel label="Institución" />}
+                    label="Nombre de la Institución"
                     fullWidth
                     error={!!error}
                     helperText={error?.message}

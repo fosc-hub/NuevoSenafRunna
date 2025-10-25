@@ -1073,8 +1073,8 @@ const DemandaTableContent: React.FC = () => {
             loading={isLoading || updateCalificacion.isPending || updateDemandaZona.isPending}
             localeText={{
               // Toolbar
-              toolbarFilters: 'Filtros',
-              toolbarFiltersLabel: 'Mostrar filtros',
+              toolbarFilters: 'Filtro de Demandas',
+              toolbarFiltersLabel: 'Mostrar filtro de demandas',
               toolbarExport: 'Exportar',
               toolbarColumns: 'Columnas',
               toolbarDensity: 'Densidad',

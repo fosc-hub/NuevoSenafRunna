@@ -170,7 +170,7 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="body2" fontWeight={500}>
-                        {adjunto.archivo.split('/').pop()}
+                        {adjunto.nombre_original}
                       </Typography>
                       <Chip
                         label={adjunto.tipo_adjunto_display}
@@ -183,7 +183,7 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
                   secondary={
                     <Box component="span" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                       <Typography variant="caption" color="text.secondary">
-                        Subido el {new Date(adjunto.fecha_carga).toLocaleDateString('es-ES', { dateStyle: 'medium' })} por {adjunto.usuario_carga_info.full_name}
+                        Subido el {new Date(adjunto.fecha_subida).toLocaleDateString('es-ES', { dateStyle: 'medium' })} por {adjunto.usuario_carga.nombre_completo}
                       </Typography>
                       {adjunto.descripcion && (
                         <Typography variant="caption" color="text.secondary">

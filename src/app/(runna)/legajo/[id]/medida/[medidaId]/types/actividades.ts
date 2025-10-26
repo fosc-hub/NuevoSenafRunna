@@ -17,18 +17,24 @@ export interface TTipoActividad {
 // Attachment
 export interface TAdjuntoActividad {
   id: number
+  actividad: number
+  archivo: string
+  nombre_original: string
+  tipo_mime: string
+  tamanio_bytes: number
   tipo_adjunto: 'ACTA_COMPROMISO' | 'EVIDENCIA' | 'INFORME' | 'FOTO' | 'OTRO'
   tipo_adjunto_display: string
-  archivo: string
-  archivo_url: string
-  descripcion?: string
-  fecha_carga: string
-  usuario_carga: number
-  usuario_carga_info: {
+  version: number
+  reemplaza_a: number | null
+  activo: boolean
+  usuario_carga: {
     id: number
     username: string
-    full_name: string
+    nombre_completo: string
   }
+  fecha_subida: string
+  archivo_url: string
+  descripcion?: string
 }
 
 // User info interface (for responsible users)

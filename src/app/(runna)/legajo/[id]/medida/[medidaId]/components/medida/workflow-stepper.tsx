@@ -47,6 +47,7 @@ import { shouldSkipEstados } from "../../utils/estado-validation"
 import MPJStageStepper from "./mpj-stage-stepper"
 import MPICeseCompletion from "./mpi-cese-completion"
 import MPEPostCeseSection from "./mpe-post-cese-section"
+import EstadoStepper from "./estado-stepper"
 
 // ============================================================================
 // STYLED COMPONENTS
@@ -337,27 +338,15 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = (props) => {
       }
     }
 
-    // Standard workflow: Estado-based stepper
-    // TODO: Implement estado-based stepper component
-    // For now, show a placeholder indicating V2 standard workflow
+    // Standard workflow: Estado-based stepper (MPI 1-2 estados, MPE 1-5 estados)
     return (
-      <Box
-        sx={{
-          p: 3,
-          backgroundColor: theme.palette.info.light,
-          borderRadius: 2,
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          V2 Workflow Estándar: {tipoMedida} - {tipoEtapa}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Estados disponibles: {availableEstados.length}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          TODO: Implementar componente EstadoStepper para flujo estándar con estados 1-5
-        </Typography>
-      </Box>
+      <EstadoStepper
+        availableEstados={availableEstados}
+        etapaActual={etapaActual}
+        tipoMedida={tipoMedida}
+        showMetadata={true}
+        orientation={isMobile ? "vertical" : "horizontal"}
+      />
     )
   }
 

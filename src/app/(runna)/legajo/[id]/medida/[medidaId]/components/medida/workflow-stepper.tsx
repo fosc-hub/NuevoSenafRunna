@@ -1,12 +1,19 @@
 "use client"
 
 /**
- * Workflow Stepper Component
+ * Workflow Stepper Component - V2 Enhanced
  *
- * Horizontal stepper that visualizes the 4-step workflow progression
- * with sequential navigation and completion status.
+ * Smart router component that displays type-specific workflows:
+ * - V2 Mode: Routes to appropriate components based on tipo_medida + tipo_etapa
+ * - V1 Mode: Renders legacy 4-step workflow (backward compatible)
  *
- * Features:
+ * V2 Features:
+ * - MPJ: Stage-only stepper (no estados)
+ * - MPI Cese: Completion message (no estados)
+ * - MPE POST_CESE: Post-cese activities section (no estados)
+ * - Standard workflows: Estado-based stepper (catalog-driven)
+ *
+ * V1 Features (legacy):
  * - Visual progress indication (color coding, check icons, progress bars)
  * - Sequential navigation (locked until previous step completed)
  * - Estado-based completion detection
@@ -32,6 +39,14 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked"
 import LockIcon from "@mui/icons-material/Lock"
 import type { StepStatus, StepProgress } from "../../types/workflow"
+
+// V2 Imports
+import type { TipoEtapa, TEstadoEtapaMedida } from "../../types/estado-etapa"
+import type { TipoMedida, EtapaMedida } from "../../types/medida-api"
+import { shouldSkipEstados } from "../../utils/estado-validation"
+import MPJStageStepper from "./mpj-stage-stepper"
+import MPICeseCompletion from "./mpi-cese-completion"
+import MPEPostCeseSection from "./mpe-post-cese-section"
 
 // ============================================================================
 // STYLED COMPONENTS
@@ -76,11 +91,71 @@ export interface WorkflowStep {
   content: React.ReactNode
 }
 
-interface WorkflowStepperProps {
+// ============================================================================
+// V2 PROPS (Type-Specific Workflows)
+// ============================================================================
+
+interface V2WorkflowProps {
+  /** V2 Mode: Measure type */
+  tipoMedida: TipoMedida
+
+  /** V2 Mode: Stage type (from etapa_actual.tipo_etapa) */
+  tipoEtapa: TipoEtapa | null
+
+  /** V2 Mode: Current etapa data */
+  etapaActual: EtapaMedida | null
+
+  /** V2 Mode: Medida ID for API calls */
+  medidaId: number
+
+  /** V2 Mode: Available estados from catalog (filtered by type/stage) */
+  availableEstados?: TEstadoEtapaMedida[]
+
+  /** V2 Mode: Fecha cese efectivo (for MPE POST_CESE) */
+  fechaCeseEfectivo?: string | null
+
+  /** V2 Mode: Plan trabajo ID (for MPE POST_CESE) */
+  planTrabajoId?: number | null
+}
+
+// ============================================================================
+// V1 PROPS (Legacy 4-Step Workflow)
+// ============================================================================
+
+interface V1WorkflowProps {
+  /** V1 Mode: Step definitions */
   steps: WorkflowStep[]
+
+  /** V1 Mode: Active step index */
   activeStep: number
+
+  /** V1 Mode: Step click handler */
   onStepClick: (stepIndex: number) => void
+
+  /** V1 Mode: Stepper orientation */
   orientation?: "horizontal" | "vertical"
+}
+
+// ============================================================================
+// COMBINED PROPS (V1 OR V2)
+// ============================================================================
+
+/**
+ * WorkflowStepper supports two modes:
+ * - V2 Mode: Provide tipoMedida, tipoEtapa, etapaActual, medidaId
+ * - V1 Mode: Provide steps, activeStep, onStepClick
+ */
+type WorkflowStepperProps =
+  | V2WorkflowProps
+  | V1WorkflowProps
+
+// Type guards
+function isV2Props(props: WorkflowStepperProps): props is V2WorkflowProps {
+  return 'tipoMedida' in props
+}
+
+function isV1Props(props: WorkflowStepperProps): props is V1WorkflowProps {
+  return 'steps' in props
 }
 
 // ============================================================================
@@ -209,14 +284,97 @@ const StepStatusChip: React.FC<StepStatusChipProps> = ({ estado, status }) => {
 // MAIN COMPONENT
 // ============================================================================
 
-export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
-  steps,
-  activeStep,
-  onStepClick,
-  orientation = "horizontal",
-}) => {
+export const WorkflowStepper: React.FC<WorkflowStepperProps> = (props) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+
+  // ========================================================================
+  // V2 MODE: Type-Specific Workflow Routing
+  // ========================================================================
+  if (isV2Props(props)) {
+    const {
+      tipoMedida,
+      tipoEtapa,
+      etapaActual,
+      medidaId,
+      availableEstados = [],
+      fechaCeseEfectivo,
+      planTrabajoId,
+    } = props
+
+    // MPJ: Show stage-only stepper (no estados)
+    if (tipoMedida === 'MPJ') {
+      return <MPJStageStepper etapaActual={etapaActual} showDescriptions={true} />
+    }
+
+    // MPI Cese OR MPE POST_CESE: Show completion/post-cese sections (no estados)
+    if (shouldSkipEstados(tipoMedida, tipoEtapa)) {
+      // MPI Cese: Show completion message
+      if (tipoMedida === 'MPI' && tipoEtapa === 'CESE') {
+        return <MPICeseCompletion etapaActual={etapaActual} showInstructions={true} />
+      }
+
+      // MPE POST_CESE: Show post-cese activities
+      if (tipoMedida === 'MPE' && tipoEtapa === 'POST_CESE') {
+        if (!fechaCeseEfectivo) {
+          return (
+            <Box sx={{ p: 3, backgroundColor: theme.palette.warning.light, borderRadius: 2 }}>
+              <Typography variant="body1" color="text.secondary">
+                Error: MPE POST_CESE requiere fecha_cese_efectivo
+              </Typography>
+            </Box>
+          )
+        }
+
+        return (
+          <MPEPostCeseSection
+            medidaId={medidaId}
+            fechaCeseEfectivo={fechaCeseEfectivo}
+            planTrabajoId={planTrabajoId || 0}
+            etapaNombre={etapaActual?.nombre}
+          />
+        )
+      }
+    }
+
+    // Standard workflow: Estado-based stepper
+    // TODO: Implement estado-based stepper component
+    // For now, show a placeholder indicating V2 standard workflow
+    return (
+      <Box
+        sx={{
+          p: 3,
+          backgroundColor: theme.palette.info.light,
+          borderRadius: 2,
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          V2 Workflow Estándar: {tipoMedida} - {tipoEtapa}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Estados disponibles: {availableEstados.length}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          TODO: Implementar componente EstadoStepper para flujo estándar con estados 1-5
+        </Typography>
+      </Box>
+    )
+  }
+
+  // ========================================================================
+  // V1 MODE: Legacy 4-Step Workflow
+  // ========================================================================
+  if (!isV1Props(props)) {
+    return (
+      <Box sx={{ p: 3, backgroundColor: theme.palette.error.light, borderRadius: 2 }}>
+        <Typography variant="body1" color="error">
+          Error: WorkflowStepper requiere props V1 o V2
+        </Typography>
+      </Box>
+    )
+  }
+
+  const { steps, activeStep, onStepClick, orientation = "horizontal" } = props
 
   // Use vertical orientation on mobile for better UX
   const effectiveOrientation = isMobile ? "vertical" : orientation

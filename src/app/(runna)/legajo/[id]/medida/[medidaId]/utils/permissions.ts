@@ -292,3 +292,121 @@ export function logUserPermissions(user: any, config: PermissionConfig): void {
     canSend: checkPermission(user, 'canSend', config),
   })
 }
+
+// ============================================================================
+// V2: ESTADO-BASED PERMISSIONS (MED-01 V2)
+// ============================================================================
+
+import type { TEstadoEtapaMedida } from '../types/estado-etapa'
+import { canUserTransitionToEstado as canTransitionToEstado } from './estado-validation'
+
+/**
+ * V2: Check if user can advance to a specific estado
+ *
+ * Requirements:
+ * - Must be next sequential estado (orden + 1)
+ * - User must have matching responsable_tipo role
+ *
+ * @param user - User object
+ * @param targetEstado - Target estado from catalog
+ * @param currentEstado - Current estado (null if no estado yet)
+ * @returns True if user can advance to target estado
+ */
+export function canAdvanceToEstado(
+  user: any,
+  targetEstado: TEstadoEtapaMedida,
+  currentEstado: TEstadoEtapaMedida | null
+): boolean {
+  if (!user) return false
+
+  // SUPERUSER always has permission
+  const userRole = getUserWorkflowRole(user)
+  if (userRole === 'SUPERUSER') return true
+
+  // Check sequential progression
+  if (currentEstado) {
+    // Can only advance to next estado (orden + 1)
+    if (targetEstado.orden !== currentEstado.orden + 1) {
+      return false
+    }
+  } else {
+    // If no current estado, can only start with orden 1
+    if (targetEstado.orden !== 1) {
+      return false
+    }
+  }
+
+  // Check role permission using estado validation
+  return canTransitionToEstado({ id: user.id, nombre_completo: user.username, role: userRole }, targetEstado)
+}
+
+/**
+ * V2: Check if workflow actions should be shown
+ *
+ * MPJ hides state transition UI (only stage transitions)
+ * MPI Cese hides state UI (direct closure)
+ * MPE POST_CESE hides state UI (only PLTM activities)
+ *
+ * @param tipoMedida - Measure type
+ * @param tipoEtapa - Stage type
+ * @returns True if workflow action buttons should be displayed
+ */
+export function shouldShowWorkflowActions(
+  tipoMedida: 'MPI' | 'MPE' | 'MPJ',
+  tipoEtapa: string | null
+): boolean {
+  // MPJ never shows estado workflow actions
+  if (tipoMedida === 'MPJ') {
+    return false
+  }
+
+  // MPI Cese doesn't show estado workflow actions
+  if (tipoMedida === 'MPI' && tipoEtapa === 'CESE') {
+    return false
+  }
+
+  // MPE POST_CESE doesn't show estado workflow actions
+  if (tipoMedida === 'MPE' && tipoEtapa === 'POST_CESE') {
+    return false
+  }
+
+  // All other cases show workflow actions
+  return true
+}
+
+/**
+ * V2: Get allowed estados for user based on current context
+ *
+ * Filters estados by:
+ * - Applicability to measure type and stage
+ * - Sequential progression (next estado only)
+ * - User role permission
+ *
+ * @param user - User object
+ * @param availableEstados - All applicable estados for this medida/stage
+ * @param currentEstado - Current estado (null if no estado)
+ * @returns Array of estados user can transition to
+ */
+export function getAllowedEstadosForUser(
+  user: any,
+  availableEstados: TEstadoEtapaMedida[],
+  currentEstado: TEstadoEtapaMedida | null
+): TEstadoEtapaMedida[] {
+  if (!user) return []
+
+  const userRole = getUserWorkflowRole(user)
+
+  // SUPERUSER sees all next estados
+  if (userRole === 'SUPERUSER') {
+    if (!currentEstado) {
+      return availableEstados.filter(e => e.orden === 1)
+    }
+    const nextOrden = currentEstado.orden + 1
+    return availableEstados.filter(e => e.orden === nextOrden)
+  }
+
+  // Filter by permission
+  return availableEstados.filter(estado =>
+    canAdvanceToEstado(user, estado, currentEstado)
+  )
+}

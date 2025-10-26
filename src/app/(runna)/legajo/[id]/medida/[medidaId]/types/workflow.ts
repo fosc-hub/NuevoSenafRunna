@@ -7,9 +7,17 @@
  * - MPI (Medida de Protección Inmediata)
  *
  * Document types: intervenciones, nota-aval, informe-juridico, ratificacion-judicial
+ *
+ * V2 Enhancements:
+ * - Integrated with estado-etapa.ts for type-specific estado management
+ * - Added TipoEtapa from medida-api.ts for stage-based workflow
  */
 
 import type { ReactNode } from "react"
+
+// Re-export V2 types for convenience
+export type { TEstadoEtapaMedida, TipoEtapa, ResponsableTipo } from './estado-etapa'
+export type { EtapaMedida, MedidaDetailResponse } from './medida-api'
 
 // ============================================================================
 // ENUMS & BASIC TYPES
@@ -17,7 +25,13 @@ import type { ReactNode } from "react"
 
 export type SectionType = 'intervencion' | 'nota-aval' | 'informe-juridico' | 'ratificacion'
 export type TipoMedida = 'MPE' | 'MPI' | 'MPJ'
+
+/**
+ * Workflow Phase - Legacy type for backward compatibility
+ * Use TipoEtapa from estado-etapa.ts for V2 implementation
+ */
 export type WorkflowPhase = 'apertura' | 'innovacion' | 'prorroga' | 'cese'
+
 export type ModalMode = 'view' | 'edit' | 'create'
 export type UserRole = 'ET' | 'JZ' | 'DIRECTOR' | 'LEGAL' | 'SUPERUSER'
 export type ItemRendererType = 'card' | 'list' | 'table'

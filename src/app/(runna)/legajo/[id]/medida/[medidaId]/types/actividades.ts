@@ -35,7 +35,8 @@ export interface TAdjuntoActividad {
 export interface TUsuarioInfo {
   id: number
   username: string
-  full_name: string
+  full_name?: string  // Legacy field name
+  nombre_completo?: string  // API field name (actual)
 }
 
 // Activity

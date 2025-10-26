@@ -217,7 +217,7 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
           <ComentariosTab
             actividadId={actividad.id}
             comentarios={actividad.comentarios || []}
-            onAgregarComentario={(texto) => actions.agregarComentario(actividad.id, { texto })}
+            onAgregarComentario={(texto) => actions.agregarComentario(actividad.id, texto)}
             loading={actions.loading}
           />
         </TabPanel>

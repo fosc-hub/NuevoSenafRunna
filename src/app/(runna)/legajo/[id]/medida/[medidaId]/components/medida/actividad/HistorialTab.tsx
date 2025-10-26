@@ -4,6 +4,12 @@ import React, { useEffect, useState } from 'react'
 import {
   Box,
   Typography,
+  Paper,
+  Chip,
+  CircularProgress,
+  Alert
+} from '@mui/material'
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
@@ -11,11 +17,7 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-  Paper,
-  Chip,
-  CircularProgress,
-  Alert
-} from '@mui/material'
+} from '@mui/lab'
 import CreateIcon from '@mui/icons-material/Create'
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle'
 import EditIcon from '@mui/icons-material/Edit'
@@ -50,7 +52,7 @@ const getIconByTipoAccion = (tipo: string) => {
   return icons[tipo] || <ChangeCircleIcon />
 }
 
-const getColorByTipoAccion = (tipo: string): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'grey' => {
+const getColorByTipoAccion = (tipo: string): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'default' => {
   const colors: Record<string, any> = {
     'CREACION': 'info',
     'CAMBIO_ESTADO': 'primary',
@@ -63,7 +65,7 @@ const getColorByTipoAccion = (tipo: string): 'primary' | 'secondary' | 'success'
     'VISADO_RECHAZADO': 'error',
     'TRANSFERENCIA': 'warning',
   }
-  return colors[tipo] || 'grey'
+  return colors[tipo] || 'default'
 }
 
 export const HistorialTab: React.FC<HistorialTabProps> = ({

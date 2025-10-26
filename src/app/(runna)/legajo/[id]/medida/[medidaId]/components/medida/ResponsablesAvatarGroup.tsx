@@ -11,7 +11,12 @@ interface ResponsablesAvatarGroupProps {
   maxDisplay?: number
 }
 
-function stringToColor(string: string): string {
+function stringToColor(string?: string | null): string {
+  // Defensive: handle undefined/null/empty strings
+  if (!string || string.length === 0) {
+    return '#9e9e9e' // Default gray color
+  }
+
   let hash = 0
   for (let i = 0; i < string.length; i++) {
     hash = string.charCodeAt(i) + ((hash << 5) - hash)
@@ -24,11 +29,21 @@ function stringToColor(string: string): string {
   return color
 }
 
-function getInitials(fullName: string): string {
+function getInitials(fullName?: string | null): string {
+  // Defensive: handle undefined/null/empty strings
+  if (!fullName || fullName.trim().length === 0) {
+    return '?'
+  }
+
   const names = fullName.trim().split(' ')
   if (names.length === 0) return '?'
   if (names.length === 1) return names[0].charAt(0).toUpperCase()
   return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase()
+}
+
+// Helper to safely get full name from TUsuarioInfo
+function getFullName(user: TUsuarioInfo): string {
+  return user.nombre_completo || user.full_name || user.username || 'Usuario'
 }
 
 export const ResponsablesAvatarGroup: React.FC<ResponsablesAvatarGroupProps> = ({
@@ -48,7 +63,7 @@ export const ResponsablesAvatarGroup: React.FC<ResponsablesAvatarGroupProps> = (
             <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
               Responsable Principal
             </Typography>
-            <Typography variant="caption">{responsablePrincipal.full_name}</Typography>
+            <Typography variant="caption">{getFullName(responsablePrincipal)}</Typography>
           </Box>
         }
         arrow
@@ -60,12 +75,12 @@ export const ResponsablesAvatarGroup: React.FC<ResponsablesAvatarGroupProps> = (
               height: 32,
               fontSize: '0.875rem',
               fontWeight: 600,
-              bgcolor: stringToColor(responsablePrincipal.full_name),
+              bgcolor: stringToColor(getFullName(responsablePrincipal)),
               border: '2px solid #fff',
               boxShadow: 1
             }}
           >
-            {getInitials(responsablePrincipal.full_name)}
+            {getInitials(getFullName(responsablePrincipal))}
           </Avatar>
         </Box>
       </Tooltip>
@@ -80,7 +95,7 @@ export const ResponsablesAvatarGroup: React.FC<ResponsablesAvatarGroupProps> = (
               </Typography>
               {responsablesSecundarios.map((resp) => (
                 <Typography key={resp.id} variant="caption" sx={{ display: 'block' }}>
-                  • {resp.full_name}
+                  • {getFullName(resp)}
                 </Typography>
               ))}
             </Box>
@@ -103,10 +118,10 @@ export const ResponsablesAvatarGroup: React.FC<ResponsablesAvatarGroupProps> = (
               <Avatar
                 key={resp.id}
                 sx={{
-                  bgcolor: stringToColor(resp.full_name)
+                  bgcolor: stringToColor(getFullName(resp))
                 }}
               >
-                {getInitials(resp.full_name)}
+                {getInitials(getFullName(resp))}
               </Avatar>
             ))}
           </AvatarGroup>

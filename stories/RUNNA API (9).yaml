@@ -178,22 +178,6 @@ paths:
       description: Retrieve a list of activities with optional filtering.
       parameters:
       - in: query
-        name: actor
-        schema:
-          type: string
-          enum:
-          - ADULTOS_INSTITUCION
-          - EQUIPOS_RESIDENCIALES
-          - EQUIPO_LEGAL
-          - EQUIPO_TECNICO
-        description: |-
-          Actor asignado (autocompleta desde tipo_actividad)
-
-          * `EQUIPO_TECNICO` - Equipo Técnico
-          * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
-          * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
-          * `EQUIPO_LEGAL` - Equipo de Legales
-      - in: query
         name: es_borrador
         schema:
           type: boolean
@@ -203,16 +187,22 @@ paths:
           type: string
           enum:
           - CANCELADA
+          - COMPLETADA
           - EN_PROGRESO
           - PENDIENTE
-          - REALIZADA
+          - PENDIENTE_VISADO
           - VENCIDA
+          - VISADO_APROBADO
+          - VISADO_CON_OBSERVACION
         description: |-
           Estado actual de la actividad
 
           * `PENDIENTE` - Pendiente
           * `EN_PROGRESO` - En Progreso
-          * `REALIZADA` - Realizada
+          * `COMPLETADA` - Completada
+          * `PENDIENTE_VISADO` - Pendiente de Visado
+          * `VISADO_CON_OBSERVACION` - Visado con Observación
+          * `VISADO_APROBADO` - Visado Aprobado
           * `CANCELADA` - Cancelada
           * `VENCIDA` - Vencida
       - name: ordering
@@ -251,6 +241,10 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: visador
+        schema:
+          type: integer
       tags:
       - actividades
       security:
@@ -409,9 +403,31 @@ paths:
         '204':
           description: No response body
   /api/actividades/{id}/adjuntos/:
+    get:
+      operationId: actividades_adjuntos_retrieve
+      description: Gestionar adjuntos de actividad (GET para listar, POST para crear)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TAdjuntoActividad'
+          description: ''
     post:
       operationId: actividades_adjuntos_create
-      description: Add an attachment to an existing activity.
+      description: Gestionar adjuntos de actividad (GET para listar, POST para crear)
       parameters:
       - in: path
         name: id
@@ -442,6 +458,362 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TAdjuntoActividad'
+          description: ''
+  /api/actividades/{id}/cambiar-estado/:
+    post:
+      operationId: actividades_cambiar_estado_create
+      description: Cambiar estado de actividad con validaciones de transición
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          nuevo_estado:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+          motivo:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+  /api/actividades/{id}/comentarios/:
+    post:
+      operationId: actividades_comentarios_create
+      description: Agregar comentario con soporte de @menciones
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TComentarioActividad'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TComentarioActividad'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TComentarioActividad'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TComentarioActividad'
+          description: ''
+  /api/actividades/{id}/historial/:
+    get:
+      operationId: actividades_historial_list
+      description: Listar historial de cambios de actividad
+      parameters:
+      - in: query
+        name: es_borrador
+        schema:
+          type: boolean
+      - in: query
+        name: estado
+        schema:
+          type: string
+          enum:
+          - CANCELADA
+          - COMPLETADA
+          - EN_PROGRESO
+          - PENDIENTE
+          - PENDIENTE_VISADO
+          - VENCIDA
+          - VISADO_APROBADO
+          - VISADO_CON_OBSERVACION
+        description: |-
+          Estado actual de la actividad
+
+          * `PENDIENTE` - Pendiente
+          * `EN_PROGRESO` - En Progreso
+          * `COMPLETADA` - Completada
+          * `PENDIENTE_VISADO` - Pendiente de Visado
+          * `VISADO_CON_OBSERVACION` - Visado con Observación
+          * `VISADO_APROBADO` - Visado Aprobado
+          * `CANCELADA` - Cancelada
+          * `VENCIDA` - Vencida
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: origen
+        schema:
+          type: string
+          enum:
+          - DEMANDA_OFICIO
+          - DEMANDA_PI
+          - MANUAL
+          - OFICIO
+        description: |-
+          Origen de la actividad
+
+          * `MANUAL` - Creación Manual
+          * `DEMANDA_PI` - Demanda - Petición de Informe
+          * `DEMANDA_OFICIO` - Demanda - Carga de Oficios
+          * `OFICIO` - Oficio Judicial
+      - in: query
+        name: plan_trabajo
+        schema:
+          type: integer
+      - in: query
+        name: responsable_principal
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: visador
+        schema:
+          type: integer
+      tags:
+      - actividades
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/THistorialActividadList'
+          description: ''
+  /api/actividades/{id}/reabrir/:
+    post:
+      operationId: actividades_reabrir_create
+      description: Reabrir actividad cerrada (solo JZ/Director/Admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          motivo:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
+          description: ''
+  /api/actividades/{id}/transferencias/:
+    get:
+      operationId: actividades_transferencias_list
+      description: Listar historial de transferencias de actividad
+      parameters:
+      - in: query
+        name: es_borrador
+        schema:
+          type: boolean
+      - in: query
+        name: estado
+        schema:
+          type: string
+          enum:
+          - CANCELADA
+          - COMPLETADA
+          - EN_PROGRESO
+          - PENDIENTE
+          - PENDIENTE_VISADO
+          - VENCIDA
+          - VISADO_APROBADO
+          - VISADO_CON_OBSERVACION
+        description: |-
+          Estado actual de la actividad
+
+          * `PENDIENTE` - Pendiente
+          * `EN_PROGRESO` - En Progreso
+          * `COMPLETADA` - Completada
+          * `PENDIENTE_VISADO` - Pendiente de Visado
+          * `VISADO_CON_OBSERVACION` - Visado con Observación
+          * `VISADO_APROBADO` - Visado Aprobado
+          * `CANCELADA` - Cancelada
+          * `VENCIDA` - Vencida
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: origen
+        schema:
+          type: string
+          enum:
+          - DEMANDA_OFICIO
+          - DEMANDA_PI
+          - MANUAL
+          - OFICIO
+        description: |-
+          Origen de la actividad
+
+          * `MANUAL` - Creación Manual
+          * `DEMANDA_PI` - Demanda - Petición de Informe
+          * `DEMANDA_OFICIO` - Demanda - Carga de Oficios
+          * `OFICIO` - Oficio Judicial
+      - in: query
+        name: plan_trabajo
+        schema:
+          type: integer
+      - in: query
+        name: responsable_principal
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: visador
+        schema:
+          type: integer
+      tags:
+      - actividades
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TTransferenciaActividad'
+          description: ''
+  /api/actividades/{id}/transferir/:
+    post:
+      operationId: actividades_transferir_create
+      description: Transferir actividad a otro equipo (solo JZ/Director)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TTransferenciaActividad'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TTransferenciaActividad'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TTransferenciaActividad'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTransferenciaActividad'
+          description: ''
+  /api/actividades/{id}/visar/:
+    post:
+      operationId: actividades_visar_create
+      description: Visar actividad (solo Legal)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Actividad de Plan de
+          Trabajo.
+        required: true
+      tags:
+      - actividades
+      requestBody:
+        content:
+          aprobado:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+          observaciones:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TActividadPlanTrabajo'
           description: ''
   /api/actividades/marcar-vencidas/:
     post:
@@ -2905,6 +3277,28 @@ paths:
       responses:
         '201':
           description: No response body
+  /api/legajos/{legajo_id}/grupo/:
+    get:
+      operationId: legajos_grupo_retrieve
+      description: |-
+        GET /api/legajos/{legajo_id}/grupo/
+
+        Returns:
+        - 200: Estructura del grupo completo
+        - 404: Legajo no encontrado
+      parameters:
+      - in: path
+        name: legajo_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - legajos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/legajos/{id}/:
     get:
       operationId: legajos_retrieve
@@ -4113,6 +4507,49 @@ paths:
       description: Retrieve a list of entries with optional filtering.
       tags:
       - medidas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/medidas-all/:
+    get:
+      operationId: medidas_all_list
+      description: "\n        Retorna todas las medidas con:\n        - Datos completos\
+        \ de medida (incluye legajo y NNyA)\n        - Intervención asociada (más\
+        \ reciente)\n        - Plan de trabajo con todas sus actividades\n\n     \
+        \   Filtros disponibles:\n        - tipo_medida: MPI, MPE, MPJ\n        -\
+        \ estado_vigencia: VIGENTE, CERRADA, ARCHIVADA, NO_RATIFICADA\n        - legajo:\
+        \ ID del legajo\n        - numero_medida: Filtro parcial por número de medida\n\
+        \        - fecha_apertura_desde: Fecha mínima de apertura\n        - fecha_apertura_hasta:\
+        \ Fecha máxima de apertura\n        - juzgado: ID del juzgado\n        - urgencia:\
+        \ ID de urgencia\n        "
+      summary: Listar todas las medidas con datos completos
+      tags:
+      - medidas-all
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TMedidaAll'
+          description: ''
+  /api/medidas-all/{id}/:
+    get:
+      operationId: medidas_all_retrieve
+      description: Retrieve a single entry
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - medidas-all
       security:
       - jwtAuth: []
       responses:
@@ -6329,40 +6766,76 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /api/tipos-actividad/:
+  /api/tipos-actividad-plan-trabajo/:
     get:
-      operationId: tipos_actividad_list
-      description: Retrieve a list of activity types with optional filtering by actor
-        and active status.
+      operationId: tipos_actividad_plan_trabajo_list
+      description: Retrieve a list of activity types with optional filtering by tipo,
+        tipo_medida, etapa_medida, and active status.
       parameters:
       - in: query
         name: activo
         schema:
           type: boolean
       - in: query
-        name: actor
+        name: etapa_medida_aplicable
         schema:
           type: string
+          nullable: true
           enum:
-          - ADULTOS_INSTITUCION
-          - EQUIPOS_RESIDENCIALES
-          - EQUIPO_LEGAL
-          - EQUIPO_TECNICO
+          - APERTURA
+          - CESE
+          - INNOVACION
+          - POST_CESE
+          - PROCESO
+          - PRORROGA
         description: |-
-          Actor responsable de esta categoría de actividad
+          Etapa de medida aplicable (opcional)
 
-          * `EQUIPO_TECNICO` - Equipo Técnico
-          * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
-          * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
-          * `EQUIPO_LEGAL` - Equipo de Legales
+          * `APERTURA` - Apertura de Medida
+          * `INNOVACION` - Innovación de Medida
+          * `PRORROGA` - Prórroga de Medida
+          * `CESE` - Cese de Medida
+          * `POST_CESE` - Post-Cese
+          * `PROCESO` - En Proceso
       - name: ordering
         required: false
         in: query
         description: Which field to use when ordering the results.
         schema:
           type: string
+      - in: query
+        name: requiere_visado_legales
+        schema:
+          type: boolean
+      - in: query
+        name: tipo
+        schema:
+          type: string
+          enum:
+          - MANUAL
+          - OFICIO
+        description: |-
+          Tipo de actividad: MANUAL o OFICIO
+
+          * `MANUAL` - Actividad Manual
+          * `OFICIO` - Actividad de Oficio Judicial
+      - in: query
+        name: tipo_medida_aplicable
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - MPE
+          - MPI
+          - MPJ
+        description: |-
+          Tipo de medida aplicable (opcional: MPI/MPE/MPJ)
+
+          * `MPI` - Medida de Protección Integral
+          * `MPE` - Medida de Protección Excepcional
+          * `MPJ` - Medida Penal Juvenil
       tags:
-      - tipos-actividad
+      - tipos-actividad-plan-trabajo
       security:
       - jwtAuth: []
       responses:
@@ -6372,21 +6845,22 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TTipoActividad'
+                  $ref: '#/components/schemas/TTipoActividadPlanTrabajo'
           description: ''
-  /api/tipos-actividad/{id}/:
+  /api/tipos-actividad-plan-trabajo/{id}/:
     get:
-      operationId: tipos_actividad_retrieve
+      operationId: tipos_actividad_plan_trabajo_retrieve
       description: Retrieve a single activity type by ID.
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Tipo de Actividad.
+        description: A unique integer value identifying this Tipo de Actividad de
+          Plan de Trabajo.
         required: true
       tags:
-      - tipos-actividad
+      - tipos-actividad-plan-trabajo
       security:
       - jwtAuth: []
       responses:
@@ -6394,7 +6868,272 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TTipoActividad'
+                $ref: '#/components/schemas/TTipoActividadPlanTrabajo'
+          description: ''
+  /api/tipos-oficio/:
+    get:
+      operationId: tipos_oficio_list
+      description: |-
+        ViewSet para gestionar el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+
+        ACCIONES:
+        - list: Listar tipos de oficios
+        - retrieve: Obtener detalle de un tipo de oficio
+        - create: Crear nuevo tipo de oficio (solo admin)
+        - update: Actualizar tipo de oficio (solo admin)
+        - destroy: Eliminar tipo de oficio (solo admin)
+      parameters:
+      - in: query
+        name: activo
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - tipos-oficio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TTipoOficio'
+          description: ''
+    post:
+      operationId: tipos_oficio_create
+      description: |-
+        ViewSet para gestionar el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+
+        ACCIONES:
+        - list: Listar tipos de oficios
+        - retrieve: Obtener detalle de un tipo de oficio
+        - create: Crear nuevo tipo de oficio (solo admin)
+        - update: Actualizar tipo de oficio (solo admin)
+        - destroy: Eliminar tipo de oficio (solo admin)
+      tags:
+      - tipos-oficio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TTipoOficio'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TTipoOficio'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TTipoOficio'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTipoOficio'
+          description: ''
+  /api/tipos-oficio/{id}/:
+    get:
+      operationId: tipos_oficio_retrieve
+      description: |-
+        ViewSet para gestionar el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+
+        ACCIONES:
+        - list: Listar tipos de oficios
+        - retrieve: Obtener detalle de un tipo de oficio
+        - create: Crear nuevo tipo de oficio (solo admin)
+        - update: Actualizar tipo de oficio (solo admin)
+        - destroy: Eliminar tipo de oficio (solo admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Tipo de Oficio.
+        required: true
+      tags:
+      - tipos-oficio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTipoOficio'
+          description: ''
+    put:
+      operationId: tipos_oficio_update
+      description: |-
+        ViewSet para gestionar el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+
+        ACCIONES:
+        - list: Listar tipos de oficios
+        - retrieve: Obtener detalle de un tipo de oficio
+        - create: Crear nuevo tipo de oficio (solo admin)
+        - update: Actualizar tipo de oficio (solo admin)
+        - destroy: Eliminar tipo de oficio (solo admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Tipo de Oficio.
+        required: true
+      tags:
+      - tipos-oficio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TTipoOficio'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TTipoOficio'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TTipoOficio'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTipoOficio'
+          description: ''
+    patch:
+      operationId: tipos_oficio_partial_update
+      description: |-
+        ViewSet para gestionar el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+
+        ACCIONES:
+        - list: Listar tipos de oficios
+        - retrieve: Obtener detalle de un tipo de oficio
+        - create: Crear nuevo tipo de oficio (solo admin)
+        - update: Actualizar tipo de oficio (solo admin)
+        - destroy: Eliminar tipo de oficio (solo admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Tipo de Oficio.
+        required: true
+      tags:
+      - tipos-oficio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTTipoOficio'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTTipoOficio'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTTipoOficio'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTipoOficio'
+          description: ''
+    delete:
+      operationId: tipos_oficio_destroy
+      description: |-
+        ViewSet para gestionar el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+
+        ACCIONES:
+        - list: Listar tipos de oficios
+        - retrieve: Obtener detalle de un tipo de oficio
+        - create: Crear nuevo tipo de oficio (solo admin)
+        - update: Actualizar tipo de oficio (solo admin)
+        - destroy: Eliminar tipo de oficio (solo admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Tipo de Oficio.
+        required: true
+      tags:
+      - tipos-oficio
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/tipos-vinculo/:
+    get:
+      operationId: tipos_vinculo_list
+      description: |-
+        ViewSet de solo lectura para tipos de vínculo.
+        Endpoints:
+        - GET /api/tipos-vinculo/ (lista)
+        - GET /api/tipos-vinculo/{id}/ (detalle)
+      tags:
+      - tipos-vinculo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TTipoVinculo'
+          description: ''
+  /api/tipos-vinculo/{id}/:
+    get:
+      operationId: tipos_vinculo_retrieve
+      description: |-
+        ViewSet de solo lectura para tipos de vínculo.
+        Endpoints:
+        - GET /api/tipos-vinculo/ (lista)
+        - GET /api/tipos-vinculo/{id}/ (detalle)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Tipo de Vínculo.
+        required: true
+      tags:
+      - tipos-vinculo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTipoVinculo'
           description: ''
   /api/token/:
     post:
@@ -6652,6 +7391,249 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TValoracion'
+          description: ''
+  /api/vinculos-legajo/:
+    get:
+      operationId: vinculos_legajo_list
+      description: |-
+        ViewSet para gestión de vínculos entre legajos/medidas/demandas.
+
+        Endpoints:
+        - GET /api/vinculos-legajo/ (lista con filtros)
+        - POST /api/vinculos-legajo/ (crear vínculo)
+        - GET /api/vinculos-legajo/{id}/ (detalle)
+        - DELETE /api/vinculos-legajo/{id}/ (no permitido, usar acción 'desvincular')
+        - POST /api/vinculos-legajo/{id}/desvincular/ (soft delete con justificación)
+
+        Filtros disponibles (query params):
+        - legajo_origen: ID del legajo origen
+        - tipo_vinculo: Código del tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)
+        - tipo_destino: Tipo de entidad destino (legajo, medida, demanda)
+        - activo: true/false (default: true)
+      tags:
+      - vinculos-legajo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TVinculoLegajoList'
+          description: ''
+    post:
+      operationId: vinculos_legajo_create
+      description: |-
+        ViewSet para gestión de vínculos entre legajos/medidas/demandas.
+
+        Endpoints:
+        - GET /api/vinculos-legajo/ (lista con filtros)
+        - POST /api/vinculos-legajo/ (crear vínculo)
+        - GET /api/vinculos-legajo/{id}/ (detalle)
+        - DELETE /api/vinculos-legajo/{id}/ (no permitido, usar acción 'desvincular')
+        - POST /api/vinculos-legajo/{id}/desvincular/ (soft delete con justificación)
+
+        Filtros disponibles (query params):
+        - legajo_origen: ID del legajo origen
+        - tipo_vinculo: Código del tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)
+        - tipo_destino: Tipo de entidad destino (legajo, medida, demanda)
+        - activo: true/false (default: true)
+      tags:
+      - vinculos-legajo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TVinculoLegajoCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TVinculoLegajoCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TVinculoLegajoCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TVinculoLegajoCreate'
+          description: ''
+  /api/vinculos-legajo/{id}/:
+    get:
+      operationId: vinculos_legajo_retrieve
+      description: |-
+        ViewSet para gestión de vínculos entre legajos/medidas/demandas.
+
+        Endpoints:
+        - GET /api/vinculos-legajo/ (lista con filtros)
+        - POST /api/vinculos-legajo/ (crear vínculo)
+        - GET /api/vinculos-legajo/{id}/ (detalle)
+        - DELETE /api/vinculos-legajo/{id}/ (no permitido, usar acción 'desvincular')
+        - POST /api/vinculos-legajo/{id}/desvincular/ (soft delete con justificación)
+
+        Filtros disponibles (query params):
+        - legajo_origen: ID del legajo origen
+        - tipo_vinculo: Código del tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)
+        - tipo_destino: Tipo de entidad destino (legajo, medida, demanda)
+        - activo: true/false (default: true)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Vínculo de Legajo.
+        required: true
+      tags:
+      - vinculos-legajo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TVinculoLegajoDetail'
+          description: ''
+    put:
+      operationId: vinculos_legajo_update
+      description: |-
+        ViewSet para gestión de vínculos entre legajos/medidas/demandas.
+
+        Endpoints:
+        - GET /api/vinculos-legajo/ (lista con filtros)
+        - POST /api/vinculos-legajo/ (crear vínculo)
+        - GET /api/vinculos-legajo/{id}/ (detalle)
+        - DELETE /api/vinculos-legajo/{id}/ (no permitido, usar acción 'desvincular')
+        - POST /api/vinculos-legajo/{id}/desvincular/ (soft delete con justificación)
+
+        Filtros disponibles (query params):
+        - legajo_origen: ID del legajo origen
+        - tipo_vinculo: Código del tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)
+        - tipo_destino: Tipo de entidad destino (legajo, medida, demanda)
+        - activo: true/false (default: true)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Vínculo de Legajo.
+        required: true
+      tags:
+      - vinculos-legajo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TVinculoLegajoDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TVinculoLegajoDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TVinculoLegajoDetail'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TVinculoLegajoDetail'
+          description: ''
+    patch:
+      operationId: vinculos_legajo_partial_update
+      description: |-
+        ViewSet para gestión de vínculos entre legajos/medidas/demandas.
+
+        Endpoints:
+        - GET /api/vinculos-legajo/ (lista con filtros)
+        - POST /api/vinculos-legajo/ (crear vínculo)
+        - GET /api/vinculos-legajo/{id}/ (detalle)
+        - DELETE /api/vinculos-legajo/{id}/ (no permitido, usar acción 'desvincular')
+        - POST /api/vinculos-legajo/{id}/desvincular/ (soft delete con justificación)
+
+        Filtros disponibles (query params):
+        - legajo_origen: ID del legajo origen
+        - tipo_vinculo: Código del tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)
+        - tipo_destino: Tipo de entidad destino (legajo, medida, demanda)
+        - activo: true/false (default: true)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Vínculo de Legajo.
+        required: true
+      tags:
+      - vinculos-legajo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTVinculoLegajoDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTVinculoLegajoDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTVinculoLegajoDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TVinculoLegajoDetail'
+          description: ''
+  /api/vinculos-legajo/{id}/desvincular/:
+    post:
+      operationId: vinculos_legajo_desvincular_create
+      description: |-
+        Soft delete de un vínculo con justificación obligatoria.
+
+        POST /api/vinculos-legajo/{id}/desvincular/
+        Body: { "justificacion_desvincular": "Razón con mínimo 20 caracteres" }
+
+        Returns:
+        - 200: Vínculo desvinculado exitosamente
+        - 400: Justificación inválida o vínculo ya desvinculado
+        - 404: Vínculo no encontrado
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Vínculo de Legajo.
+        required: true
+      tags:
+      - vinculos-legajo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Desvincular'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Desvincular'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Desvincular'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Desvincular'
           description: ''
   /api/vulneracion/:
     get:
@@ -6931,31 +7913,23 @@ components:
         * `CREATE` - Create
         * `UPDATE` - Update
         * `DELETE` - Delete
-    ActorEnum:
-      enum:
-      - EQUIPO_TECNICO
-      - EQUIPOS_RESIDENCIALES
-      - ADULTOS_INSTITUCION
-      - EQUIPO_LEGAL
-      type: string
-      description: |-
-        * `EQUIPO_TECNICO` - Equipo Técnico
-        * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
-        * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
-        * `EQUIPO_LEGAL` - Equipo de Legales
     AdjuntosTiposEnum:
       enum:
-      - ACTA_COMPROMISO
       - EVIDENCIA
+      - ACTA
+      - ACTA_COMPROMISO
       - INFORME
       - FOTO
+      - OFICIO
       - OTRO
       type: string
       description: |-
-        * `ACTA_COMPROMISO` - Acta Compromiso
-        * `EVIDENCIA` - Evidencia
-        * `INFORME` - Informe
+        * `EVIDENCIA` - Evidencia de Ejecución
+        * `ACTA` - Acta de Reunión
+        * `ACTA_COMPROMISO` - Acta de Compromiso
+        * `INFORME` - Informe Técnico
         * `FOTO` - Fotografía
+        * `OFICIO` - Oficio Judicial
         * `OTRO` - Otro
     BeneficiosGestionadosEnum:
       enum:
@@ -7110,6 +8084,11 @@ components:
           items:
             $ref: '#/components/schemas/TRespuestaDepth'
           readOnly: true
+        adjuntos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TDemandaAdjunto'
+          readOnly: true
         codigos_demanda:
           type: string
           readOnly: true
@@ -7210,6 +8189,7 @@ components:
           readOnly: true
       required:
       - actividades
+      - adjuntos
       - ambito_vulneracion
       - apellido_usuario
       - bloque_datos_remitente
@@ -7342,6 +8322,18 @@ components:
       - submotivo_ingreso
       - tipo_institucion
       - ultima_actualizacion
+    Desvincular:
+      type: object
+      description: |-
+        Serializer para desvincular (soft delete) un vínculo existente.
+        Usado en acción custom del ViewSet.
+      properties:
+        justificacion_desvincular:
+          type: string
+          description: Justificación obligatoria (mínimo 20 caracteres)
+          minLength: 20
+      required:
+      - justificacion_desvincular
     EnvioDeRespuestaEnum:
       enum:
       - NO_NECESARIO
@@ -7352,6 +8344,18 @@ components:
         * `NO_NECESARIO` - No Necesario
         * `PENDIENTE` - Pendiente
         * `ENVIADO` - Enviado
+    EquipoBasico:
+      type: object
+      description: Serializer básico para equipo/zona
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zona:
+          type: integer
+      required:
+      - id
+      - zona
     EstadoCalificacionEnum:
       enum:
       - PERTINENTE_CONSTATACION_URGENTE
@@ -7392,6 +8396,18 @@ components:
         * `ADMITIDA` - Admitida
         * `INFORME_SIN_ENVIAR` - Informe Sin Enviar
         * `INFORME_ENVIADO` - Informe Enviado
+    EstadoTransferenciaEnum:
+      enum:
+      - PENDIENTE
+      - ACEPTADA
+      - RECHAZADA
+      - COMPLETADA
+      type: string
+      description: |-
+        * `PENDIENTE` - Pendiente de Aceptación
+        * `ACEPTADA` - Aceptada por Equipo Destino
+        * `RECHAZADA` - Rechazada por Equipo Destino
+        * `COMPLETADA` - Transferencia Completada
     EstadoVigenciaEnum:
       enum:
       - VIGENTE
@@ -7404,6 +8420,22 @@ components:
         * `CERRADA` - Cerrada
         * `ARCHIVADA` - Archivada
         * `NO_RATIFICADA` - No Ratificada
+    EtapaMedidaAplicableEnum:
+      enum:
+      - APERTURA
+      - INNOVACION
+      - PRORROGA
+      - CESE
+      - POST_CESE
+      - PROCESO
+      type: string
+      description: |-
+        * `APERTURA` - Apertura de Medida
+        * `INNOVACION` - Innovación de Medida
+        * `PRORROGA` - Prórroga de Medida
+        * `CESE` - Cese de Medida
+        * `POST_CESE` - Post-Cese
+        * `PROCESO` - En Proceso
     GeneroEnum:
       enum:
       - MASCULINO
@@ -8152,7 +9184,9 @@ components:
           type: integer
     PatchedTActividadPlanTrabajo:
       type: object
-      description: Serializer para actividades del plan de trabajo (PLTM-01).
+      description: |-
+        Serializer para actividades del plan de trabajo (PLTM-01 V2).
+        Actualizado con 8 estados y campos de visado.
       properties:
         id:
           type: integer
@@ -8165,17 +9199,12 @@ components:
           description: Tipo de actividad (catálogo configurable)
         tipo_actividad_info:
           allOf:
-          - $ref: '#/components/schemas/TTipoActividad'
+          - $ref: '#/components/schemas/TTipoActividadPlanTrabajo'
           readOnly: true
         subactividad:
           type: string
           description: Detalle específico de la subactividad
           maxLength: 200
-        actor:
-          type: string
-        actor_display:
-          type: string
-          readOnly: true
         fecha_planificacion:
           type: string
           format: date
@@ -8200,7 +9229,10 @@ components:
 
             * `PENDIENTE` - Pendiente
             * `EN_PROGRESO` - En Progreso
-            * `REALIZADA` - Realizada
+            * `COMPLETADA` - Completada
+            * `PENDIENTE_VISADO` - Pendiente de Visado
+            * `VISADO_CON_OBSERVACION` - Visado con Observación
+            * `VISADO_APROBADO` - Visado Aprobado
             * `CANCELADA` - Cancelada
             * `VENCIDA` - Vencida
         estado_display:
@@ -8215,7 +9247,7 @@ components:
           description: Usuario responsable principal de la actividad
         responsable_principal_info:
           allOf:
-          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          - $ref: '#/components/schemas/UsuarioBasico'
           readOnly: true
         responsables_secundarios:
           type: array
@@ -8225,7 +9257,7 @@ components:
         responsables_secundarios_info:
           type: array
           items:
-            $ref: '#/components/schemas/TCustomUserSerializerSimple'
+            $ref: '#/components/schemas/UsuarioBasico'
           readOnly: true
         referentes_externos:
           type: string
@@ -8245,6 +9277,24 @@ components:
         origen_display:
           type: string
           readOnly: true
+        visador:
+          type: integer
+          nullable: true
+          description: Usuario del equipo legal que realiza el visado
+        visador_info:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        fecha_visado:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp del visado
+        observaciones_visado:
+          type: string
+          nullable: true
+          description: Observaciones del equipo legal sobre la actividad
         es_borrador:
           type: boolean
           description: Si es True, la actividad está en modo borrador
@@ -8254,7 +9304,7 @@ components:
           description: Usuario que creó la actividad
         usuario_creacion_info:
           allOf:
-          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          - $ref: '#/components/schemas/UsuarioBasico'
           readOnly: true
         fecha_creacion:
           type: string
@@ -8689,7 +9739,7 @@ components:
           type: integer
           nullable: true
         tipo:
-          $ref: '#/components/schemas/TipoEnum'
+          $ref: '#/components/schemas/TLocalCentroVidaTipoEnum'
         activo:
           type: boolean
     PatchedTLocalizacion:
@@ -8897,6 +9947,103 @@ components:
         medico_tratamiento:
           type: integer
           nullable: true
+    PatchedTTipoOficio:
+      type: object
+      description: |-
+        Serializer para el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          description: 'Nombre del tipo de oficio (ej: Ratificación, Pedido Informe)'
+          maxLength: 100
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción detallada del tipo de oficio
+        activo:
+          type: boolean
+          description: Si el tipo de oficio está disponible para su uso
+        orden:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: Orden de visualización en dropdowns
+    PatchedTVinculoLegajoDetail:
+      type: object
+      description: |-
+        Serializer para detalle de vínculo (GET detail).
+        Incluye toda la información completa.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legajo_origen:
+          type: integer
+          description: Legajo desde el cual se origina el vínculo
+        legajo_origen_info:
+          type: string
+          readOnly: true
+        legajo_destino:
+          type: integer
+          nullable: true
+          description: Legajo vinculado (para HERMANOS, MISMO_CASO_JUDICIAL, TRANSFERENCIA)
+        medida_destino:
+          type: integer
+          nullable: true
+          description: Medida vinculada (para MEDIDAS_RELACIONADAS)
+        demanda_destino:
+          type: integer
+          nullable: true
+          description: Demanda vinculada (para vinculación en REG-01)
+        tipo_vinculo:
+          allOf:
+          - $ref: '#/components/schemas/TTipoVinculo'
+          readOnly: true
+        tipo_destino:
+          type: string
+          readOnly: true
+        destino_completo:
+          type: string
+          readOnly: true
+        justificacion:
+          type: string
+          description: Justificación obligatoria (min 20 caracteres)
+        activo:
+          type: boolean
+          description: False = vínculo desactivado (soft delete)
+        creado_por:
+          type: integer
+          description: Usuario que creó el vínculo
+        creado_por_info:
+          type: string
+          readOnly: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha de creación del vínculo
+        desvinculado_por:
+          type: integer
+          nullable: true
+          description: Usuario que desvinculó
+        desvinculado_por_info:
+          type: string
+          readOnly: true
+        desvinculado_en:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Fecha de desvinculación
+        justificacion_desvincular:
+          type: string
+          nullable: true
+          description: Justificación para desvincular (obligatoria si activo=False)
     PatchedTVulneracion:
       type: object
       properties:
@@ -9076,6 +10223,18 @@ components:
       required:
       - codigos_demanda
       - demanda_zona
+    ResponsableTipoEnum:
+      enum:
+      - EQUIPO_TECNICO
+      - JEFE_ZONAL
+      - DIRECTOR
+      - EQUIPO_LEGAL
+      type: string
+      description: |-
+        * `EQUIPO_TECNICO` - Equipo Técnico
+        * `JEFE_ZONAL` - Jefe Zonal
+        * `DIRECTOR` - Director
+        * `EQUIPO_LEGAL` - Equipo Legal
     SituacionDniEnum:
       enum:
       - EN_TRAMITE
@@ -9147,7 +10306,9 @@ components:
           nullable: true
     TActividadPlanTrabajo:
       type: object
-      description: Serializer para actividades del plan de trabajo (PLTM-01).
+      description: |-
+        Serializer para actividades del plan de trabajo (PLTM-01 V2).
+        Actualizado con 8 estados y campos de visado.
       properties:
         id:
           type: integer
@@ -9160,17 +10321,12 @@ components:
           description: Tipo de actividad (catálogo configurable)
         tipo_actividad_info:
           allOf:
-          - $ref: '#/components/schemas/TTipoActividad'
+          - $ref: '#/components/schemas/TTipoActividadPlanTrabajo'
           readOnly: true
         subactividad:
           type: string
           description: Detalle específico de la subactividad
           maxLength: 200
-        actor:
-          type: string
-        actor_display:
-          type: string
-          readOnly: true
         fecha_planificacion:
           type: string
           format: date
@@ -9195,7 +10351,10 @@ components:
 
             * `PENDIENTE` - Pendiente
             * `EN_PROGRESO` - En Progreso
-            * `REALIZADA` - Realizada
+            * `COMPLETADA` - Completada
+            * `PENDIENTE_VISADO` - Pendiente de Visado
+            * `VISADO_CON_OBSERVACION` - Visado con Observación
+            * `VISADO_APROBADO` - Visado Aprobado
             * `CANCELADA` - Cancelada
             * `VENCIDA` - Vencida
         estado_display:
@@ -9210,7 +10369,7 @@ components:
           description: Usuario responsable principal de la actividad
         responsable_principal_info:
           allOf:
-          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          - $ref: '#/components/schemas/UsuarioBasico'
           readOnly: true
         responsables_secundarios:
           type: array
@@ -9220,7 +10379,7 @@ components:
         responsables_secundarios_info:
           type: array
           items:
-            $ref: '#/components/schemas/TCustomUserSerializerSimple'
+            $ref: '#/components/schemas/UsuarioBasico'
           readOnly: true
         referentes_externos:
           type: string
@@ -9240,6 +10399,24 @@ components:
         origen_display:
           type: string
           readOnly: true
+        visador:
+          type: integer
+          nullable: true
+          description: Usuario del equipo legal que realiza el visado
+        visador_info:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        fecha_visado:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp del visado
+        observaciones_visado:
+          type: string
+          nullable: true
+          description: Observaciones del equipo legal sobre la actividad
         es_borrador:
           type: boolean
           description: Si es True, la actividad está en modo borrador
@@ -9249,7 +10426,7 @@ components:
           description: Usuario que creó la actividad
         usuario_creacion_info:
           allOf:
-          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          - $ref: '#/components/schemas/UsuarioBasico'
           readOnly: true
         fecha_creacion:
           type: string
@@ -9309,7 +10486,6 @@ components:
             type: string
           writeOnly: true
       required:
-      - actor_display
       - adjuntos
       - dias_restantes
       - esta_vencida
@@ -9320,6 +10496,7 @@ components:
       - fecha_inicio_real
       - fecha_modificacion
       - fecha_planificacion
+      - fecha_visado
       - id
       - origen_display
       - plan_trabajo
@@ -9333,18 +10510,25 @@ components:
       - usuario_creacion
       - usuario_creacion_info
       - usuario_modificacion
+      - visador_info
     TActividadPlanTrabajoEstadoEnum:
       enum:
       - PENDIENTE
       - EN_PROGRESO
-      - REALIZADA
+      - COMPLETADA
+      - PENDIENTE_VISADO
+      - VISADO_CON_OBSERVACION
+      - VISADO_APROBADO
       - CANCELADA
       - VENCIDA
       type: string
       description: |-
         * `PENDIENTE` - Pendiente
         * `EN_PROGRESO` - En Progreso
-        * `REALIZADA` - Realizada
+        * `COMPLETADA` - Completada
+        * `PENDIENTE_VISADO` - Pendiente de Visado
+        * `VISADO_CON_OBSERVACION` - Visado con Observación
+        * `VISADO_APROBADO` - Visado Aprobado
         * `CANCELADA` - Cancelada
         * `VENCIDA` - Vencida
     TActividadTipo:
@@ -9374,59 +10558,86 @@ components:
           nullable: true
     TAdjuntoActividad:
       type: object
-      description: Serializer para adjuntos de actividades.
+      description: |-
+        Serializer para adjuntos de actividades.
+        Soporta versionado y reemplazo de archivos.
+        PLTM-02 compliant.
       properties:
         id:
           type: integer
           readOnly: true
+        actividad:
+          type: integer
+          description: Actividad del plan de trabajo asociada
+        archivo:
+          type: string
+          format: uri
+          description: Archivo adjunto
+        nombre_original:
+          type: string
+          readOnly: true
+          description: Nombre original del archivo
+        tipo_mime:
+          type: string
+          readOnly: true
+          description: Tipo MIME del archivo
+        tamanio_bytes:
+          type: integer
+          readOnly: true
+          description: Tamaño del archivo en bytes
         tipo_adjunto:
           allOf:
-          - $ref: '#/components/schemas/TipoAdjunto39aEnum'
+          - $ref: '#/components/schemas/TipoAdjuntoCbeEnum'
           description: |-
-            Tipo de documento adjunto
+            Categoría del adjunto
 
-            * `ACTA_COMPROMISO` - Acta Compromiso
-            * `EVIDENCIA` - Evidencia
-            * `INFORME` - Informe
+            * `EVIDENCIA` - Evidencia de Ejecución
+            * `ACTA` - Acta de Reunión
+            * `ACTA_COMPROMISO` - Acta de Compromiso
+            * `INFORME` - Informe Técnico
             * `FOTO` - Fotografía
+            * `OFICIO` - Oficio Judicial
             * `OTRO` - Otro
         tipo_adjunto_display:
           type: string
           readOnly: true
-        archivo:
-          type: string
-          format: uri
-          description: Archivo adjunto (PDF, JPG, PNG, DOC, DOCX)
-        archivo_url:
-          type: string
+        version:
+          type: integer
           readOnly: true
-        descripcion:
-          type: string
+          description: Número de versión del adjunto
+        reemplaza_a:
+          type: integer
           nullable: true
-          description: Descripción del adjunto
-          maxLength: 255
-        fecha_carga:
+          description: Adjunto que reemplaza (versión anterior)
+        activo:
+          type: boolean
+          readOnly: true
+          description: False si fue reemplazado por otra versión
+        usuario_carga:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        fecha_subida:
           type: string
           format: date-time
           readOnly: true
-          description: Timestamp de carga del archivo
-        usuario_carga:
-          type: integer
-          readOnly: true
-          description: Usuario que subió el archivo
-        usuario_carga_info:
-          allOf:
-          - $ref: '#/components/schemas/TCustomUserSerializerSimple'
+          description: Fecha y hora de subida
+        archivo_url:
+          type: string
           readOnly: true
       required:
+      - actividad
+      - activo
       - archivo
       - archivo_url
-      - fecha_carga
+      - fecha_subida
       - id
-      - tipo_adjunto
+      - nombre_original
+      - tamanio_bytes
       - tipo_adjunto_display
+      - tipo_mime
       - usuario_carga
-      - usuario_carga_info
+      - version
     TBarrio:
       type: object
       properties:
@@ -9669,32 +10880,59 @@ components:
       - codigo
       - demanda
       - tipo_codigo
-    TCustomUserSerializerSimple:
+    TComentarioActividad:
       type: object
-      description: Simplified user serializer for nested use
+      description: |-
+        Serializer para comentarios en actividades.
+        Soporta @menciones automáticas usando regex r'@([\w.-]+)'
       properties:
         id:
           type: integer
           readOnly: true
-        username:
+        actividad:
+          type: integer
+          readOnly: true
+          description: Actividad del plan de trabajo asociada
+        autor:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        texto:
+          type: string
+          description: Texto del comentario. Soporta @menciones con formato @username
+        menciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha y hora de creación del comentario
+        editado:
+          type: boolean
+          readOnly: true
+          description: Indica si el comentario fue editado
+        fecha_edicion:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Fecha y hora de la última edición
+        notificaciones_enviadas:
           type: string
           readOnly: true
-          title: Nombre de usuario
-          description: Obligatorio. Longitud máxima de 150 caracteres. Solo puede
-            estar formado por letras, números y los caracteres @/./+/-/_.
-        full_name:
-          type: string
-          readOnly: true
-        email:
-          type: string
-          format: email
-          readOnly: true
-          title: Dirección de email
       required:
-      - email
-      - full_name
+      - actividad
+      - autor
+      - editado
+      - fecha_creacion
+      - fecha_edicion
       - id
-      - username
+      - menciones
+      - notificaciones_enviadas
+      - texto
     TCustomUserZona:
       type: object
       properties:
@@ -10400,9 +11638,67 @@ components:
       - id
       - nombre
       - situacion_salud_categoria
+    TEstadoEtapaMedida:
+      type: object
+      description: |-
+        Serializer para el catálogo TEstadoEtapaMedida.
+
+        Expone información sobre estados disponibles, responsables, y siguiente acción.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        codigo:
+          type: string
+          description: 'Código único del estado (ej: PENDIENTE_REGISTRO_INTERVENCION)'
+          maxLength: 50
+        nombre_display:
+          type: string
+          description: 'Nombre legible del estado (ej: (1) Pendiente de registro de
+            intervención)'
+          maxLength: 200
+        orden:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: Orden secuencial del estado (1-5)
+        responsable_tipo:
+          allOf:
+          - $ref: '#/components/schemas/ResponsableTipoEnum'
+          description: |-
+            Tipo de usuario responsable de este estado
+
+            * `EQUIPO_TECNICO` - Equipo Técnico
+            * `JEFE_ZONAL` - Jefe Zonal
+            * `DIRECTOR` - Director
+            * `EQUIPO_LEGAL` - Equipo Legal
+        siguiente_accion:
+          type: string
+          description: Descripción de la acción requerida para avanzar
+        aplica_a_tipos_medida:
+          description: 'Lista de tipos de medida: [''MPI'', ''MPE'', ''MPJ'']'
+        aplica_a_tipos_etapa:
+          description: 'Lista de etapas: [''APERTURA'', ''INNOVACION'', ''PRORROGA'',
+            ''CESE'', ''POST_CESE'', ''PROCESO'']'
+        activo:
+          type: boolean
+      required:
+      - codigo
+      - id
+      - nombre_display
+      - orden
+      - responsable_tipo
+      - siguiente_accion
     TEtapaMedida:
       type: object
-      description: Serializer para etapas de medida
+      description: |-
+        Serializer para etapas de medida.
+
+        Campos V2:
+        - tipo_etapa: APERTURA | INNOVACION | PRORROGA | CESE | POST_CESE
+        - estado_especifico: FK nested a TEstadoEtapaMedida
+        - estado_especifico_detalle: Información completa del estado (método)
       properties:
         id:
           type: integer
@@ -10412,17 +11708,45 @@ components:
           description: Nombre de la etapa
           maxLength: 100
         estado:
-          allOf:
-          - $ref: '#/components/schemas/TEtapaMedidaEstadoEnum'
+          nullable: true
           description: |-
-            Estado actual de la etapa
+            Estado actual de la etapa (deprecated - usar estado_especifico)
 
             * `PENDIENTE_REGISTRO_INTERVENCION` - (1) Pendiente de registro de intervención
             * `PENDIENTE_APROBACION_REGISTRO` - (2) Pendiente de aprobación de registro
             * `PENDIENTE_NOTA_AVAL` - (3) Pendiente de Nota de Aval
             * `PENDIENTE_INFORME_JURIDICO` - (4) Pendiente de Informe Jurídico
             * `PENDIENTE_RATIFICACION_JUDICIAL` - (5) Pendiente de ratificación judicial
+          oneOf:
+          - $ref: '#/components/schemas/TEtapaMedidaEstadoEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         estado_display:
+          type: string
+          readOnly: true
+        tipo_etapa:
+          nullable: true
+          description: |-
+            Tipo de etapa de la medida (V2)
+
+            * `APERTURA` - Apertura
+            * `INNOVACION` - Innovación
+            * `PRORROGA` - Prórroga
+            * `CESE` - Cese
+            * `POST_CESE` - Post-cese
+            * `PROCESO` - Proceso
+          oneOf:
+          - $ref: '#/components/schemas/TipoEtapaEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        tipo_etapa_display:
+          type: string
+          readOnly: true
+        estado_especifico:
+          allOf:
+          - $ref: '#/components/schemas/TEstadoEtapaMedida'
+          readOnly: true
+        estado_especifico_detalle:
           type: string
           readOnly: true
         fecha_inicio_estado:
@@ -10442,9 +11766,12 @@ components:
           description: Observaciones sobre el estado actual
       required:
       - estado_display
+      - estado_especifico
+      - estado_especifico_detalle
       - fecha_fin_estado
       - fecha_inicio_estado
       - id
+      - tipo_etapa_display
     TEtapaMedidaEstadoEnum:
       enum:
       - PENDIENTE_REGISTRO_INTERVENCION
@@ -10631,6 +11958,65 @@ components:
           readOnly: true
       required:
       - persona
+    THistorialActividadList:
+      type: object
+      description: Serializer simplificado para listado de historial
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tipo_accion:
+          allOf:
+          - $ref: '#/components/schemas/TipoAccionEnum'
+          readOnly: true
+          description: |-
+            Tipo de acción realizada
+
+            * `CREACION` - Creación de Actividad
+            * `CAMBIO_ESTADO` - Cambio de Estado
+            * `EDICION_CAMPOS` - Edición de Campos
+            * `REAPERTURA` - Reapertura de Actividad
+            * `ASIGNACION` - Asignación de Responsable
+            * `ADJUNTO_AGREGADO` - Adjunto Agregado
+            * `COMENTARIO` - Comentario Agregado
+            * `VISADO_APROBADO` - Visado Aprobado
+            * `VISADO_RECHAZADO` - Visado Rechazado
+            * `TRANSFERENCIA` - Transferencia de Equipo
+        tipo_accion_display:
+          type: string
+          readOnly: true
+        usuario:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        fecha_accion:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha y hora de la acción
+        estado_anterior:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Estado anterior de la actividad
+        estado_nuevo:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Estado nuevo de la actividad
+        motivo:
+          type: string
+          readOnly: true
+          description: Motivo de cancelación, reapertura u observaciones
+      required:
+      - estado_anterior
+      - estado_nuevo
+      - fecha_accion
+      - id
+      - motivo
+      - tipo_accion
+      - tipo_accion_display
+      - usuario
     TIndicadoresValoracion:
       type: object
       properties:
@@ -11058,12 +12444,26 @@ components:
           type: integer
           nullable: true
         tipo:
-          $ref: '#/components/schemas/TipoEnum'
+          $ref: '#/components/schemas/TLocalCentroVidaTipoEnum'
         activo:
           type: boolean
       required:
       - id
       - nombre
+    TLocalCentroVidaTipoEnum:
+      enum:
+      - HOGAR
+      - INSTITUCION
+      - FAMILIA_AMPLIADA
+      - FAMILIA_ACOGEDORA
+      - OTRO
+      type: string
+      description: |-
+        * `HOGAR` - Hogar Convivencial
+        * `INSTITUCION` - Institución
+        * `FAMILIA_AMPLIADA` - Familia Ampliada
+        * `FAMILIA_ACOGEDORA` - Familia Acogedora
+        * `OTRO` - Otro
     TLocalidad:
       type: object
       properties:
@@ -11289,7 +12689,11 @@ components:
       - nombre
     TMedida:
       type: object
-      description: Serializer principal para medidas
+      description: |-
+        Serializer principal para medidas.
+
+        Campos V2:
+        - fecha_cese_efectivo: Fecha de cese efectivo para MPE
       properties:
         id:
           type: integer
@@ -11334,6 +12738,11 @@ components:
           readOnly: true
           nullable: true
           description: Fecha de cierre de la medida
+        fecha_cese_efectivo:
+          type: string
+          format: date
+          nullable: true
+          description: Fecha efectiva de cese de la medida (MPE Post-cese)
         duracion_dias:
           type: integer
           readOnly: true
@@ -11383,6 +12792,110 @@ components:
       - id
       - juzgado
       - numero_medida
+      - tipo_medida
+      - tipo_medida_display
+      - urgencia
+    TMedidaAll:
+      type: object
+      description: |-
+        Serializer completo que incluye:
+        - Datos de medida (incluye legajo y NNyA)
+        - Intervención asociada
+        - Plan de trabajo con actividades
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        numero_medida:
+          type: string
+          description: 'Número de medida autogenerado (ej: MED-2025-001-MPE)'
+          maxLength: 50
+        tipo_medida:
+          allOf:
+          - $ref: '#/components/schemas/TipoMedidaEnum'
+          description: |-
+            Tipo de medida: MPI, MPE o MPJ
+
+            * `MPI` - Medida de Protección Integral
+            * `MPE` - Medida de Protección Excepcional
+            * `MPJ` - Medida Penal Juvenil
+        tipo_medida_display:
+          type: string
+          readOnly: true
+        estado_vigencia:
+          allOf:
+          - $ref: '#/components/schemas/EstadoVigenciaEnum'
+          description: |-
+            Estado de vigencia de la medida
+
+            * `VIGENTE` - Vigente
+            * `CERRADA` - Cerrada
+            * `ARCHIVADA` - Archivada
+            * `NO_RATIFICADA` - No Ratificada
+        estado_vigencia_display:
+          type: string
+          readOnly: true
+        fecha_apertura:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha de apertura de la medida
+        fecha_cierre:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha de cierre de la medida
+        duracion_dias:
+          type: integer
+          readOnly: true
+        juzgado:
+          type: string
+          readOnly: true
+        nro_sac:
+          type: string
+          nullable: true
+          description: Número SAC (Sistema de Administración de Causas)
+          maxLength: 50
+        urgencia:
+          type: string
+          readOnly: true
+        etapa_actual:
+          type: string
+          readOnly: true
+        legajo:
+          type: string
+          readOnly: true
+        creado_por:
+          type: string
+          readOnly: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+        fecha_modificacion:
+          type: string
+          format: date-time
+          readOnly: true
+        intervencion:
+          type: string
+          readOnly: true
+        plan_trabajo:
+          type: string
+          readOnly: true
+      required:
+      - creado_por
+      - duracion_dias
+      - estado_vigencia_display
+      - etapa_actual
+      - fecha_apertura
+      - fecha_creacion
+      - fecha_modificacion
+      - id
+      - intervencion
+      - juzgado
+      - legajo
+      - numero_medida
+      - plan_trabajo
       - tipo_medida
       - tipo_medida_display
       - urgencia
@@ -12296,25 +13809,15 @@ components:
       required:
       - id
       - nombre
-    TTipoActividad:
+    TTipoActividadPlanTrabajo:
       type: object
-      description: Serializer para tipos de actividad (catálogo).
+      description: |-
+        Serializer para tipos de actividad del plan de trabajo (catálogo).
+        V2: Actualizado con campos de tipo, aplicabilidad y visado.
+        V2.2: tipo_oficio cambiado de ENUM a ForeignKey.
       properties:
         id:
           type: integer
-          readOnly: true
-        actor:
-          allOf:
-          - $ref: '#/components/schemas/ActorEnum'
-          description: |-
-            Actor responsable de esta categoría de actividad
-
-            * `EQUIPO_TECNICO` - Equipo Técnico
-            * `EQUIPOS_RESIDENCIALES` - Equipos Residenciales
-            * `ADULTOS_INSTITUCION` - Adultos Responsables/Institución
-            * `EQUIPO_LEGAL` - Equipo de Legales
-        actor_display:
-          type: string
           readOnly: true
         nombre:
           type: string
@@ -12324,9 +13827,83 @@ components:
           type: string
           nullable: true
           description: Descripción detallada del tipo de actividad
+        tipo:
+          allOf:
+          - $ref: '#/components/schemas/TTipoActividadPlanTrabajoTipoEnum'
+          description: |-
+            Tipo de actividad: MANUAL o OFICIO
+
+            * `MANUAL` - Actividad Manual
+            * `OFICIO` - Actividad de Oficio Judicial
+        tipo_display:
+          type: string
+          readOnly: true
+        tipo_oficio:
+          type: integer
+          nullable: true
+          description: Tipo de oficio judicial (solo si tipo=OFICIO)
+        tipo_oficio_detalle:
+          allOf:
+          - $ref: '#/components/schemas/TTipoOficio'
+          readOnly: true
+        tipo_medida_aplicable:
+          nullable: true
+          description: |-
+            Tipo de medida aplicable (opcional: MPI/MPE/MPJ)
+
+            * `MPI` - Medida de Protección Integral
+            * `MPE` - Medida de Protección Excepcional
+            * `MPJ` - Medida Penal Juvenil
+          oneOf:
+          - $ref: '#/components/schemas/TipoMedidaAplicableEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        tipo_medida_aplicable_display:
+          type: string
+          readOnly: true
+        etapa_medida_aplicable:
+          nullable: true
+          description: |-
+            Etapa de medida aplicable (opcional)
+
+            * `APERTURA` - Apertura de Medida
+            * `INNOVACION` - Innovación de Medida
+            * `PRORROGA` - Prórroga de Medida
+            * `CESE` - Cese de Medida
+            * `POST_CESE` - Post-Cese
+            * `PROCESO` - En Proceso
+          oneOf:
+          - $ref: '#/components/schemas/EtapaMedidaAplicableEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        etapa_medida_aplicable_display:
+          type: string
+          readOnly: true
         requiere_evidencia:
           type: boolean
           description: Si es True, cerrar la actividad exige adjuntos obligatorios
+        requiere_visado_legales:
+          type: boolean
+          description: Si es True, al completarse requiere visado del equipo legal
+        plazo_dias:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+          description: Plazo en días para completar la actividad (opcional)
+        permite_gestion_grupal:
+          type: boolean
+          description: Si es True, permite crear una única actividad para múltiples
+            NNyA
+        plantilla_adjunta:
+          type: string
+          format: uri
+          nullable: true
+          description: Archivo plantilla para esta actividad (opcional)
+        plantilla_adjunta_url:
+          type: string
+          readOnly: true
         activo:
           type: boolean
           description: Indica si este tipo está disponible para selección
@@ -12341,11 +13918,177 @@ components:
           format: date-time
           readOnly: true
       required:
-      - actor
-      - actor_display
+      - etapa_medida_aplicable_display
       - fecha_creacion
       - id
       - nombre
+      - plantilla_adjunta_url
+      - tipo_display
+      - tipo_medida_aplicable_display
+      - tipo_oficio_detalle
+    TTipoActividadPlanTrabajoTipoEnum:
+      enum:
+      - MANUAL
+      - OFICIO
+      type: string
+      description: |-
+        * `MANUAL` - Actividad Manual
+        * `OFICIO` - Actividad de Oficio Judicial
+    TTipoOficio:
+      type: object
+      description: |-
+        Serializer para el catálogo de tipos de oficios judiciales.
+        PLTM-01 V2
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          description: 'Nombre del tipo de oficio (ej: Ratificación, Pedido Informe)'
+          maxLength: 100
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción detallada del tipo de oficio
+        activo:
+          type: boolean
+          description: Si el tipo de oficio está disponible para su uso
+        orden:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: Orden de visualización en dropdowns
+      required:
+      - id
+      - nombre
+    TTipoVinculo:
+      type: object
+      description: |-
+        Serializer de solo lectura para tipos de vínculo.
+        Usado en listados y selects del frontend.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        codigo:
+          type: string
+          readOnly: true
+          description: Código único del tipo de vínculo
+        nombre:
+          type: string
+          readOnly: true
+          description: Nombre descriptivo del tipo de vínculo
+        descripcion:
+          type: string
+          readOnly: true
+          description: Descripción detallada del tipo de vínculo
+        activo:
+          type: boolean
+          readOnly: true
+          description: Si el tipo de vínculo está activo
+      required:
+      - activo
+      - codigo
+      - descripcion
+      - id
+      - nombre
+    TTransferenciaActividad:
+      type: object
+      description: |-
+        Serializer para transferencias de actividades entre equipos.
+        Valida permisos (nivel 3+) y motivo (min 15 caracteres).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        actividad:
+          type: integer
+          readOnly: true
+          description: Actividad transferida
+        equipo_origen:
+          type: integer
+          readOnly: true
+          description: Equipo que transfiere la actividad
+        equipo_origen_info:
+          allOf:
+          - $ref: '#/components/schemas/EquipoBasico'
+          readOnly: true
+        equipo_destino:
+          type: integer
+          description: Equipo que recibe la actividad
+        equipo_destino_info:
+          allOf:
+          - $ref: '#/components/schemas/EquipoBasico'
+          readOnly: true
+        responsable_anterior:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Responsable anterior de la actividad
+        responsable_anterior_info:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        responsable_nuevo:
+          type: integer
+          nullable: true
+          description: Nuevo responsable asignado (puede ser null si el JZ del equipo
+            destino asigna después)
+        responsable_nuevo_info:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        transferido_por:
+          type: integer
+          readOnly: true
+          description: Usuario JZ/Director que autorizó la transferencia
+        transferido_por_info:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioBasico'
+          readOnly: true
+        fecha_transferencia:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha y hora de la transferencia
+        motivo:
+          type: string
+          description: 'Motivo de la transferencia (ej: ''Competencia técnica específica
+            del equipo X'')'
+        estado_transferencia:
+          allOf:
+          - $ref: '#/components/schemas/EstadoTransferenciaEnum'
+          description: |-
+            Estado del proceso de transferencia
+
+            * `PENDIENTE` - Pendiente de Aceptación
+            * `ACEPTADA` - Aceptada por Equipo Destino
+            * `RECHAZADA` - Rechazada por Equipo Destino
+            * `COMPLETADA` - Transferencia Completada
+        estado_transferencia_display:
+          type: string
+          readOnly: true
+        observaciones:
+          type: string
+          description: Observaciones del equipo destino (en caso de rechazo o aceptación
+            condicionada)
+      required:
+      - actividad
+      - equipo_destino
+      - equipo_destino_info
+      - equipo_origen
+      - equipo_origen_info
+      - estado_transferencia_display
+      - fecha_transferencia
+      - id
+      - motivo
+      - responsable_anterior
+      - responsable_anterior_info
+      - responsable_nuevo_info
+      - transferido_por
+      - transferido_por_info
     TValoracion:
       type: object
       properties:
@@ -12355,6 +14098,193 @@ components:
           type: boolean
       required:
       - indicador
+    TVinculoLegajoCreate:
+      type: object
+      description: |-
+        Serializer para crear vínculos (POST).
+        Incluye validaciones de negocio.
+      properties:
+        legajo_origen:
+          type: integer
+          description: Legajo desde el cual se origina el vínculo
+        legajo_destino:
+          type: integer
+          nullable: true
+          description: Legajo vinculado (para HERMANOS, MISMO_CASO_JUDICIAL, TRANSFERENCIA)
+        medida_destino:
+          type: integer
+          nullable: true
+          description: Medida vinculada (para MEDIDAS_RELACIONADAS)
+        demanda_destino:
+          type: integer
+          nullable: true
+          description: Demanda vinculada (para vinculación en REG-01)
+        tipo_vinculo:
+          type: integer
+          description: Tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)
+        justificacion:
+          type: string
+          description: Justificación obligatoria (min 20 caracteres)
+      required:
+      - justificacion
+      - legajo_origen
+      - tipo_vinculo
+    TVinculoLegajoDetail:
+      type: object
+      description: |-
+        Serializer para detalle de vínculo (GET detail).
+        Incluye toda la información completa.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legajo_origen:
+          type: integer
+          description: Legajo desde el cual se origina el vínculo
+        legajo_origen_info:
+          type: string
+          readOnly: true
+        legajo_destino:
+          type: integer
+          nullable: true
+          description: Legajo vinculado (para HERMANOS, MISMO_CASO_JUDICIAL, TRANSFERENCIA)
+        medida_destino:
+          type: integer
+          nullable: true
+          description: Medida vinculada (para MEDIDAS_RELACIONADAS)
+        demanda_destino:
+          type: integer
+          nullable: true
+          description: Demanda vinculada (para vinculación en REG-01)
+        tipo_vinculo:
+          allOf:
+          - $ref: '#/components/schemas/TTipoVinculo'
+          readOnly: true
+        tipo_destino:
+          type: string
+          readOnly: true
+        destino_completo:
+          type: string
+          readOnly: true
+        justificacion:
+          type: string
+          description: Justificación obligatoria (min 20 caracteres)
+        activo:
+          type: boolean
+          description: False = vínculo desactivado (soft delete)
+        creado_por:
+          type: integer
+          description: Usuario que creó el vínculo
+        creado_por_info:
+          type: string
+          readOnly: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha de creación del vínculo
+        desvinculado_por:
+          type: integer
+          nullable: true
+          description: Usuario que desvinculó
+        desvinculado_por_info:
+          type: string
+          readOnly: true
+        desvinculado_en:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Fecha de desvinculación
+        justificacion_desvincular:
+          type: string
+          nullable: true
+          description: Justificación para desvincular (obligatoria si activo=False)
+      required:
+      - creado_en
+      - creado_por
+      - creado_por_info
+      - destino_completo
+      - desvinculado_en
+      - desvinculado_por_info
+      - id
+      - justificacion
+      - legajo_origen
+      - legajo_origen_info
+      - tipo_destino
+      - tipo_vinculo
+    TVinculoLegajoList:
+      type: object
+      description: |-
+        Serializer para listado de vínculos (GET list).
+        Incluye representaciones anidadas simples de entidades relacionadas.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legajo_origen:
+          type: integer
+          description: Legajo desde el cual se origina el vínculo
+        legajo_origen_numero:
+          type: string
+          readOnly: true
+        tipo_vinculo:
+          allOf:
+          - $ref: '#/components/schemas/TTipoVinculo'
+          readOnly: true
+        tipo_destino:
+          type: string
+          readOnly: true
+        destino_info:
+          type: string
+          readOnly: true
+        justificacion:
+          type: string
+          description: Justificación obligatoria (min 20 caracteres)
+        activo:
+          type: boolean
+          description: False = vínculo desactivado (soft delete)
+        creado_por:
+          type: integer
+          description: Usuario que creó el vínculo
+        creado_por_username:
+          type: string
+          readOnly: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha de creación del vínculo
+        desvinculado_por:
+          type: integer
+          nullable: true
+          description: Usuario que desvinculó
+        desvinculado_por_username:
+          type: string
+          readOnly: true
+        desvinculado_en:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Fecha de desvinculación
+        justificacion_desvincular:
+          type: string
+          nullable: true
+          description: Justificación para desvincular (obligatoria si activo=False)
+      required:
+      - creado_en
+      - creado_por
+      - creado_por_username
+      - destino_info
+      - desvinculado_en
+      - desvinculado_por_username
+      - id
+      - justificacion
+      - legajo_origen
+      - legajo_origen_numero
+      - tipo_destino
+      - tipo_vinculo
     TVulneracion:
       type: object
       properties:
@@ -12526,19 +14456,47 @@ components:
       required:
       - id
       - nombre
-    TipoAdjunto39aEnum:
+    TipoAccionEnum:
       enum:
-      - ACTA_COMPROMISO
+      - CREACION
+      - CAMBIO_ESTADO
+      - EDICION_CAMPOS
+      - REAPERTURA
+      - ASIGNACION
+      - ADJUNTO_AGREGADO
+      - COMENTARIO
+      - VISADO_APROBADO
+      - VISADO_RECHAZADO
+      - TRANSFERENCIA
+      type: string
+      description: |-
+        * `CREACION` - Creación de Actividad
+        * `CAMBIO_ESTADO` - Cambio de Estado
+        * `EDICION_CAMPOS` - Edición de Campos
+        * `REAPERTURA` - Reapertura de Actividad
+        * `ASIGNACION` - Asignación de Responsable
+        * `ADJUNTO_AGREGADO` - Adjunto Agregado
+        * `COMENTARIO` - Comentario Agregado
+        * `VISADO_APROBADO` - Visado Aprobado
+        * `VISADO_RECHAZADO` - Visado Rechazado
+        * `TRANSFERENCIA` - Transferencia de Equipo
+    TipoAdjuntoCbeEnum:
+      enum:
       - EVIDENCIA
+      - ACTA
+      - ACTA_COMPROMISO
       - INFORME
       - FOTO
+      - OFICIO
       - OTRO
       type: string
       description: |-
-        * `ACTA_COMPROMISO` - Acta Compromiso
-        * `EVIDENCIA` - Evidencia
-        * `INFORME` - Informe
+        * `EVIDENCIA` - Evidencia de Ejecución
+        * `ACTA` - Acta de Reunión
+        * `ACTA_COMPROMISO` - Acta de Compromiso
+        * `INFORME` - Informe Técnico
         * `FOTO` - Fotografía
+        * `OFICIO` - Oficio Judicial
         * `OTRO` - Otro
     TipoCalleEnum:
       enum:
@@ -12556,20 +14514,6 @@ components:
         * `RUTA` - Ruta
         * `BOULEVARD` - Boulevard
         * `OTRO` - Otro
-    TipoEnum:
-      enum:
-      - HOGAR
-      - INSTITUCION
-      - FAMILIA_AMPLIADA
-      - FAMILIA_ACOGEDORA
-      - OTRO
-      type: string
-      description: |-
-        * `HOGAR` - Hogar Convivencial
-        * `INSTITUCION` - Institución
-        * `FAMILIA_AMPLIADA` - Familia Ampliada
-        * `FAMILIA_ACOGEDORA` - Familia Acogedora
-        * `OTRO` - Otro
     TipoEscuelaEnum:
       enum:
       - PUBLICA
@@ -12586,6 +14530,32 @@ components:
         * `COMUN` - Común
         * `ESPECIAL` - Especial
         * `OTRO` - Otro
+    TipoEtapaEnum:
+      enum:
+      - APERTURA
+      - INNOVACION
+      - PRORROGA
+      - CESE
+      - POST_CESE
+      - PROCESO
+      type: string
+      description: |-
+        * `APERTURA` - Apertura
+        * `INNOVACION` - Innovación
+        * `PRORROGA` - Prórroga
+        * `CESE` - Cese
+        * `POST_CESE` - Post-cese
+        * `PROCESO` - Proceso
+    TipoMedidaAplicableEnum:
+      enum:
+      - MPI
+      - MPE
+      - MPJ
+      type: string
+      description: |-
+        * `MPI` - Medida de Protección Integral
+        * `MPE` - Medida de Protección Excepcional
+        * `MPJ` - Medida Penal Juvenil
     TipoMedidaEnum:
       enum:
       - MPI
@@ -12660,6 +14630,27 @@ components:
         * `CUARTO_SECUNDARIO` - Cuarto Secundario
         * `QUINTO_SECUNDARIO` - Quinto Secundario
         * `OTRO` - Otro
+    UsuarioBasico:
+      type: object
+      description: Serializer básico para usuario (reutilizable)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima de 150 caracteres. Solo puede
+            estar formado por letras, números y los caracteres @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        nombre_completo:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - nombre_completo
+      - username
     VinculoDemandaEnum:
       enum:
       - NNYA_PRINCIPAL

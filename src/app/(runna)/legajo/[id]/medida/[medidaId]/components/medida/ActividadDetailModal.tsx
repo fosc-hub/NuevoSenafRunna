@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -12,266 +12,298 @@ import {
   IconButton,
   Chip,
   Divider,
-  Grid,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Link
+  Tabs,
+  Tab,
+  Alert
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import InfoIcon from '@mui/icons-material/Info'
+import CommentIcon from '@mui/icons-material/Comment'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
-import PersonIcon from '@mui/icons-material/Person'
-import GroupIcon from '@mui/icons-material/Group'
-import EventIcon from '@mui/icons-material/Event'
-import DescriptionIcon from '@mui/icons-material/Description'
+import HistoryIcon from '@mui/icons-material/History'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import type { TActividadPlanTrabajo } from '../../types/actividades'
+
+// Import custom hooks
+import { useActividadPermissions } from '../../hooks/useActividadPermissions'
+import { useActividadActions } from '../../hooks/useActividadActions'
+
+// Import all components
+import { EditableFields } from './actividad/EditableFields'
+import { ResponsablesSection } from './actividad/ResponsablesSection'
+import { QuickLinksSection } from './actividad/QuickLinksSection'
+import { CambiarEstadoSection } from './actividad/CambiarEstadoSection'
+import { ReabrirButton } from './actividad/ReabrirButton'
+import { TransferirDialog } from './actividad/TransferirDialog'
+import { VisarButton } from './actividad/VisarButton'
+import { ComentariosTab } from './actividad/ComentariosTab'
+import { EvidenciasTab } from './actividad/EvidenciasTab'
+import { HistorialTab } from './actividad/HistorialTab'
+import { TransferenciasTab } from './actividad/TransferenciasTab'
 
 interface ActividadDetailModalProps {
   open: boolean
   onClose: () => void
   actividad: TActividadPlanTrabajo
+  legajoId?: number
+  medidaId?: number
   onUpdate?: () => void
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode
+  index: number
+  value: number
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+  return (
+    <div role="tabpanel" hidden={value !== index}>
+      {value === index && <Box sx={{ py: 2 }}>{children}</Box>}
+    </div>
+  )
 }
 
 export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
   open,
   onClose,
   actividad,
+  legajoId,
+  medidaId,
   onUpdate
 }) => {
-  const getEstadoColor = (estado: string) => {
+  const [currentTab, setCurrentTab] = useState(0)
+
+  // Hooks for permissions and actions
+  const permissions = useActividadPermissions(actividad)
+  const actions = useActividadActions()
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue)
+  }
+
+  const handleSuccess = () => {
+    if (onUpdate) onUpdate()
+  }
+
+  const getEstadoColor = (estado: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
     const colors: Record<string, any> = {
-      'PENDIENTE': { backgroundColor: '#ff9800', color: 'white' },
-      'EN_PROGRESO': { backgroundColor: '#2196f3', color: 'white' },
-      'REALIZADA': { backgroundColor: '#4caf50', color: 'white' },
-      'CANCELADA': { backgroundColor: '#f44336', color: 'white' },
-      'VENCIDA': { backgroundColor: '#9e9e9e', color: 'white' }
+      'PENDIENTE': 'warning',
+      'EN_PROGRESO': 'info',
+      'COMPLETADA': 'success',
+      'CANCELADA': 'error',
+      'VENCIDA': 'default',
+      'PENDIENTE_VISADO': 'secondary',
+      'VISADO_APROBADO': 'success',
+      'VISADO_CON_OBSERVACION': 'warning'
     }
-    return colors[estado] || { backgroundColor: '#9e9e9e', color: 'white' }
+    return colors[estado] || 'default'
   }
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      PaperProps={{ sx: { borderRadius: 2, maxHeight: '90vh' } }}
     >
+      {/* Header */}
       <DialogTitle sx={{
-        textAlign: 'center',
-        fontWeight: 600,
-        fontSize: '1.5rem',
         position: 'relative',
-        pb: 1,
+        pb: 2,
         borderBottom: '1px solid #e0e0e0'
       }}>
-        Detalle de Actividad
-        <IconButton
-          onClick={onClose}
-          sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent sx={{ px: 4, py: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Header with Estado and Dias Restantes */}
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" fontWeight={600}>
+              {actividad.nombre}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {actividad.tipo_actividad_info?.nombre || 'Actividad'}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Chip
               label={actividad.estado_display}
-              sx={{
-                ...getEstadoColor(actividad.estado),
-                fontWeight: 500,
-                fontSize: '0.875rem'
-              }}
+              color={getEstadoColor(actividad.estado)}
+              size="small"
             />
-            <Chip
-              label={`${actividad.dias_restantes} días restantes`}
-              color={actividad.esta_vencida ? 'error' : 'default'}
-            />
-            {actividad.es_borrador && (
+            {actividad.esta_vencida && (
               <Chip
-                label="BORRADOR"
-                variant="outlined"
-                color="warning"
+                label="VENCIDA"
+                color="error"
+                size="small"
               />
             )}
-            {actividad.origen !== 'MANUAL' && (
-              <Chip
-                label={`Origen: ${actividad.origen_display}`}
-                variant="outlined"
-                color="info"
-              />
-            )}
-          </Box>
-
-          <Divider />
-
-          {/* Tipo y Subactividad */}
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              {actividad.tipo_actividad_info.nombre}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {actividad.subactividad}
-            </Typography>
-            <Typography variant="caption" color="primary">
-              {actividad.actor_display}
-            </Typography>
-          </Box>
-
-          {/* Descripción */}
-          {actividad.descripcion && (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                <DescriptionIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                Descripción
-              </Typography>
-              <Typography variant="body2">{actividad.descripcion}</Typography>
-            </Box>
-          )}
-
-          {/* Fechas */}
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  <EventIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                  Fecha Planificación
-                </Typography>
-                <Typography variant="body2">
-                  {new Date(actividad.fecha_planificacion).toLocaleDateString('es-ES', {
-                    dateStyle: 'medium'
-                  })}
-                </Typography>
-              </Box>
-            </Grid>
-            {actividad.fecha_inicio_real && (
-              <Grid item xs={12} sm={6}>
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>Fecha Inicio Real</Typography>
-                  <Typography variant="body2">
-                    {new Date(actividad.fecha_inicio_real).toLocaleDateString('es-ES', {
-                      dateStyle: 'medium'
-                    })}
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-            {actividad.fecha_finalizacion_real && (
-              <Grid item xs={12} sm={6}>
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>Fecha Finalización Real</Typography>
-                  <Typography variant="body2">
-                    {new Date(actividad.fecha_finalizacion_real).toLocaleDateString('es-ES', {
-                      dateStyle: 'medium'
-                    })}
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-
-          {/* Responsables */}
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              <PersonIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-              Responsable Principal
-            </Typography>
-            <Typography variant="body2">{actividad.responsable_principal_info.full_name}</Typography>
-
-            {actividad.responsables_secundarios_info && actividad.responsables_secundarios_info.length > 0 && (
-              <>
-                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-                  <GroupIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                  Responsables Secundarios
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {actividad.responsables_secundarios_info.map(resp => (
-                    <Chip
-                      key={resp.id}
-                      label={resp.full_name}
-                      size="small"
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
-              </>
-            )}
-          </Box>
-
-          {/* Referentes Externos */}
-          {actividad.referentes_externos && (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>Referentes Externos</Typography>
-              <Typography variant="body2">{actividad.referentes_externos}</Typography>
-            </Box>
-          )}
-
-          {/* Adjuntos */}
-          {actividad.adjuntos && actividad.adjuntos.length > 0 && (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                <AttachFileIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                Adjuntos ({actividad.adjuntos.length})
-              </Typography>
-              <List dense>
-                {actividad.adjuntos.map((adjunto) => (
-                  <ListItem key={adjunto.id}>
-                    <ListItemIcon>
-                      <AttachFileIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Link href={adjunto.archivo_url} target="_blank" rel="noopener">
-                          {adjunto.archivo.split('/').pop()}
-                        </Link>
-                      }
-                      secondary={`${adjunto.tipo_adjunto_display} - ${new Date(adjunto.fecha_carga).toLocaleDateString('es-ES')}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-
-          {/* Cancelación */}
-          {actividad.estado === 'CANCELADA' && actividad.motivo_cancelacion && (
-            <Box sx={{ bgcolor: 'error.light', p: 2, borderRadius: 1 }}>
-              <Typography variant="subtitle2" gutterBottom>Motivo de Cancelación</Typography>
-              <Typography variant="body2">{actividad.motivo_cancelacion}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Cancelada el {new Date(actividad.fecha_cancelacion!).toLocaleDateString('es-ES')}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Auditoría */}
-          <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1 }}>
-            <Typography variant="caption" color="text.secondary">
-              Creada por {actividad.usuario_creacion_info.full_name} el{' '}
-              {new Date(actividad.fecha_creacion).toLocaleString('es-ES', {
-                dateStyle: 'medium',
-                timeStyle: 'short'
-              })}
-            </Typography>
-            {actividad.fecha_modificacion !== actividad.fecha_creacion && (
-              <Typography variant="caption" color="text.secondary" display="block">
-                Última modificación: {new Date(actividad.fecha_modificacion).toLocaleString('es-ES', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short'
-                })}
-              </Typography>
-            )}
+            <IconButton
+              onClick={onClose}
+              size="small"
+              sx={{ color: 'grey.500' }}
+            >
+              <CloseIcon />
+            </IconButton>
           </Box>
         </Box>
+      </DialogTitle>
+
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+        <Tabs value={currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+          <Tab icon={<InfoIcon />} label="Detalle" iconPosition="start" />
+          <Tab icon={<CommentIcon />} label="Comentarios" iconPosition="start" />
+          <Tab icon={<AttachFileIcon />} label="Adjuntos" iconPosition="start" />
+          <Tab icon={<HistoryIcon />} label="Historial" iconPosition="start" />
+          <Tab icon={<SwapHorizIcon />} label="Transferencias" iconPosition="start" />
+        </Tabs>
+      </Box>
+
+      {/* Content */}
+      <DialogContent sx={{ px: 3, py: 2, minHeight: 400 }}>
+        {/* Tab: Detalle */}
+        <TabPanel value={currentTab} index={0}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Quick Links */}
+            {legajoId && medidaId && (
+              <QuickLinksSection
+                actividad={actividad}
+                legajoId={legajoId}
+                medidaId={medidaId}
+              />
+            )}
+
+            {/* Editable Fields */}
+            <EditableFields
+              actividad={actividad}
+              canEdit={permissions.canEdit}
+              onSave={async (updatedFields) => {
+                // TODO: Implement update actividad fields API call
+                console.log('Update fields:', updatedFields)
+                return null
+              }}
+              loading={actions.loading}
+              onSuccess={handleSuccess}
+            />
+
+            {/* Responsables */}
+            <ResponsablesSection
+              actividad={actividad}
+              canEdit={permissions.canEdit}
+              onAsignarResponsable={async (usuarioId, esPrincipal) => {
+                // TODO: Implement assign responsable API call
+                console.log('Assign responsable:', usuarioId, esPrincipal)
+                return null
+              }}
+              onRemoverResponsable={async (usuarioId) => {
+                // TODO: Implement remove responsable API call
+                console.log('Remove responsable:', usuarioId)
+                return null
+              }}
+              loading={actions.loading}
+              onSuccess={handleSuccess}
+            />
+
+            {/* Info Alert for locked states */}
+            {permissions.isLocked && !permissions.canReopen && (
+              <Alert severity="info">
+                Esta actividad está cerrada. Solo usuarios con permisos de Jefe Zonal, Director o Administrador pueden reabrirla.
+              </Alert>
+            )}
+          </Box>
+        </TabPanel>
+
+        {/* Tab: Comentarios */}
+        <TabPanel value={currentTab} index={1}>
+          <ComentariosTab
+            actividadId={actividad.id}
+            comentarios={actividad.comentarios || []}
+            onAgregarComentario={(texto) => actions.agregarComentario(actividad.id, { texto })}
+            loading={actions.loading}
+          />
+        </TabPanel>
+
+        {/* Tab: Adjuntos */}
+        <TabPanel value={currentTab} index={2}>
+          <EvidenciasTab
+            actividadId={actividad.id}
+            adjuntos={actividad.adjuntos || []}
+            canEdit={permissions.canEdit}
+            onSuccess={handleSuccess}
+          />
+        </TabPanel>
+
+        {/* Tab: Historial */}
+        <TabPanel value={currentTab} index={3}>
+          <HistorialTab
+            actividadId={actividad.id}
+            onGetHistorial={() => actions.getHistorial(actividad.id, {})}
+            loading={actions.loading}
+          />
+        </TabPanel>
+
+        {/* Tab: Transferencias */}
+        <TabPanel value={currentTab} index={4}>
+          <TransferenciasTab
+            actividadId={actividad.id}
+            onGetTransferencias={() => actions.getTransferencias(actividad.id)}
+            loading={actions.loading}
+          />
+        </TabPanel>
       </DialogContent>
 
-      <DialogActions sx={{ px: 4, pb: 3, pt: 2 }}>
-        <Button onClick={onClose} variant="contained" fullWidth>
+      {/* Actions */}
+      <Divider />
+      <DialogActions sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {/* State Change */}
+          <CambiarEstadoSection
+            actividad={actividad}
+            canEdit={permissions.canEdit}
+            onSuccess={handleSuccess}
+            onCambiarEstado={(nuevoEstado, motivo) =>
+              actions.cambiarEstado(actividad.id, { nuevo_estado: nuevoEstado, motivo })
+            }
+            loading={actions.loading}
+          />
+
+          {/* Legal Approval */}
+          <VisarButton
+            actividadId={actividad.id}
+            canVisar={permissions.canVisar}
+            onVisar={(aprobado, observaciones) =>
+              actions.visar(actividad.id, { aprobado, observaciones })
+            }
+            loading={actions.loading}
+          />
+
+          {/* Transfer */}
+          <TransferirDialog
+            actividad={actividad}
+            canTransfer={permissions.canTransfer}
+            onTransferir={(equipoDestinoId, responsableNuevoId, motivo) =>
+              actions.transferir(actividad.id, {
+                equipo_destino: equipoDestinoId,
+                responsable_nuevo: responsableNuevoId,
+                motivo
+              })
+            }
+            loading={actions.loading}
+            onSuccess={handleSuccess}
+          />
+
+          {/* Reopen */}
+          <ReabrirButton
+            actividad={actividad}
+            canReopen={permissions.canReopen}
+            onReabrir={(motivo, nuevoEstado) =>
+              actions.reabrir(actividad.id, { motivo, nuevo_estado: nuevoEstado })
+            }
+            loading={actions.loading}
+            onSuccess={handleSuccess}
+          />
+        </Box>
+
+        <Button onClick={onClose} variant="outlined">
           Cerrar
         </Button>
       </DialogActions>

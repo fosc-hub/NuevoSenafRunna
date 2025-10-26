@@ -1,46 +1,55 @@
-# LEG-01: Reconocimiento de Existencia de Legajo
+# LEG-01: Reconocimiento de Existencia de Legajo y Vinculación Justificada
 
 ## Historia de Usuario
 
 **Como** usuario encargado de registro de (1) una demanda cualquiera y/o (2) de una demanda judicial con legajo previo
-**Quiero** detectar información previa de Legajo
-**Para** pre-completar el nuevo registro de demanda, y a la vez, estar correctamente informado sobre los datos existentes en el Sistema
+**Quiero** detectar información previa de Legajo Y vincular legajos con demandas/medidas/otros legajos con justificación obligatoria
+**Para** pre-completar el nuevo registro de demanda, estar correctamente informado sobre los datos existentes en el Sistema, y gestionar grupos de casos relacionados (hermanos, mismo caso judicial, medidas vinculadas)
 
 ---
 
-## Contexto del Sistema
+## Contexto Técnico
 
-### Integración con REG-01 (Wizard de Registro de Demanda)
+### Integración Arquitectónica
 
-Esta funcionalidad se integra directamente con el proceso de registro de demandas (REG-01), que es un wizard de 3 pasos:
+LEG-01 es una **dependencia crítica** para múltiples stories del sistema:
 
-1. **Paso 1**: Información General de la demanda
-2. **Paso 2**: Adultos Convivientes
-3. **Paso 3**: Niños y Adolescentes (**DONDE SE EJECUTA LEG-01**)
+- **REG-01** (Registro de Demanda): Pre-carga de datos de legajo existente + vinculación de demanda con múltiples legajos
+- **MED-01** (Registro de Medida): Vinculación de medidas relacionadas (hermanos, innovación)
+- **PLTM-01** (Plan de Trabajo): Actividades sobre grupos de medidas vinculadas (`permite_gestion_grupal=True`)
+- **PLTM-02** (Acción sobre Actividad): Acciones sobre grupos de medidas vinculadas
+- **BE-06** (Gestión de Legajo): Transferencias de legajos con vínculos preservados
+- **LEG-04** (Detalle de Legajo): Visualización de vínculos en detalle de legajo
 
-### Objetivo Principal
+### Estado de Implementación
 
-Evitar la creación de legajos duplicados en el sistema, asegurando que cuando se registra información de un NNyA (Niño, Niña o Adolescente), el sistema detecte automáticamente si ya existe un legajo asociado a esa persona.
+- ✅ **Detección de Duplicados**: Implementada en REG-01 Paso 3 (algoritmo de scoring)
+- ❌ **Vinculación Justificada**: NO implementada (requiere modelo `TVinculoLegajo`)
+- ✅ **Modelos Base**: `TLegajo`, `TMedida`, `TDemanda` implementados
+- ⚠️ **Campo `permite_gestion_grupal`**: Implementado en `TActividadPlanTrabajo` pero SIN usar
 
-### Principio Fundamental
+### Prerrequisitos Técnicos
 
-**El Legajo debe ser único por NNyA y viceversa.**
+- ✅ LEG-02 (Registro de Legajo) implementado
+- ✅ MED-01 (Registro de Medida) implementado
+- ⚠️ REG-01 (Registro de Demanda) implementado parcialmente SIN vinculaciones
+- ⚠️ PLTM-01 implementado SIN gestión grupal de actividades
 
 ---
 
 ## Descripción Funcional
 
-### 1. Soluciones Propuestas (según documentación)
+### 1. Soluciones Propuestas (según Documentación V2)
 
-El reconocimiento de existencia de legajo se implementa mediante **tres aproximaciones complementarias**:
+El reconocimiento de existencia de legajo se implementa mediante **cuatro aproximaciones complementarias**:
 
-#### Opción A: Indicador Visual en Mesa de Entradas
+#### Opción A: Indicador Visual en Mesa de Entradas ✅ IMPLEMENTADA
 - **Dónde**: Listado de demandas (BE-01)
 - **Qué**: Visualizar en cada fila si la demanda tiene legajo relacionado
 - **Cómo**: Chip/badge visual que indica "Legajo Existente" con número de legajo
 - **Beneficio**: Información rápida sin necesidad de abrir la demanda
 
-#### Opción B: Búsqueda desde Mesa de Legajos
+#### Opción B: Búsqueda desde Mesa de Legajos ✅ IMPLEMENTADA
 - **Dónde**: Mesa de Legajos (BE-05)
 - **Qué**: Buscar un legajo existente antes de iniciar registro de demanda
 - **Cómo**:
@@ -54,7 +63,7 @@ El reconocimiento de existencia de legajo se implementa mediante **tres aproxima
     - Acceso temporal
     - Transferencia del legajo
 
-#### Opción C: Detección Automática Durante Registro (PRINCIPAL)
+#### Opción C: Detección Automática Durante Registro (PRINCIPAL) ✅ IMPLEMENTADA
 - **Dónde**: Wizard REG-01, Paso 3 (al cargar datos de NNyA)
 - **Qué**: Detección automática mientras el usuario completa el formulario
 - **Cuándo**: Al ingresar campos identificatorios (DNI, nombre, apellido, fecha nacimiento)
@@ -63,6 +72,19 @@ El reconocimiento de existencia de legajo se implementa mediante **tres aproxima
   2. Ejecuta algoritmo de scoring de coincidencia
   3. Si encuentra match, muestra modal/alerta
   4. Ofrece opciones al usuario
+
+#### **NUEVO V2: Opción D - Vinculación Justificada de Legajos** ❌ NO IMPLEMENTADA
+
+**Contexto**: Una vez detectado un legajo existente, el sistema debe permitir vincular:
+- **Legajo, y Medida perteneciente a ese Legajo, con Demanda**: Demanda afecta a un legajo existente, y dispara la creación de una Medida, o bien, implica actividades sobre una Medida existente
+- **Legajo con Legajo**: Hermanos, mismo caso judicial, transferencias
+
+**Requisitos V2**:
+- **Tipo de Vínculo Obligatorio**: `HERMANOS`, `MISMO_CASO_JUDICIAL`, `MEDIDAS_RELACIONADAS`, `TRANSFERENCIA`
+- **Justificación Obligatoria**: Mínimo 20 caracteres explicando el motivo de la vinculación
+- **Auditoría Completa**: Usuario que vinculó, fecha, justificación, tipo de vínculo
+- **Soft Delete**: Campo `activo=True/False` para desvincular sin perder historial
+- **Preservación en Transferencias**: Los vínculos se mantienen al transferir legajo entre zonas
 
 ---
 
@@ -97,7 +119,7 @@ La búsqueda de duplicados se ejecuta cuando:
 
 ---
 
-## 3. Lógica de Detección Multi-Criterio
+## 3. Lógica de Detección Multi-Criterio (IMPLEMENTADA)
 
 ### Algoritmo de Matching
 
@@ -1554,3 +1576,870 @@ Esta User Story (LEG-01) es **fundamental** para evitar duplicación de legajos 
 6. Agregar índices de base de datos
 7. Configurar auditoría y logging
 8. Documentar API endpoints
+
+---
+
+## 15. Estructura de Modelos (NUEVO V2)
+
+### Modelo Central: `TVinculoLegajo`
+
+```python
+class TTipoVinculo(models.Model):
+    """
+    Catálogo de tipos de vínculo entre legajos/medidas/demandas.
+    Fixture obligatorio.
+    """
+    codigo = models.CharField(max_length=50, unique=True)
+    # HERMANOS, MISMO_CASO_JUDICIAL, MEDIDAS_RELACIONADAS, TRANSFERENCIA
+
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField()
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'infrastructure_ttipo_vinculo'
+        verbose_name = 'Tipo de Vínculo'
+        verbose_name_plural = 'Tipos de Vínculos'
+
+
+class TVinculoLegajo(models.Model):
+    """
+    Modelo central para vincular legajos con demandas, medidas u otros legajos.
+    Soporta vinculación many-to-many con justificación obligatoria.
+
+    ARQUITECTURA: Explicit FKs en lugar de GenericFK para mejor performance y queries.
+    """
+    # Entidad Origen (siempre un Legajo)
+    legajo_origen = models.ForeignKey(
+        'TLegajo',
+        on_delete=models.PROTECT,
+        related_name='vinculos_salientes',
+        help_text='Legajo desde el cual se origina el vínculo'
+    )
+
+    # Entidad Destino: Explicit FKs (exactamente UNA debe estar poblada)
+    legajo_destino = models.ForeignKey(
+        'TLegajo',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vinculos_entrantes',
+        help_text='Legajo vinculado (para HERMANOS, MISMO_CASO_JUDICIAL, TRANSFERENCIA)'
+    )
+
+    medida_destino = models.ForeignKey(
+        'TMedida',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vinculos_legajos',
+        help_text='Medida vinculada (para MEDIDAS_RELACIONADAS)'
+    )
+
+    demanda_destino = models.ForeignKey(
+        'TDemanda',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vinculos_legajos',
+        help_text='Demanda vinculada (para vinculación en REG-01)'
+    )
+
+    # Tipo de Vínculo
+    tipo_vinculo = models.ForeignKey(
+        'TTipoVinculo',
+        on_delete=models.PROTECT,
+        help_text='Tipo de vínculo (HERMANOS, MISMO_CASO_JUDICIAL, etc.)'
+    )
+
+    # Justificación (OBLIGATORIA)
+    justificacion = models.TextField(
+        help_text='Justificación obligatoria (min 20 caracteres)'
+    )
+
+    # Auditoría
+    creado_por = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.PROTECT,
+        related_name='vinculos_creados',
+        help_text='Usuario que creó el vínculo'
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    # Soft Delete
+    activo = models.BooleanField(
+        default=True,
+        help_text='False = vínculo desactivado (soft delete)'
+    )
+    desvinculado_por = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vinculos_desvinculados',
+        help_text='Usuario que desvinculó'
+    )
+    desvinculado_en = models.DateTimeField(null=True, blank=True)
+    justificacion_desvincular = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Justificación para desvincular (obligatoria si activo=False)'
+    )
+
+    class Meta:
+        db_table = 'infrastructure_tvinculo_legajo'
+        verbose_name = 'Vínculo de Legajo'
+        verbose_name_plural = 'Vínculos de Legajos'
+        indexes = [
+            models.Index(fields=['legajo_origen', 'activo']),
+            models.Index(fields=['legajo_destino', 'activo']),
+            models.Index(fields=['medida_destino', 'activo']),
+            models.Index(fields=['demanda_destino', 'activo']),
+            models.Index(fields=['tipo_vinculo', 'activo']),
+        ]
+        constraints = [
+            # Exactamente UNA entidad destino debe estar poblada
+            models.CheckConstraint(
+                check=(
+                    models.Q(legajo_destino__isnull=False, medida_destino__isnull=True, demanda_destino__isnull=True) |
+                    models.Q(legajo_destino__isnull=True, medida_destino__isnull=False, demanda_destino__isnull=True) |
+                    models.Q(legajo_destino__isnull=True, medida_destino__isnull=True, demanda_destino__isnull=False)
+                ),
+                name='exactamente_una_entidad_destino'
+            ),
+            # Justificación mínima 20 caracteres
+            models.CheckConstraint(
+                check=models.Q(justificacion__isnull=False) &
+                      models.Q(justificacion__length__gte=20),
+                name='justificacion_minima_20_chars'
+            )
+        ]
+
+    def __str__(self):
+        destino = self.legajo_destino or self.medida_destino or self.demanda_destino
+        return f"Vínculo {self.tipo_vinculo.codigo}: {self.legajo_origen} → {destino}"
+
+    def clean(self):
+        """
+        Validación completa de negocio antes de guardar.
+        """
+        from django.core.exceptions import ValidationError
+
+        # 1. Validar exactamente UNA entidad destino
+        destinos_poblados = sum([
+            bool(self.legajo_destino),
+            bool(self.medida_destino),
+            bool(self.demanda_destino)
+        ])
+
+        if destinos_poblados == 0:
+            raise ValidationError(
+                'Debe especificar al menos una entidad destino (legajo, medida o demanda)'
+            )
+
+        if destinos_poblados > 1:
+            raise ValidationError(
+                'Solo puede vincular a UNA entidad destino (legajo, medida o demanda)'
+            )
+
+        # 2. Validar no auto-vinculación (legajo_origen != legajo_destino)
+        if self.legajo_destino and self.legajo_origen.id == self.legajo_destino.id:
+            raise ValidationError(
+                'No se puede vincular un legajo consigo mismo'
+            )
+
+        # 3. Validar no vinculación circular (A→B, B→A con mismo tipo)
+        if self.legajo_destino:
+            vinculo_inverso = TVinculoLegajo.objects.filter(
+                legajo_origen=self.legajo_destino,
+                legajo_destino=self.legajo_origen,
+                tipo_vinculo=self.tipo_vinculo,
+                activo=True
+            ).exclude(pk=self.pk).exists()
+
+            if vinculo_inverso:
+                raise ValidationError(
+                    f'Ya existe un vínculo circular entre estos legajos con tipo {self.tipo_vinculo.codigo}'
+                )
+
+        # 4. Validar no duplicados (mismo origen, destino, tipo activos)
+        if self.legajo_destino:
+            duplicado = TVinculoLegajo.objects.filter(
+                legajo_origen=self.legajo_origen,
+                legajo_destino=self.legajo_destino,
+                tipo_vinculo=self.tipo_vinculo,
+                activo=True
+            ).exclude(pk=self.pk).exists()
+        elif self.medida_destino:
+            duplicado = TVinculoLegajo.objects.filter(
+                legajo_origen=self.legajo_origen,
+                medida_destino=self.medida_destino,
+                tipo_vinculo=self.tipo_vinculo,
+                activo=True
+            ).exclude(pk=self.pk).exists()
+        else:  # demanda_destino
+            duplicado = TVinculoLegajo.objects.filter(
+                legajo_origen=self.legajo_origen,
+                demanda_destino=self.demanda_destino,
+                tipo_vinculo=self.tipo_vinculo,
+                activo=True
+            ).exclude(pk=self.pk).exists()
+
+        if duplicado:
+            raise ValidationError(
+                'Ya existe un vínculo activo idéntico'
+            )
+
+        # 5. Validar longitud justificación
+        if not self.justificacion or len(self.justificacion) < 20:
+            raise ValidationError(
+                'La justificación debe tener al menos 20 caracteres'
+            )
+
+    def desvincular(self, usuario, justificacion):
+        """
+        Soft delete del vínculo con justificación obligatoria.
+        """
+        if len(justificacion) < 20:
+            raise ValidationError('Justificación debe tener mínimo 20 caracteres')
+
+        self.activo = False
+        self.desvinculado_por = usuario
+        self.desvinculado_en = timezone.now()
+        self.justificacion_desvincular = justificacion
+        self.save()
+
+    @property
+    def entidad_destino(self):
+        """
+        Retorna la entidad destino (cualquiera que esté poblada).
+        """
+        return self.legajo_destino or self.medida_destino or self.demanda_destino
+
+    @property
+    def tipo_entidad_destino(self):
+        """
+        Retorna el tipo de entidad destino como string.
+        """
+        if self.legajo_destino:
+            return 'legajo'
+        elif self.medida_destino:
+            return 'medida'
+        elif self.demanda_destino:
+            return 'demanda'
+        return None
+```
+
+### Modificaciones en Modelos Existentes
+
+```python
+# En infrastructure/models/legajo_models.py
+
+class TLegajo(models.Model):
+    # ... campos existentes ...
+
+    def obtener_grupo_vinculado(self, tipo_vinculo=None):
+        """
+        Retorna todos los legajos/medidas/demandas vinculados a este legajo.
+        Útil para gestión grupal de actividades PLTM.
+
+        Args:
+            tipo_vinculo: Código del tipo de vínculo (ej: 'HERMANOS')
+
+        Returns:
+            QuerySet de TVinculoLegajo activos
+        """
+        vinculos = TVinculoLegajo.objects.filter(
+            legajo_origen=self,
+            activo=True
+        )
+
+        if tipo_vinculo:
+            vinculos = vinculos.filter(tipo_vinculo__codigo=tipo_vinculo)
+
+        return vinculos
+
+    def obtener_hermanos(self):
+        """
+        Retorna lista de legajos hermanos vinculados.
+        Usado para PLTM-01 gestión grupal de actividades.
+        """
+        vinculos = self.obtener_grupo_vinculado(tipo_vinculo='HERMANOS')
+        hermanos_ids = [v.legajo_destino.id for v in vinculos if v.legajo_destino]
+
+        return TLegajo.objects.filter(id__in=hermanos_ids)
+
+    def obtener_medidas_vinculadas(self):
+        """
+        Retorna lista de medidas vinculadas a este legajo.
+        Usado para PLTM-01 cuando permite_gestion_grupal=True.
+        """
+        vinculos = TVinculoLegajo.objects.filter(
+            legajo_origen=self,
+            tipo_vinculo__codigo='MEDIDAS_RELACIONADAS',
+            medida_destino__isnull=False,
+            activo=True
+        ).select_related('medida_destino')
+
+        return [v.medida_destino for v in vinculos]
+
+    def tiene_medidas_vinculadas(self):
+        """
+        Verifica si el legajo tiene medidas vinculadas con otros legajos.
+        Útil para actividades PLTM con permite_gestion_grupal=True.
+        """
+        return TVinculoLegajo.objects.filter(
+            legajo_origen=self,
+            tipo_vinculo__codigo='MEDIDAS_RELACIONADAS',
+            medida_destino__isnull=False,
+            activo=True
+        ).exists()
+
+    def obtener_grupo_completo(self):
+        """
+        Retorna estructura completa del grupo vinculado (hermanos + medidas).
+        Usado para endpoint GET /api/vinculos/grupo/{legajo_id}/
+
+        Returns:
+            dict con estructura de grafo de vínculos
+        """
+        grupo = {
+            'legajo_raiz': self.id,
+            'hermanos': [],
+            'medidas_vinculadas': [],
+            'total_vinculos': 0
+        }
+
+        # Obtener hermanos con sus medidas
+        hermanos = self.obtener_hermanos()
+        for hermano in hermanos:
+            grupo['hermanos'].append({
+                'legajo_id': hermano.id,
+                'nombre_completo': hermano.nnya.nombre_completo,
+                'medidas': [m.id for m in hermano.obtener_medidas_vinculadas()]
+            })
+
+        # Obtener medidas vinculadas directas
+        medidas = self.obtener_medidas_vinculadas()
+        grupo['medidas_vinculadas'] = [
+            {'medida_id': m.id, 'tipo_medida': m.tipo_medida.nombre}
+            for m in medidas
+        ]
+
+        grupo['total_vinculos'] = len(hermanos) + len(medidas)
+
+        return grupo
+```
+
+### Integración con PLTM-01: Gestión Grupal de Actividades
+
+```python
+# En infrastructure/models/medida/TActividadPlanTrabajo.py
+
+class TActividadPlanTrabajo(models.Model):
+    # ... campos existentes ...
+
+    # Campo ya implementado en PLTM-01:
+    permite_gestion_grupal = models.BooleanField(
+        default=False,
+        help_text='Si True, la actividad aplica a todo el grupo de medidas vinculadas'
+    )
+
+    # NUEVO CAMPO para rastrear origen de actividad grupal:
+    actividad_origen_grupal = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='actividades_grupo',
+        help_text='Actividad original desde la cual se replicó esta actividad (gestión grupal)'
+    )
+
+    def aplicar_a_grupo_vinculado(self):
+        """
+        Aplica esta actividad a todas las medidas vinculadas del legajo.
+        Solo funciona si permite_gestion_grupal=True.
+
+        Returns:
+            List[TActividadPlanTrabajo]: Lista de actividades creadas para el grupo
+        """
+        if not self.permite_gestion_grupal:
+            raise ValidationError(
+                'Esta actividad no permite gestión grupal'
+            )
+
+        # Obtener legajo origen desde la medida del plan de trabajo
+        legajo_origen = self.plan_de_trabajo.medida.legajo
+
+        # Obtener grupo de medidas vinculadas
+        medidas_vinculadas = legajo_origen.obtener_medidas_vinculadas()
+
+        actividades_creadas = []
+
+        for medida in medidas_vinculadas:
+            # Crear plan de trabajo si no existe para esta medida
+            plan_trabajo, created = TPlanDeTrabajo.objects.get_or_create(
+                medida=medida,
+                defaults={
+                    'fecha_inicio': self.plan_de_trabajo.fecha_inicio,
+                    'objetivo_general': self.plan_de_trabajo.objetivo_general
+                }
+            )
+
+            # Crear actividad replicada
+            actividad_replica = TActividadPlanTrabajo.objects.create(
+                plan_de_trabajo=plan_trabajo,
+                tipo_actividad=self.tipo_actividad,
+                descripcion=self.descripcion,
+                fecha_inicio=self.fecha_inicio,
+                fecha_fin=self.fecha_fin,
+                permite_gestion_grupal=True,
+                actividad_origen_grupal=self,  # Rastrear origen
+                estado=self.estado
+            )
+
+            actividades_creadas.append(actividad_replica)
+
+        return actividades_creadas
+```
+
+---
+
+## 16. Endpoints Vinculación Justificada (NUEVO V2)
+
+### Endpoint: Crear Vínculo
+
+```http
+POST /api/vinculos/
+Content-Type: application/json
+
+Request Body:
+{
+  "legajo_origen_id": 123,
+  "legajo_destino_id": 456,        // Opcional (uno de los tres requerido)
+  "medida_destino_id": null,       // Opcional
+  "demanda_destino_id": null,      // Opcional
+  "tipo_vinculo_codigo": "HERMANOS",
+  "justificacion": "Juan y María son hermanos confirmados por partida de nacimiento. Ambos involucrados en situación de violencia familiar."
+}
+
+Response 201 Created:
+{
+  "id": 789,
+  "legajo_origen": {
+    "id": 123,
+    "numero": "2024-0123",
+    "nnya_nombre_completo": "Juan Pérez"
+  },
+  "legajo_destino": {
+    "id": 456,
+    "numero": "2024-0456",
+    "nnya_nombre_completo": "María Pérez"
+  },
+  "medida_destino": null,
+  "demanda_destino": null,
+  "tipo_vinculo": {
+    "codigo": "HERMANOS",
+    "nombre": "Hermanos",
+    "descripcion": "Vínculo entre legajos de hermanos"
+  },
+  "justificacion": "Juan y María son hermanos confirmados por partida de nacimiento...",
+  "activo": true,
+  "creado_por": {
+    "id": 10,
+    "nombre_completo": "Ana García"
+  },
+  "creado_en": "2024-10-25T14:30:00Z",
+  "desvinculado_por": null,
+  "desvinculado_en": null
+}
+
+Response 400 Bad Request:
+{
+  "error": "Debe especificar exactamente una entidad destino"
+}
+
+Response 400 Bad Request:
+{
+  "error": "No se puede vincular un legajo consigo mismo"
+}
+
+Response 400 Bad Request:
+{
+  "error": "Ya existe un vínculo circular entre estos legajos con tipo HERMANOS"
+}
+```
+
+### Endpoint: Desvincular
+
+```http
+POST /api/vinculos/{vinculo_id}/desvincular/
+Content-Type: application/json
+
+Request Body:
+{
+  "justificacion": "Se verificó que no son hermanos, corresponden a familias diferentes."
+}
+
+Response 200 OK:
+{
+  "id": 789,
+  "activo": false,
+  "desvinculado_por": {
+    "id": 10,
+    "nombre_completo": "Ana García"
+  },
+  "desvinculado_en": "2024-10-25T16:45:00Z",
+  "justificacion_desvincular": "Se verificó que no son hermanos, corresponden a familias diferentes."
+}
+```
+
+### Endpoint: Obtener Grupo Vinculado (Grafo Completo)
+
+```http
+GET /api/vinculos/grupo/{legajo_id}/
+```
+
+**Response 200 OK - Estructura Completa**:
+
+```json
+{
+  "legajo_raiz": {
+    "id": 123,
+    "numero": "2024-0123",
+    "nnya": {
+      "id": 500,
+      "nombre_completo": "Juan Pérez",
+      "dni": 12345678,
+      "fecha_nacimiento": "2010-03-15"
+    },
+    "zona": {
+      "id": 1,
+      "nombre": "Zona Norte"
+    },
+    "estado": "ACTIVO"
+  },
+
+  "hermanos": [
+    {
+      "vinculo_id": 789,
+      "legajo": {
+        "id": 456,
+        "numero": "2024-0456",
+        "nnya": {
+          "id": 501,
+          "nombre_completo": "María Pérez",
+          "dni": 12345679,
+          "fecha_nacimiento": "2012-08-20"
+        }
+      },
+      "tipo_vinculo": {
+        "codigo": "HERMANOS",
+        "nombre": "Hermanos"
+      },
+      "justificacion": "Juan y María son hermanos confirmados...",
+      "creado_en": "2024-10-25T14:30:00Z",
+      "activo": true,
+      "medidas": [
+        {
+          "id": 700,
+          "tipo_medida": {
+            "codigo": "MEDIDA_PROTECCION",
+            "nombre": "Medida de Protección"
+          },
+          "estado": "VIGENTE"
+        }
+      ]
+    },
+    {
+      "vinculo_id": 790,
+      "legajo": {
+        "id": 457,
+        "numero": "2024-0457",
+        "nnya": {
+          "id": 502,
+          "nombre_completo": "Santiago Pérez",
+          "dni": 12345680,
+          "fecha_nacimiento": "2014-12-10"
+        }
+      },
+      "tipo_vinculo": {
+        "codigo": "HERMANOS",
+        "nombre": "Hermanos"
+      },
+      "justificacion": "Santiago es hermano menor de Juan y María...",
+      "creado_en": "2024-10-26T10:00:00Z",
+      "activo": true,
+      "medidas": []
+    }
+  ],
+
+  "medidas_vinculadas": [
+    {
+      "vinculo_id": 791,
+      "medida": {
+        "id": 701,
+        "numero": "MED-2024-0100",
+        "tipo_medida": {
+          "codigo": "MEDIDA_INNOVACION",
+          "nombre": "Medida Excepcional de Innovación"
+        },
+        "estado": "VIGENTE",
+        "legajo": {
+          "id": 124,
+          "numero": "2024-0124",
+          "nnya_nombre_completo": "Carlos Ramírez"
+        }
+      },
+      "tipo_vinculo": {
+        "codigo": "MEDIDAS_RELACIONADAS",
+        "nombre": "Medidas Relacionadas"
+      },
+      "justificacion": "Ambos casos comparten situación familiar común...",
+      "creado_en": "2024-10-27T09:15:00Z",
+      "activo": true
+    }
+  ],
+
+  "demandas_vinculadas": [
+    {
+      "vinculo_id": 792,
+      "demanda": {
+        "id": 900,
+        "numero": "DEM-2024-0500",
+        "objetivo": "PROTECCION",
+        "fecha_registro": "2024-10-28T11:00:00Z",
+        "estado": "EN_EVALUACION"
+      },
+      "tipo_vinculo": {
+        "codigo": "MISMO_CASO_JUDICIAL",
+        "nombre": "Mismo Caso Judicial"
+      },
+      "justificacion": "Nueva demanda relacionada con el mismo expediente judicial...",
+      "creado_en": "2024-10-28T12:00:00Z",
+      "activo": true
+    }
+  ],
+
+  "transferencias": [],
+
+  "estadisticas": {
+    "total_hermanos": 2,
+    "total_medidas_vinculadas": 1,
+    "total_demandas_vinculadas": 1,
+    "total_transferencias": 0,
+    "total_vinculos_activos": 4,
+    "permite_gestion_grupal": true
+  },
+
+  "grafo_visual": {
+    "nodos": [
+      {
+        "id": "legajo_123",
+        "tipo": "legajo",
+        "label": "Juan Pérez (2024-0123)",
+        "es_raiz": true
+      },
+      {
+        "id": "legajo_456",
+        "tipo": "legajo",
+        "label": "María Pérez (2024-0456)"
+      },
+      {
+        "id": "legajo_457",
+        "tipo": "legajo",
+        "label": "Santiago Pérez (2024-0457)"
+      },
+      {
+        "id": "medida_701",
+        "tipo": "medida",
+        "label": "MED-2024-0100"
+      },
+      {
+        "id": "demanda_900",
+        "tipo": "demanda",
+        "label": "DEM-2024-0500"
+      }
+    ],
+    "aristas": [
+      {
+        "origen": "legajo_123",
+        "destino": "legajo_456",
+        "tipo": "HERMANOS",
+        "vinculo_id": 789,
+        "activo": true
+      },
+      {
+        "origen": "legajo_123",
+        "destino": "legajo_457",
+        "tipo": "HERMANOS",
+        "vinculo_id": 790,
+        "activo": true
+      },
+      {
+        "origen": "legajo_123",
+        "destino": "medida_701",
+        "tipo": "MEDIDAS_RELACIONADAS",
+        "vinculo_id": 791,
+        "activo": true
+      },
+      {
+        "origen": "legajo_123",
+        "destino": "demanda_900",
+        "tipo": "MISMO_CASO_JUDICIAL",
+        "vinculo_id": 792,
+        "activo": true
+      }
+    ]
+  }
+}
+```
+
+**Response 404 Not Found**:
+```json
+{
+  "error": "Legajo no encontrado",
+  "legajo_id": 123
+}
+```
+
+### Endpoint: Listar Vínculos de Legajo
+
+```http
+GET /api/vinculos/?legajo_origen_id=123
+GET /api/vinculos/?legajo_destino_id=456
+GET /api/vinculos/?tipo_vinculo_codigo=HERMANOS
+GET /api/vinculos/?activo=true
+```
+
+**Response 200 OK**:
+```json
+{
+  "count": 4,
+  "results": [
+    {
+      "id": 789,
+      "legajo_origen": {...},
+      "legajo_destino": {...},
+      "tipo_vinculo": {...},
+      "justificacion": "...",
+      "activo": true,
+      "creado_en": "2024-10-25T14:30:00Z"
+    },
+    ...
+  ]
+}
+```
+
+---
+
+## Changelog
+
+### v2.1 - Refinamiento Arquitectónico (2024-10-25)
+
+**Contexto**: Correcciones arquitectónicas sobre V2 inicial
+
+**Cambios Arquitectónicos Críticos**:
+
+1. **✅ ELIMINADO: GenericForeignKey → Explicit FKs**
+   - **ANTES**: `entidad_vinculada_type`, `entidad_vinculada_id`, `entidad_vinculada` (GenericFK)
+   - **AHORA**: `legajo_destino`, `medida_destino`, `demanda_destino` (FKs explícitas)
+   - **BENEFICIO**: Mejor performance en queries, soporte para `select_related()`, índices más eficientes
+   - **VALIDACIÓN**: CheckConstraint a nivel DB asegura exactamente UNA entidad destino
+
+2. **✅ ELIMINADO: Flujo de Aprobación**
+   - **CAMPOS REMOVIDOS**: `aprobado_por`, `aprobado_en`, `estado_aprobacion`
+   - **CAMPO REMOVIDO EN TTipoVinculo**: `requiere_aprobacion_jz`
+   - **RAZÓN**: Simplificación arquitectónica, no requerido por negocio
+
+3. **✅ AGREGADO: Validación Completa en `clean()`**
+   - Validación exactamente UNA entidad destino
+   - Validación no auto-vinculación (legajo_origen != legajo_destino)
+   - Validación no vinculación circular bidireccional (A→B, B→A con mismo tipo)
+   - Validación no duplicados (mismo origen, destino, tipo activos)
+   - Validación longitud justificación (min 20 caracteres)
+
+4. **✅ AGREGADO: Properties Auxiliares**
+   - `entidad_destino`: Retorna la entidad destino poblada
+   - `tipo_entidad_destino`: Retorna 'legajo', 'medida' o 'demanda' como string
+
+5. **✅ AGREGADO: Integración PLTM-01 Completa**
+   - Método `TLegajo.obtener_grupo_completo()`: Retorna grafo completo de vínculos
+   - Método `TLegajo.obtener_medidas_vinculadas()`: Lista de medidas vinculadas
+   - Método `TActividadPlanTrabajo.aplicar_a_grupo_vinculado()`: Replicar actividad a grupo
+   - Campo nuevo `actividad_origen_grupal`: Rastrear origen de replicación
+
+6. **✅ AGREGADO: Endpoint Grupo/Grafo Completo**
+   - `GET /api/vinculos/grupo/{legajo_id}/`: Respuesta estructurada completa
+   - Incluye: hermanos, medidas_vinculadas, demandas_vinculadas, transferencias
+   - Incluye: estadísticas (totales, permite_gestion_grupal)
+   - Incluye: grafo_visual (nodos + aristas para visualización frontend)
+
+**Índices Optimizados**:
+```python
+indexes = [
+    models.Index(fields=['legajo_origen', 'activo']),
+    models.Index(fields=['legajo_destino', 'activo']),
+    models.Index(fields=['medida_destino', 'activo']),
+    models.Index(fields=['demanda_destino', 'activo']),
+    models.Index(fields=['tipo_vinculo', 'activo']),
+]
+```
+
+**Queries Optimizadas**:
+- `TVinculoLegajo.objects.filter(legajo_destino=x).select_related('legajo_origen', 'tipo_vinculo')`
+- `TVinculoLegajo.objects.filter(medida_destino=x).select_related('legajo_origen')`
+- Sin necesidad de `ContentType` joins
+
+---
+
+### v2.0 - Actualización V2 (2024-10-25)
+
+**Contexto**: Actualización basada en Documentación RUNNA V2 y análisis de cambios Gemini
+
+**Cambios Mayores**:
+
+1. **NUEVO: Vinculación Justificada de Legajos**
+   - Agregada Opción D: Vinculación Justificada (antes solo detección)
+   - Nuevo modelo `TVinculoLegajo` con explicit FKs a Legajo/Medida/Demanda
+   - Nuevo modelo `TTipoVinculo` (catálogo con fixture)
+   - 4 tipos de vínculo: HERMANOS, MISMO_CASO_JUDICIAL, MEDIDAS_RELACIONADAS, TRANSFERENCIA
+   - Justificación obligatoria (min 20 caracteres)
+   - Auditoría completa: creado_por, desvinculado_por
+   - Soft delete con `activo=True/False`
+
+**Archivos Nuevos Requeridos**:
+- `runna/infrastructure/models/vinculo_models.py` (TVinculoLegajo, TTipoVinculo)
+- `runna/api/serializers/vinculo_serializers.py` (TVinculoLegajoSerializer, TTipoVinculoSerializer)
+- `runna/api/views/vinculo_views.py` (VinculoViewSet con acción `grupo/{id}`)
+- `runna/infrastructure/management/fixtures/ttipo_vinculo.json` (fixture con 4 tipos)
+- `tests/test_vinculo_legajo.py` (14 tests nuevos)
+
+**Compatibilidad con V1**:
+- ✅ Detección de duplicados (implementada) → Sin cambios
+- ✅ Búsqueda desde Mesa de Legajos (implementada) → Sin cambios
+- ✅ Indicador visual en Mesa de Entradas (implementada) → Sin cambios
+- ❌ Vinculación justificada (NUEVA funcionalidad V2)
+
+---
+
+### v1.0 - Versión Inicial (Implementada)
+
+**Funcionalidades Implementadas**:
+- Detección automática de duplicados en REG-01 Paso 3
+- Algoritmo de scoring multi-criterio (DNI, nombre, apellido, fecha)
+- Modal de alerta con opciones (Ver Detalle, Vincular, Crear Nuevo, Cancelar)
+- Búsqueda desde Mesa de Legajos
+- Indicador visual en Mesa de Entradas
+- 4 tests de detección y scoring
+
+**Pendientes de V1**:
+- Vinculación justificada (agregada en V2)
+- Gestión grupal de actividades PLTM (agregada en V2)
+- Transferencias con vínculos preservados (agregada en V2)
+
+---
+
+**Fin de User Story LEG-01 v2.0**
+
+*Generado el 2024-10-25 por Claude Code con /sm --persona-architect*

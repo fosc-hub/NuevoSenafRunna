@@ -18,6 +18,7 @@ class TPlanDeTrabajo(models.Model):
     """
     Plan de trabajo asociado a una medida.
     Agrupa todas las actividades de intervención.
+    Auto-creado al crear TMedida vía signal post_save.
     """
     medida = models.OneToOneField(
         TMedida,
@@ -25,6 +26,10 @@ class TPlanDeTrabajo(models.Model):
         related_name='plan_trabajo'
     )
     # Otros campos...
+
+    # IMPORTANTE: Se crea automáticamente al crear TMedida
+    # Acceso desde medida: medida.plan_trabajo
+    # Disponible en MED-01 GET: plan_trabajo_id en TMedidaDetalleSerializer
 
 class TActividad(models.Model):
     """
@@ -93,49 +98,84 @@ Crear y organizar actividades del Plan de Trabajo en tabs por actor, para ejecut
 
 ## 📊 ESTADOS DE ACTIVIDADES
 
-### Estados del Modelo TActividad
+### Estados del Modelo TActividad (V2: 8 estados)
 
 | Estado | Código | Descripción | Transición |
 |--------|--------|-------------|------------|
 | **Pendiente** | `PENDIENTE` | Actividad creada, sin iniciar | Estado inicial |
 | **En Progreso** | `EN_PROGRESO` | Actividad en ejecución | Desde PENDIENTE |
-| **Realizada** | `REALIZADA` | Actividad completada exitosamente | Desde EN_PROGRESO |
+| **Completada** | `COMPLETADA` | Actividad completada exitosamente | Desde EN_PROGRESO |
+| **Pendiente Visado** | `PENDIENTE_VISADO` | Completada, esperando visado de Legales | Desde COMPLETADA (si requiere_visado_legales=True) |
+| **Visado con Observación** | `VISADO_CON_OBSERVACION` | Visado rechazado con observaciones | Desde PENDIENTE_VISADO |
+| **Visado Aprobado** | `VISADO_APROBADO` | Visado aprobado por Legales | Desde PENDIENTE_VISADO |
 | **Cancelada** | `CANCELADA` | Actividad cancelada con motivo | Desde PENDIENTE/EN_PROGRESO |
 | **Vencida** | `VENCIDA` | Plazo expirado sin completar | Auto-marcado por sistema |
+
+### Transiciones Manuales
+```python
+# Flujo normal:
+PENDIENTE → EN_PROGRESO → COMPLETADA
+
+# Si requiere_visado_legales=True:
+COMPLETADA → PENDIENTE_VISADO → VISADO_APROBADO
+            ↓
+        VISADO_CON_OBSERVACION → EN_PROGRESO (reapertura)
+
+# Cancelación (requiere motivo):
+PENDIENTE/EN_PROGRESO → CANCELADA
+```
 
 ### Transiciones Automáticas
 ```python
 # Sistema auto-marca VENCIDA si:
-if fecha_planificacion < today() and estado != 'REALIZADA':
+if fecha_planificacion < today() and estado not in ['COMPLETADA', 'VISADO_APROBADO', 'CANCELADA']:
     estado = 'VENCIDA'
+
+# Sistema transiciona a PENDIENTE_VISADO si:
+if estado == 'COMPLETADA' and tipo_actividad.requiere_visado_legales:
+    estado = 'PENDIENTE_VISADO'
+    # Notificar a Equipo Legal
 ```
+
+### Bloqueos de Edición
+- **Actividades COMPLETADA/CANCELADA/VISADO_APROBADO**: Solo lectura
+- **Reapertura**: Solo JZ/Director/Admin pueden reabrir con motivo
+- **Visado**: Solo Equipo Legal puede aprobar/rechazar visados
 
 ## 🏗️ ESTRUCTURA DE MODELOS
 
-### Modelo Catálogo: `TTipoActividad`
+### Modelo Catálogo: `TTipoActividadPlanTrabajo`
 
 ```python
-# infrastructure/models/medida/TTipoActividad.py
+# infrastructure/models/medida/TTipoActividadPlanTrabajo.py
 
-class TTipoActividad(models.Model):
+class TTipoActividadPlanTrabajo(models.Model):
     """
-    PLTM-01: Catálogo de tipos de actividades configurables.
-    Define los tipos y subactividades disponibles por actor.
+    PLTM-01 V2: Catálogo de tipos de actividades configurables desde Admin.
+    Define plantillas de actividades con automatización para Oficios.
     """
 
-    ACTOR_CHOICES = [
-        ('EQUIPO_TECNICO', 'Equipo Técnico'),
-        ('EQUIPOS_RESIDENCIALES', 'Equipos Residenciales'),
-        ('ADULTOS_INSTITUCION', 'Adultos Responsables/Institución'),
-        ('EQUIPO_LEGAL', 'Equipo de Legales')
+    TIPO_CHOICES = [
+        ('OFICIO', 'Oficio'),
+        ('MANUAL', 'Manual')
     ]
 
-    actor = models.CharField(
-        max_length=30,
-        choices=ACTOR_CHOICES,
-        help_text="Actor responsable de esta categoría de actividad"
-    )
+    TIPO_MEDIDA_CHOICES = [
+        ('MPI', 'MPI - Medida de Protección Integral'),
+        ('MPE', 'MPE - Medida de Protección Excepcional'),
+        ('MPJ', 'MPJ - Medida de Protección Judicial')
+    ]
 
+    ETAPA_MEDIDA_CHOICES = [
+        ('APERTURA', 'Apertura'),
+        ('INNOVACION', 'Innovación'),
+        ('PRORROGA', 'Prórroga'),
+        ('CESE', 'Cese'),
+        ('POST_CESE', 'Post-cese'),
+        ('PROCESO', 'Proceso')
+    ]
+
+    # Identificación
     nombre = models.CharField(
         max_length=100,
         help_text="Nombre del tipo de actividad (ej: 'Visita domiciliaria')"
@@ -147,6 +187,69 @@ class TTipoActividad(models.Model):
         help_text="Descripción detallada del tipo de actividad"
     )
 
+    # **V2: Tipo de Actividad (OFICIO o MANUAL)**
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default='MANUAL',
+        help_text="Tipo de actividad: OFICIO (creada automáticamente desde oficio judicial) o MANUAL (creada por equipo de trabajo)"
+    )
+
+    # **V2: Tipo de Oficio (solo si tipo=OFICIO)**
+    tipo_oficio = models.ForeignKey(
+        'TTipoOficio',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tipos_actividad',
+        help_text="Tipo de oficio que genera esta actividad (solo si tipo=OFICIO). Si está presente, notifica a Equipo Legal automáticamente."
+    )
+
+    # **V2: Tipo de Medida Aplicable (ENUM - único valor)**
+    tipo_medida_aplicable = models.CharField(
+        max_length=10,
+        choices=TIPO_MEDIDA_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Tipo de medida aplicable (MPI, MPE, MPJ)"
+    )
+
+    # **V2: Etapa de Medida Aplicable (ENUM)**
+    etapa_medida_aplicable = models.CharField(
+        max_length=20,
+        choices=ETAPA_MEDIDA_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Etapa de medida aplicable (Apertura, Innovación, Prórroga, Cese, Post-cese, Proceso)"
+    )
+
+    # **V2: Plantilla Adjunta**
+    plantilla_adjunta = models.FileField(
+        upload_to='plantillas/actividades/',
+        null=True,
+        blank=True,
+        help_text="Documento modelo/plantilla para la actividad"
+    )
+
+    # **V2: Requiere Visado de Legales**
+    requiere_visado_legales = models.BooleanField(
+        default=False,
+        help_text="Si es True, requiere visado del equipo legal antes de completar"
+    )
+
+    # **V2: Plazo en Días**
+    plazo_dias = models.IntegerField(
+        default=0,
+        help_text="Plazo en días para calcular fecha de vencimiento automáticamente"
+    )
+
+    # **V2: Permite Gestión Grupal**
+    permite_gestion_grupal = models.BooleanField(
+        default=False,
+        help_text="Si es True, permite gestionar sobre grupo de medidas vinculadas"
+    )
+
+    # Configuración
     requiere_evidencia = models.BooleanField(
         default=False,
         help_text="Si es True, cerrar la actividad exige adjuntos obligatorios"
@@ -167,16 +270,87 @@ class TTipoActividad(models.Model):
     )
 
     class Meta:
-        db_table = 'tipo_actividad'
-        verbose_name = 'Tipo de Actividad'
-        verbose_name_plural = 'Tipos de Actividades'
-        ordering = ['actor', 'orden', 'nombre']
+        db_table = 'tipo_actividad_plan_trabajo'
+        verbose_name = 'Tipo de Actividad Plan Trabajo'
+        verbose_name_plural = 'Tipos de Actividades Plan Trabajo'
+        ordering = ['orden', 'nombre']
         indexes = [
-            models.Index(fields=['actor', 'activo'], name='idx_tipo_actor_activo'),
+            models.Index(fields=['tipo', 'activo'], name='idx_tipo_act_pt_tipo_activo'),
         ]
 
     def __str__(self):
-        return f"{self.get_actor_display()} - {self.nombre}"
+        return f"{self.nombre} ({self.get_tipo_display()})"
+
+    def clean(self):
+        """
+        Validaciones de negocio.
+        """
+        from django.core.exceptions import ValidationError
+
+        # Si tipo=OFICIO, tipo_oficio es obligatorio
+        if self.tipo == 'OFICIO' and not self.tipo_oficio:
+            raise ValidationError({
+                'tipo_oficio': 'Tipo de Oficio es obligatorio cuando tipo=OFICIO.'
+            })
+
+        # Si tipo=MANUAL, tipo_oficio debe ser nulo
+        if self.tipo == 'MANUAL' and self.tipo_oficio:
+            raise ValidationError({
+                'tipo_oficio': 'Tipo de Oficio debe ser nulo cuando tipo=MANUAL.'
+            })
+
+
+### Modelo Intermedio: `TPlanTrabajoActividadPredeterminada`
+
+```python
+# infrastructure/models/medida/TPlanTrabajoActividadPredeterminada.py
+
+class TPlanTrabajoActividadPredeterminada(models.Model):
+    """
+    PLTM-01 V2: Tabla intermedia para asignar actividades predeterminadas a PLTM.
+    Define qué tipos de actividad se crean automáticamente al crear un Plan de Trabajo.
+    """
+
+    tipo_medida = models.ForeignKey(
+        'TTipoMedida',
+        on_delete=models.CASCADE,
+        related_name='actividades_predeterminadas',
+        help_text="Tipo de medida al que se aplica esta actividad predeterminada"
+    )
+
+    tipo_actividad = models.ForeignKey(
+        'TTipoActividadPlanTrabajo',
+        on_delete=models.CASCADE,
+        related_name='asignaciones_predeterminadas',
+        help_text="Tipo de actividad a crear automáticamente"
+    )
+
+    orden = models.IntegerField(
+        default=0,
+        help_text="Orden de creación de actividades"
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        help_text="Indica si esta asignación está activa"
+    )
+
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        db_table = 'plan_trabajo_actividad_predeterminada'
+        verbose_name = 'Actividad Predeterminada de Plan Trabajo'
+        verbose_name_plural = 'Actividades Predeterminadas de Plan Trabajo'
+        ordering = ['tipo_medida', 'orden']
+        unique_together = [['tipo_medida', 'tipo_actividad']]
+        indexes = [
+            models.Index(fields=['tipo_medida', 'activo'], name='idx_pt_actpred_tipo_activo'),
+        ]
+
+    def __str__(self):
+        return f"{self.tipo_medida.nombre} - {self.tipo_actividad.nombre}"
 ```
 
 ### Modelo Principal: `TActividad` (Extendido)
@@ -187,7 +361,7 @@ class TTipoActividad(models.Model):
 class TActividad(models.Model):
     """
     PLTM-01: Actividad individual del Plan de Trabajo.
-    Representa tareas específicas por actor con seguimiento completo.
+    Representa tareas específicas del Equipo de Trabajo con seguimiento completo.
     """
 
     # RELACIÓN CON PLAN DE TRABAJO
@@ -199,22 +373,15 @@ class TActividad(models.Model):
 
     # TIPO Y CLASIFICACIÓN
     tipo_actividad = models.ForeignKey(
-        TTipoActividad,
+        TTipoActividadPlanTrabajo,
         on_delete=models.PROTECT,
         related_name='actividades',
-        help_text="Tipo de actividad (catálogo configurable)"
+        help_text="Tipo de actividad (catálogo configurable desde Admin)"
     )
 
     subactividad = models.CharField(
         max_length=200,
         help_text="Detalle específico de la subactividad"
-    )
-
-    # ACTOR RESPONSABLE (desde TTipoActividad)
-    actor = models.CharField(
-        max_length=30,
-        choices=TTipoActividad.ACTOR_CHOICES,
-        help_text="Actor asignado (autocompleta desde tipo_actividad)"
     )
 
     # PLANIFICACIÓN TEMPORAL
@@ -234,17 +401,20 @@ class TActividad(models.Model):
         help_text="Fecha real de finalización (cuando pasa a REALIZADA)"
     )
 
-    # ESTADO Y SEGUIMIENTO
+    # ESTADO Y SEGUIMIENTO (V2: 8 estados)
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
         ('EN_PROGRESO', 'En Progreso'),
-        ('REALIZADA', 'Realizada'),
+        ('COMPLETADA', 'Completada'),
+        ('PENDIENTE_VISADO', 'Pendiente Visado'),
+        ('VISADO_CON_OBSERVACION', 'Visado con Observación'),
+        ('VISADO_APROBADO', 'Visado Aprobado'),
         ('CANCELADA', 'Cancelada'),
         ('VENCIDA', 'Vencida')
     ]
 
     estado = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=ESTADO_CHOICES,
         default='PENDIENTE',
         help_text="Estado actual de la actividad"
@@ -376,7 +546,6 @@ class TActividad(models.Model):
             models.Index(fields=['plan_trabajo', 'estado'], name='idx_actividad_plan_estado'),
             models.Index(fields=['responsable_principal', 'estado'], name='idx_actividad_responsable'),
             models.Index(fields=['fecha_planificacion', 'estado'], name='idx_actividad_fecha_estado'),
-            models.Index(fields=['actor', 'estado'], name='idx_actividad_actor_estado'),
         ]
 
     def __str__(self):
@@ -403,29 +572,24 @@ class TActividad(models.Model):
                 'motivo_cancelacion': 'Debe proporcionar un motivo de cancelación.'
             })
 
-        # Validar que actor coincida con tipo_actividad
-        if self.tipo_actividad and self.actor != self.tipo_actividad.actor:
-            raise ValidationError({
-                'actor': f'El actor debe coincidir con el tipo de actividad: {self.tipo_actividad.actor}'
-            })
-
     def save(self, *args, **kwargs):
         """
         Override save para auto-completar campos y validaciones.
         """
         self.full_clean()
 
-        # Auto-completar actor desde tipo_actividad
-        if self.tipo_actividad and not self.actor:
-            self.actor = self.tipo_actividad.actor
-
         # Auto-marcar fecha_inicio_real al pasar a EN_PROGRESO
         if self.estado == 'EN_PROGRESO' and not self.fecha_inicio_real:
             self.fecha_inicio_real = timezone.now().date()
 
-        # Auto-marcar fecha_finalizacion_real al pasar a REALIZADA
-        if self.estado == 'REALIZADA' and not self.fecha_finalizacion_real:
+        # Auto-marcar fecha_finalizacion_real al pasar a COMPLETADA
+        if self.estado == 'COMPLETADA' and not self.fecha_finalizacion_real:
             self.fecha_finalizacion_real = timezone.now().date()
+
+        # **V2: Auto-transición a PENDIENTE_VISADO si requiere visado**
+        if self.estado == 'COMPLETADA' and self.tipo_actividad.requiere_visado_legales:
+            self.estado = 'PENDIENTE_VISADO'
+            # TODO: Disparar notificación a Equipo Legal cuando tipo=OFICIO
 
         # Auto-marcar fecha_cancelacion al pasar a CANCELADA
         if self.estado == 'CANCELADA' and not self.fecha_cancelacion:
@@ -438,13 +602,15 @@ class TActividad(models.Model):
         """
         Método de clase para auto-marcar actividades vencidas.
         Se ejecuta diariamente por un cron job o Celery task.
+
+        V2: Excluye estados completados (COMPLETADA, VISADO_APROBADO, CANCELADA)
         """
         from django.utils import timezone
         hoy = timezone.now().date()
 
         actividades_vencidas = cls.objects.filter(
             fecha_planificacion__lt=hoy,
-            estado__in=['PENDIENTE', 'EN_PROGRESO']
+            estado__in=['PENDIENTE', 'EN_PROGRESO', 'PENDIENTE_VISADO', 'VISADO_CON_OBSERVACION']
         )
 
         count = actividades_vencidas.update(estado='VENCIDA')
@@ -454,9 +620,12 @@ class TActividad(models.Model):
     def esta_vencida(self):
         """
         Propiedad para verificar si la actividad está vencida.
+
+        V2: Excluye estados completados (COMPLETADA, VISADO_APROBADO, CANCELADA)
         """
         from django.utils import timezone
-        if self.fecha_planificacion < timezone.now().date() and self.estado not in ['REALIZADA', 'CANCELADA']:
+        estados_finales = ['COMPLETADA', 'VISADO_APROBADO', 'CANCELADA']
+        if self.fecha_planificacion < timezone.now().date() and self.estado not in estados_finales:
             return True
         return False
 
@@ -552,35 +721,65 @@ class TAdjuntoActividad(models.Model):
 
 ## 🔧 SERIALIZERS
 
-### Serializer de Tipo de Actividad: `TTipoActividadSerializer`
+### Serializer de Tipo de Actividad: `TTipoActividadPlanTrabajoSerializer`
 
 ```python
-# api/serializers/TTipoActividadSerializer.py
+# api/serializers/TTipoActividadPlanTrabajoSerializer.py
 
 from rest_framework import serializers
-from infrastructure.models.medida import TTipoActividad
+from infrastructure.models.medida import TTipoActividadPlanTrabajo
 
 
-class TTipoActividadSerializer(serializers.ModelSerializer):
+class TTipoActividadPlanTrabajoSerializer(serializers.ModelSerializer):
     """
-    Serializer para tipos de actividad (catálogo).
+    Serializer para tipos de actividad del plan de trabajo (catálogo configurable desde Admin).
     """
-    actor_display = serializers.CharField(source='get_actor_display', read_only=True)
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    tipo_medida_aplicable_display = serializers.CharField(source='get_tipo_medida_aplicable_display', read_only=True)
+    etapa_medida_aplicable_display = serializers.CharField(source='get_etapa_medida_aplicable_display', read_only=True)
+    tipo_oficio_info = serializers.SerializerMethodField()
+    plantilla_adjunta_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = TTipoActividad
+        model = TTipoActividadPlanTrabajo
         fields = [
             'id',
-            'actor',
-            'actor_display',
             'nombre',
             'descripcion',
+            'tipo',
+            'tipo_display',
+            'tipo_oficio',
+            'tipo_oficio_info',
+            'tipo_medida_aplicable',
+            'tipo_medida_aplicable_display',
+            'etapa_medida_aplicable',
+            'etapa_medida_aplicable_display',
+            'plantilla_adjunta',
+            'plantilla_adjunta_url',
+            'requiere_visado_legales',
+            'plazo_dias',
+            'permite_gestion_grupal',
             'requiere_evidencia',
             'activo',
             'orden',
             'fecha_creacion'
         ]
-        read_only_fields = ['id', 'fecha_creacion', 'actor_display']
+        read_only_fields = ['id', 'fecha_creacion']
+
+    def get_tipo_oficio_info(self, obj):
+        if obj.tipo_oficio:
+            return {
+                'id': obj.tipo_oficio.id,
+                'nombre': obj.tipo_oficio.nombre
+            }
+        return None
+
+    def get_plantilla_adjunta_url(self, obj):
+        if obj.plantilla_adjunta:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.plantilla_adjunta.url)
+        return None
 ```
 
 ### Serializer de Adjuntos: `TAdjuntoActividadSerializer`
@@ -630,19 +829,19 @@ class TAdjuntoActividadSerializer(serializers.ModelSerializer):
 # api/serializers/TActividadSerializer.py
 
 from rest_framework import serializers
-from infrastructure.models.medida import TActividad, TAdjuntoActividad, TTipoActividad
+from infrastructure.models.medida import TActividad, TAdjuntoActividad, TTipoActividadPlanTrabajo
 from api.serializers.TCustomUserSerializer import TCustomUserSerializer
 from api.serializers.TAdjuntoActividadSerializer import TAdjuntoActividadSerializer
-from api.serializers.TTipoActividadSerializer import TTipoActividadSerializer
+from api.serializers.TTipoActividadPlanTrabajoSerializer import TTipoActividadPlanTrabajoSerializer
 from django.utils import timezone
 
 
 class TActividadSerializer(serializers.ModelSerializer):
     """
-    Serializer para actividades del plan de trabajo (PLTM-01).
+    Serializer para actividades del plan de trabajo (PLTM-01 V2).
     """
     # Read-only nested serializers
-    tipo_actividad_info = TTipoActividadSerializer(source='tipo_actividad', read_only=True)
+    tipo_actividad_info = TTipoActividadPlanTrabajoSerializer(source='tipo_actividad', read_only=True)
     responsable_principal_info = TCustomUserSerializer(source='responsable_principal', read_only=True)
     responsables_secundarios_info = TCustomUserSerializer(source='responsables_secundarios', many=True, read_only=True)
     usuario_creacion_info = TCustomUserSerializer(source='usuario_creacion', read_only=True)
@@ -650,7 +849,6 @@ class TActividadSerializer(serializers.ModelSerializer):
 
     # Display fields
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    actor_display = serializers.CharField(source='get_actor_display', read_only=True)
     origen_display = serializers.CharField(source='get_origen_display', read_only=True)
 
     # Computed fields
@@ -687,8 +885,6 @@ class TActividadSerializer(serializers.ModelSerializer):
             'tipo_actividad',
             'tipo_actividad_info',
             'subactividad',
-            'actor',
-            'actor_display',
             'fecha_planificacion',
             'fecha_inicio_real',
             'fecha_finalizacion_real',
@@ -723,7 +919,6 @@ class TActividadSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id',
-            'actor',
             'fecha_inicio_real',
             'fecha_finalizacion_real',
             'usuario_creacion',
@@ -907,8 +1102,6 @@ class TActividadSerializer(serializers.ModelSerializer):
   "tipo_actividad": 1,
   "tipo_actividad_info": {
     "id": 1,
-    "actor": "EQUIPO_TECNICO",
-    "actor_display": "Equipo Técnico",
     "nombre": "Visita Domiciliaria",
     "descripcion": "Visita al hogar del niño/adolescente",
     "requiere_evidencia": true,
@@ -916,8 +1109,6 @@ class TActividadSerializer(serializers.ModelSerializer):
     "orden": 1
   },
   "subactividad": "Visita domiciliaria para evaluación de entorno familiar",
-  "actor": "EQUIPO_TECNICO",
-  "actor_display": "Equipo Técnico",
   "fecha_planificacion": "2025-11-25",
   "fecha_inicio_real": null,
   "fecha_finalizacion_real": null,
@@ -1018,8 +1209,7 @@ class TActividadSerializer(serializers.ModelSerializer):
 **Permisos**: Equipo Técnico, JZ, Director, Legal (lectura)
 
 **Query Parameters**:
-- `estado`: Filtrar por estado (PENDIENTE, EN_PROGRESO, REALIZADA, CANCELADA, VENCIDA)
-- `actor`: Filtrar por actor (EQUIPO_TECNICO, EQUIPOS_RESIDENCIALES, ADULTOS_INSTITUCION, EQUIPO_LEGAL)
+- `estado`: Filtrar por estado (PENDIENTE, EN_PROGRESO, COMPLETADA, PENDIENTE_VISADO, VISADO_CON_OBSERVACION, VISADO_APROBADO, CANCELADA, VENCIDA)
 - `responsable_principal`: Filtrar por ID de responsable
 - `fecha_desde`: Filtrar desde fecha (formato: YYYY-MM-DD)
 - `fecha_hasta`: Filtrar hasta fecha (formato: YYYY-MM-DD)
@@ -1038,7 +1228,6 @@ class TActividadSerializer(serializers.ModelSerializer):
       "id": 1,
       "tipo_actividad_info": {...},
       "subactividad": "Visita domiciliaria para evaluación de entorno familiar",
-      "actor_display": "Equipo Técnico",
       "fecha_planificacion": "2025-11-25",
       "estado_display": "Pendiente",
       "responsable_principal_info": {...},
@@ -1158,8 +1347,8 @@ class TActividadSerializer(serializers.ModelSerializer):
 **Permisos**: Todos los usuarios autenticados
 
 **Query Parameters**:
-- `actor`: Filtrar por actor (EQUIPO_TECNICO, EQUIPOS_RESIDENCIALES, ADULTOS_INSTITUCION, EQUIPO_LEGAL)
 - `activo`: Filtrar por activo (true/false)
+- `tipo`: Filtrar por tipo (OFICIO, MANUAL)
 
 **Response Success (200)**:
 ```json
@@ -1170,21 +1359,23 @@ class TActividadSerializer(serializers.ModelSerializer):
   "results": [
     {
       "id": 1,
-      "actor": "EQUIPO_TECNICO",
-      "actor_display": "Equipo Técnico",
       "nombre": "Visita Domiciliaria",
       "descripcion": "Visita al hogar del niño/adolescente",
+      "tipo": "MANUAL",
+      "tipo_display": "Manual",
       "requiere_evidencia": true,
+      "requiere_visado_legales": false,
       "activo": true,
       "orden": 1
     },
     {
       "id": 2,
-      "actor": "EQUIPO_TECNICO",
-      "actor_display": "Equipo Técnico",
       "nombre": "Entrevista con Referentes",
       "descripcion": "Entrevista con adultos responsables o referentes comunitarios",
+      "tipo": "MANUAL",
+      "tipo_display": "Manual",
       "requiere_evidencia": false,
+      "requiere_visado_legales": false,
       "activo": true,
       "orden": 2
     },
@@ -1211,9 +1402,9 @@ class TActividadSerializer(serializers.ModelSerializer):
 ### CA-01: Creación Manual de Actividad
 - [ ] Usuario Equipo Técnico, JZ o Director puede crear actividades
 - [ ] Campos obligatorios: `tipo_actividad`, `subactividad`, `fecha_planificacion`, `responsable_principal`
-- [ ] Actor se auto-completa desde `tipo_actividad.actor`
 - [ ] Se puede guardar como **Borrador** (`es_borrador=True`)
 - [ ] Error 400 si faltan campos obligatorios
+- [ ] `responsable_principal` debe ser un usuario del Equipo de Trabajo
 
 ### CA-02: Auto-creación desde Demanda PI
 - [ ] Si Demanda tiene objetivo "Petición de Informe (PI)": crear actividad automáticamente
@@ -1224,27 +1415,26 @@ class TActividadSerializer(serializers.ModelSerializer):
 
 ### CA-03: Auto-creación desde Oficio Judicial
 - [ ] Si Oficio judicial se carga: crear actividad automáticamente según tipo
-- [ ] **Tipos de Oficio y Actores Responsables**:
-  - [ ] **Ratificación de Medida** → Actor: `EQUIPO_LEGAL`, Actividad: "Gestionar Ratificación Judicial"
-  - [ ] **Pedido de Informe** → Actor: `EQUIPO_LEGAL`, Actividad: "Responder Pedido Judicial"
-  - [ ] **Orden de Medida** → Actor: `EQUIPO_TECNICO`, Actividad: "Ejecutar Medida Ordenada"
-  - [ ] **Otros** → Actor: `EQUIPO_LEGAL`, Actividad: "Gestionar Oficio Judicial"
+- [ ] **Tipos de Oficio y Responsabilidad**:
+  - [ ] **Ratificación de Medida** → Actividad: "Gestionar Ratificación Judicial" (notifica a Legales)
+  - [ ] **Pedido de Informe** → Actividad: "Responder Pedido Judicial" (notifica a Legales)
+  - [ ] **Orden de Medida** → Actividad: "Ejecutar Medida Ordenada"
+  - [ ] **Otros** → Actividad: "Gestionar Oficio Judicial" (notifica a Legales)
 - [ ] `origen = 'OFICIO'`
 - [ ] `origen_oficio` apunta al oficio origen
 - [ ] `tipo_actividad` se asigna automáticamente según tipo de Oficio
-- [ ] `responsable_principal` se asigna según actor: Jefe de Legales o Jefe Técnico
-- [ ] **Notificaciones**: Enviar a Equipo Legal + JZ + Equipo Técnico del legajo
+- [ ] `responsable_principal` se asigna al Jefe del Equipo Técnico del Legajo
+- [ ] **Notificaciones**: Si tipo=OFICIO, enviar notificación a Equipo Legal + JZ + Equipo Técnico del legajo
 - [ ] **Vincular con MED-05**: Si es "Ratificación", crear registro MED-05 en estado PENDIENTE
 - [ ] Sistema registra en auditoría la auto-creación con tipo de Oficio
 
-### CA-04: Tabs por Actor
-- [ ] Modal "Plan de Acción MPE" tiene 4 tabs:
-  - [ ] Equipo técnico
-  - [ ] Equipos residenciales
-  - [ ] Adultos responsables/Institución
-  - [ ] Equipo de Legales (solo visible para usuarios con `legal=True`)
-- [ ] Cada tab filtra `TTipoActividad` por `actor`
-- [ ] Actividad creada hereda el `actor` del tab activo
+### CA-04: Transferencia de Actividades entre Equipos de Trabajo
+- [ ] Equipo de Trabajo responsable del Legajo puede transferir actividades a otros Equipos de Trabajo
+- [ ] Endpoint: `POST /api/actividades/<id>/transferir/`
+- [ ] Request body: `{"equipo_destino_id": <id>, "motivo_transferencia": "texto"}`
+- [ ] Solo JZ, Director o responsable_principal pueden transferir
+- [ ] Al transferir, `responsable_principal` cambia al jefe del equipo destino
+- [ ] Sistema registra en auditoría la transferencia con motivo
 
 ### CA-05: Adjuntos Múltiples
 - [ ] Se pueden adjuntar múltiples archivos al crear actividad
@@ -1253,20 +1443,23 @@ class TActividadSerializer(serializers.ModelSerializer):
 - [ ] Cada adjunto tiene descripción opcional
 - [ ] Error 400 si extensión no permitida
 
-### CA-06: Estados y Transiciones
+### CA-06: Estados y Transiciones (V2: 8 Estados)
 - [ ] Estado inicial: `PENDIENTE`
-- [ ] Transición manual: `PENDIENTE` → `EN_PROGRESO` → `REALIZADA`
-- [ ] Transición manual: `PENDIENTE/EN_PROGRESO` → `CANCELADA` (requiere motivo)
-- [ ] Transición automática: `PENDIENTE/EN_PROGRESO` → `VENCIDA` (si fecha_planificacion < hoy)
+- [ ] Transición manual: `PENDIENTE` → `EN_PROGRESO` → `COMPLETADA`
+- [ ] Transición automática: Si `COMPLETADA` y `tipo_actividad.requiere_visado_legales=True` → `PENDIENTE_VISADO`
+- [ ] Transición manual (Legal): `PENDIENTE_VISADO` → `VISADO_APROBADO` o `VISADO_CON_OBSERVACION`
+- [ ] Transición manual: `PENDIENTE/EN_PROGRESO/PENDIENTE_VISADO/VISADO_CON_OBSERVACION` → `CANCELADA` (requiere motivo)
+- [ ] Transición automática: `PENDIENTE/EN_PROGRESO/PENDIENTE_VISADO/VISADO_CON_OBSERVACION` → `VENCIDA` (si fecha_planificacion < hoy)
 - [ ] Sistema marca `fecha_inicio_real` al pasar a `EN_PROGRESO`
-- [ ] Sistema marca `fecha_finalizacion_real` al pasar a `REALIZADA`
+- [ ] Sistema marca `fecha_finalizacion_real` al pasar a `COMPLETADA`
+- [ ] Si tipo=OFICIO y requiere visado, notificar a Equipo Legal al pasar a PENDIENTE_VISADO
 
 ### CA-07: Validaciones de Negocio
 - [ ] `fecha_planificacion` no puede ser anterior a 1 año
 - [ ] `tipo_actividad` debe estar activo
 - [ ] Si `estado = CANCELADA`: `motivo_cancelacion` es obligatorio
-- [ ] Actor debe coincidir con `tipo_actividad.actor`
 - [ ] Responsable principal no puede estar en `responsables_secundarios`
+- [ ] Responsable principal debe pertenecer a un Equipo de Trabajo
 
 ### CA-08: Permisos por Rol y Zona
 - [ ] Creación: Equipo Técnico, JZ (Nivel 3+), Director (Nivel 4+)
@@ -1351,21 +1544,19 @@ class TActividadSerializer(serializers.ModelSerializer):
 1. Usuario accede a la medida en el sistema
 2. Navega a la pestaña "Plan de Trabajo"
 3. Presiona botón "Crear Actividad"
-4. Sistema abre modal "Plan de Acción MPE"
-5. Selecciona tab "Equipo técnico"
-6. Selecciona tipo: "Visita Domiciliaria"
-7. Ingresa subactividad: "Evaluación de entorno familiar"
-8. Ingresa fecha de planificación: 2025-11-25
-9. Ingresa descripción: "Verificar condiciones habitacionales"
-10. Selecciona responsable principal: Juan Pérez (auto-completa)
-11. Agrega responsable secundario: Ana López
-12. Ingresa referentes externos: "Escuela N°5 - María Gómez - 381555123"
-13. Adjunta archivo: acta_compromiso.pdf (tipo: ACTA_COMPROMISO)
-14. Presiona "Guardar"
+4. Sistema abre modal "Plan de Acción"
+5. Selecciona tipo: "Visita Domiciliaria"
+6. Ingresa subactividad: "Evaluación de entorno familiar"
+7. Ingresa fecha de planificación: 2025-11-25
+8. Ingresa descripción: "Verificar condiciones habitacionales"
+9. Selecciona responsable principal: Juan Pérez (auto-completa)
+10. Agrega responsable secundario: Ana López
+11. Ingresa referentes externos: "Escuela N°5 - María Gómez - 381555123"
+12. Adjunta archivo: acta_compromiso.pdf (tipo: ACTA_COMPROMISO)
+13. Presiona "Guardar"
 
 **Resultado**:
 - Sistema crea actividad con `estado=PENDIENTE`
-- Sistema auto-completa `actor=EQUIPO_TECNICO`
 - Sistema registra `usuario_creacion=Juan Pérez`
 - Sistema crea adjunto con `tipo_adjunto=ACTA_COMPROMISO`
 - Sistema envía notificación a Juan Pérez y Ana López
@@ -1387,11 +1578,10 @@ class TActividadSerializer(serializers.ModelSerializer):
    - `subactividad`: "Informe solicitado por Juzgado X"
    - `fecha_planificacion`: fecha_vencimiento de la demanda
    - `responsable_principal`: Jefe de Equipo Técnico de la zona
-   - `actor`: "EQUIPO_TECNICO"
    - `origen`: "DEMANDA_PI"
    - `origen_demanda`: ID de la demanda
 5. Sistema registra en auditoría la auto-creación
-6. Sistema notifica al responsable asignado (Equipo Técnico)
+6. Sistema notifica al responsable asignado (Equipo Técnico del Legajo)
 
 **Resultado**:
 - Actividad creada automáticamente con origen trazable
@@ -1413,58 +1603,53 @@ class TActividadSerializer(serializers.ModelSerializer):
 4. Usuario completa datos: Juzgado, Carátula, Expediente, Fecha, Adjunto PDF
 5. Sistema vincula Oficio a Legajo y Medida existente
 6. Sistema ejecuta auto-creación:
-   - Crea actividad con `tipo_actividad`: "Gestionar Ratificación Judicial" (pk: 11)
+   - Crea actividad con `tipo_actividad`: "Gestionar Ratificación Judicial" (tipo=OFICIO, requiere_visado_legales=True)
    - `subactividad`: "Ratificación - Exp. [Número] - [Juzgado]"
    - `fecha_planificacion`: fecha_vencimiento del Oficio
-   - `responsable_principal`: Jefe de Equipo Legal de la zona
-   - `actor`: "EQUIPO_LEGAL"
+   - `responsable_principal`: Jefe del Equipo Técnico del Legajo
    - `origen`: "OFICIO"
    - `origen_oficio`: ID del oficio
 7. **Integración MED-05**: Sistema crea registro TRatificacionJudicial en estado PENDIENTE
 8. Sistema genera deep-link desde actividad a MED-05
-9. Sistema envía notificaciones:
-   - Equipo Legal de la zona
-   - Jefe Zonal (JZ)
-   - Equipo Técnico del legajo
+9. **Notificaciones**: Sistema notifica a Equipo Legal + JZ + Equipo Técnico del legajo
 10. Sistema bloquea Demanda para acciones no judiciales
 
 **Resultado**:
-- Actividad de Ratificación asignada a Equipo Legal
+- Actividad de Ratificación asignada al Equipo Técnico del Legajo
+- Notificación enviada a Equipo Legal (para visado posterior)
 - Registro MED-05 creado en estado PENDIENTE
 - Deep-link bidireccional: Actividad ↔ MED-05 ↔ Oficio
-- Notificaciones enviadas a 3 actores: Legal, JZ, Técnico
 - Demanda bloqueada hasta cierre de ratificación
 
 **Flujo - Caso 2: Oficio de Pedido de Informe**:
 1-5. [Mismo flujo inicial]
 6. Sistema ejecuta auto-creación:
-   - Crea actividad con `tipo_actividad`: "Responder Pedido Judicial" (pk: 12)
+   - Crea actividad con `tipo_actividad`: "Responder Pedido Judicial" (tipo=OFICIO, requiere_visado_legales=True)
    - `subactividad`: "Respuesta a pedido judicial - Exp. [Número]"
-   - `actor`: "EQUIPO_LEGAL"
-   - `responsable_principal`: Jefe de Equipo Legal
+   - `responsable_principal`: Jefe del Equipo Técnico del Legajo
 7. Sistema genera deep-link a CONS-03 (Envío de respuestas)
-8. Sistema notifica a Legal, JZ, Técnico
+8. **Notificaciones**: Sistema notifica a Equipo Legal + JZ + Equipo Técnico
 9. Cierre de actividad requiere adjuntar acuse de recibo
 
 **Resultado**:
-- Actividad de Respuesta asignada a Equipo Legal
+- Actividad de Respuesta asignada al Equipo Técnico del Legajo
+- Notificación enviada a Equipo Legal (para visado posterior)
 - Deep-link a CONS-03 para envío de respuesta
 - Validación obligatoria de acuse de recibo al cerrar
 
 **Flujo - Caso 3: Oficio de Orden de Medida**:
 1-5. [Mismo flujo inicial]
 6. Sistema ejecuta auto-creación:
-   - Crea actividad con `tipo_actividad`: "Ejecutar Medida Ordenada" (pk: 13 - EQUIPO_TECNICO)
+   - Crea actividad con `tipo_actividad`: "Ejecutar Medida Ordenada" (tipo=OFICIO)
    - `subactividad`: "Ejecutar medida ordenada - Exp. [Número]"
-   - `actor`: "EQUIPO_TECNICO" (Excepción: este tipo es para Equipo Técnico)
-   - `responsable_principal`: Jefe de Equipo Técnico de la zona
+   - `responsable_principal`: Jefe del Equipo Técnico del Legajo
 7. Sistema genera deep-link a MED-01/MED-02 para registro/intervención
-8. Sistema notifica a Técnico, Legal, JZ
+8. **Notificaciones**: Sistema notifica a Equipo Técnico + Legal + JZ
 
 **Resultado**:
-- Actividad de Ejecución asignada a Equipo Técnico
+- Actividad de Ejecución asignada al Equipo Técnico del Legajo
+- Notificación enviada a Equipo Legal
 - Deep-link a MED-01/02 para gestión de medida
-- Coordinación entre Técnico (ejecutor) y Legal (judicial)
 
 **Auditoría Completa**:
 - Registro de tipo de Oficio que generó la actividad
@@ -1579,24 +1764,31 @@ graph TD
         A[Trigger: Manual / Demanda PI / Oficio] --> B{Tipo de Origen}
         B -- MANUAL --> C[Usuario crea desde modal]
         B -- DEMANDA_PI --> D[Sistema auto-crea desde PI]
-        D --> D1[Actor: EQUIPO_TECNICO]
+        D --> D1[Responsable: Jefe Equipo Técnico]
         B -- OFICIO --> E{Tipo de Oficio}
 
-        E -- Ratificación --> E1[Actor: EQUIPO_LEGAL]
+        E -- Ratificación --> E1[Responsable: Jefe Equipo Técnico]
         E1 --> E1A[Crear MED-05 PENDIENTE]
-        E1A --> E1B[Deep-link: Actividad ↔ MED-05]
+        E1A --> E1B[Notificar Equipo Legal]
+        E1B --> E1C[Deep-link: Actividad ↔ MED-05]
 
-        E -- Pedido Informe --> E2[Actor: EQUIPO_LEGAL]
-        E2 --> E2A[Deep-link: CONS-03]
+        E -- Pedido Informe --> E2[Responsable: Jefe Equipo Técnico]
+        E2 --> E2A[Notificar Equipo Legal]
+        E2A --> E2B[Deep-link: CONS-03]
 
-        E -- Orden Medida --> E3[Actor: EQUIPO_TECNICO]
-        E3 --> E3A[Deep-link: MED-01/02]
+        E -- Orden Medida --> E3[Responsable: Jefe Equipo Técnico]
+        E3 --> E3A[Notificar Equipo Legal]
+        E3A --> E3B[Deep-link: MED-01/02]
 
-        E -- Otros --> E4[Actor: EQUIPO_LEGAL]
+        E -- Otros --> E4[Responsable: Jefe Equipo Técnico]
+        E4 --> E4A[Notificar Equipo Legal]
 
         C --> F[Validar campos obligatorios]
         D1 --> F
-        E1B --> F
+        E1C --> F
+        E2B --> F
+        E3B --> F
+        E4A --> F
         E2A --> F
         E3A --> F
         E4 --> F
@@ -1731,7 +1923,7 @@ graph TD
 - ⚠️ Integración con PLTM-04 (Historial de Seguimiento)
 
 ### Fixtures Requeridos
-- Tipos de actividad por actor (fixture obligatorio)
+- Tipos de actividad predefinidos (fixture obligatorio)
 - Usuarios de Equipo Técnico, JZ, Director con zonas asignadas
 - Planes de trabajo con medidas asociadas
 - Demandas con objetivo "PI" para testing de auto-creación
@@ -1744,171 +1936,115 @@ graph TD
 ```json
 [
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 1,
     "fields": {
-      "actor": "EQUIPO_TECNICO",
       "nombre": "Visita Domiciliaria",
       "descripcion": "Visita al hogar del niño/adolescente para evaluación de entorno familiar",
+      "tipo": "MANUAL",
       "requiere_evidencia": true,
+      "requiere_visado_legales": false,
+      "plazo_dias": 15,
       "activo": true,
       "orden": 1
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 2,
     "fields": {
-      "actor": "EQUIPO_TECNICO",
       "nombre": "Entrevista con Referentes",
       "descripcion": "Entrevista con adultos responsables o referentes comunitarios",
+      "tipo": "MANUAL",
       "requiere_evidencia": false,
+      "requiere_visado_legales": false,
+      "plazo_dias": 10,
       "activo": true,
       "orden": 2
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 3,
     "fields": {
-      "actor": "EQUIPO_TECNICO",
       "nombre": "Elaboración de Informe",
       "descripcion": "Elaboración de informe técnico para presentar al juzgado",
+      "tipo": "MANUAL",
       "requiere_evidencia": true,
+      "requiere_visado_legales": true,
+      "plazo_dias": 30,
       "activo": true,
       "orden": 3
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 4,
     "fields": {
-      "actor": "EQUIPO_TECNICO",
       "nombre": "Reunión de Equipo",
       "descripcion": "Reunión de coordinación y análisis de caso",
+      "tipo": "MANUAL",
       "requiere_evidencia": false,
+      "requiere_visado_legales": false,
+      "plazo_dias": 7,
       "activo": true,
       "orden": 4
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
-    "pk": 5,
-    "fields": {
-      "actor": "EQUIPOS_RESIDENCIALES",
-      "nombre": "Taller con NNyA",
-      "descripcion": "Taller recreativo, educativo o terapéutico con niños/adolescentes",
-      "requiere_evidencia": true,
-      "activo": true,
-      "orden": 1
-    }
-  },
-  {
-    "model": "infrastructure.TTipoActividad",
-    "pk": 6,
-    "fields": {
-      "actor": "EQUIPOS_RESIDENCIALES",
-      "nombre": "Reunión de Convivencia",
-      "descripcion": "Reunión de convivencia y resolución de conflictos",
-      "requiere_evidencia": false,
-      "activo": true,
-      "orden": 2
-    }
-  },
-  {
-    "model": "infrastructure.TTipoActividad",
-    "pk": 7,
-    "fields": {
-      "actor": "EQUIPOS_RESIDENCIALES",
-      "nombre": "Actividad Recreativa",
-      "descripcion": "Salida recreativa o actividad lúdica",
-      "requiere_evidencia": true,
-      "activo": true,
-      "orden": 3
-    }
-  },
-  {
-    "model": "infrastructure.TTipoActividad",
-    "pk": 8,
-    "fields": {
-      "actor": "ADULTOS_INSTITUCION",
-      "nombre": "Reunión con Familiares",
-      "descripcion": "Reunión con adultos responsables para evaluar revinculación",
-      "requiere_evidencia": false,
-      "activo": true,
-      "orden": 1
-    }
-  },
-  {
-    "model": "infrastructure.TTipoActividad",
-    "pk": 9,
-    "fields": {
-      "actor": "ADULTOS_INSTITUCION",
-      "nombre": "Acta de Compromiso",
-      "descripcion": "Firma de acta de compromiso con adultos responsables",
-      "requiere_evidencia": true,
-      "activo": true,
-      "orden": 2
-    }
-  },
-  {
-    "model": "infrastructure.TTipoActividad",
-    "pk": 10,
-    "fields": {
-      "actor": "ADULTOS_INSTITUCION",
-      "nombre": "Articulación Institucional",
-      "descripcion": "Reunión con instituciones externas (escuela, salud, etc.)",
-      "requiere_evidencia": false,
-      "activo": true,
-      "orden": 3
-    }
-  },
-  {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 11,
     "fields": {
-      "actor": "EQUIPO_LEGAL",
       "nombre": "Gestionar Ratificación Judicial",
       "descripcion": "Gestión de oficio de ratificación de medida - Vinculado a MED-05",
+      "tipo": "OFICIO",
       "requiere_evidencia": true,
+      "requiere_visado_legales": true,
+      "plazo_dias": 10,
       "activo": true,
-      "orden": 1
+      "orden": 11
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 12,
     "fields": {
-      "actor": "EQUIPO_LEGAL",
       "nombre": "Responder Pedido Judicial",
       "descripcion": "Respuesta a pedido de informe judicial - Vinculado a CONS-03",
+      "tipo": "OFICIO",
       "requiere_evidencia": true,
+      "requiere_visado_legales": true,
+      "plazo_dias": 15,
       "activo": true,
-      "orden": 2
+      "orden": 12
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 13,
     "fields": {
-      "actor": "EQUIPO_TECNICO",
       "nombre": "Ejecutar Medida Ordenada",
       "descripcion": "Ejecución de medida ordenada judicialmente - Vinculado a MED-01/02",
+      "tipo": "OFICIO",
       "requiere_evidencia": true,
+      "requiere_visado_legales": false,
+      "plazo_dias": 30,
       "activo": true,
-      "orden": 5
+      "orden": 13
     }
   },
   {
-    "model": "infrastructure.TTipoActividad",
+    "model": "infrastructure.TTipoActividadPlanTrabajo",
     "pk": 14,
     "fields": {
-      "actor": "EQUIPO_LEGAL",
       "nombre": "Gestionar Oficio Judicial",
       "descripcion": "Gestión de oficio judicial de tipo 'Otros'",
+      "tipo": "OFICIO",
       "requiere_evidencia": false,
+      "requiere_visado_legales": true,
+      "plazo_dias": 20,
       "activo": true,
-      "orden": 4
+      "orden": 14
     }
   }
 ]
@@ -1916,10 +2052,10 @@ graph TD
 
 ---
 
-**Última actualización**: 2025-10-18 (Corrección: Agregado actor EQUIPO_LEGAL para Oficios)
+**Última actualización**: 2025-10-25 (Corrección V2.2: Eliminado campo actor_responsable redundante)
 **Story creada por**: Claude Code + Gemini CLI Analysis
-**Basado en**: Documentacion RUNNA.md - Secciones PLTM, BE-04, MED-05, REG-01
-**Estado**: ✅ Documentación completa y corregida - Lista para implementación
+**Basado en**: Documentacion RUNNA-V2.md - Secciones PLTM, BE-04, MED-05, REG-01
+**Estado**: ✅ Documentación V2.2 completa y corregida - Lista para implementación
 
 ---
 
@@ -1994,3 +2130,600 @@ graph TD
 **Corregido por**: Claude Code con análisis Gemini CLI
 **Basado en**: Análisis de BE-04, MED-05, REG-01 en Documentacion RUNNA.md
 **Estado**: ✅ Corrección documentada y lista para implementación
+
+---
+
+## 📝 CHANGELOG V2 - ACTUALIZACIÓN ARQUITECTÓNICA MAYOR
+
+### Actualización V2: Actividades Configurables desde Admin (2025-10-25)
+
+**Contexto**:
+- Cliente proveyó feedback después de implementación V1
+- Documentación actualizada a RUNNA-V2.md
+- V1 IMPLEMENTADA: 21/21 tests unitarios + 11/11 E2E passing
+- Cambios arquitectónicos MAYORES requeridos
+
+**Análisis de Gemini CLI sobre RUNNA-V2.md** identificó:
+
+#### 1. **CAMBIO CRÍTICO: Modelo `TTipoActividadPlanTrabajo`** (no `TTipoActividad`)
+
+**Problema V1**:
+- Modelo llamado `TTipoActividad` era genérico
+- No soportaba automatización desde Oficios
+- No diferenciaba tipos OFICIO vs MANUAL
+- No tenía configuración avanzada para Admin
+
+**Solución V2**:
+```python
+class TTipoActividadPlanTrabajo(models.Model):
+    # NUEVOS CAMPOS V2:
+    tipo = models.CharField(choices=[('OFICIO', 'Oficio'), ('MANUAL', 'Manual')])
+    tipo_oficio = models.ForeignKey('TTipoOficio', ...)  # Solo si tipo=OFICIO
+    tipo_medida_aplicable = models.ForeignKey('TTipoMedida', ...)  # Único valor MPI/MPE/MPJ
+    etapa_medida_aplicable = models.ForeignKey('TEtapaMedida', ...)
+    plantilla_adjunta = models.FileField(...)
+    requiere_visado_legales = models.BooleanField(...)
+    plazo_dias = models.IntegerField(...)  # Cálculo automático de vencimiento
+    permite_gestion_grupal = models.BooleanField(...)
+```
+
+**Beneficios**:
+- ✅ Automatización completa desde Oficios judiciales
+- ✅ Plantillas descargables para usuarios
+- ✅ Gestión grupal para medidas vinculadas
+- ✅ Visado legal obligatorio para ciertos tipos
+- ✅ Cálculo automático de plazos
+
+#### 2. **NUEVO: Tabla Intermedia `TPlanTrabajoActividadPredeterminada`**
+
+**Problema V1**:
+- No había forma de asignar actividades predeterminadas a PLTM
+- Creación manual de cada actividad era repetitiva
+- No se aprovechaba configuración desde Admin
+
+**Solución V2**:
+```python
+class TPlanTrabajoActividadPredeterminada(models.Model):
+    tipo_medida = models.ForeignKey('TTipoMedida', ...)
+    tipo_actividad = models.ForeignKey('TTipoActividadPlanTrabajo', ...)
+    orden = models.IntegerField(...)
+    activo = models.BooleanField(...)
+
+    class Meta:
+        unique_together = [['tipo_medida', 'tipo_actividad']]
+```
+
+**Flujo Automático**:
+1. Admin configura actividades predeterminadas para MPE
+2. Al crear Medida MPE → Signal post_save crea TPlanDeTrabajo
+3. Sistema lee `TPlanTrabajoActividadPredeterminada` donde tipo_medida=MPE
+4. Crea automáticamente N actividades en PENDIENTE
+5. Usuario solo completa actividades, no las crea manualmente
+
+**Beneficios**:
+- ✅ Estandarización de planes de trabajo por tipo de medida
+- ✅ Reducción de errores humanos
+- ✅ Configuración centralizada en Admin
+- ✅ Facilita onboarding de nuevos usuarios
+
+#### 3. **ENUM `tipo`: OFICIO vs MANUAL** (no PETICION_INFORME)
+
+**Problema V1**:
+- Análisis Gemini reveló que PETICION_INFORME no es un tipo separado
+- Es un **objetivo de Demanda** que dispara creación de actividad OFICIO
+
+**Corrección V2**:
+```python
+TIPO_CHOICES = [
+    ('OFICIO', 'Oficio'),      # Creada automáticamente desde Demanda/Oficio
+    ('MANUAL', 'Manual')       # Creada manualmente por usuario
+]
+```
+
+**Lógica**:
+- **OFICIO**: Sistema detecta Demanda PI → crea actividad automáticamente
+- **MANUAL**: Usuario crea desde modal "Plan de Acción MPE"
+
+#### 4. **`tipo_oficio` como ForeignKey** (no ENUM)
+
+**Problema V1**:
+- tipo_oficio era un ENUM hardcodeado
+- No era escalable ni configurable
+
+**Solución V2**:
+```python
+tipo_oficio = models.ForeignKey(
+    'TTipoOficio',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='tipos_actividad'
+)
+```
+
+**Validación**:
+```python
+def clean(self):
+    # Si tipo=OFICIO, tipo_oficio es obligatorio
+    if self.tipo == 'OFICIO' and not self.tipo_oficio:
+        raise ValidationError(...)
+
+    # Si tipo=MANUAL, tipo_oficio debe ser nulo
+    if self.tipo == 'MANUAL' and self.tipo_oficio:
+        raise ValidationError(...)
+```
+
+#### 5. **`tipo_medida_aplicable` con valor único** (no ManyToMany)
+
+**Problema V1**:
+- Análisis Gemini confirmó que permite **único valor**: MPI, MPE o MPJ
+- No es relación muchos a muchos
+
+**Solución V2**:
+```python
+tipo_medida_aplicable = models.ForeignKey(
+    'TTipoMedida',
+    on_delete=models.PROTECT,
+    null=True,
+    blank=True,
+    related_name='tipos_actividad',
+    help_text="Tipo de medida aplicable (MPI, MPE, MPJ)"
+)
+```
+
+#### 6. **Actualización de Serializers**
+
+**Cambios**:
+- `TTipoActividadSerializer` → `TTipoActividadPlanTrabajoSerializer`
+- Agregados campos: `tipo_display`, `tipo_oficio_info`, `tipo_medida_aplicable_info`, `plantilla_adjunta_url`
+- Serializer más rico para frontend con nested objects
+
+**Response Structure Mejorada**:
+```json
+{
+  "id": 1,
+  "nombre": "Gestionar Ratificación Judicial",
+  "tipo": "OFICIO",
+  "tipo_display": "Oficio",
+  "tipo_oficio_info": {
+    "id": 3,
+    "nombre": "Ratificación de Medida"
+  },
+  "tipo_medida_aplicable_info": {
+    "id": 2,
+    "nombre": "MPE"
+  },
+  "plantilla_adjunta_url": "http://localhost:8000/media/plantillas/ratificacion.pdf",
+  "requiere_visado_legales": true,
+  "plazo_dias": 10,
+  "permite_gestion_grupal": false
+}
+```
+
+### Impacto en Implementación Existente (V1)
+
+#### Migraciones Requeridas:
+1. **Renombrar modelo**: `TTipoActividad` → `TTipoActividadPlanTrabajo`
+2. **Renombrar tabla**: `tipo_actividad` → `tipo_actividad_plan_trabajo`
+3. **Agregar campos nuevos**: `tipo`, `tipo_oficio`, `tipo_medida_aplicable`, `etapa_medida_aplicable`, `plantilla_adjunta`, `requiere_visado_legales`, `plazo_dias`, `permite_gestion_grupal`
+4. **Renombrar campo**: `actor` → `actor_responsable`
+5. **Crear modelo**: `TPlanTrabajoActividadPredeterminada`
+6. **Crear tabla intermedia**: `plan_trabajo_actividad_predeterminada`
+
+#### Actualización de Referencias:
+- ✅ `TActividad.tipo_actividad` → ForeignKey a `TTipoActividadPlanTrabajo`
+- ✅ Actualizar imports en serializers
+- ✅ Actualizar fixtures: agregar campos V2
+- ✅ Actualizar tests: validar nuevos campos
+
+#### Fixture V2 Example:
+```json
+{
+  "model": "infrastructure.TTipoActividadPlanTrabajo",
+  "pk": 11,
+  "fields": {
+    "nombre": "Gestionar Ratificación Judicial",
+    "tipo": "OFICIO",
+    "tipo_oficio": 3,
+    "tipo_medida_aplicable": 2,
+    "etapa_medida_aplicable": 5,
+    "actor_responsable": "EQUIPO_LEGAL",
+    "requiere_visado_legales": true,
+    "plazo_dias": 10,
+    "permite_gestion_grupal": false,
+    "requiere_evidencia": true,
+    "activo": true,
+    "orden": 1
+  }
+}
+```
+
+### Tests Adicionales Requeridos:
+
+1. `test_crear_tipo_actividad_oficio_sin_tipo_oficio_falla`: Validar clean()
+2. `test_crear_tipo_actividad_manual_con_tipo_oficio_falla`: Validar clean()
+3. `test_asignar_actividades_predeterminadas_a_plan_trabajo`: Tabla intermedia
+4. `test_crear_actividad_con_plantilla_adjunta`: Descargar plantilla
+5. `test_actividad_requiere_visado_legales`: Workflow de visado
+6. `test_calculo_automatico_fecha_vencimiento_por_plazo_dias`: plazo_dias → fecha_vencimiento
+7. `test_gestion_grupal_medidas_vinculadas`: permite_gestion_grupal=True
+
+### Checklist de Migración V1 → V2:
+
+- [ ] Crear backup de base de datos
+- [ ] Crear migración para renombrar modelo `TTipoActividad` → `TTipoActividadPlanTrabajo`
+- [ ] Crear migración para agregar campos V2 a `TTipoActividadPlanTrabajo`
+- [ ] Crear modelo `TPlanTrabajoActividadPredeterminada`
+- [ ] Actualizar serializers: `TTipoActividadPlanTrabajoSerializer`
+- [ ] Actualizar referencias en `TActividadSerializer`
+- [ ] Actualizar fixtures con campos V2
+- [ ] Migrar datos existentes: llenar campos nuevos con valores por defecto
+- [ ] Ejecutar migraciones: `makemigrations` + `migrate`
+- [ ] Poblar tabla intermedia: crear asignaciones predeterminadas para MPE
+- [ ] Ejecutar tests V1 existentes: verificar compatibilidad
+- [ ] Agregar tests V2 nuevos: cubrir campos nuevos
+- [ ] Validar E2E: workflow completo con actividades predeterminadas
+- [ ] Actualizar documentación API: nuevos campos en responses
+- [ ] Notificar frontend: actualizar contratos de API
+
+### Beneficios de Actualización V2:
+
+**Para Usuarios**:
+- ✅ Planes de trabajo precargados automáticamente
+- ✅ Menos trabajo manual, más productividad
+- ✅ Plantillas descargables para actividades
+- ✅ Plazos calculados automáticamente
+- ✅ Visado legal integrado en workflow
+
+**Para Administradores**:
+- ✅ Configuración centralizada desde Django Admin
+- ✅ Estandarización de procesos por tipo de medida
+- ✅ Fácil modificación sin tocar código
+- ✅ Auditoría completa de configuraciones
+
+**Para Desarrolladores**:
+- ✅ Arquitectura más escalable y mantenible
+- ✅ Separación clara: OFICIO (automático) vs MANUAL (usuario)
+- ✅ Validaciones robustas en modelo
+- ✅ Relaciones ForeignKey en lugar de ENUMs hardcodeados
+
+### Timeline Estimado de Migración:
+
+- **Día 1**: Crear migraciones + Actualizar modelos (4h)
+- **Día 2**: Actualizar serializers + Actualizar referencias (4h)
+- **Día 3**: Migrar fixtures + Poblar tabla intermedia (3h)
+- **Día 4**: Ejecutar migraciones + Validar datos migrados (2h)
+- **Día 5**: Actualizar tests V1 + Agregar tests V2 (5h)
+- **Día 6**: Validación E2E + Correcciones (3h)
+- **Día 7**: Documentación + Notificación a frontend (2h)
+
+**Total Estimado**: 23 horas (~3 sprints)
+
+### Riesgos y Mitigaciones:
+
+**Riesgo 1**: Pérdida de datos en migración de renombrado
+- **Mitigación**: Backup completo antes de migración + Migración reversible
+
+**Riesgo 2**: Tests V1 fallan después de cambios
+- **Mitigación**: Ejecutar tests después de cada migración incremental
+
+**Riesgo 3**: Frontend desactualizado no muestra campos nuevos
+- **Mitigación**: Mantener compatibilidad hacia atrás en serializers (campos opcionales)
+
+**Riesgo 4**: Actividades existentes sin tipo_medida_aplicable
+- **Mitigación**: Migración de datos con valores por defecto + Script de limpieza
+
+---
+
+**Fecha de Actualización V2**: 2025-10-25
+**Actualizado por**: Claude Code con análisis Gemini CLI sobre RUNNA-V2.md
+**Basado en**: Análisis exhaustivo de sección PLTM en Documentacion RUNNA-V2.md
+**Estado**: ✅ Actualización V2 documentada - Lista para migración incremental
+**Versión**: V2.0 (Arquitectura configurables desde Admin + Actividades predeterminadas)
+
+---
+
+## 📝 CORRECCIÓN ARQUITECTÓNICA V2.2 - Eliminación de Campo Redundante (2025-10-25)
+
+### Corrección 3: Campo actor_responsable es REDUNDANTE
+
+**Problema Detectado**:
+- V2.0 y V2.1 incluían campo `actor_responsable` con 4 opciones: EQUIPO_TECNICO, EQUIPOS_RESIDENCIALES, ADULTOS_INSTITUCION, EQUIPO_LEGAL
+- Diseño contemplaba 4 tabs en UI según actor
+- Feedback del usuario reveló que este campo es redundante e innecesario
+
+**Análisis del Usuario**:
+> "Si es de tipo_oficio siempre deberá notificar a legales, y las actividades siempre serán responsabilidad de un equipo de trabajo(equipo tecnico), por lo que, ese campo, es redundante. Lo unico a tener en cuenta es que, en el PLTM, el equipo de trabajo responsable del Legajo al que se relaciona la medida, puede derivar ciertas actividades a otros equipos de trabajo."
+
+**Entendimiento Correcto del Negocio**:
+1. **TODAS las actividades** son ejecutadas por **Equipos de Trabajo** (técnicos)
+2. Si `tipo=OFICIO`, el sistema **notifica** a Equipo Legal, pero **NO ejecuta** la actividad
+3. El Equipo de Trabajo puede **transferir actividades** a otros Equipos de Trabajo
+4. No existen 4 tipos diferentes de actores, solo **Equipos de Trabajo** con capacidad de transferencia
+
+**Correcciones Aplicadas**:
+
+1. **Eliminado campo `actor_responsable` de `TTipoActividadPlanTrabajo`**:
+```python
+# ANTES (INCORRECTO - V2.1):
+ACTOR_CHOICES = [
+    ('EQUIPO_TECNICO', 'Equipo Técnico'),
+    ('EQUIPOS_RESIDENCIALES', 'Equipos Residenciales'),
+    ('ADULTOS_INSTITUCION', 'Adultos Responsables/Institución'),
+    ('EQUIPO_LEGAL', 'Equipo de Legales')
+]
+
+actor_responsable = models.CharField(
+    max_length=30,
+    choices=ACTOR_CHOICES,
+    help_text="Actor responsable por defecto de esta actividad"
+)
+
+# DESPUÉS (CORRECTO - V2.2):
+# Campo eliminado completamente
+# Todas las actividades son responsabilidad de Equipos de Trabajo
+```
+
+2. **Eliminado campo `actor` de `TActividad`**:
+```python
+# ANTES (INCORRECTO - V2.1):
+actor = models.CharField(
+    max_length=30,
+    choices=TTipoActividadPlanTrabajo.ACTOR_CHOICES,
+    help_text="Actor asignado"
+)
+
+# DESPUÉS (CORRECTO - V2.2):
+# Campo eliminado completamente
+# responsable_principal siempre es un usuario del Equipo de Trabajo
+```
+
+3. **Simplificado `__str__()` de `TTipoActividadPlanTrabajo`**:
+```python
+# ANTES:
+def __str__(self):
+    return f"{self.get_actor_responsable_display()} - {self.nombre} ({self.get_tipo_display()})"
+
+# DESPUÉS:
+def __str__(self):
+    return f"{self.nombre} ({self.get_tipo_display()})"
+```
+
+4. **Eliminada validación redundante en `TActividad.clean()`**:
+```python
+# ANTES (validación eliminada):
+if self.tipo_actividad and self.actor != self.tipo_actividad.actor:
+    raise ValidationError({
+        'actor': f'El actor debe coincidir con el tipo de actividad'
+    })
+```
+
+5. **Eliminada auto-completación en `TActividad.save()`**:
+```python
+# ANTES (lógica eliminada):
+if self.tipo_actividad and not self.actor:
+    self.actor = self.tipo_actividad.actor_responsable
+```
+
+6. **Actualizado serializer `TTipoActividadPlanTrabajoSerializer`**:
+```python
+# Eliminados campos:
+# - actor_responsable
+# - actor_responsable_display
+```
+
+7. **Actualizado serializer `TActividadSerializer`**:
+```python
+# Eliminados campos:
+# - actor
+# - actor_display
+```
+
+8. **Actualizado CA-03: Auto-creación desde Oficios**:
+```python
+# ANTES:
+- actor: EQUIPO_LEGAL
+- responsable_principal: Jefe de Equipo Legal
+
+# DESPUÉS:
+- responsable_principal: Jefe del Equipo Técnico del Legajo
+- Notificación automática a Equipo Legal cuando tipo=OFICIO
+```
+
+9. **Agregado CA-04: Transferencia de Actividades entre Equipos de Trabajo**:
+- Endpoint: `POST /api/actividades/<id>/transferir/`
+- Permite transferir actividades a otros Equipos de Trabajo
+- `responsable_principal` cambia al jefe del equipo destino
+- Auditoría completa de transferencias
+
+10. **Simplificado UI design**:
+- Eliminado diseño de 4 tabs por actor
+- UI unificada para gestión de actividades
+- Todas las actividades gestionadas por Equipos de Trabajo
+
+**Lógica de Notificaciones Corregida**:
+```python
+# Si tipo=OFICIO → Notificar a Equipo Legal
+if tipo_actividad.tipo == 'OFICIO':
+    enviar_notificacion(equipo_legal)
+    enviar_notificacion(jefe_zonal)
+    enviar_notificacion(equipo_tecnico_legajo)
+```
+
+**Impacto en Migraciones V2.1 → V2.2**:
+
+1. Eliminar campo `actor_responsable` de `TTipoActividadPlanTrabajo`
+2. Eliminar campo `actor` de `TActividad`
+3. Actualizar índices: eliminar `idx_tipo_act_pt_actor_activo` y `idx_actividad_actor_estado`
+4. Actualizar ordering de `TTipoActividadPlanTrabajo`: `['orden', 'nombre']`
+5. Actualizar fixtures: eliminar campo `actor_responsable`
+6. Actualizar tests: eliminar validaciones de actor
+7. Implementar endpoint de transferencia
+
+**Beneficios de V2.2**:
+
+- ✅ **Arquitectura simplificada**: Sin redundancia de campos
+- ✅ **Lógica de negocio correcta**: Refleja workflow real del usuario
+- ✅ **UI más simple**: Sin complejidad innecesaria de tabs
+- ✅ **Flexibilidad**: Transferencia de actividades entre equipos
+- ✅ **Notificaciones claras**: Equipo Legal notificado, no responsable
+
+**Fecha de Corrección V2.2**: 2025-10-25
+**Corregido por**: Claude Code basado en feedback directo del usuario
+**Razón**: Campo actor_responsable redundante - todas las actividades son responsabilidad de Equipos de Trabajo
+**Estado**: ✅ Corrección V2.2 aplicada - Lista para implementación
+
+---
+
+## 📝 CORRECCIONES POST-ANÁLISIS V2 (2025-10-25)
+
+### Corrección 1: tipo_medida_aplicable y etapa_medida_aplicable son ENUMs (no ForeignKey)
+
+**Problema Detectado**:
+- Versión inicial V2 usaba ForeignKey para estos campos
+- Análisis Gemini CLI sobre RUNNA-V2.md confirmó que son ENUMs
+
+**Corrección Aplicada**:
+```python
+# ANTES (INCORRECTO):
+tipo_medida_aplicable = models.ForeignKey('TTipoMedida', ...)
+etapa_medida_aplicable = models.ForeignKey('TEtapaMedida', ...)
+
+# DESPUÉS (CORRECTO):
+TIPO_MEDIDA_CHOICES = [
+    ('MPI', 'MPI - Medida de Protección Integral'),
+    ('MPE', 'MPE - Medida de Protección Excepcional'),
+    ('MPJ', 'MPJ - Medida de Protección Judicial')
+]
+
+ETAPA_MEDIDA_CHOICES = [
+    ('APERTURA', 'Apertura'),
+    ('INNOVACION', 'Innovación'),
+    ('PRORROGA', 'Prórroga'),
+    ('CESE', 'Cese'),
+    ('POST_CESE', 'Post-cese'),
+    ('PROCESO', 'Proceso')
+]
+
+tipo_medida_aplicable = models.CharField(max_length=10, choices=TIPO_MEDIDA_CHOICES, ...)
+etapa_medida_aplicable = models.CharField(max_length=20, choices=ETAPA_MEDIDA_CHOICES, ...)
+```
+
+**Razón**:
+- RUNNA-V2.md especifica valores fijos: "MPI / MPE / MPJ" y "Apertura, Innovación, Prórroga, Cese, Post-cese, Proceso"
+- No hay tabla de referencia, son valores configurables directamente en el modelo
+
+### Corrección 2: Estados de Actividad - 8 estados (no 5)
+
+**Problema Detectado**:
+- V1 tenía 5 estados: PENDIENTE, EN_PROGRESO, REALIZADA, CANCELADA, VENCIDA
+- Análisis Gemini CLI reveló 8 estados en V2
+
+**Corrección Aplicada**:
+```python
+# ANTES (V1 - 5 estados):
+ESTADO_CHOICES = [
+    ('PENDIENTE', 'Pendiente'),
+    ('EN_PROGRESO', 'En Progreso'),
+    ('REALIZADA', 'Realizada'),
+    ('CANCELADA', 'Cancelada'),
+    ('VENCIDA', 'Vencida')
+]
+
+# DESPUÉS (V2 - 8 estados):
+ESTADO_CHOICES = [
+    ('PENDIENTE', 'Pendiente'),
+    ('EN_PROGRESO', 'En Progreso'),
+    ('COMPLETADA', 'Completada'),                        # Cambio: REALIZADA → COMPLETADA
+    ('PENDIENTE_VISADO', 'Pendiente Visado'),           # NUEVO
+    ('VISADO_CON_OBSERVACION', 'Visado con Observación'), # NUEVO
+    ('VISADO_APROBADO', 'Visado Aprobado'),             # NUEVO
+    ('CANCELADA', 'Cancelada'),
+    ('VENCIDA', 'Vencida')
+]
+```
+
+**Flujo de Visado Agregado**:
+```python
+COMPLETADA → PENDIENTE_VISADO (si requiere_visado_legales=True)
+           → VISADO_APROBADO (aprobado por Legales)
+           → VISADO_CON_OBSERVACION (rechazado por Legales)
+```
+
+**Impacto**:
+- Método `save()`: Auto-transición a PENDIENTE_VISADO cuando se completa y requiere_visado_legales=True
+- Método `marcar_vencidas()`: Incluye PENDIENTE_VISADO y VISADO_CON_OBSERVACION como estados vencibles
+- Propiedad `esta_vencida`: Excluye COMPLETADA, VISADO_APROBADO, CANCELADA como estados finales
+
+### Corrección 3: Serializer - tipo_medida_aplicable_display y etapa_medida_aplicable_display
+
+**Problema Detectado**:
+- Serializer inicial usaba SerializerMethodField para nested objects
+- Con ENUM, debe usar get_<field>_display() de Django
+
+**Corrección Aplicada**:
+```python
+# ANTES (INCORRECTO con ForeignKey):
+tipo_medida_aplicable_info = serializers.SerializerMethodField()
+
+def get_tipo_medida_aplicable_info(self, obj):
+    return {'id': obj.tipo_medida_aplicable.id, 'nombre': obj.tipo_medida_aplicable.nombre}
+
+# DESPUÉS (CORRECTO con ENUM):
+tipo_medida_aplicable_display = serializers.CharField(
+    source='get_tipo_medida_aplicable_display',
+    read_only=True
+)
+```
+
+**Response Structure Actualizada**:
+```json
+{
+  "tipo_medida_aplicable": "MPE",
+  "tipo_medida_aplicable_display": "MPE - Medida de Protección Excepcional",
+  "etapa_medida_aplicable": "APERTURA",
+  "etapa_medida_aplicable_display": "Apertura"
+}
+```
+
+### Checklist de Correcciones Aplicadas:
+
+- [x] TTipoActividadPlanTrabajo: Agregados TIPO_MEDIDA_CHOICES y ETAPA_MEDIDA_CHOICES
+- [x] TTipoActividadPlanTrabajo: tipo_medida_aplicable como CharField con choices
+- [x] TTipoActividadPlanTrabajo: etapa_medida_aplicable como CharField con choices
+- [x] TActividad: ESTADO_CHOICES actualizado a 8 estados
+- [x] TActividad: estado CharField max_length=30 (antes 20)
+- [x] TActividad.save(): Auto-transición a PENDIENTE_VISADO agregada
+- [x] TActividad.marcar_vencidas(): Incluye estados de visado
+- [x] TActividad.esta_vencida: Excluye COMPLETADA, VISADO_APROBADO, CANCELADA
+- [x] TTipoActividadPlanTrabajoSerializer: Agregados _display fields para ENUMs
+- [x] Documentación: Sección de estados actualizada con 8 estados y flujos de visado
+- [x] Documentación: Transiciones manuales y automáticas clarificadas
+
+### Impacto en Migraciones:
+
+**Migraciones Adicionales Requeridas**:
+1. `TActividad.estado`: Migrar datos de `REALIZADA` → `COMPLETADA`
+2. `TActividad.estado`: Aumentar max_length de 20 → 30
+3. `TTipoActividadPlanTrabajo`: Cambiar tipo_medida_aplicable de ForeignKey → CharField
+4. `TTipoActividadPlanTrabajo`: Cambiar etapa_medida_aplicable de ForeignKey → CharField
+5. Poblar valores por defecto para actividades existentes sin tipo_medida/etapa
+
+**Script de Migración de Datos**:
+```python
+# Migrar estados V1 → V2
+TActividad.objects.filter(estado='REALIZADA').update(estado='COMPLETADA')
+
+# Poblar valores por defecto para tipos de actividad existentes
+TTipoActividadPlanTrabajo.objects.filter(
+    tipo_medida_aplicable__isnull=True
+).update(tipo_medida_aplicable='MPE')  # Default MPE
+```
+
+---
+
+**Fecha de Correcciones**: 2025-10-25 (2 horas después de V2.0)
+**Corregido por**: Claude Code con análisis Gemini CLI (segunda revisión)
+**Basado en**: Citas textuales de Documentacion RUNNA-V2.md
+**Estado**: ✅ Correcciones aplicadas - ENUMs confirmados - Estados V2 completos
+**Versión**: V2.1 (Correcciones ENUMs + Estados de Visado)

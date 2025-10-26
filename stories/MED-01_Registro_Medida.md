@@ -1776,3 +1776,48 @@ def crear_medida_automatica(sender, instance, created, **kwargs):
 ---
 
 **Story MED-01 documentada completamente. Lista para implementación con /sc:implement.**
+
+---
+
+# ACTUALIZACIÓN V2: Estados Diferenciados por Tipo de Medida
+
+**Fecha:** 2025-10-25
+**Versión:** 2.0
+**Documento:** [MED-01_V2_Estados_Diferenciados.md](.claude/stories/MED-01_V2_Estados_Diferenciados.md)
+
+## 🔄 Cambios Principales V2
+
+La **Documentación RUNNA V2** especifica lógica diferenciada por tipo de medida que no estaba contemplada en la implementación V1:
+
+### Estados Diferenciados por Tipo:
+- **MPI Apertura:** Solo estados 1-2 (sin jurídico completo)
+- **MPI Cese:** Sin estados (solo informe de cierre)
+- **MPE:** Estados 1-5 completos para todas las etapas
+- **MPE Post-cese:** Actividades PLTM posteriores a `fecha_cese_efectivo`
+- **MPJ:** Auto-transición de etapas al completar oficios judiciales
+
+### Arquitectura V2:
+- ✅ **Nuevo Modelo:** `TEstadoEtapaMedida` (catálogo centralizado)
+- ✅ **Actualización:** `TEtapaMedida` con `tipo_etapa` y `estado_especifico` (FK)
+- ✅ **Actualización:** `TMedida` con `fecha_cese_efectivo`
+- ✅ **Validaciones:** Archivo `med01_validaciones.py` con 6 funciones
+- ✅ **Integración PLTM:** Signal para auto-transición MPJ
+- ✅ **15 tests adicionales:** Cobertura completa de lógica V2
+- ✅ **Backward Compatibility:** Campo `estado` antiguo se mantiene
+
+### Estimación V2:
+- **Puntos Adicionales:** +8 puntos
+- **Total MED-01:** 29 puntos (21 V1 + 8 V2)
+- **Tiempo Adicional:** 8-12 horas
+- **Dependencias:** PLTM-02 (✅ implementado)
+
+### Próximos Pasos:
+1. Revisar documento [MED-01_V2_Estados_Diferenciados.md](.claude/stories/MED-01_V2_Estados_Diferenciados.md)
+2. Implementar cambios arquitectónicos V2
+3. Migrar datos existentes a nuevo catálogo
+4. Ejecutar 15 tests adicionales
+5. Validar backward compatibility
+
+---
+
+**Para detalles completos de V2, ver: [MED-01_V2_Estados_Diferenciados.md](.claude/stories/MED-01_V2_Estados_Diferenciados.md)**

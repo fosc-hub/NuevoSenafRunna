@@ -1,14 +1,18 @@
 "use client"
 
 /**
- * Apertura Tab - Workflow Stepper UX
+ * Apertura Tab - Workflow Stepper UX (V2 Enhanced)
  *
- * Uses the UnifiedWorkflowTab component to display the 4-step workflow
- * with visual stepper for the Apertura phase.
+ * Uses the UnifiedWorkflowTab component to display workflow:
+ * - V2 Mode: Catalog-based estados 1-5 (MPE) or 1-2 (MPI)
+ * - V1 Mode: Hardcoded 4-step workflow (backward compatible)
+ *
+ * Automatically detects mode based on medidaApiData.etapa_actual.estado_especifico
  */
 
 import React from "react"
 import { UnifiedWorkflowTab } from "../unified-workflow-tab"
+import type { MedidaDetailResponse } from "../../../types/medida-api"
 
 interface AperturaTabUnifiedProps {
   medidaData: {
@@ -19,6 +23,7 @@ interface AperturaTabUnifiedProps {
     fecha_apertura?: string
     [key: string]: any
   }
+  medidaApiData?: MedidaDetailResponse
   legajoData?: {
     numero: string
     persona_nombre: string
@@ -29,11 +34,13 @@ interface AperturaTabUnifiedProps {
 
 export const AperturaTabUnified: React.FC<AperturaTabUnifiedProps> = ({
   medidaData,
+  medidaApiData,
   legajoData,
 }) => {
   return (
     <UnifiedWorkflowTab
       medidaData={medidaData}
+      medidaApiData={medidaApiData}
       legajoData={legajoData}
       workflowPhase="apertura"
     />

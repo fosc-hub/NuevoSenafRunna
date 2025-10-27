@@ -47,7 +47,12 @@ export const getTiposVinculo = async (): Promise<TTipoVinculo[]> => {
   try {
     console.log("Obteniendo tipos de vínculo...")
 
-    const response = await get<TTipoVinculo[]>("tipos-vinculo")
+    const response = await get<TTipoVinculo[]>("tipos-vinculo/")
+
+    if (!response || !Array.isArray(response)) {
+      console.warn("Respuesta inválida de tipos de vínculo:", response)
+      return []
+    }
 
     console.log(`Tipos de vínculo obtenidos: ${response.length}`)
 
@@ -120,6 +125,18 @@ export const getVinculos = async (
       queryParams.legajo_origen = params.legajo_origen.toString()
     }
 
+    if (params?.legajo_destino) {
+      queryParams.legajo_destino = params.legajo_destino.toString()
+    }
+
+    if (params?.medida_destino) {
+      queryParams.medida_destino = params.medida_destino.toString()
+    }
+
+    if (params?.demanda_destino) {
+      queryParams.demanda_destino = params.demanda_destino.toString()
+    }
+
     if (params?.tipo_vinculo) {
       queryParams.tipo_vinculo = params.tipo_vinculo
     }
@@ -140,12 +157,22 @@ export const getVinculos = async (
       queryParams.page_size = params.page_size.toString()
     }
 
-    const response = await getWithCustomParams<PaginatedResponse<TVinculoLegajoList>>(
-      "vinculos-legajo",
+    const response = await get<PaginatedResponse<TVinculoLegajoList>>(
+      "vinculos-legajo/",
       queryParams
     )
 
-    console.log(`Vínculos obtenidos: ${response.results.length} de ${response.count}`)
+    if (!response) {
+      console.warn("Respuesta inválida de vínculos:", response)
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+      }
+    }
+
+    console.log(`Vínculos obtenidos: ${response.results?.length || 0} de ${response.count || 0}`)
 
     return response
   } catch (error: any) {
@@ -183,7 +210,7 @@ export const getVinculoDetail = async (vinculoId: number): Promise<TVinculoLegaj
   try {
     console.log(`Obteniendo detalle de vínculo ${vinculoId}`)
 
-    const response = await get<TVinculoLegajoDetail>(`vinculos-legajo/${vinculoId}`)
+    const response = await get<TVinculoLegajoDetail>(`vinculos-legajo/${vinculoId}/`)
 
     console.log("Detalle de vínculo obtenido:", response)
 

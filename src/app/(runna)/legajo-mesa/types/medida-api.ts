@@ -50,6 +50,8 @@ export interface EtapaMedida {
   fecha_inicio_estado: string // ISO date string
   fecha_fin_estado: string | null // ISO date string
   observaciones: string | null
+  // MED-01 V2: Estados Diferenciados
+  estado_especifico?: number | null // ID del TEstadoEtapaMedida catalog entry
 }
 
 // ============================================================================
@@ -120,6 +122,8 @@ export interface MedidaDetailResponse {
   notas_aval_historial?: NotaAvalInfo[] // Historial completo de notas de aval (para casos con múltiples observaciones)
   // PLTM-01: Plan de Trabajo
   plan_trabajo_id?: number | null // ID del plan de trabajo asociado (MPE/MPJ)
+  // MED-01 V2: Fechas adicionales
+  fecha_cese_efectivo?: string | null // Fecha de cese efectivo (ISO date string)
 }
 
 // Response de medida básica (en listados)

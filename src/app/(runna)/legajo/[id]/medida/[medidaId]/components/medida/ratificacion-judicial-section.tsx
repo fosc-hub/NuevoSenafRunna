@@ -68,6 +68,7 @@ interface RatificacionJudicialSectionProps {
   medidaId: number
   medidaNumero?: string
   estadoActual?: EstadoEtapa | string
+  etapaId?: number // ID de la etapa específica para esta ratificación (Apertura, Innovación, Prórroga, Cese)
   userRole?: string // Rol del usuario actual
   userLevel?: number // Nivel del usuario actual
   isEquipoLegal?: boolean // Si el usuario es Equipo Legal (nivel 3 o 4 con flag legal=true)
@@ -160,6 +161,7 @@ export const RatificacionJudicialSection: React.FC<
   medidaId,
   medidaNumero,
   estadoActual,
+  etapaId,
   userRole,
   userLevel,
   isEquipoLegal,
@@ -579,6 +581,7 @@ export const RatificacionJudicialSection: React.FC<
         medidaNumero={medidaNumero}
         mode={dialogMode}
         initialData={dialogMode === "edit" ? ratificacion : null}
+        etapaId={etapaId}
       />
     </Box>
   )

@@ -108,6 +108,7 @@ export interface RatificacionJudicial {
  */
 export interface CreateRatificacionJudicialRequest {
   // Campos de datos (JSON)
+  etapa_id: number // ID de la etapa específica (Apertura, Innovación, Prórroga, Cese)
   decision: DecisionJudicial
   fecha_resolucion: string // ISO date (YYYY-MM-DD)
   fecha_notificacion?: string // ISO date (YYYY-MM-DD) - opcional
@@ -250,6 +251,7 @@ export function buildRatificacionFormData(
   const formData = new FormData()
 
   // Datos básicos
+  formData.append("etapa_id", request.etapa_id.toString())
   formData.append("decision", request.decision)
   formData.append("fecha_resolucion", request.fecha_resolucion)
 

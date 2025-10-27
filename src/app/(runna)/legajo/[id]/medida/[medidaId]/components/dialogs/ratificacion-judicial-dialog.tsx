@@ -67,6 +67,7 @@ interface RatificacionJudicialDialogProps {
   medidaNumero?: string
   mode?: "create" | "edit"
   initialData?: RatificacionJudicial | null
+  etapaId?: number // ID de la etapa específica (Apertura, Innovación, Prórroga, Cese)
 }
 
 interface FormErrors {
@@ -90,6 +91,7 @@ export const RatificacionJudicialDialog: React.FC<
   medidaNumero,
   mode = "create",
   initialData = null,
+  etapaId,
 }) => {
   // ============================================================================
   // STATE
@@ -270,7 +272,14 @@ export const RatificacionJudicialDialog: React.FC<
 
     // Build request based on mode
     if (mode === "create") {
+      // Validate etapaId is provided
+      if (!etapaId) {
+        setSubmitError("Error: No se ha especificado la etapa para esta ratificación")
+        return
+      }
+
       const request: CreateRatificacionJudicialRequest = {
+        etapa_id: etapaId,
         decision: formData.decision as DecisionJudicial,
         fecha_resolucion: formData.fecha_resolucion,
         fecha_notificacion: formData.fecha_notificacion || undefined,

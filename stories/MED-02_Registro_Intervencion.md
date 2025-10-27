@@ -69,7 +69,6 @@ El Equipo Técnico (ET) accede desde **LEG-04 (Detalle de Legajo)** a la medida 
    - Información Básica (datos de la intervención)
    - Detalles de Intervención (motivos y categorías)
    - Documentos y Archivos (evidencias y respaldos)
-   - Plan de Trabajo (definición inicial de actividades PLTM)
    - Configuración Adicional (informes, notificaciones)
 
 3. **Guardado progresivo**: Sistema permite guardar borrador en cualquier momento
@@ -164,7 +163,7 @@ sequenceDiagram
 - ✅ Etapa anterior (Estado 1) se marca con fecha_fin_estado
 - ✅ Se actualiza `medida.etapa_actual` a la nueva etapa
 - ✅ Sistema envía notificación al Jefe Zonal
-- ✅ Sistema crea actividades iniciales de Plan de Trabajo (PLTM)
+- ✅ Sistema puede crear actividades iniciales de Plan de Trabajo (PLTM) automáticamente si están configuradas
 
 ### CA-5: Notificación a Jefe Zonal
 
@@ -191,7 +190,7 @@ sequenceDiagram
 - ✅ Se actualiza `medida.etapa_actual` a Estado 3
 - ✅ Sistema envía notificación al Director
 - ✅ Sistema registra fecha, usuario y decisión de aprobación
-- ✅ Plan de Trabajo queda activo y en progreso
+- ✅ Actividades del Plan de Trabajo (si existen) quedan activas y en progreso
 
 ### CA-7: Rechazo por Jefe Zonal
 
@@ -226,14 +225,18 @@ sequenceDiagram
 | **Director** | ✅ | ✅ | ✅ | ✅ |
 | **Admin** | ✅ | ✅ | ✅ | ✅ |
 
-### CA-9: Integración con Plan de Trabajo
+### CA-9: Integración Backend con Plan de Trabajo
+
+**Nota:** El Plan de Trabajo ya no es un paso del formulario de registro de intervención.
+La creación de actividades PLTM se realiza automáticamente en el backend al enviar la intervención,
+si el sistema está configurado para ello.
 
 **Dado** que un Equipo Técnico envía una intervención a aprobación
 
 **Cuando** el sistema procesa el registro
 
 **Entonces**:
-- ✅ Se crean actividades de PLTM según lo definido en sección Plan de Trabajo
+- ✅ Se crean actividades de PLTM automáticamente según la configuración del sistema
 - ✅ Actividades quedan vinculadas a la medida
 - ✅ Actividades tienen responsable, plazo y estado inicial "Pendiente"
 - ✅ Plan de Trabajo corre en paralelo al andarivel de aprobación

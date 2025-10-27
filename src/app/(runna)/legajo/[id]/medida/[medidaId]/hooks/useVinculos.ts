@@ -23,7 +23,7 @@ import {
   getHermanosByLegajo,
   countVinculosActivos,
   validateVinculoData,
-} from '../../legajo-mesa/api/vinculo-api-service'
+} from '../../../../../legajo-mesa/api/vinculo-api-service'
 import type {
   TTipoVinculo,
   TVinculoLegajoCreate,
@@ -32,7 +32,7 @@ import type {
   DesvincularVinculoRequest,
   VinculosLegajoQueryParams,
   TipoVinculoCodigo,
-} from '../../legajo-mesa/types/vinculo-types'
+} from '../../../../../legajo-mesa/types/vinculo-types'
 
 /**
  * Hook for vinculo operations with loading/error states
@@ -132,8 +132,8 @@ export const useVinculos = () => {
   const loadVinculos = useCallback(async (params?: VinculosLegajoQueryParams) => {
     const result = await handleAction(() => getVinculos(params))
     if (result) {
-      setVinculos(result.results)
-      setTotalVinculos(result.count)
+      setVinculos(result.results || [])
+      setTotalVinculos(result.count || 0)
     }
     return result
   }, [])
@@ -148,8 +148,8 @@ export const useVinculos = () => {
       undefined
     )
     if (result) {
-      setVinculos(result)
-      setTotalVinculos(result.length)
+      setVinculos(result || [])
+      setTotalVinculos(result?.length || 0)
     }
     return result
   }, [])

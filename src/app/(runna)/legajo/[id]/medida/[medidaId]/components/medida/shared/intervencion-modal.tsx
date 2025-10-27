@@ -7,9 +7,8 @@
  * Extracted and refactored from RegistroIntervencionModal for reusability.
  *
  * Features:
- * - 5-step wizard workflow (Información Básica → Detalles → Documentos → Plan de Trabajo → Configuración)
+ * - 4-step wizard workflow (Información Básica → Detalles → Documentos → Configuración)
  * - Workflow states: BORRADOR → ENVIADO → APROBADO/RECHAZADO
- * - Plan de Trabajo integration
  * - File attachment management
  * - Complete validation and error handling
  * - Reusable across MPI, MPE, and MPJ
@@ -56,9 +55,6 @@ import { WorkflowStateActions } from "./workflow-state-actions"
 import { PersonalInfoCard } from "./personal-info-card"
 import { FileUploadSection, type FileItem } from "./file-upload-section"
 import { RejectionDialog } from "./rejection-dialog"
-
-// Import Plan de Trabajo Tab
-import { PlanTrabajoTab } from "../mpe-tabs/plan-trabajo-tab"
 
 // Import business logic hook
 import { useRegistroIntervencion } from "../../../hooks/useRegistroIntervencion"
@@ -676,21 +672,7 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                     </Box>
                 )
 
-            case 3: // Plan de Trabajo - PRESERVED as-is
-                return (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <Card elevation={2} sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                                Plan de Trabajo
-                            </Typography>
-                            <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 2, overflow: 'hidden' }}>
-                                <PlanTrabajoTab medidaData={{}} />
-                            </Box>
-                        </Card>
-                    </Box>
-                )
-
-            case 4: // Configuración Adicional - PRESERVED as-is
+            case 3: // Configuración Adicional - PRESERVED as-is
                 return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         <Card elevation={2} sx={{ p: 3 }}>
@@ -793,8 +775,7 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         { label: 'Información Básica', content: getStepContent(0) },
         { label: 'Detalles de Intervención', content: getStepContent(1) },
         { label: 'Documentos y Archivos', content: getStepContent(2) },
-        { label: 'Plan de Trabajo', content: getStepContent(3) },
-        { label: 'Configuración Adicional', content: getStepContent(4) },
+        { label: 'Configuración Adicional', content: getStepContent(3) },
     ]
 
     // Dynamic title based on tipoMedida

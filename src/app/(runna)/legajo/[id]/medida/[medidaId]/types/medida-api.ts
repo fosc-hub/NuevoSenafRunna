@@ -145,10 +145,11 @@ export interface MedidaDetailResponse {
   etapa_actual: EtapaMedida | null
 
   /**
-   * Historical stages (all previous stages)
+   * Historical stages (all stages including current)
    * Ordered by fecha_creacion descending
+   * Use this to filter by tipo_etapa for each tab
    */
-  historial_etapas?: EtapaMedida[]
+  historial_etapas: EtapaMedida[]
 
   // Related Entities
   plan_trabajo_id: number | null

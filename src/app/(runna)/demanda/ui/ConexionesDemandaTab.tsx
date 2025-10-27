@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -14,13 +14,24 @@ import {
   Paper,
   useTheme,
   alpha,
+  Button,
+  Chip,
 } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
+import LinkIcon from "@mui/icons-material/Link"
+import LinkOffIcon from "@mui/icons-material/LinkOff"
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
+import ExpandLessIcon from "@mui/icons-material/ExpandLess"
+import FolderIcon from "@mui/icons-material/Folder"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import { get, create, update } from "@/app/api/apiService"
 import SearchModal from "@/components/searchModal/searchModal"
 import { useUser } from "@/utils/auth/userZustand"
+import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
+import type { TVinculoLegajoList } from "@/app/(runna)/legajo-mesa/types/vinculo-types"
+import CrearVinculoLegajoDialog from "./dialogs/CrearVinculoLegajoDialog"
+import DesvincularVinculoDialog from "./dialogs/DesvincularVinculoDialog"
 
 interface Demanda {
   id: number
@@ -54,6 +65,20 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
 
   // States for existing connections
   const [error, setError] = useState<string | null>(null)
+
+  // States for legajo vinculos
+  const [crearVinculoDialogOpen, setCrearVinculoDialogOpen] = useState(false)
+  const [desvincularDialogOpen, setDesvincularDialogOpen] = useState(false)
+  const [vinculoToDesvincular, setVinculoToDesvincular] = useState<TVinculoLegajoList | null>(null)
+  const [expandedJustificaciones, setExpandedJustificaciones] = useState<Set<number>>(new Set())
+
+  // Hook for legajo vinculos management
+  const {
+    vinculos: legajoVinculos,
+    loadVinculos,
+    loading: vinculosLoading,
+    error: vinculosError,
+  } = useVinculos()
 
   // Fetch all demandas
   const { data: allDemandas = [], isLoading: isLoadingDemandas } = useQuery({
@@ -134,6 +159,68 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
       toast.error("Error al eliminar la conexión")
     },
   })
+
+  // Load legajo vinculos on mount and when demandaId changes
+  useEffect(() => {
+    if (demandaId) {
+      loadVinculos({
+        demanda_destino: demandaId,
+        activo: true,
+      })
+    }
+  }, [demandaId, loadVinculos])
+
+  // Handlers for legajo vinculos
+  const handleOpenCrearVinculo = () => {
+    setCrearVinculoDialogOpen(true)
+  }
+
+  const handleCloseCrearVinculo = () => {
+    setCrearVinculoDialogOpen(false)
+  }
+
+  const handleVinculoCreated = () => {
+    // Reload vinculos after creation
+    loadVinculos({
+      demanda_destino: demandaId,
+      activo: true,
+    })
+  }
+
+  const handleOpenDesvincular = (vinculo: TVinculoLegajoList) => {
+    setVinculoToDesvincular(vinculo)
+    setDesvincularDialogOpen(true)
+  }
+
+  const handleCloseDesvincular = () => {
+    setDesvincularDialogOpen(false)
+    setVinculoToDesvincular(null)
+  }
+
+  const handleVinculoDesvinculado = () => {
+    // Reload vinculos after desvincular
+    loadVinculos({
+      demanda_destino: demandaId,
+      activo: true,
+    })
+  }
+
+  const toggleJustificacion = (vinculoId: number) => {
+    setExpandedJustificaciones((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(vinculoId)) {
+        newSet.delete(vinculoId)
+      } else {
+        newSet.add(vinculoId)
+      }
+      return newSet
+    })
+  }
+
+  const getTruncatedText = (text: string, maxLength: number = 100) => {
+    if (text.length <= maxLength) return text
+    return text.substring(0, maxLength) + "..."
+  }
 
   // Permission check must come after all hooks
   if (!hasVinculacionPermission) {
@@ -295,6 +382,197 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
           </Box>
         )}
       </Paper>
+
+      {/* Vínculos con Legajos Section */}
+      <Paper
+        elevation={1}
+        sx={{
+          p: 3,
+          mt: 4,
+          borderRadius: 2,
+          bgcolor: "white",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+            Vínculos con Legajos
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<LinkIcon />}
+            onClick={handleOpenCrearVinculo}
+            size="small"
+          >
+            Crear Vínculo
+          </Button>
+        </Box>
+
+        {vinculosError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {vinculosError}
+          </Alert>
+        )}
+
+        {vinculosLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : legajoVinculos && legajoVinculos.length > 0 ? (
+          <List sx={{ mt: 2 }}>
+            {legajoVinculos.map((vinculo) => {
+              const isExpanded = expandedJustificaciones.has(vinculo.id)
+              const shouldTruncate = vinculo.justificacion.length > 100
+
+              return (
+                <React.Fragment key={vinculo.id}>
+                  <ListItem
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.02),
+                        borderColor: theme.palette.primary.main,
+                      },
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      py: 2,
+                    }}
+                  >
+                    {/* Header Row */}
+                    <Box sx={{ display: "flex", width: "100%", alignItems: "flex-start", mb: 1.5 }}>
+                      <FolderIcon sx={{ mr: 1.5, mt: 0.5, color: "primary.main" }} />
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          {vinculo.legajo_origen_info}
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+                          <Chip
+                            label={vinculo.tipo_vinculo.nombre}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            Tipo: {vinculo.tipo_destino}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <IconButton
+                        edge="end"
+                        aria-label="desvincular"
+                        onClick={() => handleOpenDesvincular(vinculo)}
+                        size="small"
+                        sx={{
+                          color: theme.palette.error.main,
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.error.main, 0.1),
+                          },
+                        }}
+                      >
+                        <LinkOffIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+
+                    {/* Justificación */}
+                    <Box sx={{ width: "100%", pl: 5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        Justificación:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mt: 0.5,
+                          fontStyle: "italic",
+                          color: "text.secondary",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {isExpanded || !shouldTruncate
+                          ? vinculo.justificacion
+                          : getTruncatedText(vinculo.justificacion)}
+                      </Typography>
+                      {shouldTruncate && (
+                        <Button
+                          size="small"
+                          onClick={() => toggleJustificacion(vinculo.id)}
+                          endIcon={isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                          sx={{ mt: 0.5, textTransform: "none" }}
+                        >
+                          {isExpanded ? "Ver menos" : "Ver más"}
+                        </Button>
+                      )}
+                    </Box>
+
+                    {/* Metadata Footer */}
+                    <Box
+                      sx={{
+                        width: "100%",
+                        pl: 5,
+                        mt: 1.5,
+                        pt: 1.5,
+                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Creado por: <strong>{vinculo.creado_por_info}</strong>
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Fecha:{" "}
+                          <strong>
+                            {new Date(vinculo.creado_en).toLocaleDateString("es-AR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })}
+                          </strong>
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </ListItem>
+                </React.Fragment>
+              )
+            })}
+          </List>
+        ) : (
+          <Box
+            sx={{
+              p: 3,
+              textAlign: "center",
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.background.paper, 0.7),
+              border: `1px dashed ${theme.palette.divider}`,
+              mt: 2,
+            }}
+          >
+            <FolderIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
+            <Typography variant="body1" color="text.secondary">
+              No hay vínculos con legajos
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Cree un vínculo para relacionar esta demanda con un legajo existente.
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+
+      {/* Dialogs */}
+      <CrearVinculoLegajoDialog
+        open={crearVinculoDialogOpen}
+        onClose={handleCloseCrearVinculo}
+        demandaId={demandaId}
+        onVinculoCreated={handleVinculoCreated}
+      />
+
+      <DesvincularVinculoDialog
+        open={desvincularDialogOpen}
+        onClose={handleCloseDesvincular}
+        vinculo={vinculoToDesvincular}
+        onVinculoDesvinculado={handleVinculoDesvinculado}
+      />
     </Box>
   )
 }

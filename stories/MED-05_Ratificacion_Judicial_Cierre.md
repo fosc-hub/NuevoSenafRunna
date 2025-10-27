@@ -1,5 +1,25 @@
 # MED-05: Ratificación Judicial y Cierre del Ciclo de Medida
 
+> **⚠️ VERSIÓN CORREGIDA (v3.2 - 2025-10-26)**
+>
+> **Validaciones Críticas**:
+> - ✅ **SOLO MPE**: Este módulo aplica exclusivamente a Medidas de Protección Excepcional (MPE)
+> - ✅ **Etapas A/I/P/C**: Etapas de Apertura, Innovación, Prórroga **y Cese** requieren ratificación (estados 1-5)
+> - ❌ **NO Post-Cese**: Etapa Post-Cese de MPE es PLTM-driven, sin ratificación judicial
+> - ❌ **NO MPI**: Medidas de Protección Integral (MPI) solo tienen estados 1-2, sin ratificación
+> - ❌ **NO MPJ**: Medidas de Protección Jurídica (MPJ) son PLTM-driven, sin ratificación
+>
+> **Simplificación v3.0**:
+> - ❌ Sin sincronización automática con Oficios
+> - ❌ Sin archivo automático de Demandas
+> - ❌ Sin impacto operativo automático en PLTM
+>
+> **Enfoque actual**: Registro manual de resultado judicial + notificaciones
+>
+> **Responsabilidad operativa**: Equipo técnico decide manualmente próxima acción (Innovación, Prórroga, Cese, PLTM)
+>
+> Ver [CHANGELOG](#-changelog) al final del documento para detalles completos.
+
 ## 📋 CONTEXTO TÉCNICO
 
 ### Estado de Implementación Previo
@@ -29,12 +49,26 @@ graph TD
 
 ## 🎯 DESCRIPCIÓN
 
-**MED-05: Ratificación Judicial de la Medida** es el último paso en el "andarivel" procesal de una medida de protección (Apertura, Innovación o Prórroga). Su objetivo es **registrar la decisión final del Poder Judicial** sobre la medida solicitada, cerrando así el ciclo jurídico iniciado en MED-01.
+**MED-05: Ratificación Judicial de la Medida** es el último paso en el "andarivel" procesal de una **Medida de Protección Excepcional (MPE)** en sus etapas de Apertura, Innovación o Prórroga. Su objetivo es **registrar la decisión final del Poder Judicial** sobre la medida solicitada, cerrando así el ciclo jurídico de la **etapa actual** (no de la medida completa).
 
 Esta etapa formaliza si la medida es **Ratificada** o **No Ratificada** por un juez, y documenta la resolución judicial correspondiente con sus adjuntos oficiales.
 
 ### Objetivo Principal
-Cerrar el ciclo completo de la medida de protección con el resultado judicial definitivo, manteniendo trazabilidad completa desde MED-01 hasta el cierre.
+Cerrar el ciclo jurídico de la **etapa actual** de MPE con el resultado judicial definitivo, manteniendo trazabilidad completa desde MED-01 hasta MED-05.
+
+### ⚠️ Tipos de Medida y Etapas Aplicables
+
+| Tipo Medida | ¿Aplica MED-05? | Etapas con Ratificación | Razón |
+|-------------|----------------|-------------------------|-------|
+| **MPE** (Protección Excepcional) | ✅ **SÍ** | Apertura, Innovación, Prórroga, **Cese** | Estados 1-5 completos (decisión judicial) |
+| **MPE** (Protección Excepcional) | ❌ **NO** | Post-Cese | PLTM-driven, sin proceso judicial |
+| **MPI** (Protección Integral) | ❌ **NO** | Ninguna | Solo estados 1-2, sin ratificación |
+| **MPJ** (Protección Jurídica) | ❌ **NO** | Ninguna | PLTM-driven, sin estados formales |
+
+**Validaciones Críticas**:
+- ✅ El sistema debe **PERMITIR** ratificación para MPE en etapas: Apertura, Innovación, Prórroga, **Cese**
+- ❌ El sistema debe **RECHAZAR** ratificación para MPE en etapa: Post-Cese (error 400)
+- ❌ El sistema debe **RECHAZAR** ratificación para MPI y MPJ (error 400)
 
 ## 👥 ROLES Y PERMISOS
 
@@ -723,10 +757,15 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 
 ## ✅ CRITERIOS DE ACEPTACIÓN
 
-### CA-01: Precondición de Informe Jurídico
+### CA-01: Precondiciones y Validación de Tipo de Medida
+- [ ] **CRÍTICO**: Validar que medida sea tipo MPE (Protección Excepcional)
+- [ ] **CRÍTICO**: Rechazar con error 400 si medida es MPI (solo estados 1-2, sin ratificación)
+- [ ] **CRÍTICO**: Rechazar con error 400 si medida es MPJ (PLTM-driven, sin ratificación)
+- [ ] **CRÍTICO**: Validar que etapa sea Apertura, Innovación, Prórroga **o Cese** (todas tienen estados 1-5)
+- [ ] **CRÍTICO**: Rechazar con error 400 si etapa es Post-Cese (PLTM-driven, sin ratificación)
 - [ ] No se puede crear ratificación si etapa no está en estado `PENDIENTE_RATIFICACION_JUDICIAL`
 - [ ] Validar que MED-04 (Informe Jurídico) esté completado
-- [ ] Error 400 con mensaje claro si precondición falla
+- [ ] Error 400 con mensaje claro y específico para cada tipo de falla
 
 ### CA-02: Datos Mínimos Obligatorios
 - [ ] `decision`: Requerido (RATIFICADA / NO_RATIFICADA / PENDIENTE)
@@ -742,12 +781,14 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 - [ ] Validar formato PDF para todos los adjuntos
 - [ ] Error 400 si archivo no es PDF
 
-### CA-04: Transiciones de Estado Automáticas
-- [ ] `RATIFICADA`: Transiciona etapa a estado `RATIFICADA` (final)
-- [ ] `NO_RATIFICADA`: Transiciona etapa a estado `NO_RATIFICADA` (final)
+### CA-04: Transiciones de Estado (Solo Etapa Actual)
+- [ ] `RATIFICADA`: Transiciona **etapa actual** a estado `RATIFICADA` (final de etapa, NO de medida)
+- [ ] `NO_RATIFICADA`: Transiciona **etapa actual** a estado `NO_RATIFICADA` (final de etapa, NO de medida)
 - [ ] `PENDIENTE`: No transiciona (caso edge)
-- [ ] Transición ejecutada en `save()` del modelo
+- [ ] Transición ejecutada en ViewSet (patrón consistente con MED-02, 03, 04)
 - [ ] Usar método `_transicionar_estado()` de TEtapaMedida
+- [ ] **NO crear** etapa posterior automáticamente (responsabilidad manual del equipo técnico)
+- [ ] Medida puede continuar activa después de ratificación (puede haber Innovación, Prórroga, Cese)
 
 ### CA-05: Permisos por Rol y Zona
 - [ ] Solo Equipo Legal (`legal=True`) puede crear/modificar
@@ -762,46 +803,28 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 - [ ] `fecha_notificacion >= fecha_resolucion` (si ambas existen)
 - [ ] Error 400 con mensaje específico por campo
 
-### CA-07: Sincronización con Oficios
-- [ ] Si ratificación se carga vía Oficio: actualizar MED-05 automáticamente
-- [ ] Si MED-05 se actualiza manualmente: actualizar Oficio vinculado
-- [ ] Mantener consistencia bidireccional
-- [ ] Registrar auditoría de sincronización
-
-### CA-08: Puente con Demanda Original
-- [ ] Si proceso originó por Demanda "Carga de Oficios": archivar Demanda al finalizar MED-05
-- [ ] Mantener trazabilidad Demanda → Legajo → Medida → Ratificación
-- [ ] Actualizar estado Demanda a `Archivada`
-- [ ] Registrar cierre en auditoría
-
-### CA-09: Impacto Operativo en PLTM
-- [ ] Si `RATIFICADA`: cerrar tareas judiciales en Plan de Trabajo (PLTM)
-- [ ] Si `NO_RATIFICADA`: crear actividad "Revisión post no ratificación" asignada a JZ/Dirección
-- [ ] Actualizar estado de actividades relacionadas
-- [ ] Notificar cambios a usuarios asignados
-
-### CA-10: Notificaciones Automáticas
+### CA-07: Notificaciones Automáticas
 - [ ] Notificar a Equipo Técnico al cambiar estado de MED-05
 - [ ] Notificar a JZ/Dirección al cambiar estado de MED-05
 - [ ] Notificar a Legales al cambiar estado de MED-05
 - [ ] Incluir resultado de ratificación en notificación
 - [ ] Registrar envío de notificaciones
 
-### CA-11: Auditoría Completa
+### CA-08: Auditoría Completa
 - [ ] Registrar `usuario_registro` en creación
 - [ ] Registrar `fecha_registro` automáticamente
 - [ ] Registrar `fecha_modificacion` en cada actualización
 - [ ] Mantener historial de cambios (si aplica)
 - [ ] Trazabilidad completa MED-01 → MED-05
 
-### CA-12: Response Structure Completa
+### CA-09: Response Structure Completa
 - [ ] Incluir datos de ratificación completos
 - [ ] Incluir adjuntos con URLs completas
 - [ ] Incluir información de usuario (nested serializer)
 - [ ] Incluir timestamps de auditoría
 - [ ] Formato JSON consistente con MED-01 a MED-04
 
-### CA-13: Casos Edge y Soft Delete
+### CA-10: Casos Edge y Soft Delete
 - [ ] Impedir ratificación sin archivo de resolución
 - [ ] Impedir modificación de ratificación final (RATIFICADA/NO_RATIFICADA)
 - [ ] Impedir acceso si usuario no pertenece a zona del legajo
@@ -811,30 +834,27 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 - [ ] Soft delete: desactivar ratificación anterior al crear nueva
 - [ ] Mantener historial completo para auditoría y trazabilidad
 
-### CA-14: Integración con Workflow Completo
-- [ ] Cierra ciclo MED-01 → MED-05 correctamente
-- [ ] Sincroniza con módulo Oficios
-- [ ] Sincroniza con módulo Demandas
-- [ ] Dispara acciones en PLTM según resultado
-- [ ] Mantiene consistencia de estados en todo el sistema
-
-### CA-15: Testing Completo
-- [ ] Mínimo 18 tests unitarios cubriendo:
-  - [ ] Creación exitosa con decisión RATIFICADA
-  - [ ] Creación exitosa con decisión NO_RATIFICADA
+### CA-11: Testing Completo
+- [ ] Mínimo 22 tests unitarios cubriendo (actualizado v3.2):
+  - [ ] Creación exitosa con decisión RATIFICADA (MPE Apertura)
+  - [ ] Creación exitosa con decisión NO_RATIFICADA (MPE Innovación)
+  - [ ] **NUEVO v3.1**: Rechazo si medida es MPI (error 400)
+  - [ ] **NUEVO v3.1**: Rechazo si medida es MPJ (error 400)
+  - [ ] **NUEVO v3.2**: Creación exitosa para etapa Cese de MPE (RATIFICADA)
+  - [ ] **NUEVO v3.2**: Rechazo si etapa es Post-cese de MPE (error 400)
+  - [ ] **CORREGIDO v3.2**: Éxito para Apertura/Innovación/Prórroga/**Cese** de MPE
   - [ ] Validación de precondición (estado correcto)
   - [ ] Validación de fechas (no futuras)
   - [ ] Validación de adjunto obligatorio
   - [ ] Validación de permisos (Legal/JZ)
   - [ ] Transiciones de estado automáticas
+  - [ ] **NUEVO**: NO crea etapa posterior automáticamente
   - [ ] Casos edge (duplicación activa, modificación final)
   - [ ] **Soft delete: puede crear múltiples ratificaciones inactivas**
   - [ ] **Soft delete: solo una ratificación activa a la vez**
   - [ ] **Soft delete: desactivar anterior al crear nueva**
   - [ ] **Historial: obtener ratificación activa por etapa**
   - [ ] **Historial: obtener todas las ratificaciones (activas + inactivas)**
-  - [ ] Sincronización con Oficios
-  - [ ] Impacto en PLTM
 - [ ] Coverage >90% del código relacionado
 
 ## 🧪 CASOS DE USO DETALLADOS
@@ -858,11 +878,12 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 10. Guarda el formulario
 
 **Resultado**:
-- Sistema cambia estado de etapa a `RATIFICADA`
-- Sistema cierra tareas judiciales en PLTM
+- Sistema cambia estado de **etapa actual** a `RATIFICADA` (no cierra la medida completa)
 - Sistema notifica a Equipo Técnico, JZ, Director
 - Sistema registra auditoría completa
+- Sistema **NO crea** automáticamente nueva etapa (responsabilidad manual del equipo)
 - Usuario ve confirmación: "Ratificación registrada exitosamente"
+- **Próxima acción manual**: Equipo Técnico/JZ decide si crear Innovación, Prórroga, Cese, o continuar con PLTM
 
 ### Caso de Uso 2: No Ratificación (NO_RATIFICADA)
 **Precondiciones**:
@@ -881,11 +902,12 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 8. Guarda el formulario
 
 **Resultado**:
-- Sistema cambia estado de etapa a `NO_RATIFICADA`
-- Sistema crea actividad "Revisión post no ratificación" en PLTM asignada a Director
+- Sistema cambia estado de **etapa actual** a `NO_RATIFICADA` (no cierra la medida completa)
 - Sistema notifica a Equipo Técnico, Director, Legales
 - Sistema registra auditoría completa
-- Usuario ve confirmación: "No ratificación registrada. Se ha creado tarea de revisión"
+- Sistema **NO crea** automáticamente nueva etapa o tarea (responsabilidad manual del equipo)
+- Usuario ve confirmación: "No ratificación registrada exitosamente"
+- **Próxima acción manual**: Equipo Técnico/JZ/Dirección decide próximos pasos (revisión, nueva Innovación, etc.)
 
 ### Caso de Uso 3: Intento de Ratificación sin Informe Jurídico
 **Precondiciones**:
@@ -955,7 +977,75 @@ class TRatificacionJudicialSerializer(serializers.ModelSerializer):
 - Usuario ve confirmación: "Ratificación corregida exitosamente. La anterior se ha desactivado."
 - Transición de estado ejecutada según nueva decisión
 
-### Caso de Uso 7: Consulta de Historial de Ratificaciones
+### Caso de Uso 7: Intento de Ratificación para MPI (DEBE FALLAR)
+**Precondiciones**:
+- Medida tipo MPI (Protección Integral)
+- Usuario es Equipo Legal
+
+**Flujo**:
+1. Usuario intenta crear ratificación para medida MPI
+2. Sistema valida tipo de medida
+
+**Resultado**:
+- Sistema muestra error 400: "Solo las Medidas de Protección Excepcional (MPE) requieren ratificación judicial. Esta medida es de tipo Protección Integral (MPI)."
+- Usuario no puede proceder
+- Sistema registra intento fallido en logs
+
+### Caso de Uso 8: Intento de Ratificación para MPJ (DEBE FALLAR)
+**Precondiciones**:
+- Medida tipo MPJ (Protección Jurídica)
+- Usuario es Equipo Legal
+
+**Flujo**:
+1. Usuario intenta crear ratificación para medida MPJ
+2. Sistema valida tipo de medida
+
+**Resultado**:
+- Sistema muestra error 400: "Solo las Medidas de Protección Excepcional (MPE) requieren ratificación judicial. Esta medida es de tipo Protección Jurídica (MPJ)."
+- Usuario no puede proceder
+- Sistema registra intento fallido en logs
+
+### Caso de Uso 9: Intento de Ratificación para Etapa Post-Cese MPE (DEBE FALLAR)
+**Precondiciones**:
+- Medida tipo MPE
+- Etapa actual: Post-Cese
+- Usuario es Equipo Legal
+
+**Flujo**:
+1. Usuario intenta crear ratificación para etapa Post-Cese
+2. Sistema valida etapa específica
+
+**Resultado**:
+- Sistema muestra error 400: "Solo las etapas de Apertura, Innovación, Prórroga y Cese de MPE requieren ratificación judicial. Etapa actual: Post-Cese (PLTM-driven, sin proceso judicial)."
+- Usuario no puede proceder
+- Sistema registra intento fallido en logs
+
+### Caso de Uso 10: Ratificación Exitosa para Etapa Cese (DEBE FUNCIONAR)
+**Precondiciones**:
+- Medida tipo MPE
+- Etapa actual: Cese en estado `PENDIENTE_RATIFICACION_JUDICIAL`
+- Usuario es Equipo Legal de la zona del legajo
+- MED-04 completado para etapa Cese
+
+**Flujo**:
+1. Usuario de Legales recibe oficio judicial ratificando el Cese de la medida
+2. Ingresa a la medida en el sistema
+3. Navega a la pestaña "Ratificación Judicial" de la etapa Cese
+4. Selecciona decisión "RATIFICADA"
+5. Ingresa fecha de resolución: 2025-12-15
+6. Adjunta archivo PDF de resolución judicial
+7. Escribe observaciones: "Ratificación de Cese - Medida finalizada judicialmente"
+8. Guarda el formulario
+
+**Resultado**:
+- Sistema cambia estado de **etapa Cese** a `RATIFICADA`
+- Sistema notifica a Equipo Técnico, JZ, Director
+- Sistema registra auditoría completa
+- Sistema **NO crea** automáticamente etapa Post-Cese (responsabilidad manual)
+- Usuario ve confirmación: "Ratificación de Cese registrada exitosamente"
+- **Próxima acción manual**: Equipo Técnico/JZ puede crear etapa Post-Cese si hay actividades pendientes, o archivar la medida
+
+### Caso de Uso 11: Consulta de Historial de Ratificaciones
 **Precondiciones**:
 - Múltiples ratificaciones (activas e inactivas) para una etapa
 - Usuario es Equipo Legal, JZ o Administrador
@@ -1009,19 +1099,9 @@ graph TD
         M -- NO_RATIFICADA --> O[Estado Final: NO_RATIFICADA]
     end
 
-    subgraph "Impactos en PLTM"
-        N --> P[Cerrar tareas judiciales en PLTM]
-        O --> Q[Crear tarea 'Revisión post no ratificación']
-    end
-
-    subgraph "Sincronización con Oficios"
-        L --> R[Actualizar Oficio vinculado]
-        R --> L
-    end
-
-    subgraph "Cierre de Demanda Original"
-        N --> S[Archivar Demanda original si aplica]
-        O --> S
+    subgraph "Notificaciones"
+        N --> P[Notificar a Equipo Técnico, JZ, Director, Legales]
+        O --> P
     end
 ```
 
@@ -1062,31 +1142,49 @@ graph TD
 - [ ] Migraciones aplicadas: `migrate`
 - [ ] Fixtures creados para testing (si aplica)
 - [ ] `setup_project.py` actualizado con migraciones MED-05
-- [ ] Tests ejecutados y pasando: 18-20 tests (incluyendo soft delete y historial)
+- [ ] Tests ejecutados y pasando: 16+ tests (simplificado en v3.0: soft delete, historial, validaciones)
 
 ## 🎯 OBJETIVOS DE TESTING
 
-### Mínimo 18 Tests
-1. `test_crear_ratificacion_ratificada_exitoso`: Creación con RATIFICADA
-2. `test_crear_ratificacion_no_ratificada_exitoso`: Creación con NO_RATIFICADA
-3. `test_crear_ratificacion_sin_estado_correcto_falla`: Error si estado != 5
-4. `test_crear_ratificacion_sin_archivo_falla`: Error si falta archivo obligatorio
-5. `test_crear_ratificacion_fecha_futura_falla`: Error si fecha_resolucion futura
-6. `test_crear_ratificacion_fecha_notificacion_futura_falla`: Error si fecha_notificacion futura
-7. `test_crear_ratificacion_fecha_notificacion_anterior_falla`: Error si fecha_notificacion < fecha_resolucion
-8. `test_crear_ratificacion_sin_permisos_falla`: Error 403 si no es Legal/JZ
-9. `test_transicion_estado_ratificada`: Validar estado final RATIFICADA
-10. `test_transicion_estado_no_ratificada`: Validar estado final NO_RATIFICADA
-11. `test_duplicacion_ratificacion_activa_falla`: Error 400 si ya existe ratificación ACTIVA
-12. `test_multiples_ratificaciones_inactivas`: Permitir múltiples ratificaciones inactivas
-13. `test_soft_delete_desactivar_anterior`: Desactivar anterior al crear nueva
-14. `test_solo_una_ratificacion_activa`: Validar constraint de una activa por etapa
-15. `test_get_activa_por_etapa`: Obtener ratificación activa correcta
-16. `test_get_historial_por_etapa`: Obtener todas las ratificaciones (activas + inactivas)
-17. `test_modificar_ratificacion_pendiente`: Permitir modificar solo si está PENDIENTE
-18. `test_modificar_ratificacion_final_falla`: Error si decisión ya es RATIFICADA/NO_RATIFICADA
-19. `test_adjuntos_multiples`: Validar creación de múltiples adjuntos
-20. `test_permisos_zona`: Validar que usuario pertenezca a zona del legajo
+### Mínimo 22 Tests (Actualizado v3.2 - Cese SÍ Requiere Ratificación)
+
+#### Tests de Validación Tipo de Medida y Etapa (CRÍTICOS)
+1. `test_crear_ratificacion_mpe_apertura_exitoso`: Creación exitosa para MPE Apertura con RATIFICADA
+2. `test_crear_ratificacion_mpe_innovacion_exitoso`: Creación exitosa para MPE Innovación con NO_RATIFICADA
+3. `test_crear_ratificacion_mpe_prorroga_exitoso`: Creación exitosa para MPE Prórroga
+4. `test_crear_ratificacion_mpe_cese_exitoso`: **NUEVO v3.2** - Creación exitosa para MPE Cese (estados 1-5)
+5. `test_crear_ratificacion_mpi_falla`: **NUEVO v3.1** - Error 400 si medida es MPI (solo estados 1-2)
+6. `test_crear_ratificacion_mpj_falla`: **NUEVO v3.1** - Error 400 si medida es MPJ (PLTM-driven)
+7. `test_crear_ratificacion_mpe_postcese_falla`: **NUEVO v3.2** - Error 400 si etapa es Post-cese (PLTM-driven)
+
+#### Tests de Validaciones y Permisos
+8. `test_crear_ratificacion_sin_estado_correcto_falla`: Error si estado != 5
+9. `test_crear_ratificacion_sin_archivo_falla`: Error si falta archivo obligatorio
+10. `test_crear_ratificacion_fecha_futura_falla`: Error si fecha_resolucion futura
+11. `test_crear_ratificacion_fecha_notificacion_futura_falla`: Error si fecha_notificacion futura
+12. `test_crear_ratificacion_fecha_notificacion_anterior_falla`: Error si fecha_notificacion < fecha_resolucion
+13. `test_crear_ratificacion_sin_permisos_falla`: Error 403 si no es Legal/JZ
+14. `test_permisos_zona`: Validar que usuario pertenezca a zona del legajo
+
+#### Tests de Transiciones de Estado
+15. `test_transicion_estado_ratificada`: Validar estado final RATIFICADA (solo etapa, no medida)
+16. `test_transicion_estado_no_ratificada`: Validar estado final NO_RATIFICADA (solo etapa, no medida)
+17. `test_ratificacion_no_crea_etapa_automaticamente`: **NUEVO** - Validar que NO se crea etapa posterior
+
+#### Tests de Soft Delete y Historial
+18. `test_duplicacion_ratificacion_activa_falla`: Error 400 si ya existe ratificación ACTIVA
+19. `test_multiples_ratificaciones_inactivas`: Permitir múltiples ratificaciones inactivas
+20. `test_soft_delete_desactivar_anterior`: Desactivar anterior al crear nueva
+21. `test_solo_una_ratificacion_activa`: Validar constraint de una activa por medida
+22. `test_get_activa_por_medida`: Obtener ratificación activa correcta
+23. `test_get_historial_por_medida`: Obtener todas las ratificaciones (activas + inactivas)
+
+#### Tests de Modificación y Adjuntos
+24. `test_modificar_ratificacion_pendiente`: Permitir modificar solo si está PENDIENTE
+25. `test_modificar_ratificacion_final_falla`: Error si decisión ya es RATIFICADA/NO_RATIFICADA
+26. `test_adjuntos_multiples`: Validar creación de múltiples adjuntos
+
+**Total**: 27 tests (v3.2: +1 test Cese exitoso, -1 test rechazo Cese erróneo = neto igual, pero corregidos)
 
 ## 🔗 DEPENDENCIAS TÉCNICAS
 
@@ -1097,9 +1195,7 @@ graph TD
 
 ### Métodos Requeridos
 - ✅ `TEtapaMedida._transicionar_estado()` (MED-01)
-- ⚠️ Integración con PLTM (pendiente de implementación PLTM-01 a PLTM-04)
-- ⚠️ Sincronización con Oficios (pendiente de implementación módulo Oficios)
-- ⚠️ Archivo de Demanda (pendiente de implementación lógica de cierre Demanda)
+- ✅ Sistema de notificaciones (si existe en el proyecto)
 
 ### Fixtures Requeridos
 - Usuarios de Equipo Legal con `legal=True`
@@ -1216,8 +1312,230 @@ medida = models.ForeignKey(TMedida, ...)
 
 ---
 
-**Última actualización**: 2025-10-13
+## 📝 CHANGELOG
+
+### v3.2 - Corrección Crítica: Cese SÍ Requiere Ratificación Judicial (2025-10-26)
+
+**Objetivo**: Corregir error en v3.1 que excluía incorrectamente la etapa Cese de MPE.
+
+**❌ ERROR IDENTIFICADO EN v3.1**:
+- Se documentó incorrectamente que solo Apertura, Innovación y Prórroga requieren ratificación
+- Se creó validación errónea para rechazar ratificación de etapa Cese
+- Se creó caso de uso CU-09 que rechazaba Cese (INCORRECTO)
+- Se creó test `test_crear_ratificacion_mpe_cese_falla` (INCORRECTO)
+
+**✅ CORRECCIÓN BASADA EN RUNNA-V2.md**:
+> **Cita textual MED-01**:
+> ```
+> MPE
+>   Cese: Única intervención - Estados 1, 2, 3, 4, 5
+> ```
+
+**Hallazgos Críticos**:
+1. ✅ **Confirmado**: Etapa **Cese de MPE** SÍ requiere ratificación judicial (tiene estados 1-5)
+2. ✅ **Confirmado**: Solo **Post-Cese** NO requiere ratificación (es PLTM-driven, sin estados formales)
+3. ❌ **Error v3.1**: Validación rechazaba Cese incorrectamente
+4. ✅ **Correcto ahora**: Apertura, Innovación, Prórroga **Y CESE** requieren ratificación
+
+**Cambios Aplicados**:
+
+1. **Tabla "Tipos de Medida Aplicables"**:
+   - ✅ Agregada fila separada para MPE Post-Cese (NO requiere)
+   - ✅ Actualizada fila MPE para incluir Cese explícitamente
+   - ✅ Clarificado que A/I/P/**C** todas tienen estados 1-5
+
+2. **Advertencia Inicial**:
+   - ✅ Cambiado de "A/I/P" a "A/I/P/C" (Apertura, Innovación, Prórroga, Cese)
+   - ✅ Aclarado que Post-Cese NO requiere ratificación
+   - ✅ Actualizado a v3.2
+
+3. **CA-01 Corregido**:
+   - ✅ Validación permite Apertura, Innovación, Prórroga **o Cese**
+   - ✅ Validación rechaza solo Post-Cese (no Cese)
+   - ✅ Mensaje de error actualizado
+
+4. **Casos de Uso Corregidos**:
+   - ❌ **Eliminado CU-09** (rechazo Cese - INCORRECTO)
+   - ✅ **Nuevo CU-09**: Rechazo Post-Cese (CORRECTO)
+   - ✅ **Nuevo CU-10**: Ratificación exitosa para etapa Cese (CORRECTO)
+   - ✅ Renumerado CU-11 (antes CU-10): Consulta historial
+
+5. **Tests Corregidos** (27 total):
+   - ❌ **Eliminado**: `test_crear_ratificacion_mpe_cese_falla` (era incorrecto)
+   - ✅ **Nuevo**: `test_crear_ratificacion_mpe_cese_exitoso` (correcto)
+   - ✅ **Actualizado**: `test_crear_ratificacion_mpe_postcese_falla` (Post-Cese, no Cese)
+
+**Tabla Comparativa de Corrección**:
+
+| Aspecto | v3.1 (INCORRECTO) | v3.2 (CORRECTO) |
+|---------|-------------------|-----------------|
+| **Etapas válidas** | A/I/P | A/I/P/**C** |
+| **Cese** | ❌ Rechazado | ✅ Permitido |
+| **Post-Cese** | ❌ No mencionado explícitamente | ❌ Rechazado explícitamente |
+| **Test Cese** | `_falla` | `_exitoso` |
+| **CU-09** | Rechazo Cese | Rechazo Post-Cese |
+| **CU-10** | Historial | Ratificación Cese exitosa |
+
+**Razón del Error Inicial**:
+- Título de MED-05 dice "(Apertura, Innovación, Prórroga)" sin mencionar Cese
+- Se asumió incorrectamente que Cese no requería ratificación
+- Análisis de Gemini reveló que Cese SÍ tiene estados 1-5 completos
+
+**Impacto de la Corrección**:
+- ✅ **Mayor precisión**: Refleja correctamente el proceso judicial completo
+- ✅ **Consistencia**: Todas las etapas con estados 1-5 requieren ratificación
+- ✅ **Claridad**: Post-Cese explícitamente identificado como no-judicial
+
+**Estado**: ✅ Error crítico corregido, documentación alineada con RUNNA-V2.md
+
+---
+
+### v3.1 - Validación Tipo de Medida y Alineación con MED-01 V2 (2025-10-26)
+
+**Objetivo**: Validar que MED-05 esté correctamente alineado con tipos de medida (MPE/MPI/MPJ) definidos en MED-01 V2.
+
+**Hallazgos Críticos**:
+1. ✅ **Confirmado**: MED-05 SOLO aplica a **MPE** (Medida de Protección Excepcional)
+2. ✅ **Confirmado**: Solo etapas **Apertura, Innovación, Prórroga** de MPE requieren ratificación
+3. ✅ **Confirmado**: **NO** se debe crear etapa posterior automáticamente post-ratificación
+4. ❌ **Faltante v3.0**: Validación tipo medida MPE en serializer
+5. ❌ **Faltante v3.0**: Validación etapa específica (A/I/P) en serializer
+6. ❌ **Faltante v3.0**: Tests para rechazar MPI/MPJ
+
+**Cambios Principales**:
+
+1. **Validación Crítica de Tipo de Medida**:
+   - ✅ Agregada tabla "Tipos de Medida Aplicables" en descripción
+   - ✅ Actualizado CA-01 con validación tipo MPE (CRÍTICO)
+   - ✅ Agregada validación rechazo MPI (solo estados 1-2, sin ratificación)
+   - ✅ Agregada validación rechazo MPJ (PLTM-driven, sin ratificación)
+   - ✅ Agregada validación etapa específica (solo A/I/P, no Cese ni Post-cese)
+
+2. **Clarificación de Transiciones de Estado**:
+   - ✅ CA-04 actualizado: Cierre de **etapa actual** (NO de medida completa)
+   - ✅ CA-04 actualizado: **NO crear** etapa posterior automáticamente
+   - ✅ Explícito: Responsabilidad manual del equipo técnico para próximos pasos
+   - ✅ Aclarado: Medida puede continuar activa después de ratificación
+
+3. **Casos de Uso Nuevos**:
+   - ✅ **CU-07**: Intento ratificación MPI → Error 400
+   - ✅ **CU-08**: Intento ratificación MPJ → Error 400
+   - ✅ **CU-09**: Intento ratificación etapa Cese MPE → Error 400
+   - ✅ Actualizado CU-01 y CU-02 con clarificación "NO crea etapa automáticamente"
+
+4. **Tests Adicionales** (26 total, +10 nuevos):
+   - ✅ `test_crear_ratificacion_mpi_falla`: MPI no requiere ratificación
+   - ✅ `test_crear_ratificacion_mpj_falla`: MPJ no requiere ratificación
+   - ✅ `test_crear_ratificacion_mpe_cese_falla`: Cese no requiere ratificación
+   - ✅ `test_crear_ratificacion_mpe_postcese_falla`: Post-cese no requiere ratificación
+   - ✅ `test_crear_ratificacion_solo_mpe_apertura_innovacion_prorroga`: Solo MPE A/I/P
+   - ✅ `test_ratificacion_no_crea_etapa_automaticamente`: No auto-creación de etapa
+   - ✅ Reorganización de tests por categorías (Tipo Medida, Validaciones, Transiciones, Soft Delete, Modificación)
+
+5. **Workflow Post-Ratificación Clarificado**:
+   ```
+   Ratificar → Cambiar estado etapa → Notificar → [MANUAL] Equipo decide próxima acción
+   ```
+
+**Métricas de Actualización**:
+- Tests: **16 → 26** (+62.5%)
+- Criterios de aceptación: **11** (CA-01 ampliado, CA-04 clarificado)
+- Casos de uso: **7 → 10** (+3 nuevos para validación tipo medida)
+- Validaciones críticas agregadas: **5** (tipo MPE, etapas A/I/P, rechazo MPI/MPJ/Cese/Post-cese)
+
+**Documento de Análisis**: Ver [MED-05_V2_Validacion_Alineacion_MED-01.md](.claude/stories/MED-05_V2_Validacion_Alineacion_MED-01.md)
+
+**Estado**: ✅ Alineado con MED-01 V2 y listo para implementación
+
+---
+
+### v3.0 - Simplificación del Módulo (2025-10-26)
+
+**Objetivo**: Alinear MED-05 con la documentación RUNNA-V2.md que simplificó el módulo eliminando integraciones complejas.
+
+**Cambios Principales**:
+
+1. **Eliminación de Integraciones Automáticas Complejas**:
+   - ❌ **ELIMINADO CA-07**: Sincronización bidireccional con módulo Oficios
+   - ❌ **ELIMINADO CA-08**: Puente con Demanda Original y archivo automático
+   - ❌ **ELIMINADO CA-09**: Impacto operativo automático en PLTM (cierre/creación tareas)
+   - ❌ **ELIMINADO CA-14**: Integración con Workflow Completo
+
+2. **Renumeración de Criterios de Aceptación**:
+   - CA-10 → CA-07: Notificaciones Automáticas (simplificadas)
+   - CA-11 → CA-08: Auditoría Completa
+   - CA-12 → CA-09: Response Structure Completa
+   - CA-13 → CA-10: Casos Edge y Soft Delete
+   - CA-15 → CA-11: Testing Completo (eliminados tests de integración compleja)
+
+3. **Simplificación de Casos de Uso**:
+   - **CU-01 (RATIFICADA)**: Eliminado "Sistema cierra tareas judiciales en PLTM"
+   - **CU-02 (NO_RATIFICADA)**: Eliminado "Sistema crea actividad 'Revisión post no ratificación' en PLTM"
+   - Ambos casos ahora solo notifican sin acciones operativas automáticas
+
+4. **Actualización de Diagramas Mermaid**:
+   - Eliminado subgrafo "Impactos en PLTM"
+   - Eliminado subgrafo "Sincronización con Oficios"
+   - Eliminado subgrafo "Cierre de Demanda Original"
+   - Agregado subgrafo simplificado "Notificaciones"
+
+5. **Simplificación de Dependencias Técnicas**:
+   - ❌ Eliminado: "Integración con PLTM (pendiente)"
+   - ❌ Eliminado: "Sincronización con Oficios (pendiente)"
+   - ❌ Eliminado: "Archivo de Demanda (pendiente)"
+   - ✅ Mantenido: Sistema de notificaciones básico
+
+6. **Actualización de Testing**:
+   - Eliminados tests de sincronización con Oficios
+   - Eliminados tests de impacto en PLTM
+   - Mantenidos tests core: validaciones, permisos, transiciones, soft delete, historial
+
+**Filosofía del Cambio**:
+- **Antes (v2.0)**: Módulo complejo con automatizaciones cross-módulo (Oficios, Demandas, PLTM)
+- **Después (v3.0)**: Módulo simple y declarativo que registra resultado judicial y notifica
+- **Responsabilidad**: Equipo operativo (no sistema) ajusta PLTM manualmente según ratificación
+
+**Reducción de Complejidad**:
+- Criterios de aceptación: **15 → 11** (-27%)
+- Dependencias técnicas externas: **3 → 0** (-100%)
+- Casos de uso con lógica compleja: **7 → 7** (mismos, pero simplificados)
+- Testing de integración cross-módulo: **2 → 0** (-100%)
+
+**Impacto en Implementación**:
+- ✅ **Menor complejidad**: Sin lógica de negocio compleja cross-módulo
+- ✅ **Desacoplamiento**: MED-05 independiente de Oficios, Demandas, PLTM
+- ✅ **Mantenibilidad**: Menos puntos de falla por sincronización
+- ✅ **Flexibilidad operativa**: Equipo técnico decide acciones post-ratificación
+
+**Estado**: ✅ Simplificación documentada y alineada con RUNNA-V2.md
+
+---
+
+### v2.0 - Cambio Arquitectónico: FK de TEtapaMedida → TMedida (2025-10-13)
+
+[Contenido de revisión arquitectónica anterior se mantiene sin cambios]
+
+---
+
+### v1.0 - Cambio de OneToOneField a ForeignKey (2025-10-13)
+
+[Contenido de cambio de OneToOneField anterior se mantiene sin cambios]
+
+---
+
+**Última actualización**: 2025-10-26
 **Story creada por**: Claude Code + Gemini CLI Analysis
-**Revisada por**: Claude Code (Corrección FK: TEtapaMedida → TMedida)
-**Basado en**: Documentacion RUNNA.md - Sección Medidas de Protección (MED)
-**Estado**: ✅ Documentación completa y corregida - Lista para implementación
+**Revisiones**:
+- v3.2 (2025-10-26): **Corrección crítica** - Cese SÍ requiere ratificación judicial
+- v3.1 (2025-10-26): Validación tipo medida y alineación con MED-01 V2 (contenía error sobre Cese)
+- v3.0 (2025-10-26): Simplificación basada en RUNNA-V2.md
+- v2.0 (2025-10-13): Corrección FK: TEtapaMedida → TMedida
+- v1.0 (2025-10-13): Cambio de OneToOneField a ForeignKey
+
+**Basado en**:
+- Documentacion RUNNA-V2.md - Sección Medidas de Protección (MED-05)
+- Documentacion RUNNA-V2.md - Sección MED-01 (Tipos de Medida MPE/MPI/MPJ, Estados por Etapa)
+
+**Documento de Análisis**: [MED-05_V2_Validacion_Alineacion_MED-01.md](.claude/stories/MED-05_V2_Validacion_Alineacion_MED-01.md) (será actualizado)
+
+**Estado**: ✅ Error crítico corregido (Cese), documentación validada y lista para implementación

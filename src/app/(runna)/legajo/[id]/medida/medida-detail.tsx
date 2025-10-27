@@ -521,6 +521,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                     : `M-${medidaData.id}`,
                 plan_trabajo_id: medidaApiData?.plan_trabajo_id
               }}
+              medidaApiData={medidaApiData || undefined}
               legajoData={legajoData ? {
                 numero: legajoData.numero,
                 persona_nombre: legajoData.nnya?.nombre || "",
@@ -583,6 +584,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                     : undefined,
                   fecha_apertura: medidaApiData.fecha_apertura,
                 }}
+                medidaApiData={medidaApiData}
                 legajoData={legajoData ? {
                   numero: legajoData.numero,
                   persona_nombre: legajoData.nnya?.nombre || "",

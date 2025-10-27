@@ -10,9 +10,11 @@ import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
 import { CeseTab } from "./mpe-tabs/cese-tab"
 import { HistorialSeguimientoTable } from "./historial-seguimiento-table"
 import { InformesMensualesTable } from "./informes-mensuales-table"
+import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPETabsProps {
     medidaData: any
+    medidaApiData?: MedidaDetailResponse
     legajoData?: {
         numero: string
         persona_nombre: string
@@ -22,7 +24,7 @@ interface MPETabsProps {
     planTrabajoId?: number
 }
 
-export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, legajoData, planTrabajoId }) => {
+export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, legajoData, planTrabajoId }) => {
     const [activeTab, setActiveTab] = useState(0)
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -58,9 +60,9 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, legajoData, planTr
 
             {/* Tab Content */}
             <Box>
-                {activeTab === 0 && <AperturaTab medidaData={medidaData} legajoData={legajoData} />}
-                {activeTab === 1 && <InnovacionTab medidaData={medidaData} legajoData={legajoData} />}
-                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} legajoData={legajoData} />}
+                {activeTab === 0 && <AperturaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
+                {activeTab === 1 && <InnovacionTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
+                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
                 {activeTab === 3 && (
                     planTrabajoId ? (
                         <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
@@ -70,7 +72,7 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, legajoData, planTr
                         </Box>
                     )
                 )}
-                {activeTab === 4 && <CeseTab medidaData={medidaData} legajoData={legajoData} />}
+                {activeTab === 4 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
                 {activeTab === 5 && (
                     <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
                         Contenido de Post cese - En desarrollo

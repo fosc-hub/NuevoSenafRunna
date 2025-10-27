@@ -279,6 +279,15 @@ export interface VinculosLegajoQueryParams {
   /** Filter by origin legajo ID */
   legajo_origen?: number
 
+  /** Filter by destination legajo ID */
+  legajo_destino?: number
+
+  /** Filter by destination medida ID */
+  medida_destino?: number
+
+  /** Filter by destination demanda ID */
+  demanda_destino?: number
+
   /** Filter by link type code */
   tipo_vinculo?: TipoVinculoCodigo
 

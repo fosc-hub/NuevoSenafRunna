@@ -1,7 +1,31 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(dir .next)",
+      "Bash(ls \"C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\api\"\")",
+      "Bash(ls 'C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\api\\')",
+      "Bash(ls 'C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\types\\')",
+      "Bash(ls 'C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\hooks\\')",
+      "Bash(ls 'C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\components\\medida\\')",
+      "Bash(ls 'C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\components\\dialogs\\')",
+      "Bash(dir \"src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\components\\medida\\mpe-tabs\" /B)",
+      "Bash(ls -la \"src/app/(runna)/legajo/[id]/medida/[medidaId]/\")",
+      "Bash(ls -la \"src/app/(runna)/legajo/[id]/medida/[medidaId]/api/\")",
+      "Bash(ls -la \"src/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/\")",
+      "Bash(ls -la \"src/app/(runna)/legajo/[id]/medida/[medidaId]/types/\")",
+      "Bash(ls -la \"src/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/mpe-tabs/\")",
+      "Bash(ls \"src/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/\")",
+      "Bash(ls -lh \"src/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/mpe-tabs/\")",
+      "Bash(wc -l \"C:\\Users\\santi\\OneDrive\\Documentos\\Documentos\\FoSc\\NuevoSenafRunna\\src\\app\\(runna)\\legajo\\[id]\\medida\\[medidaId]\\components\\medida\\registro-intervencion-modal.tsx\")",
+      "Bash(ls -la \"src/app/(runna)/legajo/[id]/medida/[medidaId]/utils/\")",
+      "Bash(find \"src/app/(runna)/legajo/[id]/medida/[medidaId]\" -name \"step-completion.ts\" -type f)",
+      "Bash(npm run build)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

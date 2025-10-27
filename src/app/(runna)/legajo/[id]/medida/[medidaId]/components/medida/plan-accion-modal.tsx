@@ -19,13 +19,15 @@ interface PlanAccionModalProps {
   onClose: () => void
   planTrabajoId: number
   onSuccess?: () => void
+  filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
 }
 
 export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
   open,
   onClose,
   planTrabajoId,
-  onSuccess
+  onSuccess,
+  filterEtapa
 }) => {
   const [activeTab, setActiveTab] = useState(0)
   const [formData, setFormData] = useState<Partial<CreateActividadRequest>>({})
@@ -105,6 +107,7 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
           onChange={handleFormChange}
           onClose={onClose}
           onSuccess={onSuccess}
+          filterEtapa={filterEtapa}
         />
       </DialogContent>
     </Dialog>

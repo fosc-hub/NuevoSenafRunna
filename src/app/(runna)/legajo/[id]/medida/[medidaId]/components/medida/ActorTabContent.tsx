@@ -60,13 +60,15 @@ interface ActorTabContentProps {
   onChange: (updates: Partial<CreateActividadRequest>) => void
   onClose: () => void
   onSuccess?: () => void
+  filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
 }
 
 export const ActorTabContent: React.FC<ActorTabContentProps> = ({
   actor,
   planTrabajoId,
   onClose,
-  onSuccess
+  onSuccess,
+  filterEtapa
 }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -159,6 +161,7 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
               value={field.value}
               onChange={field.onChange}
               actor={actor}
+              filterEtapa={filterEtapa}
               error={!!errors.tipo_actividad}
               helperText={errors.tipo_actividad?.message}
             />

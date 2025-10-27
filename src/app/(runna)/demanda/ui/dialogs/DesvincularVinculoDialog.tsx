@@ -21,16 +21,42 @@ import {
 import CloseIcon from "@mui/icons-material/Close"
 import LinkOffIcon from "@mui/icons-material/LinkOff"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"
-import {
-  MIN_CARACTERES_JUSTIFICACION_VINCULO,
-  type TVinculoLegajoList,
-} from "@/app/(runna)/legajo-mesa/types/vinculo-types"
+import { MIN_CARACTERES_JUSTIFICACION_VINCULO } from "@/app/(runna)/legajo-mesa/types/vinculo-types"
 import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
+
+// Type matching actual API response for demanda vinculos
+interface VinculoLegajoDemanda {
+  id: number
+  legajo_origen: number
+  legajo_origen_numero: string
+  tipo_vinculo: {
+    id: number
+    codigo: string
+    nombre: string
+    descripcion: string
+    activo: boolean
+  }
+  tipo_destino: string
+  destino_info: {
+    tipo: string
+    id: number
+    objetivo?: string
+    fecha_ingreso?: string
+  }
+  justificacion: string
+  activo: boolean
+  creado_por: number
+  creado_por_username: string
+  creado_en: string
+  desvinculado_por: number | null
+  desvinculado_en: string | null
+  justificacion_desvincular: string | null
+}
 
 interface DesvincularVinculoDialogProps {
   open: boolean
   onClose: () => void
-  vinculo: TVinculoLegajoList | null
+  vinculo: VinculoLegajoDemanda | null
   onVinculoDesvinculado?: () => void
 }
 
@@ -45,6 +71,19 @@ export default function DesvincularVinculoDialog({
 
   const [justificacion, setJustificacion] = useState("")
   const [validationError, setValidationError] = useState<string | null>(null)
+
+  // Helper to format destino info
+  const formatDestinoInfo = (vinculo: VinculoLegajoDemanda) => {
+    const { tipo_destino, destino_info } = vinculo
+    if (tipo_destino === "demanda") {
+      return `Demanda #${destino_info.id}${destino_info.objetivo ? ` - ${destino_info.objetivo}` : ""}`
+    } else if (tipo_destino === "legajo") {
+      return `Legajo #${destino_info.id}`
+    } else if (tipo_destino === "medida") {
+      return `Medida #${destino_info.id}`
+    }
+    return `${tipo_destino} #${destino_info.id}`
+  }
 
   // Reset form when dialog closes or vinculo changes
   useEffect(() => {
@@ -177,7 +216,7 @@ export default function DesvincularVinculoDialog({
                   Vinculado a
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {vinculo.destino_completo}
+                  {formatDestinoInfo(vinculo)}
                 </Typography>
               </Box>
 
@@ -206,7 +245,7 @@ export default function DesvincularVinculoDialog({
                   Creado por
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {vinculo.creado_por_info}
+                  {vinculo.creado_por_username}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {new Date(vinculo.creado_en).toLocaleDateString("es-AR", {

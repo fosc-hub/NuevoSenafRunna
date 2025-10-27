@@ -55,7 +55,7 @@ descripcion: TextField                  # Descripción del caso
 observaciones: TextField                # Observaciones adicionales
 
 # Clasificación
-objetivo_de_demanda: CharField          # PROTECCION | PETICION_DE_INFORME
+objetivo_de_demanda: CharField          # PROTECCION | PETICION_DE_INFORME | CARGA_OFICIOS
 ambito_vulneracion: FK(TAmbitoVulneracion)
 motivo_ingreso: FK(TCategoriaMotivo)
 submotivo_ingreso: FK(TCategoriaSubmotivo)
@@ -79,6 +79,10 @@ localizacion: FK(TLocalizacion)        # REQUIRED
 # Integración con MED (Medidas)
 tipo_medida_evaluado: CharField        # MPI | MPE | MPJ (desde EVAL-03)
 medida_creada: Boolean                 # Flag anti-duplicación
+
+# REG-01 CARGA_OFICIOS (2025-10-27)
+tipo_oficio: FK(TTipoOficio)           # Tipo de oficio judicial (NULL para otros objetivos)
+                                       # Trigger: Auto-crea actividades PLTM al vincular con medida
 
 # Auditoría
 registrado_por_user: FK(CustomUser)
@@ -979,7 +983,89 @@ Implementar validaciones dependientes:
 
 ---
 
+## 🔄 Cambios Arquitectónicos Recientes
+
+### CARGA_OFICIOS Workflow (2025-10-27)
+
+**Status**: ✅ COMPLETADO | **Migration**: 0056 | **Tests**: 21/21 PLTM-01 passing
+
+#### Resumen de Cambios
+
+Se refactorizó completamente el workflow CARGA_OFICIOS eliminando campos innecesarios y simplificando la integración con PLTM-01:
+
+
+**✅ CAMPO RETENIDO**:
+```python
+tipo_oficio = FK('TTipoOficio', null=True, blank=True)
+# Purpose: Identificar tipo de oficio para auto-crear actividades PLTM
+# Used by: Signal crear_actividades_desde_oficio
+```
+
+#### Nuevo Workflow CARGA_OFICIOS
+
+```
+1. Usuario registra demanda CARGA_OFICIOS
+   └─ objetivo_de_demanda = 'CARGA_OFICIOS'
+   └─ tipo_oficio = FK(TTipoOficio)  # Ej: "Ratificación", "Pedido Informe"
+
+2. LEG-01: Usuario vincula demanda → medida existente
+   └─ Crea TVinculoLegajo(demanda=demanda, medida=medida)
+   └─ Ingresa información judicial EN LA MEDIDA (expediente, carátula, juzgado)
+
+3. Signal detecta vinculación (oficio_signals.py)
+   └─ Trigger: TVinculoLegajo.post_save
+   └─ Condición: demanda.objetivo_de_demanda == 'CARGA_OFICIOS'
+   └─ Busca: TTipoActividadPlanTrabajo WHERE tipo_oficio = demanda.tipo_oficio
+   └─ Crea: Actividades automáticamente en medida.plan_trabajo
+
+4. PLTM-01: Actividades disponibles para gestión
+   └─ Usuario trabaja con actividades auto-creadas
+```
+
+#### Arquitectura Simplificada
+
+**Signal Removido**:
+- `crear_medida_mpj_desde_oficio` ❌ (auto-creación de medidas eliminada)
+
+**Signal Creado**:
+- `crear_actividades_desde_oficio` ✅ (auto-creación de actividades PLTM)
+
+**TTipoOficio Simplificado**:
+```python
+# BEFORE: Mezclaba PLTM-01 + REG-01 (conflicto)
+# AFTER: Solo PLTM-01 (clean)
+class TTipoOficio(models.Model):
+    nombre = CharField(max_length=200, unique=True)
+    descripcion = TextField(blank=True, null=True)
+    activo = BooleanField(default=True)
+    orden = IntegerField(default=0)
+```
+
+#### Rationale
+
+1. **Información judicial pertenece a medida**: Expediente, carátula, juzgado son datos de la **solución** (medida), no del **problema** (demanda)
+
+2. **Respeto a LEG-01 workflow**: Usuario vincula manualmente demanda→medida, no auto-creación
+
+3. **TTipoOficio es catálogo PLTM-01**: REG-01 solo lo **referencia** (FK), no lo extiende
+
+4. **Signal en momento correcto**: Trigger en TVinculoLegajo (cuando usuario confirma vinculación), no en TDemanda.save()
+
+#### Validación
+
+✅ **Migration 0056**: Solo agrega `tipo_oficio` a TDemanda (additive, non-breaking)
+✅ **PLTM-01 Tests**: 21/21 passing (2.878s) - sin regresiones
+✅ **TTipoOficio FK**: Relación con TTipoActividadPlanTrabajo intacta
+✅ **Backward Compatibility**: CARGA_OFICIOS nunca desplegado, cambios solo en desarrollo
+
+#### Documentación Completa
+
+Ver: [ARCHITECTURE_CHANGES_REG01_CARGA_OFICIOS_FINAL.md](../claudedocs/ARCHITECTURE_CHANGES_REG01_CARGA_OFICIOS_FINAL.md)
+
+---
+
 **Documento generado mediante Ingeniería Reversa**
 **Fecha:** 2025-10-26
+**Actualizado:** 2025-10-27 (CARGA_OFICIOS refactor)
 **Base:** Análisis de código existente en SENAF-RUNNA-db-backend
 **Estado:** ✅ IMPLEMENTADO - Documentación retroactiva

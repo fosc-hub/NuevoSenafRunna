@@ -157,10 +157,27 @@ export const getVinculos = async (
       queryParams.page_size = params.page_size.toString()
     }
 
-    const response = await get<PaginatedResponse<TVinculoLegajoList>>(
+    console.log('Query params being sent:', queryParams)
+
+    const response = await get<PaginatedResponse<TVinculoLegajoList> | TVinculoLegajoList[]>(
       "vinculos-legajo/",
       queryParams
     )
+
+    console.log('Raw response:', response)
+    console.log('Response type:', Array.isArray(response) ? 'array' : 'object')
+
+    // Handle both array and paginated response formats
+    if (Array.isArray(response)) {
+      // Backend returned plain array, convert to paginated format
+      console.log(`Vínculos obtenidos: ${response.length} (array format)`)
+      return {
+        count: response.length,
+        next: null,
+        previous: null,
+        results: response,
+      }
+    }
 
     if (!response) {
       console.warn("Respuesta inválida de vínculos:", response)
@@ -172,7 +189,9 @@ export const getVinculos = async (
       }
     }
 
+    // Backend returned paginated response
     console.log(`Vínculos obtenidos: ${response.results?.length || 0} de ${response.count || 0}`)
+    console.log('Response results:', response.results)
 
     return response
   } catch (error: any) {

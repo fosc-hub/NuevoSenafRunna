@@ -14,6 +14,15 @@ import FolderIcon from "@mui/icons-material/Folder"
 import { debounce } from "lodash"
 import { get } from "@/app/api/apiService"
 
+export interface MedidaActiva {
+  id: number
+  numero_medida: string
+  tipo_medida: string
+  estado_vigencia: string
+  etapa_actual__nombre: string | null
+  etapa_actual__estado: string | null
+}
+
 interface Legajo {
   id: number
   numero: string
@@ -23,13 +32,15 @@ interface Legajo {
     apellido: string
     dni: number | null
   }
+  medidas_activas?: MedidaActiva[]
 }
 
-interface LegajoOption {
+export interface LegajoOption {
   id: number
   numero: string
   displayText: string
   subtitle: string
+  medidas_activas?: MedidaActiva[]
 }
 
 interface LegajoSearchAutocompleteProps {
@@ -88,6 +99,7 @@ export default function LegajoSearchAutocomplete({
           numero: legajo.numero,
           displayText: `${legajo.numero} - ${legajo.nnya.nombre} ${legajo.nnya.apellido}`,
           subtitle: legajo.nnya.dni ? `DNI: ${legajo.nnya.dni}` : "Sin DNI",
+          medidas_activas: legajo.medidas_activas || [],
         }))
 
       setOptions(legajoOptions)

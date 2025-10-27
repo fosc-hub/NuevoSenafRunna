@@ -30,22 +30,18 @@ import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
 
-// Mock data for Oficio functionality
+// Hardcoded options for CARGA_OFICIOS dropdowns (REG-01 GAP-06)
 const TIPOS_OFICIO_MOCK = [
-  { id: "oficio_1", nombre: "Evaluación Psicológica Integral - 3 actividades, 8 acciones" },
-  { id: "oficio_2", nombre: "Visita Domiciliaria Completa - 4 actividades, 12 acciones" },
-  { id: "oficio_3", nombre: "Seguimiento Familiar - 2 actividades, 5 acciones" },
-  { id: "oficio_4", nombre: "Entrevista Socioambiental - 3 actividades, 7 acciones" },
-  { id: "oficio_5", nombre: "Informe Técnico Multidisciplinario - 5 actividades, 15 acciones" },
+  { id: 1, nombre: "Oficio Judicial" },
+  { id: 2, nombre: "Exhorto" },
+  { id: 3, nombre: "Oficios Varios" },
 ]
 
 const TIPOS_MEDIDA_MOCK = [
-  { id: "mpi", nombre: "MPI" },
-  { id: "mpe", nombre: "MPE" },
-  { id: "mpj", nombre: "MPJ" },
+  { key: "MPI", value: "Medida de Protección Integral" },
+  { key: "MPE", value: "Medida de Protección Excepcional" },
+  { key: "MPJ", value: "Medida de Protección Judicial" },
 ]
-
-const OFICIO_OPTION = { key: "oficio", value: "Oficio" }
 
 // Helper function to add a red asterisk to labels
 const RequiredLabel = ({ label }: { label: string }) => (
@@ -795,20 +791,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 name="objetivo_de_demanda"
                 rules={{ required: "Este campo es obligatorio" }}
                 control={control}
-                render={({ field, fieldState: { error } }) => {
-                  // Combine API options with mock "Oficio" option
-                  const objetivoDemandaOptions = [
-                    ...(dropdownData.objetivo_de_demanda_choices || []),
-                    OFICIO_OPTION,
-                  ]
-
-                  return (
+                render={({ field, fieldState: { error } }) => (
                     <FormControl fullWidth error={!!error}>
                       <Autocomplete
                         disabled={readOnly}
-                        options={objetivoDemandaOptions}
+                        options={dropdownData.objetivo_de_demanda_choices || []}
                         getOptionLabel={(option: any) => option.value || ""}
-                        value={objetivoDemandaOptions.find((item: any) => item.key === field.value) || null}
+                        value={(dropdownData.objetivo_de_demanda_choices || []).find((item: any) => item.key === field.value) || null}
                         onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                         renderInput={(params) => (
                           <TextField
@@ -822,26 +811,25 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                         size="medium"
                       />
                     </FormControl>
-                  )
-                }}
+                )}
               />
             </Grid>
 
-            {/* Conditional fields when "Oficio" is selected */}
-            {selectedObjetivoDemanda === "oficio" && (
+            {/* Conditional fields when "Carga de Oficios" is selected */}
+            {selectedObjetivoDemanda === "CARGA_OFICIOS" && (
               <>
                 <Grid item xs={12} md={6}>
                   <Controller
                     name="tipo_oficio"
-                    rules={{ required: "Este campo es obligatorio cuando se selecciona Oficio" }}
+                    rules={{ required: "Este campo es obligatorio cuando se selecciona Carga de Oficios" }}
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
                         <Autocomplete
                           disabled={readOnly}
-                          options={TIPOS_OFICIO_MOCK}
+                          options={dropdownData?.tipo_oficio || TIPOS_OFICIO_MOCK}
                           getOptionLabel={(option: any) => option.nombre || ""}
-                          value={TIPOS_OFICIO_MOCK.find((item: any) => item.id === field.value) || null}
+                          value={(dropdownData?.tipo_oficio || TIPOS_OFICIO_MOCK).find((item: any) => item.id === field.value) || null}
                           onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                           renderInput={(params) => (
                             <TextField
@@ -862,16 +850,16 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 <Grid item xs={12} md={6}>
                   <Controller
                     name="tipo_medida"
-                    rules={{ required: "Este campo es obligatorio cuando se selecciona Oficio" }}
+                    rules={{ required: "Este campo es obligatorio cuando se selecciona Carga de Oficios" }}
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <FormControl fullWidth error={!!error}>
                         <Autocomplete
                           disabled={readOnly}
-                          options={TIPOS_MEDIDA_MOCK}
-                          getOptionLabel={(option: any) => option.nombre || ""}
-                          value={TIPOS_MEDIDA_MOCK.find((item: any) => item.id === field.value) || null}
-                          onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                          options={dropdownData?.tipo_medida_choices || TIPOS_MEDIDA_MOCK}
+                          getOptionLabel={(option: any) => option.value || ""}
+                          value={(dropdownData?.tipo_medida_choices || TIPOS_MEDIDA_MOCK).find((item: any) => item.key === field.value) || null}
+                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -884,6 +872,86 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                           size="medium"
                         />
                       </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="numero_expediente"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Número de Expediente"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="medium"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Controller
+                    name="caratula"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Carátula"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="medium"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="plazo_dias"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="Plazo en días"
+                        type="number"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                        InputProps={{ readOnly }}
+                        size="medium"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="fecha_vencimiento_oficio"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <DatePicker
+                        label="Fecha de Vencimiento"
+                        disabled={readOnly}
+                        value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                        onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!error,
+                            helperText: error?.message,
+                            size: "medium",
+                          },
+                        }}
+                      />
                     )}
                   />
                 </Grid>

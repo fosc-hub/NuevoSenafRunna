@@ -441,6 +441,17 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
     observaciones: formData.observaciones || null,
     localizacion: formData.localizacion,
 
+    // CARGA_OFICIOS specific fields (REG-01 GAP-06)
+    // Backend expects tipo_medida_evaluado, not tipo_medida
+    ...(formData.objetivo_de_demanda === 'CARGA_OFICIOS' && {
+      tipo_oficio: formData.tipo_oficio,
+      tipo_medida_evaluado: formData.tipo_medida,
+      numero_expediente: formData.numero_expediente || null,
+      caratula: formData.caratula || null,
+      plazo_dias: formData.plazo_dias ? Number(formData.plazo_dias) : null,
+      fecha_vencimiento_oficio: formData.fecha_vencimiento_oficio || null,
+    }),
+
     relacion_demanda: {
       codigos_demanda: (formData.codigosDemanda || []).map((codigo) => ({
         codigo: codigo.codigo,

@@ -24,14 +24,10 @@ import {
   MIN_CARACTERES_JUSTIFICACION_VINCULO,
   type TVinculoLegajoCreate,
 } from "@/app/(runna)/legajo-mesa/types/vinculo-types"
-import LegajoSearchAutocomplete from "../components/LegajoSearchAutocomplete"
-
-interface LegajoOption {
-  id: number
-  numero: string
-  displayText: string
-  subtitle: string
-}
+import LegajoSearchAutocomplete, {
+  type LegajoOption,
+  type MedidaActiva
+} from "../components/LegajoSearchAutocomplete"
 
 interface CrearVinculoLegajoDialogProps {
   open: boolean
@@ -52,12 +48,14 @@ export default function CrearVinculoLegajoDialog({
   // Form state
   const [tipoVinculoId, setTipoVinculoId] = useState<number | null>(null)
   const [selectedLegajo, setSelectedLegajo] = useState<LegajoOption | null>(null)
+  const [selectedMedida, setSelectedMedida] = useState<MedidaActiva | null>(null)
   const [justificacion, setJustificacion] = useState("")
 
   // Validation errors
   const [errors, setErrors] = useState<{
     tipoVinculo?: string
     legajo?: string
+    medida?: string
     justificacion?: string
   }>({})
 
@@ -73,11 +71,18 @@ export default function CrearVinculoLegajoDialog({
     if (!open) {
       setTipoVinculoId(null)
       setSelectedLegajo(null)
+      setSelectedMedida(null)
       setJustificacion("")
       setErrors({})
       clearError()
     }
   }, [open, clearError])
+
+  // Reset medida when legajo changes
+  useEffect(() => {
+    setSelectedMedida(null)
+    setErrors((prev) => ({ ...prev, medida: undefined }))
+  }, [selectedLegajo])
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {}
@@ -88,6 +93,10 @@ export default function CrearVinculoLegajoDialog({
 
     if (!selectedLegajo) {
       newErrors.legajo = "Debe seleccionar un legajo para vincular"
+    }
+
+    if (!selectedMedida) {
+      newErrors.medida = "Debe seleccionar una medida del legajo"
     }
 
     if (!justificacion.trim()) {
@@ -105,22 +114,41 @@ export default function CrearVinculoLegajoDialog({
       return
     }
 
-    if (!selectedLegajo || !tipoVinculoId) {
+    if (!selectedLegajo || !selectedMedida || !tipoVinculoId) {
       return
     }
 
-    // Create vinculo data
-    const vinculoData: TVinculoLegajoCreate = {
+    // For CARGA_OFICIOS workflow, we create TWO separate vinculos:
+    // 1. LEGAJO → MEDIDA (for backend signal to create PLTM activities)
+    // 2. LEGAJO → DEMANDA (for UI display in Conexiones tab)
+
+    // Vínculo 1: LEGAJO → MEDIDA
+    const vinculoMedida: TVinculoLegajoCreate = {
+      legajo_origen: selectedLegajo.id,
+      medida_destino: selectedMedida.id,
+      tipo_vinculo: tipoVinculoId,
+      justificacion: `[MEDIDA: ${selectedMedida.numero_medida}] ${justificacion.trim()}`,
+    }
+
+    const resultMedida = await crearVinculo(vinculoMedida)
+
+    if (!resultMedida) {
+      // Error creating medida vinculo - stop here
+      return
+    }
+
+    // Vínculo 2: LEGAJO → DEMANDA
+    const vinculoDemanda: TVinculoLegajoCreate = {
       legajo_origen: selectedLegajo.id,
       demanda_destino: demandaId,
       tipo_vinculo: tipoVinculoId,
-      justificacion: justificacion.trim(),
+      justificacion: `[DEMANDA→MEDIDA: ${selectedMedida.numero_medida}] ${justificacion.trim()}`,
     }
 
-    const result = await crearVinculo(vinculoData)
+    const resultDemanda = await crearVinculo(vinculoDemanda)
 
-    if (result) {
-      // Success - close dialog and notify parent
+    if (resultDemanda) {
+      // Success - both vinculos created
       onClose()
       if (onVinculoCreated) {
         onVinculoCreated()
@@ -142,7 +170,7 @@ export default function CrearVinculoLegajoDialog({
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <LinkIcon color="primary" />
-            <Typography variant="h6">Crear Vínculo con Legajo</Typography>
+            <Typography variant="h6">Vincular Demanda a Medida</Typography>
           </Box>
           <IconButton
             aria-label="cerrar"
@@ -166,9 +194,12 @@ export default function CrearVinculoLegajoDialog({
 
           {/* Info Alert */}
           <Alert severity="info" sx={{ mb: 1 }}>
-            <Typography variant="body2">
-              Vincule esta demanda a un legajo existente. Debe proporcionar una justificación
-              detallada del motivo de la vinculación.
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>Workflow CARGA_OFICIOS:</strong> Se crearán DOS vínculos automáticamente:
+            </Typography>
+            <Typography variant="body2" component="ul" sx={{ ml: 2, mb: 0 }}>
+              <li><strong>LEGAJO → MEDIDA:</strong> Para que el backend cree actividades PLTM en la medida seleccionada</li>
+              <li><strong>LEGAJO → DEMANDA:</strong> Para visualizar la conexión en esta pestaña</li>
             </Typography>
           </Alert>
 
@@ -221,6 +252,51 @@ export default function CrearVinculoLegajoDialog({
             helperText={errors.legajo || "Busque el legajo que desea vincular a esta demanda"}
             disabled={loading}
           />
+
+          {/* Medida Selector - Only show when legajo is selected */}
+          {selectedLegajo && (
+            <TextField
+              select
+              fullWidth
+              required
+              label="Medida del Legajo *"
+              value={selectedMedida?.id || ""}
+              onChange={(e) => {
+                const medidaId = Number(e.target.value)
+                const medida = selectedLegajo.medidas_activas?.find(m => m.id === medidaId)
+                setSelectedMedida(medida || null)
+                setErrors((prev) => ({ ...prev, medida: undefined }))
+              }}
+              error={Boolean(errors.medida)}
+              helperText={
+                errors.medida ||
+                (selectedLegajo.medidas_activas?.length === 0
+                  ? "Este legajo no tiene medidas activas"
+                  : "Seleccione la medida específica donde se cargará el oficio")
+              }
+              disabled={loading || !selectedLegajo.medidas_activas || selectedLegajo.medidas_activas.length === 0}
+            >
+              {selectedLegajo.medidas_activas && selectedLegajo.medidas_activas.length > 0 ? (
+                selectedLegajo.medidas_activas.map((medida) => (
+                  <MenuItem key={medida.id} value={medida.id}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={500}>
+                        {medida.numero_medida} - {medida.tipo_medida}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Estado: {medida.estado_vigencia}
+                        {medida.etapa_actual__nombre && ` • Etapa: ${medida.etapa_actual__nombre}`}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  No hay medidas activas disponibles
+                </MenuItem>
+              )}
+            </TextField>
+          )}
 
           {/* Justificación */}
           <Box>

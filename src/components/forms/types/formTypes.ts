@@ -155,6 +155,13 @@ export interface FormData {
   estado_demanda: string | null;
   adjuntos: Array<File | { archivo: string }>;
   createNewUsuarioExterno: boolean;
+  // CARGA_OFICIOS fields (REG-01 GAP-06)
+  tipo_oficio?: number | string;              // FK to TTipoOficio
+  tipo_medida?: string;                        // MPI | MPE | MPJ
+  numero_expediente?: string;                  // Número de expediente judicial
+  caratula?: string;                           // Carátula del expediente
+  plazo_dias?: number;                         // Plazo en días para responder
+  fecha_vencimiento_oficio?: string | null;    // Fecha vencimiento (YYYY-MM-DD)
 }
 
 export interface DropdownData {
@@ -200,6 +207,9 @@ export interface DropdownData {
   nivel_educativo_choices: any
   ultimo_cursado_choices: any
   tipo_escuela_choices: any
+  // CARGA_OFICIOS dropdown fields (REG-01 GAP-06)
+  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number }>;
+  tipo_medida_choices?: DropdownOption[];  // MPI, MPE, MPJ
   // Add other dropdown fields as needed
 }
 

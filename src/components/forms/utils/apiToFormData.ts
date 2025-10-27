@@ -1,4 +1,5 @@
 import { get } from "@/app/api/apiService"
+import type { FormData } from "../types/formTypes"
 
 export const transformApiDataToFormData = (apiData: any): FormData => {
   return {
@@ -16,6 +17,32 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     motivo_ingreso: apiData.motivo_ingreso || null,
     submotivo_ingreso: apiData.submotivo_ingreso || null,
     localizacion: apiData.localizacion || null,
+
+    // CARGA_OFICIOS specific fields (REG-01 GAP-06)
+    // Backend uses tipo_medida_evaluado, map to frontend's tipo_medida
+    tipo_oficio: apiData.tipo_oficio || null,
+    tipo_medida: apiData.tipo_medida_evaluado || null,
+    numero_expediente: apiData.numero_expediente || null,
+    caratula: apiData.caratula || null,
+    plazo_dias: apiData.plazo_dias || null,
+    fecha_vencimiento_oficio: apiData.fecha_vencimiento_oficio || null,
+
+    // Other required fields
+    presuntos_delitos: null,
+    id: apiData.id,
+    nombre: apiData.nombre || "",
+    tipo_demanda: apiData.tipo_demanda || null,
+    nro_notificacion_102: apiData.nro_notificacion_102 || null,
+    nro_sac: apiData.nro_sac || null,
+    nro_suac: apiData.nro_suac || null,
+    nro_historia_clinica: apiData.nro_historia_clinica || null,
+    nro_oficio_web: apiData.nro_oficio_web || null,
+    autos_caratulados: apiData.autos_caratulados || "",
+    descripcion: apiData.descripcion || "",
+    presuntaVulneracion: {
+      motivos: apiData.presunta_vulneracion?.motivos || null,
+    },
+    createNewUsuarioExterno: false,
 
     // codigosDemanda
     codigosDemanda:

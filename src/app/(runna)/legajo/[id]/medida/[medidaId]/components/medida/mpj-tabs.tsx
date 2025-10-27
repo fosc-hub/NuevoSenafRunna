@@ -47,10 +47,37 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, legajoData, planTr
                 </Tabs>
             </Box>
 
-            {/* Tab Content - All tabs show the same Plan de Trabajo */}
+            {/* Tab Content - Each tab shows activities filtered by etapa */}
             <Box>
                 {planTrabajoId ? (
-                    <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
+                    <>
+                        {/* Tab Apertura */}
+                        {activeTab === 0 && (
+                            <PlanTrabajoTab
+                                medidaData={medidaData}
+                                planTrabajoId={planTrabajoId}
+                                filterEtapa="APERTURA"
+                            />
+                        )}
+
+                        {/* Tab Proceso */}
+                        {activeTab === 1 && (
+                            <PlanTrabajoTab
+                                medidaData={medidaData}
+                                planTrabajoId={planTrabajoId}
+                                filterEtapa="PROCESO"
+                            />
+                        )}
+
+                        {/* Tab Cese */}
+                        {activeTab === 2 && (
+                            <PlanTrabajoTab
+                                medidaData={medidaData}
+                                planTrabajoId={planTrabajoId}
+                                filterEtapa="CESE"
+                            />
+                        )}
+                    </>
                 ) : (
                     <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
                         No hay Plan de Trabajo asociado a esta medida.

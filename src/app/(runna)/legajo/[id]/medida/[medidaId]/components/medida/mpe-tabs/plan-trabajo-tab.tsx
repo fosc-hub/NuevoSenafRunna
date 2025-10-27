@@ -41,9 +41,10 @@ import AttachFileIcon from "@mui/icons-material/AttachFile"
 interface PlanTrabajoTabProps {
     medidaData: any
     planTrabajoId: number
+    filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
 }
 
-export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, planTrabajoId }) => {
+export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, planTrabajoId, filterEtapa }) => {
     const [actividades, setActividades] = useState<TActividadPlanTrabajo[]>([])
     const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(0)
@@ -132,11 +133,16 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
         setCancelModalOpen(true)
     }
 
+    // Filter activities by etapa if filterEtapa prop is provided (MPJ)
+    const filteredActividades = filterEtapa
+        ? actividades.filter(actividad => actividad.tipo_actividad_info.etapa_medida_aplicable === filterEtapa)
+        : actividades
+
     return (
         <>
             <Box sx={{ p: 3 }}>
                 {/* Statistics Dashboard */}
-                <ActividadStatistics actividades={actividades} />
+                <ActividadStatistics actividades={filteredActividades} />
 
                 <Paper elevation={2} sx={{ borderRadius: 2 }}>
                     {/* Header with Filters */}
@@ -244,7 +250,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                     <TableRow>
                                         <TableCell colSpan={7} align="center">Cargando...</TableCell>
                                     </TableRow>
-                                ) : !actividades || actividades.length === 0 ? (
+                                ) : !filteredActividades || filteredActividades.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} align="center">
                                             <Box sx={{ py: 8, textAlign: 'center' }}>
@@ -266,7 +272,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    actividades.map((actividad) => (
+                                    filteredActividades.map((actividad) => (
                                         <TableRow
                                             key={actividad.id}
                                             hover
@@ -458,6 +464,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                 onClose={() => setPlanAccionModalOpen(false)}
                 planTrabajoId={planTrabajoId}
                 onSuccess={loadActividades}
+                filterEtapa={filterEtapa}
             />
 
             {selectedActividad && (

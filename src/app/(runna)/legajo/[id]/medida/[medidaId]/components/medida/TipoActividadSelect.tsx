@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { FormControl, InputLabel, Select, MenuItem, FormHelperText } from '@mui/material'
+import { FormControl, InputLabel, Select, MenuItem, FormHelperText, Chip, Box } from '@mui/material'
 import { actividadService } from '../../services/actividadService'
 import type { TTipoActividad } from '../../types/actividades'
 
@@ -9,6 +9,7 @@ interface TipoActividadSelectProps {
   value: number
   onChange: (value: number) => void
   actor?: string
+  filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
   error?: boolean
   helperText?: string
   disabled?: boolean
@@ -18,6 +19,7 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
   value,
   onChange,
   actor,
+  filterEtapa,
   error,
   helperText,
   disabled
@@ -41,6 +43,11 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
     }
   }
 
+  // Filter activity types by etapa if filterEtapa is provided (for MPJ)
+  const filteredTipos = filterEtapa
+    ? tipos.filter(tipo => tipo.etapa_medida_aplicable === filterEtapa)
+    : tipos
+
   return (
     <FormControl fullWidth error={error} disabled={disabled}>
       <InputLabel>Tipo de Actividad</InputLabel>
@@ -51,13 +58,25 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
       >
         {loading ? (
           <MenuItem disabled>Cargando...</MenuItem>
-        ) : tipos.length === 0 ? (
-          <MenuItem disabled>No hay tipos disponibles</MenuItem>
+        ) : filteredTipos.length === 0 ? (
+          <MenuItem disabled>No hay tipos disponibles para esta etapa</MenuItem>
         ) : (
-          tipos.map((tipo) => (
+          filteredTipos.map((tipo) => (
             <MenuItem key={tipo.id} value={tipo.id}>
-              {tipo.nombre}
-              {tipo.requiere_evidencia && ' 📎'}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                <span style={{ flex: 1 }}>{tipo.nombre}</span>
+                {tipo.requiere_evidencia && <span>📎</span>}
+                <Chip
+                  label={tipo.etapa_medida_aplicable_display}
+                  size="small"
+                  sx={{
+                    fontSize: '0.7rem',
+                    height: '20px',
+                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    color: 'primary.main'
+                  }}
+                />
+              </Box>
             </MenuItem>
           ))
         )}

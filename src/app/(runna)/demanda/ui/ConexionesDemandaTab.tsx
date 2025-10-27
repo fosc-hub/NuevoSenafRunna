@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
   Box,
   Typography,
@@ -29,9 +29,37 @@ import { get, create, update } from "@/app/api/apiService"
 import SearchModal from "@/components/searchModal/searchModal"
 import { useUser } from "@/utils/auth/userZustand"
 import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
-import type { TVinculoLegajoList } from "@/app/(runna)/legajo-mesa/types/vinculo-types"
 import CrearVinculoLegajoDialog from "./dialogs/CrearVinculoLegajoDialog"
 import DesvincularVinculoDialog from "./dialogs/DesvincularVinculoDialog"
+
+// Type matching actual API response for demanda vinculos
+interface VinculoLegajoDemanda {
+  id: number
+  legajo_origen: number
+  legajo_origen_numero: string
+  tipo_vinculo: {
+    id: number
+    codigo: string
+    nombre: string
+    descripcion: string
+    activo: boolean
+  }
+  tipo_destino: string
+  destino_info: {
+    tipo: string
+    id: number
+    objetivo?: string
+    fecha_ingreso?: string
+  }
+  justificacion: string
+  activo: boolean
+  creado_por: number
+  creado_por_username: string
+  creado_en: string
+  desvinculado_por: number | null
+  desvinculado_en: string | null
+  justificacion_desvincular: string | null
+}
 
 interface Demanda {
   id: number
@@ -69,16 +97,19 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   // States for legajo vinculos
   const [crearVinculoDialogOpen, setCrearVinculoDialogOpen] = useState(false)
   const [desvincularDialogOpen, setDesvincularDialogOpen] = useState(false)
-  const [vinculoToDesvincular, setVinculoToDesvincular] = useState<TVinculoLegajoList | null>(null)
+  const [vinculoToDesvincular, setVinculoToDesvincular] = useState<VinculoLegajoDemanda | null>(null)
   const [expandedJustificaciones, setExpandedJustificaciones] = useState<Set<number>>(new Set())
 
   // Hook for legajo vinculos management
   const {
-    vinculos: legajoVinculos,
+    vinculos: legajoVinculosRaw,
     loadVinculos,
     loading: vinculosLoading,
     error: vinculosError,
   } = useVinculos()
+
+  // Cast vinculos to the demanda-specific type
+  const legajoVinculos = legajoVinculosRaw as unknown as VinculoLegajoDemanda[]
 
   // Fetch all demandas
   const { data: allDemandas = [], isLoading: isLoadingDemandas } = useQuery({
@@ -161,14 +192,44 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   })
 
   // Load legajo vinculos on mount and when demandaId changes
+  // Load vinculos by demanda_destino - backend returns all vinculos related to this demanda
+  // This includes both tipo_destino="demanda" AND tipo_destino="medida" (for CARGA_OFICIOS workflow)
   useEffect(() => {
     if (demandaId) {
+      console.log('ConexionesDemandaTab: Loading vinculos for demanda:', demandaId)
       loadVinculos({
         demanda_destino: demandaId,
         activo: true,
       })
     }
   }, [demandaId, loadVinculos])
+
+  // Client-side filtering REQUIRED - backend demanda_destino filter is broken
+  // Only show vinculos where tipo_destino="demanda" AND destino_info.id matches demandaId
+  const filteredLegajoVinculos = useMemo(() => {
+    console.log('ConexionesDemandaTab: Filtering vinculos for demanda:', demandaId)
+    console.log('  - raw legajoVinculos:', legajoVinculos)
+    console.log('  - legajoVinculos length:', legajoVinculos?.length || 0)
+
+    if (!legajoVinculos || !Array.isArray(legajoVinculos)) {
+      console.log('  - No vinculos array, returning empty')
+      return []
+    }
+
+    // STRICT filter: Only vinculos directly linked to THIS demanda
+    const filtered = legajoVinculos.filter((vinculo) => {
+      const isDemandaType = vinculo.tipo_destino === "demanda"
+      const matchesDemandaId = vinculo.destino_info?.id === demandaId
+      const shouldInclude = isDemandaType && matchesDemandaId
+
+      console.log(`  - Vinculo ${vinculo.id}: tipo=${vinculo.tipo_destino}, destino_id=${vinculo.destino_info?.id}, include=${shouldInclude}`)
+      return shouldInclude
+    })
+
+    console.log('  - Filtered result:', filtered)
+    console.log('  - Filtered length:', filtered.length)
+    return filtered
+  }, [legajoVinculos, demandaId])
 
   // Handlers for legajo vinculos
   const handleOpenCrearVinculo = () => {
@@ -187,7 +248,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     })
   }
 
-  const handleOpenDesvincular = (vinculo: TVinculoLegajoList) => {
+  const handleOpenDesvincular = (vinculo: VinculoLegajoDemanda) => {
     setVinculoToDesvincular(vinculo)
     setDesvincularDialogOpen(true)
   }
@@ -220,6 +281,18 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   const getTruncatedText = (text: string, maxLength: number = 100) => {
     if (text.length <= maxLength) return text
     return text.substring(0, maxLength) + "..."
+  }
+
+  const formatDestinoInfo = (vinculo: VinculoLegajoDemanda) => {
+    const { tipo_destino, destino_info } = vinculo
+    if (tipo_destino === "demanda") {
+      return `Demanda #${destino_info.id}${destino_info.objetivo ? ` - ${destino_info.objetivo}` : ""}`
+    } else if (tipo_destino === "legajo") {
+      return `Legajo #${destino_info.id}`
+    } else if (tipo_destino === "medida") {
+      return `Medida #${destino_info.id}`
+    }
+    return `${tipo_destino} #${destino_info.id}`
   }
 
   // Permission check must come after all hooks
@@ -396,7 +469,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-            Vínculos con Legajos
+            Vínculos con Legajos (Demanda ID: {demandaId})
           </Typography>
           <Button
             variant="contained"
@@ -408,6 +481,18 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
           </Button>
         </Box>
 
+        {/* Debug Info */}
+        {process.env.NODE_ENV === 'development' && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="caption">
+              Debug: Loading={vinculosLoading ? 'true' : 'false'},
+              Raw Count={legajoVinculos?.length || 0},
+              Filtered Count={filteredLegajoVinculos?.length || 0},
+              Error={vinculosError || 'none'}
+            </Typography>
+          </Alert>
+        )}
+
         {vinculosError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {vinculosError}
@@ -418,9 +503,9 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
           <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
             <CircularProgress size={24} />
           </Box>
-        ) : legajoVinculos && legajoVinculos.length > 0 ? (
+        ) : filteredLegajoVinculos && filteredLegajoVinculos.length > 0 ? (
           <List sx={{ mt: 2 }}>
-            {legajoVinculos.map((vinculo) => {
+            {filteredLegajoVinculos.map((vinculo) => {
               const isExpanded = expandedJustificaciones.has(vinculo.id)
               const shouldTruncate = vinculo.justificacion.length > 100
 
@@ -446,7 +531,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                       <FolderIcon sx={{ mr: 1.5, mt: 0.5, color: "primary.main" }} />
                       <Box sx={{ flexGrow: 1 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                          {vinculo.legajo_origen_info}
+                          Legajo {vinculo.legajo_origen_numero}
                         </Typography>
                         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
                           <Chip
@@ -456,7 +541,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                             variant="outlined"
                           />
                           <Typography variant="caption" color="text.secondary">
-                            Tipo: {vinculo.tipo_destino}
+                            Vinculado con: {formatDestinoInfo(vinculo)}
                           </Typography>
                         </Box>
                       </Box>
@@ -518,7 +603,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                     >
                       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                         <Typography variant="caption" color="text.secondary">
-                          Creado por: <strong>{vinculo.creado_por_info}</strong>
+                          Creado por: <strong>{vinculo.creado_por_username}</strong>
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           Fecha:{" "}

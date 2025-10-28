@@ -226,11 +226,31 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
 
   const handleFormSubmit = methods.handleSubmit((data) => {
     console.log("Form data before submission:", data)
-    // Ensure ninosAdolescentes and adultosConvivientes are always arrays
+
+    // REG-01: Validate vinculos if they exist
+    if (data.vinculos && data.vinculos.length > 0) {
+      const invalidVinculos = data.vinculos.filter(
+        (v) =>
+          !v.legajo ||
+          !v.tipo_vinculo ||
+          !v.justificacion ||
+          v.justificacion.trim().length < 20
+      )
+
+      if (invalidVinculos.length > 0) {
+        toast.error(
+          "Por favor, complete todos los campos obligatorios en los vínculos antes de enviar."
+        )
+        return
+      }
+    }
+
+    // Ensure ninosAdolescentes, adultosConvivientes, and vinculos are always arrays
     const formDataWithArrays = {
       ...data,
       ninosAdolescentes: data.ninosAdolescentes || [],
       adultosConvivientes: data.adultosConvivientes || [],
+      vinculos: data.vinculos || [], // Include vinculos (can be empty array)
     }
     if (!isReadOnly) {
       mutation.mutate(formDataWithArrays)

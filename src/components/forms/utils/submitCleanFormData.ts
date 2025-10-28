@@ -477,6 +477,23 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
         return createCleanAdultoData(adulto, existingAdultoIds)
       }),
     ],
+
+    // REG-01: Add vinculos if they exist (optional field)
+    ...(formData.vinculos && formData.vinculos.length > 0 ? {
+      vinculos: formData.vinculos
+        .filter(
+          (v) =>
+            v.legajo !== null &&
+            v.tipo_vinculo !== null &&
+            v.justificacion.trim().length >= 20 // Backend validation
+        )
+        .map((vinculo) => ({
+          legajo: vinculo.legajo,
+          medida: vinculo.medida, // Can be null
+          tipo_vinculo: vinculo.tipo_vinculo,
+          justificacion: vinculo.justificacion.trim(),
+        }))
+    } : {}),
   }
 
   return transformedData

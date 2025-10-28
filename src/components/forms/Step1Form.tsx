@@ -29,6 +29,7 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
+import VinculosManager from "./components/VinculosManager"
 
 // Hardcoded options for CARGA_OFICIOS dropdowns (REG-01 GAP-06)
 const TIPOS_OFICIO_MOCK = [
@@ -1096,6 +1097,13 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
             </Grid>
           </Grid>
         </FormSection>
+
+        {/* REG-01: Sección de Vínculos (Conditional for CARGA_OFICIOS workflow) */}
+        {selectedObjetivoDemanda === "CARGA_OFICIOS" && (
+          <FormSection title="Vínculos con Legajos y Medidas" collapsible={true}>
+            <VinculosManager dropdownData={dropdownData} readOnly={readOnly} />
+          </FormSection>
+        )}
       </Box>
       {/* Notification for vinculacion results */}
       <VinculacionNotification

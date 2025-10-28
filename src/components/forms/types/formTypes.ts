@@ -108,6 +108,26 @@ export interface NnyaData {
   skip_duplicate_check?: boolean
 }
 
+// Interface for vinculo data during demanda registration
+export interface VinculoFormData {
+  legajo: number | null;           // ID del legajo
+  medida: number | null;           // ID de la medida (opcional)
+  tipo_vinculo: number | null;     // ID del tipo de vínculo
+  justificacion: string;           // Justificación (min 20 chars)
+  // UI helper fields
+  legajo_info?: {
+    id: number;
+    numero: string;
+    nnya_nombre: string;
+    medidas_activas: Array<{
+      id: number;
+      numero_medida: string;
+      tipo_medida: string;
+      estado_vigencia: string;
+    }>;
+  };
+}
+
 export interface FormData {
   presuntos_delitos: null
   motivo_ingreso: any
@@ -162,6 +182,8 @@ export interface FormData {
   caratula?: string;                           // Carátula del expediente
   plazo_dias?: number;                         // Plazo en días para responder
   fecha_vencimiento_oficio?: string | null;    // Fecha vencimiento (YYYY-MM-DD)
+  // REG-01: Vínculos para crear junto con la demanda
+  vinculos?: VinculoFormData[];
 }
 
 export interface DropdownData {
@@ -210,6 +232,14 @@ export interface DropdownData {
   // CARGA_OFICIOS dropdown fields (REG-01 GAP-06)
   tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number }>;
   tipo_medida_choices?: DropdownOption[];  // MPI, MPE, MPJ
+  // REG-01: Tipos de vínculo para dropdown
+  tipos_vinculo?: Array<{
+    id: number;
+    codigo: string;
+    nombre: string;
+    descripcion: string;
+    activo: boolean;
+  }>;
   // Add other dropdown fields as needed
 }
 

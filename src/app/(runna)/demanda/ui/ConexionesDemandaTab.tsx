@@ -260,8 +260,9 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
 
   const handleVinculoCreated = () => {
     // Reload vinculos after creation
+    // Use demanda_id filter to get both direct demanda vinculos AND medida vinculos
     loadVinculos({
-      demanda_destino: demandaId,
+      demanda_id: demandaId,
       activo: true,
     })
   }
@@ -278,8 +279,9 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
 
   const handleVinculoDesvinculado = () => {
     // Reload vinculos after desvincular
+    // Use demanda_id filter to get both direct demanda vinculos AND medida vinculos
     loadVinculos({
-      demanda_destino: demandaId,
+      demanda_id: demandaId,
       activo: true,
     })
   }

@@ -36,6 +36,9 @@ interface CrearVinculoLegajoDialogProps {
   onVinculoCreated?: () => void
 }
 
+// Workflow types
+type VinculoWorkflowType = "demanda-only" | "medida-required"
+
 export default function CrearVinculoLegajoDialog({
   open,
   onClose,
@@ -46,6 +49,7 @@ export default function CrearVinculoLegajoDialog({
   const { tiposVinculo, loadTiposVinculo, crearVinculo, loading, error, clearError } = useVinculos()
 
   // Form state
+  const [workflowType, setWorkflowType] = useState<VinculoWorkflowType>("demanda-only")
   const [tipoVinculoId, setTipoVinculoId] = useState<number | null>(null)
   const [selectedLegajo, setSelectedLegajo] = useState<LegajoOption | null>(null)
   const [selectedMedida, setSelectedMedida] = useState<MedidaActiva | null>(null)
@@ -53,6 +57,7 @@ export default function CrearVinculoLegajoDialog({
 
   // Validation errors
   const [errors, setErrors] = useState<{
+    workflowType?: string
     tipoVinculo?: string
     legajo?: string
     medida?: string
@@ -69,6 +74,7 @@ export default function CrearVinculoLegajoDialog({
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
+      setWorkflowType("demanda-only")
       setTipoVinculoId(null)
       setSelectedLegajo(null)
       setSelectedMedida(null)
@@ -95,8 +101,9 @@ export default function CrearVinculoLegajoDialog({
       newErrors.legajo = "Debe seleccionar un legajo para vincular"
     }
 
-    if (!selectedMedida) {
-      newErrors.medida = "Debe seleccionar una medida del legajo"
+    // Medida is only required for "medida-required" workflow
+    if (workflowType === "medida-required" && !selectedMedida) {
+      newErrors.medida = "Debe seleccionar una medida del legajo para este tipo de vínculo"
     }
 
     if (!justificacion.trim()) {
@@ -114,44 +121,71 @@ export default function CrearVinculoLegajoDialog({
       return
     }
 
-    if (!selectedLegajo || !selectedMedida || !tipoVinculoId) {
+    if (!selectedLegajo || !tipoVinculoId) {
       return
     }
 
-    // For CARGA_OFICIOS workflow, we create TWO separate vinculos:
-    // 1. LEGAJO → MEDIDA (for backend signal to create PLTM activities)
-    // 2. LEGAJO → DEMANDA (for UI display in Conexiones tab)
+    if (workflowType === "medida-required") {
+      // WORKFLOW: MEDIDA-REQUIRED (CARGA_OFICIOS)
+      // Create TWO separate vinculos:
+      // 1. LEGAJO → MEDIDA (for backend signal to create PLTM activities)
+      // 2. LEGAJO → DEMANDA (for UI display in Conexiones tab)
 
-    // Vínculo 1: LEGAJO → MEDIDA
-    const vinculoMedida: TVinculoLegajoCreate = {
-      legajo_origen: selectedLegajo.id,
-      medida_destino: selectedMedida.id,
-      tipo_vinculo: tipoVinculoId,
-      justificacion: `[MEDIDA: ${selectedMedida.numero_medida}] ${justificacion.trim()}`,
-    }
+      if (!selectedMedida) {
+        return
+      }
 
-    const resultMedida = await crearVinculo(vinculoMedida)
+      // Vínculo 1: LEGAJO → MEDIDA
+      const vinculoMedida: TVinculoLegajoCreate = {
+        legajo_origen: selectedLegajo.id,
+        medida_destino: selectedMedida.id,
+        tipo_vinculo: tipoVinculoId,
+        justificacion: `[MEDIDA: ${selectedMedida.numero_medida}] ${justificacion.trim()}`,
+      }
 
-    if (!resultMedida) {
-      // Error creating medida vinculo - stop here
-      return
-    }
+      const resultMedida = await crearVinculo(vinculoMedida)
 
-    // Vínculo 2: LEGAJO → DEMANDA
-    const vinculoDemanda: TVinculoLegajoCreate = {
-      legajo_origen: selectedLegajo.id,
-      demanda_destino: demandaId,
-      tipo_vinculo: tipoVinculoId,
-      justificacion: `[DEMANDA→MEDIDA: ${selectedMedida.numero_medida}] ${justificacion.trim()}`,
-    }
+      if (!resultMedida) {
+        // Error creating medida vinculo - stop here
+        return
+      }
 
-    const resultDemanda = await crearVinculo(vinculoDemanda)
+      // Vínculo 2: LEGAJO → DEMANDA
+      const vinculoDemanda: TVinculoLegajoCreate = {
+        legajo_origen: selectedLegajo.id,
+        demanda_destino: demandaId,
+        tipo_vinculo: tipoVinculoId,
+        justificacion: `[DEMANDA→MEDIDA: ${selectedMedida.numero_medida}] ${justificacion.trim()}`,
+      }
 
-    if (resultDemanda) {
-      // Success - both vinculos created
-      onClose()
-      if (onVinculoCreated) {
-        onVinculoCreated()
+      const resultDemanda = await crearVinculo(vinculoDemanda)
+
+      if (resultDemanda) {
+        // Success - both vinculos created
+        onClose()
+        if (onVinculoCreated) {
+          onVinculoCreated()
+        }
+      }
+    } else {
+      // WORKFLOW: DEMANDA-ONLY (Direct legajo-demanda connection)
+      // Create single vinculo: LEGAJO → DEMANDA
+
+      const vinculoDemanda: TVinculoLegajoCreate = {
+        legajo_origen: selectedLegajo.id,
+        demanda_destino: demandaId,
+        tipo_vinculo: tipoVinculoId,
+        justificacion: justificacion.trim(),
+      }
+
+      const result = await crearVinculo(vinculoDemanda)
+
+      if (result) {
+        // Success
+        onClose()
+        if (onVinculoCreated) {
+          onVinculoCreated()
+        }
       }
     }
     // Error handling is done by the hook and displayed in the dialog
@@ -170,7 +204,7 @@ export default function CrearVinculoLegajoDialog({
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <LinkIcon color="primary" />
-            <Typography variant="h6">Vincular Demanda a Medida</Typography>
+            <Typography variant="h6">Crear Vínculo de Legajo</Typography>
           </Box>
           <IconButton
             aria-label="cerrar"
@@ -192,16 +226,66 @@ export default function CrearVinculoLegajoDialog({
             </Alert>
           )}
 
-          {/* Info Alert */}
-          <Alert severity="info" sx={{ mb: 1 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Workflow CARGA_OFICIOS:</strong> Se crearán DOS vínculos automáticamente:
-            </Typography>
-            <Typography variant="body2" component="ul" sx={{ ml: 2, mb: 0 }}>
-              <li><strong>LEGAJO → MEDIDA:</strong> Para que el backend cree actividades PLTM en la medida seleccionada</li>
-              <li><strong>LEGAJO → DEMANDA:</strong> Para visualizar la conexión en esta pestaña</li>
-            </Typography>
-          </Alert>
+          {/* Workflow Type Selector */}
+          <TextField
+            select
+            fullWidth
+            required
+            label="Tipo de Vinculación"
+            value={workflowType}
+            onChange={(e) => {
+              setWorkflowType(e.target.value as VinculoWorkflowType)
+              setErrors((prev) => ({ ...prev, workflowType: undefined }))
+            }}
+            error={Boolean(errors.workflowType)}
+            helperText={errors.workflowType || "Seleccione el tipo de vinculación que desea realizar"}
+            disabled={loading}
+          >
+            <MenuItem value="demanda-only">
+              <Box>
+                <Typography variant="body2" fontWeight={500}>
+                  Vinculación Directa (Legajo → Demanda)
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Conecta un legajo existente con esta demanda sin medida específica
+                </Typography>
+              </Box>
+            </MenuItem>
+            <MenuItem value="medida-required">
+              <Box>
+                <Typography variant="body2" fontWeight={500}>
+                  Vinculación con Medida (CARGA_OFICIOS)
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Conecta demanda a una medida específica y crea actividades PLTM automáticamente
+                </Typography>
+              </Box>
+            </MenuItem>
+          </TextField>
+
+          {/* Info Alert - conditional based on workflow type */}
+          {workflowType === "medida-required" && (
+            <Alert severity="info">
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Workflow CARGA_OFICIOS:</strong> Se crearán DOS vínculos automáticamente:
+              </Typography>
+              <Typography variant="body2" component="ul" sx={{ ml: 2, mb: 0 }}>
+                <li><strong>LEGAJO → MEDIDA:</strong> Para que el backend cree actividades PLTM en la medida seleccionada</li>
+                <li><strong>LEGAJO → DEMANDA:</strong> Para visualizar la conexión en esta pestaña</li>
+              </Typography>
+            </Alert>
+          )}
+
+          {workflowType === "demanda-only" && (
+            <Alert severity="info">
+              <Typography variant="body2">
+                Se creará un vínculo directo: <strong>LEGAJO → DEMANDA</strong>
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                Útil para vincular legajos relacionados (hermanos, mismo caso judicial) sin medida específica.
+              </Typography>
+            </Alert>
+          )}
 
           {/* Tipo de Vínculo Selector */}
           <TextField
@@ -253,8 +337,8 @@ export default function CrearVinculoLegajoDialog({
             disabled={loading}
           />
 
-          {/* Medida Selector - Only show when legajo is selected */}
-          {selectedLegajo && (
+          {/* Medida Selector - Only show when legajo is selected AND workflow requires medida */}
+          {selectedLegajo && workflowType === "medida-required" && (
             <TextField
               select
               fullWidth

@@ -10,7 +10,7 @@
  * 3. JZ rejects → back to Estado 3 for corrections
  */
 
-import { get, create, post, deleteResource } from "@/app/api/apiService"
+import { get, create, put, remove } from "@/app/api/apiService"
 import type {
   InformeCierre,
   InformeCierreAdjunto,
@@ -152,13 +152,17 @@ export const aprobarCierre = async (
   try {
     console.log(`Aprobando cierre for medida ${medidaId}`)
 
-    const response = await post<AprobarCierreResponse>(
+    // Import axiosInstance for custom action endpoint
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
+    // POST to custom action endpoint
+    const response = await axiosInstance.post<AprobarCierreResponse>(
       `medidas/${medidaId}/informe-cierre/aprobar-cierre/`,
       {}
     )
 
-    console.log("Cierre aprobado successfully:", response)
-    return response
+    console.log("Cierre aprobado successfully:", response.data)
+    return response.data
   } catch (error: any) {
     console.error(`Error aprobando cierre for medida ${medidaId}:`, error)
     console.error("Error details:", {
@@ -205,13 +209,17 @@ export const rechazarCierre = async (
       )
     }
 
-    const response = await post<RechazarCierreResponse>(
+    // Import axiosInstance for custom action endpoint
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
+    // POST to custom action endpoint
+    const response = await axiosInstance.post<RechazarCierreResponse>(
       `medidas/${medidaId}/informe-cierre/rechazar-cierre/`,
       data
     )
 
-    console.log("Cierre rechazado successfully:", response)
-    return response
+    console.log("Cierre rechazado successfully:", response.data)
+    return response.data
   } catch (error: any) {
     console.error(`Error rechazando cierre for medida ${medidaId}:`, error)
     console.error("Error details:", {
@@ -265,30 +273,29 @@ export const uploadAdjuntoInformeCierre = async (
       formData.append("descripcion", descripcion)
     }
 
-    // Make fetch request (not using apiService due to FormData)
-    const response = await fetch(
-      `/api/medidas/${medidaId}/informe-cierre/adjuntos/`,
+    // Import axiosInstance to use Django backend API
+    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
+
+    // Make API call using axiosInstance (goes to Django backend)
+    const response = await axiosInstance.post<InformeCierreAdjunto>(
+      `medidas/${medidaId}/informe-cierre/adjuntos/`,
+      formData,
       {
-        method: "POST",
-        body: formData,
-        // Don't set Content-Type - let browser set it with boundary
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     )
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(
-        errorData.detalle ||
-          errorData.error ||
-          `Error uploading file: ${response.statusText}`
-      )
-    }
-
-    const adjunto = await response.json()
-    console.log("Adjunto uploaded successfully:", adjunto)
-    return adjunto
+    console.log("Adjunto uploaded successfully:", response.data)
+    return response.data
   } catch (error: any) {
     console.error("Error uploading adjunto:", error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
     throw error
   }
 }
@@ -347,8 +354,11 @@ export const deleteAdjuntoInformeCierre = async (
   try {
     console.log(`Deleting adjunto ${adjuntoId} from medida ${medidaId}`)
 
-    await deleteResource(
-      `medidas/${medidaId}/informe-cierre/adjuntos/${adjuntoId}/`
+    // Use remove for DELETE request (endpoint format: base/id)
+    // Need to construct the path without the adjunto ID at the end
+    await remove(
+      `medidas/${medidaId}/informe-cierre/adjuntos`,
+      adjuntoId
     )
 
     console.log("Adjunto deleted successfully")

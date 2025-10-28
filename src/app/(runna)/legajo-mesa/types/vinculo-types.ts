@@ -193,6 +193,40 @@ export interface TVinculoLegajoDetail {
 // ============================================================================
 
 /**
+ * Structured destination info for vinculos
+ * Contains detailed information about the destination entity
+ */
+export interface VinculoDestinoInfo {
+  /** Entity type */
+  tipo: TipoDestino
+
+  /** Entity ID */
+  id: number
+
+  /** Entity numero/code (for legajo, medida, demanda) */
+  numero?: string
+
+  /** Demanda objetivo (for demanda-type destinations) */
+  objetivo?: string
+
+  /** Fecha ingreso (for demanda-type destinations) */
+  fecha_ingreso?: string
+
+  /** Tipo de medida code (for medida-type destinations) */
+  tipo_medida?: string
+
+  /** Legajo numero (for medida-type destinations) */
+  legajo_numero?: string
+
+  /**
+   * Demanda ID (for medida-type destinations)
+   * NEW: Added by backend to allow frontend verification
+   * Present when tipo_destino="medida"
+   */
+  demanda_id?: number
+}
+
+/**
  * TVinculoLegajoList - Response schema for list view
  *
  * Source: RUNNA API (9).yaml lines 14216-14256
@@ -207,14 +241,20 @@ export interface TVinculoLegajoList {
   /** Origin legajo ID */
   legajo_origen: number
 
-  /** Origin legajo display info (readonly) */
-  legajo_origen_info: string
+  /** Origin legajo numero (readonly) */
+  legajo_origen_numero: string
 
   /** Nested link type object (readonly) */
   tipo_vinculo: TTipoVinculo
 
   /** Computed destination entity type (readonly) */
   tipo_destino: TipoDestino
+
+  /**
+   * Structured destination information (readonly)
+   * Contains detailed info about the destination entity including demanda_id for medidas
+   */
+  destino_info: VinculoDestinoInfo
 
   /** Complete destination display string (readonly) */
   destino_completo: string
@@ -285,8 +325,15 @@ export interface VinculosLegajoQueryParams {
   /** Filter by destination medida ID */
   medida_destino?: number
 
-  /** Filter by destination demanda ID */
+  /** Filter by destination demanda ID (exact match - only direct demanda vinculos) */
   demanda_destino?: number
+
+  /**
+   * Filter by related demanda ID (NEW - includes both direct and medida vinculos)
+   * Returns vinculos where demanda_destino=X OR medida_destino.demanda=X
+   * Use this instead of demanda_destino for comprehensive filtering
+   */
+  demanda_id?: number
 
   /** Filter by link type code */
   tipo_vinculo?: TipoVinculoCodigo

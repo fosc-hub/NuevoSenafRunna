@@ -50,6 +50,7 @@ interface VinculoLegajoDemanda {
     id: number
     objetivo?: string
     fecha_ingreso?: string
+    demanda_id?: number  // ✅ NEW: Present for medida-type vinculos
   }
   justificacion: string
   activo: boolean
@@ -192,20 +193,27 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   })
 
   // Load legajo vinculos on mount and when demandaId changes
-  // Load vinculos by demanda_destino - backend returns all vinculos related to this demanda
+  // Load vinculos by demanda_id - backend returns all vinculos related to this demanda
   // This includes both tipo_destino="demanda" AND tipo_destino="medida" (for CARGA_OFICIOS workflow)
   useEffect(() => {
     if (demandaId) {
       console.log('ConexionesDemandaTab: Loading vinculos for demanda:', demandaId)
       loadVinculos({
-        demanda_destino: demandaId,
+        demanda_id: demandaId,  // ✅ Updated to use demanda_id filter
         activo: true,
       })
     }
   }, [demandaId, loadVinculos])
 
-  // Client-side filtering REQUIRED - backend demanda_destino filter is broken
-  // Only show vinculos where tipo_destino="demanda" AND destino_info.id matches demandaId
+  // Client-side filtering - show both demanda and medida type vinculos
+  //
+  // Backend demanda_id filter (✅ FIXED):
+  // - Returns: vinculos where demanda_destino=X OR medida_destino.demanda=X
+  // - Response includes demanda_id in destino_info for medidas
+  //
+  // Double validation strategy:
+  // 1. Backend filter: demanda_id parameter filters at database level
+  // 2. Frontend verification: Check demanda_id in destino_info for additional safety
   const filteredLegajoVinculos = useMemo(() => {
     console.log('ConexionesDemandaTab: Filtering vinculos for demanda:', demandaId)
     console.log('  - raw legajoVinculos:', legajoVinculos)
@@ -216,13 +224,23 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
       return []
     }
 
-    // STRICT filter: Only vinculos directly linked to THIS demanda
+    // Filter: Show vinculos directly linked to THIS demanda
     const filtered = legajoVinculos.filter((vinculo) => {
       const isDemandaType = vinculo.tipo_destino === "demanda"
+      const isMedidaType = vinculo.tipo_destino === "medida"
       const matchesDemandaId = vinculo.destino_info?.id === demandaId
-      const shouldInclude = isDemandaType && matchesDemandaId
 
-      console.log(`  - Vinculo ${vinculo.id}: tipo=${vinculo.tipo_destino}, destino_id=${vinculo.destino_info?.id}, include=${shouldInclude}`)
+      // Include demanda-type vinculos that match this demandaId
+      const includeDemanda = isDemandaType && matchesDemandaId
+
+      // Include medida-type vinculos that belong to this demanda
+      // ✅ NOW we can verify: destino_info.demanda_id must match demandaId
+      const medidaBelongsToDemanda = vinculo.destino_info?.demanda_id === demandaId
+      const includeMedida = isMedidaType && medidaBelongsToDemanda
+
+      const shouldInclude = includeDemanda || includeMedida
+
+      console.log(`  - Vinculo ${vinculo.id}: tipo=${vinculo.tipo_destino}, destino_id=${vinculo.destino_info?.id}, demanda_id=${vinculo.destino_info?.demanda_id}, include=${shouldInclude}`)
       return shouldInclude
     })
 

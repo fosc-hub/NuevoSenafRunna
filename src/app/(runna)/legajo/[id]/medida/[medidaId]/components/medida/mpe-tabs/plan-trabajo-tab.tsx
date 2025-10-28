@@ -20,7 +20,8 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    Grid
+    Grid,
+    Tooltip
 } from "@mui/material"
 import { useState, useEffect } from "react"
 import VisibilityIcon from "@mui/icons-material/Visibility"
@@ -39,6 +40,7 @@ import { QuickFilterChips } from "../QuickFilterChips"
 import { actividadService } from "../../../services/actividadService"
 import type { TActividadPlanTrabajo, ActividadFilters } from "../../../types/actividades"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
+import TimelineIcon from "@mui/icons-material/Timeline"
 
 interface PlanTrabajoTabProps {
     medidaData: any
@@ -333,14 +335,20 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                                 sx={{ fontWeight: 500, fontSize: '0.7rem' }}
                                                             />
                                                         )}
-                                                        {actividad.adjuntos && actividad.adjuntos.length > 0 && (
-                                                            <Chip
-                                                                icon={<AttachFileIcon fontSize="small" />}
-                                                                label={actividad.adjuntos.length}
-                                                                size="small"
-                                                                variant="outlined"
-                                                                sx={{ fontSize: '0.7rem' }}
-                                                            />
+                                                        {(actividad.adjuntos && actividad.adjuntos.length > 0) && (
+                                                            <Tooltip
+                                                                title={`Actividad registrada (${actividad.adjuntos.length} ${actividad.adjuntos.length === 1 ? 'archivo' : 'archivos'})`}
+                                                                arrow
+                                                            >
+                                                                <Chip
+                                                                    icon={<TimelineIcon fontSize="small" />}
+                                                                    label={actividad.adjuntos.length}
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    color="info"
+                                                                    sx={{ fontSize: '0.7rem' }}
+                                                                />
+                                                            </Tooltip>
                                                         )}
                                                     </Box>
                                                 </Box>

@@ -18,8 +18,7 @@ import {
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import InfoIcon from '@mui/icons-material/Info'
-import CommentIcon from '@mui/icons-material/Comment'
-import AttachFileIcon from '@mui/icons-material/AttachFile'
+import TimelineIcon from '@mui/icons-material/Timeline'
 import HistoryIcon from '@mui/icons-material/History'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import type { TActividadPlanTrabajo } from '../../types/actividades'
@@ -36,8 +35,7 @@ import { CambiarEstadoSection } from './actividad/CambiarEstadoSection'
 import { ReabrirButton } from './actividad/ReabrirButton'
 import { TransferirDialog } from './actividad/TransferirDialog'
 import { VisarButton } from './actividad/VisarButton'
-import { ComentariosTab } from './actividad/ComentariosTab'
-import { EvidenciasTab } from './actividad/EvidenciasTab'
+import { UnifiedActivityTab } from './actividad/UnifiedActivityTab'
 import { HistorialTab } from './actividad/HistorialTab'
 import { TransferenciasTab } from './actividad/TransferenciasTab'
 
@@ -151,8 +149,7 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
       <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
         <Tabs value={currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab icon={<InfoIcon />} label="Detalle" iconPosition="start" />
-          <Tab icon={<CommentIcon />} label="Comentarios" iconPosition="start" />
-          <Tab icon={<AttachFileIcon />} label="Adjuntos" iconPosition="start" />
+          <Tab icon={<TimelineIcon />} label="Actividad" iconPosition="start" />
           <Tab icon={<HistoryIcon />} label="Historial" iconPosition="start" />
           <Tab icon={<SwapHorizIcon />} label="Transferencias" iconPosition="start" />
         </Tabs>
@@ -212,28 +209,17 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
           </Box>
         </TabPanel>
 
-        {/* Tab: Comentarios */}
+        {/* Tab: Actividad (Unified Comentarios & Adjuntos) */}
         <TabPanel value={currentTab} index={1}>
-          <ComentariosTab
+          <UnifiedActivityTab
             actividadId={actividad.id}
-            comentarios={actividad.comentarios || []}
-            onAgregarComentario={(texto) => actions.agregarComentario(actividad.id, texto)}
-            loading={actions.loading}
-          />
-        </TabPanel>
-
-        {/* Tab: Adjuntos */}
-        <TabPanel value={currentTab} index={2}>
-          <EvidenciasTab
-            actividadId={actividad.id}
-            adjuntos={actividad.adjuntos || []}
             canEdit={permissions.canEdit}
             onSuccess={handleSuccess}
           />
         </TabPanel>
 
         {/* Tab: Historial */}
-        <TabPanel value={currentTab} index={3}>
+        <TabPanel value={currentTab} index={2}>
           <HistorialTab
             actividadId={actividad.id}
             onGetHistorial={() => actions.getHistorial(actividad.id, {})}
@@ -242,7 +228,7 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
         </TabPanel>
 
         {/* Tab: Transferencias */}
-        <TabPanel value={currentTab} index={4}>
+        <TabPanel value={currentTab} index={3}>
           <TransferenciasTab
             actividadId={actividad.id}
             onGetTransferencias={() => actions.getTransferencias(actividad.id)}

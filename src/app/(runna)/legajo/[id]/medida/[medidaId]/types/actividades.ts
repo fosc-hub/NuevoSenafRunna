@@ -252,6 +252,10 @@ export interface TActividadPlanTrabajo {
   // Attachments
   /** List of attachments (readonly) */
   adjuntos: TAdjuntoActividad[]
+
+  // Comments
+  /** List of comments (readonly, optional) */
+  comentarios?: TComentarioActividad[]
 }
 
 // API Request/Response types
@@ -332,6 +336,36 @@ export interface TComentarioActividad {
   editado: boolean
   fecha_edicion?: string
   notificaciones_enviadas: number
+}
+
+/**
+ * Unified timeline item combining comentarios and adjuntos
+ * Used for chronological display in UnifiedActivityTab
+ */
+export interface UnifiedTimelineItem {
+  id: string // Prefixed with 'c-' for comentario or 'a-' for adjunto
+  type: 'COMENTARIO' | 'ADJUNTO'
+  timestamp: string // fecha_creacion for both types
+  user: {
+    id: number
+    username: string
+    nombre_completo: string
+  }
+  data: TComentarioActividad | TAdjuntoActividad
+}
+
+/**
+ * Type guard to check if timeline item is a comentario
+ */
+export function isComentario(item: UnifiedTimelineItem): item is UnifiedTimelineItem & { data: TComentarioActividad } {
+  return item.type === 'COMENTARIO'
+}
+
+/**
+ * Type guard to check if timeline item is an adjunto
+ */
+export function isAdjunto(item: UnifiedTimelineItem): item is UnifiedTimelineItem & { data: TAdjuntoActividad } {
+  return item.type === 'ADJUNTO'
 }
 
 /**

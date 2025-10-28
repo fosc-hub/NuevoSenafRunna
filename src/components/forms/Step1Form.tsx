@@ -40,7 +40,7 @@ const TIPOS_OFICIO_MOCK = [
 const TIPOS_MEDIDA_MOCK = [
   { key: "MPI", value: "Medida de Protección Integral" },
   { key: "MPE", value: "Medida de Protección Excepcional" },
-  { key: "MPJ", value: "Medida de Protección Judicial" },
+  { key: "MPJ", value: "Medida Penal Juvenil" },
 ]
 
 // Helper function to add a red asterisk to labels
@@ -923,6 +923,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                           getOptionLabel={(option: any) => option.value || ""}
                           value={(dropdownData?.tipo_medida_choices || TIPOS_MEDIDA_MOCK).find((item: any) => item.key === field.value) || null}
                           onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                          isOptionEqualToValue={(option, value) => option.key === value.key}
                           renderInput={(params) => (
                             <TextField
                               {...params}

@@ -31,6 +31,8 @@ import { submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useDraftStore } from "./utils/userDraftStore"
 import { fetchDropdownData } from "./utils/fetchFormCase"
+import VinculosManager from "./components/VinculosManager"
+import FormSection from "./components/form-section"
 
 const steps = [
   {
@@ -426,6 +428,15 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
               Este formulario está en modo de solo lectura. No se pueden realizar modificaciones.
             </Typography>
           </Alert>
+        )}
+
+        {/* REG-01: Global VinculosManager - accessible from all steps */}
+        {dropdownData && (
+          <Box sx={{ px: 3, pt: 3 }} data-section="vinculos">
+            <FormSection title="Vínculos con Legajos y Medidas" collapsible={true} defaultExpanded={false}>
+              <VinculosManager dropdownData={dropdownData} readOnly={isReadOnly} />
+            </FormSection>
+          </Box>
         )}
 
         <Box sx={{ p: 3 }}>

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
-import { useFieldArray, type Control, useWatch } from "react-hook-form"
+import { useFieldArray, type Control, useWatch, useFormContext } from "react-hook-form"
 import {
   Button,
   Box,
@@ -47,6 +47,9 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
   // Use the hook from conexionesApi
   const { buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
+  // REG-01: Get form methods to manipulate vinculos
+  const { setValue, getValues } = useFormContext<FormData>()
+
   // Memoizar la función handleVinculacionResults para evitar recreaciones innecesarias
   const handleVinculacionResults = useCallback((results: { demanda_ids: number[]; match_descriptions: string[] }) => {
     if (results.demanda_ids.length > 0) {
@@ -54,6 +57,63 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
       setOpenSnackbar(true)
     }
   }, [])
+
+  // REG-01: Handle vincular legajo from notification - adds legajo to VinculosManager (global)
+  const handleVincularLegajo = async (legajoId: number, legajoNumero: string) => {
+    const currentVinculos = getValues("vinculos") || []
+
+    // Check duplicates
+    const alreadyAdded = currentVinculos.some((v) => v.legajo === legajoId)
+    if (alreadyAdded) {
+      console.log("Legajo already added to vinculos")
+      return
+    }
+
+    // Fetch legajo details
+    try {
+      const response = await fetch(`/api/legajos/${legajoId}/`)
+      const legajoData = await response.json()
+
+      const newVinculo = {
+        legajo: legajoId,
+        medida: null,
+        tipo_vinculo: null,
+        justificacion: "",
+        legajo_info: {
+          id: legajoId,
+          numero: legajoNumero,
+          nnya_nombre: `${legajoData.nnya?.nombre || ""} ${legajoData.nnya?.apellido || ""}`.trim(),
+          medidas_activas: legajoData.medidas_activas || [],
+        },
+      }
+
+      setValue("vinculos", [...currentVinculos, newVinculo])
+
+      // Auto-scroll to vinculos section (global VinculosManager in MultiStepForm)
+      setTimeout(() => {
+        const vinculosSection = document.querySelector('[data-section="vinculos"]')
+        if (vinculosSection) {
+          vinculosSection.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      }, 100)
+    } catch (error) {
+      console.error("Error fetching legajo details:", error)
+      // Fallback with minimal info
+      const newVinculo = {
+        legajo: legajoId,
+        medida: null,
+        tipo_vinculo: null,
+        justificacion: "",
+        legajo_info: {
+          id: legajoId,
+          numero: legajoNumero,
+          nnya_nombre: legajoNumero, // Fallback to numero if name fetch fails
+          medidas_activas: [],
+        },
+      }
+      setValue("vinculos", [...currentVinculos, newVinculo])
+    }
+  }
 
   // Watch the entire adultosConvivientes array instead of individual fields
   const watchedAdultos = useWatch({
@@ -268,12 +328,13 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
         </DialogActions>
       </Dialog>
 
-      {/* Use the modular VinculacionNotification component */}
+      {/* REG-01: VinculacionNotification with global VinculosManager support */}
       <VinculacionNotification
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
         currentDemandaId={id}
+        onVincularLegajo={handleVincularLegajo}
       />
     </>
   )

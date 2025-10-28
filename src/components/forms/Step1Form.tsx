@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useWatch } from "react-hook-form"
+import { useWatch, useFormContext } from "react-hook-form"
 import { type Control, Controller, useFieldArray, useController } from "react-hook-form"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { format, parse } from "date-fns"
@@ -29,7 +29,6 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
-import VinculosManager from "./components/VinculosManager"
 
 // Hardcoded options for CARGA_OFICIOS dropdowns (REG-01 GAP-06)
 const TIPOS_OFICIO_MOCK = [
@@ -338,6 +337,9 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
   } | null>(null)
   const [openSnackbar, setOpenSnackbar] = useState(false)
 
+  // REG-01: Get form methods to manipulate vinculos
+  const { setValue, getValues } = useFormContext<FormData>()
+
   // Use the hook from conexionesApi
   const { buscarPorNombreApellido, buscarPorDni, buscarCompleto } = useBusquedaVinculacion(800) // 800ms debounce
 
@@ -352,6 +354,66 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
   // Close the snackbar
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false)
+  }
+
+  // REG-01: Handle vincular legajo from notification - adds legajo to VinculosManager
+  const handleVincularLegajo = async (legajoId: number, legajoNumero: string) => {
+    // Get current vinculos or initialize empty array
+    const currentVinculos = getValues("vinculos") || []
+
+    // Check if this legajo is already in the list
+    const alreadyAdded = currentVinculos.some((v) => v.legajo === legajoId)
+    if (alreadyAdded) {
+      console.log("Legajo already added to vinculos")
+      return
+    }
+
+    // Fetch legajo details to get medidas_activas
+    try {
+      const response = await fetch(`/api/legajos/${legajoId}/`)
+      const legajoData = await response.json()
+
+      // Create new vinculo with legajo info pre-filled
+      const newVinculo = {
+        legajo: legajoId,
+        medida: null,
+        tipo_vinculo: null,
+        justificacion: "",
+        legajo_info: {
+          id: legajoId,
+          numero: legajoNumero,
+          nnya_nombre: `${legajoData.nnya?.nombre || ""} ${legajoData.nnya?.apellido || ""}`.trim(),
+          medidas_activas: legajoData.medidas_activas || [],
+        },
+      }
+
+      // Add to vinculos array
+      setValue("vinculos", [...currentVinculos, newVinculo])
+
+      // Scroll to vinculos section if not visible
+      setTimeout(() => {
+        const vinculosSection = document.querySelector('[data-section="vinculos"]')
+        if (vinculosSection) {
+          vinculosSection.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      }, 100)
+    } catch (error) {
+      console.error("Error fetching legajo details:", error)
+      // Still add the vinculo but without full details
+      const newVinculo = {
+        legajo: legajoId,
+        medida: null,
+        tipo_vinculo: null,
+        justificacion: "",
+        legajo_info: {
+          id: legajoId,
+          numero: legajoNumero,
+          nnya_nombre: legajoNumero, // Fallback to numero if name fetch fails
+          medidas_activas: [],
+        },
+      }
+      setValue("vinculos", [...currentVinculos, newVinculo])
+    }
   }
 
   // Watch for changes in the relevant fields
@@ -1098,19 +1160,14 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
           </Grid>
         </FormSection>
 
-        {/* REG-01: Sección de Vínculos (Conditional for CARGA_OFICIOS workflow) */}
-        {selectedObjetivoDemanda === "CARGA_OFICIOS" && (
-          <FormSection title="Vínculos con Legajos y Medidas" collapsible={true}>
-            <VinculosManager dropdownData={dropdownData} readOnly={readOnly} />
-          </FormSection>
-        )}
       </Box>
-      {/* Notification for vinculacion results */}
+      {/* REG-01: Notification for vinculacion results - now works globally with VinculosManager in MultiStepForm */}
       <VinculacionNotification
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
         currentDemandaId={id}
+        onVincularLegajo={handleVincularLegajo}
       />
     </>
   )

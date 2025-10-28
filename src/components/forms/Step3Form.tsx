@@ -37,7 +37,7 @@ interface Step3FormProps {
 
 const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, adultosConvivientes, id }) => {
   const theme = useTheme()
-  const { control, setValue } = useFormContext<FormData>()
+  const { control, setValue, getValues } = useFormContext<FormData>()
   const { fields, append, remove } = useFieldArray({
     control,
     name: "ninosAdolescentes",
@@ -72,6 +72,63 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       setOpenSnackbar(true)
     }
   }, [])
+
+  // REG-01: Handle vincular legajo from notification - adds legajo to VinculosManager (global)
+  const handleVincularLegajo = async (legajoId: number, legajoNumero: string) => {
+    const currentVinculos = getValues("vinculos") || []
+
+    // Check duplicates
+    const alreadyAdded = currentVinculos.some((v) => v.legajo === legajoId)
+    if (alreadyAdded) {
+      console.log("Legajo already added to vinculos")
+      return
+    }
+
+    // Fetch legajo details
+    try {
+      const response = await fetch(`/api/legajos/${legajoId}/`)
+      const legajoData = await response.json()
+
+      const newVinculo = {
+        legajo: legajoId,
+        medida: null,
+        tipo_vinculo: null,
+        justificacion: "",
+        legajo_info: {
+          id: legajoId,
+          numero: legajoNumero,
+          nnya_nombre: `${legajoData.nnya?.nombre || ""} ${legajoData.nnya?.apellido || ""}`.trim(),
+          medidas_activas: legajoData.medidas_activas || [],
+        },
+      }
+
+      setValue("vinculos", [...currentVinculos, newVinculo])
+
+      // Auto-scroll to vinculos section (global VinculosManager in MultiStepForm)
+      setTimeout(() => {
+        const vinculosSection = document.querySelector('[data-section="vinculos"]')
+        if (vinculosSection) {
+          vinculosSection.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      }, 100)
+    } catch (error) {
+      console.error("Error fetching legajo details:", error)
+      // Fallback with minimal info
+      const newVinculo = {
+        legajo: legajoId,
+        medida: null,
+        tipo_vinculo: null,
+        justificacion: "",
+        legajo_info: {
+          id: legajoId,
+          numero: legajoNumero,
+          nnya_nombre: legajoNumero, // Fallback to numero if name fetch fails
+          medidas_activas: [],
+        },
+      }
+      setValue("vinculos", [...currentVinculos, newVinculo])
+    }
+  }
 
   // Duplicate detection state (LEG-01)
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
@@ -484,11 +541,13 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         </DialogActions>
       </Dialog>
 
+      {/* REG-01: VinculacionNotification with global VinculosManager support */}
       <VinculacionNotification
         open={openSnackbar}
         onClose={handleCloseSnackbar}
         vinculacionResults={vinculacionResults}
         currentDemandaId={id}
+        onVincularLegajo={handleVincularLegajo}
       />
 
       {/* Duplicate Detection Modal (LEG-01) */}

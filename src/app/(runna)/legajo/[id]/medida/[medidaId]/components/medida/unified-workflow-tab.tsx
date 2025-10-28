@@ -28,6 +28,7 @@ import { AperturaSection } from "./apertura-section"
 import { NotaAvalSection } from "./nota-aval-section"
 import { InformeJuridicoSection } from "./informe-juridico-section"
 import { RatificacionJudicialSection } from "./ratificacion-judicial-section"
+import { InformeCierreSection } from "./informe-cierre-section"
 import { WorkflowStepper, WorkflowStep } from "./workflow-stepper"
 import { WorkflowStepContent } from "./workflow-step-content"
 import {
@@ -43,8 +44,8 @@ import {
 import { getMostRecentNotaAval } from "../../api/nota-aval-api-service"
 import { hasInformeJuridico } from "../../api/informe-juridico-api-service"
 import { getRatificacionActiva } from "../../api/ratificacion-judicial-api-service"
-import { getAllEstados } from "../../api/estado-etapa-api-service"
 import { createEtapa } from "../../api/etapa-api-service"
+import { getEtapaDetail, type EtapaDetailResponse } from "../../api/etapa-detail-api-service"
 import { workflowPhaseToTipoEtapa } from "../../utils/workflow-tipo-mapper"
 import IniciarEtapaDialog from "../dialogs/iniciar-etapa-dialog"
 import type { StepStatus, WorkflowPhase } from "../../types/workflow"
@@ -133,35 +134,47 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
 
   // ========== V2 Mode Detection ==========
   /**
-   * Use V2 catalog-based workflow if:
-   * 1. medidaApiData is provided
-   * 2. etapaActualForThisTab exists
-   * 3. estado_especifico is not null/undefined (backend V2 deployed)
+   * DISABLED: V2 mode uses a different UI that doesn't have interactive sections.
+   * We want to keep using V1 mode (with AperturaSection, NotaAvalSection, etc.)
+   * even when estado_especifico exists.
    *
-   * Otherwise fall back to V1 hardcoded workflow (backward compatible)
+   * V1 mode provides the full interactive workflow with sections for:
+   * - Registro de Intervención (with modal)
+   * - Nota de Aval (with form)
+   * - Informe Jurídico (with uploads)
+   * - Ratificación Judicial (with documents)
    */
-  const useV2Mode =
-    etapaActualForThisTab?.estado_especifico !== undefined &&
-    etapaActualForThisTab?.estado_especifico !== null
+  const useV2Mode = false // Always use V1 interactive workflow
 
   // ========== State Management ==========
   const [activeStep, setActiveStep] = useState(0)
+  const [etapaDetail, setEtapaDetail] = useState<EtapaDetailResponse | null>(null)
   const [notaAval, setNotaAval] = useState<NotaAvalBasicResponse | null>(null)
   const [informeJuridico, setInformeJuridico] = useState<boolean>(false)
   const [ratificacion, setRatificacion] = useState<RatificacionJudicial | null>(null)
   const [isLoadingWorkflowData, setIsLoadingWorkflowData] = useState(true)
 
-  // V2 State: Estados catalog
-  const [estadosCatalog, setEstadosCatalog] = useState<TEstadoEtapaMedida[]>([])
-  const [isLoadingEstados, setIsLoadingEstados] = useState(false)
+  // V2 State: Estados catalog (kept for WorkflowStepper compatibility, always empty)
+  const [estadosCatalog] = useState<TEstadoEtapaMedida[]>([])
+  const [isLoadingEstados] = useState(false)
 
   // Etapa creation state
   const [iniciarEtapaDialogOpen, setIniciarEtapaDialogOpen] = useState(false)
   const [isCreatingEtapa, setIsCreatingEtapa] = useState(false)
   const [createEtapaError, setCreateEtapaError] = useState<string | null>(null)
 
-  // Extract estado from medidaData
-  const estadoActual = medidaData.estado || ""
+  /**
+   * CRITICAL FIX: Use estado from the SPECIFIC etapa being viewed, not the current medida estado
+   *
+   * Previously: Used medidaData.estado (always the current active etapa's estado)
+   * Now: Use etapaActualForThisTab.estado (the estado of THIS specific etapa)
+   *
+   * This ensures:
+   * - Apertura tab shows Apertura's estado (even if it's no longer active)
+   * - Innovación tab shows Innovación's estado
+   * - Each tab has independent workflow progress
+   */
+  const estadoActual = etapaActualForThisTab?.estado || medidaData.estado || ""
 
   // Prepare data for AperturaSection
   const aperturaData = {
@@ -170,67 +183,81 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     equipo: "", // TODO: Get from medidaData if available
   }
 
-  // ========== Fetch Workflow Data on Mount ==========
+  // ========== Fetch Etapa Detail Data on Mount ==========
+  /**
+   * NEW APPROACH: Fetch etapa detail with ALL documents in a single API call
+   * Benefits:
+   * - Single API call vs 3-4 separate calls
+   * - Documents properly filtered by etapa (no cross-contamination)
+   * - Better performance and consistency
+   */
   useEffect(() => {
-    const fetchWorkflowData = async () => {
+    const fetchEtapaDetail = async () => {
+      if (!workflowPhase) {
+        console.warn('[UnifiedWorkflowTab] No workflowPhase provided, skipping etapa detail fetch')
+        setIsLoadingWorkflowData(false)
+        return
+      }
+
       try {
         setIsLoadingWorkflowData(true)
 
-        // Fetch nota de aval
-        const notaAvalData = await getMostRecentNotaAval(medidaData.id)
-        setNotaAval(notaAvalData)
+        const tipoEtapa = workflowPhaseToTipoEtapa(workflowPhase)
 
-        // Fetch informe juridico existence
-        const hasInforme = await hasInformeJuridico(medidaData.id)
-        setInformeJuridico(hasInforme)
+        console.log(`[UnifiedWorkflowTab] Fetching etapa detail for ${tipoEtapa}`)
 
-        // Fetch ratificacion activa
-        const ratifData = await getRatificacionActiva(medidaData.id)
-        setRatificacion(ratifData)
+        // Single API call gets ALL documents for this etapa
+        const detail = await getEtapaDetail(medidaData.id, tipoEtapa)
 
+        if (!detail) {
+          // Etapa doesn't exist yet (404) - normal for non-Apertura stages
+          console.log(`[UnifiedWorkflowTab] Etapa ${tipoEtapa} not found (not created yet)`)
+          setEtapaDetail(null)
+          setNotaAval(null)
+          setInformeJuridico(false)
+          setRatificacion(null)
+        } else {
+          // Extract documents from etapa detail
+          const docs = detail.etapa.documentos
+
+          console.log(`[UnifiedWorkflowTab] Etapa detail loaded:`, {
+            tipo_etapa: detail.etapa.tipo_etapa,
+            estado_actual: detail.etapa.estado_actual?.nombre_display,
+            intervenciones: docs.intervenciones.length,
+            notas_aval: docs.notas_aval.length,
+            informes_juridicos: docs.informes_juridicos.length,
+            ratificaciones: docs.ratificaciones.length,
+          })
+
+          setEtapaDetail(detail)
+
+          // Extract individual documents for backward compatibility with existing code
+          setNotaAval(docs.notas_aval.length > 0 ? docs.notas_aval[0] : null)
+          setInformeJuridico(docs.informes_juridicos.length > 0)
+          setRatificacion(docs.ratificaciones.length > 0 ? docs.ratificaciones[0] : null)
+        }
       } catch (error) {
-        console.error("Error fetching workflow data:", error)
+        console.error("[UnifiedWorkflowTab] Error fetching etapa detail:", error)
+        setEtapaDetail(null)
+        setNotaAval(null)
+        setInformeJuridico(false)
+        setRatificacion(null)
       } finally {
         setIsLoadingWorkflowData(false)
       }
     }
 
-    fetchWorkflowData()
-  }, [medidaData.id])
+    fetchEtapaDetail()
+  }, [medidaData.id, workflowPhase])
 
-  // ========== Fetch V2 Estados Catalog ==========
-  useEffect(() => {
-    // Only fetch catalog if V2 mode is enabled and workflowPhase is provided
-    if (!useV2Mode || !workflowPhase) {
-      return
-    }
-
-    const fetchEstadosCatalog = async () => {
-      try {
-        setIsLoadingEstados(true)
-
-        // Convert workflowPhase to TipoEtapa enum
-        const tipoEtapa = workflowPhaseToTipoEtapa(workflowPhase)
-
-        // Fetch estados filtered by tipo_medida and tipo_etapa
-        const estados = await getAllEstados({
-          tipo_medida: medidaData.tipo_medida,
-          tipo_etapa: tipoEtapa,
-          activo: true,
-        })
-
-        setEstadosCatalog(estados)
-      } catch (error) {
-        console.error("Error fetching estados catalog:", error)
-        // On error, leave estadosCatalog empty which will trigger V1 fallback
-        setEstadosCatalog([])
-      } finally {
-        setIsLoadingEstados(false)
-      }
-    }
-
-    fetchEstadosCatalog()
-  }, [useV2Mode, medidaData.tipo_medida, workflowPhase])
+  // ========== V2 Estados Catalog (REMOVED - no longer needed) ==========
+  /**
+   * OPTIMIZATION: We no longer need to fetch the estados catalog separately
+   * because etapaDetail already includes the current estado_actual.
+   *
+   * The WorkflowStepper can use etapaDetail.etapa.estado_actual directly.
+   * estadosCatalog is kept as an empty array for WorkflowStepper prop compatibility.
+   */
 
   // ========== Step Completion Logic ==========
   // Step 1: Intervención completed when estado is PENDIENTE_NOTA_AVAL or beyond
@@ -310,6 +337,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             medidaId={medidaData.id}
             tipoMedida={medidaData.tipo_medida}
             legajoData={legajoData}
+            intervenciones={etapaDetail?.etapa.documentos.intervenciones ?? []}
           />
         </WorkflowStepContent>
       ),
@@ -516,29 +544,84 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     )
   }
 
+  // ========== MPI Closure Section Detection ==========
+  // Show InformeCierreSection when:
+  // - MPI measure
+  // - Cese phase (or Estados 3/4 detected)
+  // - Estado 3 (PENDIENTE_DE_INFORME_DE_CIERRE) or Estado 4 (INFORME_DE_CIERRE_REDACTADO)
+  const showInformeCierreSection =
+    medidaData.tipo_medida === "MPI" &&
+    medidaApiData &&
+    etapaActualForThisTab &&
+    (etapaActualForThisTab.estado === "PENDIENTE_DE_INFORME_DE_CIERRE" ||
+      etapaActualForThisTab.estado === "INFORME_DE_CIERRE_REDACTADO")
+
+  // Extract available estados from etapa's estado_especifico_detalle
+  const availableEstadosFromEtapa: TEstadoEtapaMedida[] =
+    etapaActualForThisTab?.estado_especifico_detalle?.estados_disponibles?.map((estado: any) => ({
+      id: 0, // Not needed for display
+      codigo: estado.codigo,
+      nombre_display: estado.nombre,
+      orden: estado.orden,
+      responsable_tipo: 'EQUIPO_TECNICO', // Default, will be overridden by actual estado
+      siguiente_accion: '',
+      aplica_a_tipos_medida: [],
+      aplica_a_tipos_etapa: [],
+      activo: true,
+    })) ?? []
+
   // V2 MODE: Use catalog-based EstadoStepper
-  if (useV2Mode && estadosCatalog.length > 0 && workflowPhase && etapaActualForThisTab) {
+  // Updated: Uses estados from etapa's estado_especifico_detalle instead of separate API call
+  if (useV2Mode && workflowPhase && etapaActualForThisTab) {
     return (
-      <WorkflowStepper
-        tipoMedida={medidaData.tipo_medida}
-        tipoEtapa={workflowPhaseToTipoEtapa(workflowPhase)}
-        etapaActual={etapaActualForThisTab}
-        medidaId={medidaData.id}
-        availableEstados={estadosCatalog}
-        fechaCeseEfectivo={medidaApiData?.fecha_cese_efectivo}
-        planTrabajoId={medidaApiData?.plan_trabajo_id}
-      />
+      <>
+        <WorkflowStepper
+          tipoMedida={medidaData.tipo_medida}
+          tipoEtapa={workflowPhaseToTipoEtapa(workflowPhase)}
+          etapaActual={etapaActualForThisTab}
+          medidaId={medidaData.id}
+          availableEstados={availableEstadosFromEtapa}
+          fechaCeseEfectivo={medidaApiData?.fecha_cese_efectivo}
+          planTrabajoId={medidaApiData?.plan_trabajo_id}
+        />
+
+        {/* MPI Closure Section (Estados 3-4) */}
+        {showInformeCierreSection && (
+          <Box sx={{ mt: 3 }}>
+            <InformeCierreSection
+              medidaId={medidaData.id}
+              medidaApiData={medidaApiData}
+              isJZ={isJZ}
+              onRefresh={() => window.location.reload()}
+            />
+          </Box>
+        )}
+      </>
     )
   }
 
   // V1 MODE: Fallback to hardcoded steps (backward compatible)
   return (
-    <WorkflowStepper
-      steps={steps}
-      activeStep={activeStep}
-      onStepClick={setActiveStep}
-      orientation="horizontal"
-    />
+    <>
+      <WorkflowStepper
+        steps={steps}
+        activeStep={activeStep}
+        onStepClick={setActiveStep}
+        orientation="horizontal"
+      />
+
+      {/* MPI Closure Section (Estados 3-4) - V1 Mode */}
+      {showInformeCierreSection && (
+        <Box sx={{ mt: 3 }}>
+          <InformeCierreSection
+            medidaId={medidaData.id}
+            medidaApiData={medidaApiData}
+            isJZ={isJZ}
+            onRefresh={() => window.location.reload()}
+          />
+        </Box>
+      )}
+    </>
   )
 }
 

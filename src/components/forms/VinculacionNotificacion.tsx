@@ -24,6 +24,7 @@ interface VinculacionNotificationProps {
   onClose: () => void
   vinculacionResults: VinculacionResult | null
   currentDemandaId?: string | number
+  onVincularLegajo?: (legajoId: number, legajoNumero: string) => void // Callback to add legajo to VinculosManager
 }
 
 const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
@@ -31,6 +32,7 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
   onClose,
   vinculacionResults,
   currentDemandaId,
+  onVincularLegajo,
 }) => {
   const router = useRouter()
   const params = useParams()
@@ -124,6 +126,14 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
     }
   }
 
+  // REG-01: Función para vincular legajo (pre-fill VinculosManager)
+  const handleVincularLegajo = (legajoId: number, legajoNumero: string) => {
+    if (onVincularLegajo) {
+      onVincularLegajo(legajoId, legajoNumero)
+      onClose() // Close notification after adding to VinculosManager
+    }
+  }
+
   return (
     <Snackbar
       open={open && shouldShow}
@@ -187,6 +197,17 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
                     <Button onClick={() => handleOpenLegajo(legajo.id)} size="small" variant="outlined">
                       Ver legajo
                     </Button>
+                    {/* REG-01: Mostrar botón de vincular si hay callback (durante creación de demanda) */}
+                    {onVincularLegajo && !currentDemandaId && !params.id && (
+                      <Button
+                        onClick={() => handleVincularLegajo(legajo.id, legajo.numero)}
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                      >
+                        Vincular
+                      </Button>
+                    )}
                   </Box>
                 </Typography>
               </Box>

@@ -8,7 +8,7 @@ import PostAddIcon from "@mui/icons-material/PostAdd"
 import { SectionCard } from "./section-card"
 import { RegistroIntervencionModal } from "./registro-intervencion-modal"
 import { useState, useEffect } from "react"
-import { getIntervencionesByMedida } from "../../api/intervenciones-api-service"
+import type { IntervencionResponse } from "../../types/intervencion-api"
 
 interface AperturaSectionProps {
   data: {
@@ -27,33 +27,42 @@ interface AperturaSectionProps {
     persona_apellido: string
     zona_nombre: string
   }
+  /**
+   * Pre-fetched interventions for this etapa (from parent)
+   * NEW: Replaces internal data fetching to ensure etapa isolation
+   */
+  intervenciones?: IntervencionResponse[]
 }
 
-export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive, isCompleted, onViewForm, medidaId, tipoMedida = "MPI", legajoData }) => {
+export const AperturaSection: React.FC<AperturaSectionProps> = ({
+  data,
+  isActive,
+  isCompleted,
+  onViewForm,
+  medidaId,
+  tipoMedida = "MPI",
+  legajoData,
+  intervenciones = [], // Default to empty array
+}) => {
   const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
   const [lastIntervencionId, setLastIntervencionId] = useState<number | undefined>(undefined)
-  const [isLoadingIntervenciones, setIsLoadingIntervenciones] = useState<boolean>(false)
 
-  // Load last intervention on mount
+  /**
+   * NEW APPROACH: Use pre-fetched interventions from parent
+   * This ensures we only show interventions for THIS etapa (Apertura),
+   * not mixed with Innovación, Prórroga, or Cese interventions
+   */
   useEffect(() => {
-    const loadLastIntervencion = async () => {
-      setIsLoadingIntervenciones(true)
-      try {
-        const intervenciones = await getIntervencionesByMedida(medidaId)
-        if (intervenciones && intervenciones.length > 0) {
-          // Get the most recent intervention (assuming they come sorted by date desc)
-          const lastIntervencion = intervenciones[0]
-          setLastIntervencionId(lastIntervencion.id)
-        }
-      } catch (error) {
-        console.error("Error loading intervenciones:", error)
-      } finally {
-        setIsLoadingIntervenciones(false)
-      }
+    if (intervenciones && intervenciones.length > 0) {
+      // Get the most recent intervention (assuming they come sorted by date desc)
+      const lastIntervencion = intervenciones[0]
+      setLastIntervencionId(lastIntervencion.id)
+      console.log(`[AperturaSection] Loaded ${intervenciones.length} interventions for this etapa`)
+    } else {
+      setLastIntervencionId(undefined)
+      console.log('[AperturaSection] No interventions found for this etapa')
     }
-
-    loadLastIntervencion()
-  }, [medidaId])
+  }, [intervenciones])
 
   const handleFormularioClick = () => {
     setRegistroModalOpen(true)
@@ -66,18 +75,8 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive
 
   const handleModalClose = () => {
     setRegistroModalOpen(false)
-    // Reload last intervention after closing modal
-    const reloadLastIntervencion = async () => {
-      try {
-        const intervenciones = await getIntervencionesByMedida(medidaId)
-        if (intervenciones && intervenciones.length > 0) {
-          setLastIntervencionId(intervenciones[0].id)
-        }
-      } catch (error) {
-        console.error("Error reloading intervenciones:", error)
-      }
-    }
-    reloadLastIntervencion()
+    // Parent will handle data refresh when needed
+    // No need to refetch here since parent owns the data
   }
 
   return (
@@ -102,9 +101,9 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive
           <Button
             variant="outlined"
             color="primary"
-            startIcon={isLoadingIntervenciones ? <CircularProgress size={20} /> : <DescriptionIcon />}
+            startIcon={<DescriptionIcon />}
             onClick={handleFormularioClick}
-            disabled={isLoadingIntervenciones || !lastIntervencionId}
+            disabled={!lastIntervencionId}
             sx={{
               borderRadius: 8,
               textTransform: "none",
@@ -114,7 +113,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({ data, isActive
               },
             }}
           >
-            {isLoadingIntervenciones ? "Cargando..." : lastIntervencionId ? "Ver Última Intervención" : "Sin Intervenciones"}
+            {lastIntervencionId ? "Ver Última Intervención" : "Sin Intervenciones"}
           </Button>
 
           <Button

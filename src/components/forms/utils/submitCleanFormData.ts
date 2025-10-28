@@ -487,12 +487,17 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
             v.tipo_vinculo !== null &&
             v.justificacion.trim().length >= 20 // Backend validation
         )
-        .map((vinculo) => ({
-          legajo: vinculo.legajo,
-          medida: vinculo.medida, // Can be null
-          tipo_vinculo: vinculo.tipo_vinculo,
-          justificacion: vinculo.justificacion.trim(),
-        }))
+        .map((vinculo) => {
+          // REG-01: Nested schema uses different field names than standalone endpoint
+          // Nested endpoint expects: 'legajo', 'medida' (NOT 'legajo_origen'/'medida_destino')
+          // DO NOT include 'creado_por' - backend sets it automatically from request.user
+          return {
+            legajo: vinculo.legajo,
+            medida: vinculo.medida || null,
+            tipo_vinculo: vinculo.tipo_vinculo,
+            justificacion: vinculo.justificacion.trim(),
+          }
+        })
     } : {}),
   }
 

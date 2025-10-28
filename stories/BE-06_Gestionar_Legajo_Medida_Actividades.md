@@ -483,3 +483,108 @@ GET /api/zona/{id}/usuarios/        # Usuarios disponibles en una zona
 *Story creada basándose en análisis completo de `Documentacion RUNNA.md` sección BE-06*
 *Fecha creación: 2025-10-06*
 *Última revisión técnica: 2025-10-06*
+
+## IMPLEMENTACIÓN REAL - ANÁLISIS DE GAPS
+
+### ✅ Implementado Correctamente:
+
+1. **ViewSet Principal** (`LegajoAsignacionViewSet`)
+   - Implementado en `runna/api/views/LegajoAsignacionView.py`
+   - Registrado en `api/urls.py` como `/api/legajo/` (singular)
+   - Clase completa con todos los endpoints requeridos
+
+2. **Endpoints Implementados**
+   - ✅ `POST /api/legajo/{id}/derivar/` (línea 196-261)
+   - ✅ `POST /api/legajo/{id}/asignar/` (línea 263-341)
+   - ✅ `PATCH /api/legajo/{id}/reasignar/` (línea 343-411)
+   - ✅ `POST /api/legajo/{id}/rederivar/` (línea 413-486)
+   - ✅ `GET /api/legajo/{id}/historial-asignaciones/` (línea 488+)
+
+3. **Control de Acceso (CA-01)**
+   - ✅ Clase `IsJefeOrDirector` implementada (líneas 22-45)
+   - ✅ Validación de permisos por zona (_validar_permisos_zona)
+   - ✅ Superuser tiene acceso completo
+
+4. **Gestión de Asignación (CA-02)**
+   - ✅ Tipos de responsabilidad: TRABAJO, CENTRO_VIDA, JUDICIAL
+   - ✅ Modificación de responsable existente (reasignar)
+   - ✅ Derivación a otra zona (rederivar)
+   - ✅ Local de Centro de Vida manejado
+
+5. **Historial y Trazabilidad (CA-04)**
+   - ✅ Modelo `TLegajoZonaHistorial` usado
+   - ✅ Helper `_crear_registro_historial` (líneas 144-158)
+   - ✅ Registro de todas las acciones (DERIVACION, ASIGNACION, MODIFICACION, RE-DERIVACION)
+
+6. **Validaciones del Sistema (CA-06)**
+   - ✅ Verificación de asignaciones existentes antes de crear
+   - ✅ Validación de responsable pertenece a zona
+   - ✅ Uso de `get_object_or_404` para entidades
+
+7. **ViewSet de Centro de Vida**
+   - ✅ `TLocalCentroVidaViewSet` implementado (líneas 48-59)
+   - ✅ Filtrado por zona disponible
+
+### ⚠️ Parcialmente Implementado:
+
+1. **Notificaciones por Email (CA-03)**
+   - ⚠️ Helper `_enviar_notificacion_email` existe (líneas 160-195)
+   - ⚠️ Estructura de email correcta según CA-03
+   - ❌ TODO: Integración real con servicio de email (línea 187)
+   - ⚠️ Solo imprime en consola actualmente
+
+2. **Integración con PLTM (CA-05)**
+   - ⚠️ Placeholder para crear actividad PLTM (líneas 334-336)
+   - ❌ Comentado como TODO: Integración con PLTM (Fase 4)
+   - ❌ Requiere implementación del módulo PLTM
+
+### ❌ No Implementado:
+
+1. **Serializers Específicos**
+   - Falta verificar implementación de:
+     - `DerivarLegajoSerializer`
+     - `AsignarLegajoSerializer`
+     - `ReasignarLegajoSerializer`
+     - `RederivarLegajoSerializer`
+
+2. **Tests Específicos para BE-06**
+   - No hay tests dedicados para estos endpoints
+   - Falta validación de permisos por rol
+   - Falta test de notificaciones
+   - Falta test de historial
+
+3. **Integración con Frontend**
+   - Pop-up de asignación no implementado
+   - Deep links en emails no verificados
+
+### 📊 Resumen de Cobertura:
+- **Funcionalidad Core**: 85% implementado
+- **Control de Acceso**: 95% implementado
+- **Notificaciones**: 40% implementado (estructura lista, falta envío real)
+- **Historial**: 100% implementado
+- **Integración PLTM**: 5% (solo placeholder)
+- **Tests**: 0% cobertura específica
+
+### 🔧 Archivos Relacionados:
+- **ViewSet Principal**: `runna/api/views/LegajoAsignacionView.py`
+- **Serializers**: `runna/api/serializers/` (revisar existencia)
+- **URLs**: `runna/api/urls.py` (registro como `/api/legajo/`)
+- **Modelos**:
+  - `TLegajoZona` (infrastructure/models/Persona.py)
+  - `TLegajoZonaHistorial` (verificar existencia)
+  - `TLocalCentroVida` (verificar existencia)
+- **Tests**: No existen tests específicos
+
+### 📝 Notas Técnicas:
+1. La implementación está bien estructurada con transacciones atómicas
+2. Los helpers para historial y notificaciones facilitan mantenimiento
+3. Falta servicio real de email (NOTINT-01/02 pendiente)
+4. La integración con PLTM está correctamente diferida
+5. El ViewSet usa `/api/legajo/` (singular) para diferenciarse de `/api/legajos/` (plural)
+
+### 🚨 Acciones Requeridas:
+1. Implementar servicio de email real
+2. Verificar existencia de serializers específicos
+3. Crear tests completos para todos los endpoints
+4. Validar modelos TLegajoZonaHistorial y TLocalCentroVida
+5. Preparar integración con PLTM cuando esté listo

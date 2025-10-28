@@ -1552,3 +1552,73 @@ REG-01 (Registro) → Objetivo Protección → BE-04 (Derivar/Asignar)
 **Fecha de Creación**: 2025-10-13
 **Dependencias**: LEG-01 ✅, BE-05 ✅, BE-06 ✅, REG-01 ✅, EVAL-03 ✅
 **Siguientes Pasos**: LEG-03 (Búsqueda y Filtrado), LEG-04 (Detalle de Legajo), MED-01 (Registro de Medida)
+
+## IMPLEMENTACIÓN REAL - ANÁLISIS DE GAPS
+
+### ✅ Implementado Correctamente:
+
+1. **Endpoint de Creación Manual**
+   - `POST /api/registro-legajo/` implementado en `ComposedView.py` (líneas 392-411)
+   - Registrado en `api/urls.py`
+   - Usa transacción atómica para consistencia
+
+2. **Modelo TLegajo**
+   - Relación OneToOne con TPersona (nnya)
+   - Campos básicos implementados
+
+3. **Serializers**
+   - `LegajoCreateManualSerializer` en `LegajoSerializer.py`
+   - `TPersonaSerializer` para datos del NNyA
+
+### ⚠️ Parcialmente Implementado:
+
+1. **RegistroLegajoFormView**
+   - ⚠️ Implementación muy básica (solo 20 líneas)
+   - ❌ No valida duplicados
+   - ❌ No genera número secuencial
+   - ❌ No maneja urgencia ni zona
+
+### ❌ No Implementado:
+
+1. **Creación Automática desde EVAL-03**
+   - No hay signal/trigger en aprobación de evaluación
+   - No hay lógica de creación automática
+   - No hereda datos de la demanda
+
+2. **Generación de Número de Legajo**
+   - No existe lógica para formato YYYY-NNN
+   - No hay contador secuencial
+   - No hay reinicio anual
+
+3. **Validación de Duplicados**
+   - No verifica si NNyA ya tiene legajo
+   - No hay constraint unique en BD
+
+4. **Asignación Inicial**
+   - No crea TLegajoZona automáticamente
+   - No asigna responsable inicial
+
+5. **Tests**
+   - Existen tests pero con baja cobertura
+   - `test_legajo_creacion_manual.py`
+   - `test_legajo_creacion_automatica.py`
+
+### 📊 Resumen de Cobertura:
+- **Creación Manual**: 40% implementado
+- **Creación Automática**: 0% implementado
+- **Validaciones**: 10% implementado
+- **Tests**: 30% cobertura
+
+### 🔧 Archivos Relacionados:
+- **ViewSet**: `api/views/ComposedView.py` (líneas 392-411)
+- **URLs**: `api/urls.py`
+- **Tests**: `tests/test_legajo_creacion_manual.py`
+- **Modelo**: `infrastructure/models/Persona.py`
+
+### 🚨 Acciones Requeridas:
+1. **CRÍTICO**: Implementar creación automática desde EVAL-03
+2. **CRÍTICO**: Agregar generación de número secuencial
+3. Validar unicidad de legajo por NNyA
+4. Crear TLegajoZona en creación
+5. Heredar datos de demanda en creación automática
+

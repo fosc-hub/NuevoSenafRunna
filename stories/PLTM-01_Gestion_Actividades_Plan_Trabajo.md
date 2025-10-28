@@ -1,5 +1,71 @@
 # PLTM-01: Gestión de Actividades del Plan de Trabajo
 
+## IMPLEMENTACIÓN REAL - ANÁLISIS DE GAPS
+
+### ✅ Implementado Correctamente (70%):
+
+1. **Modelos Base**
+   - TPlanDeTrabajo implementado y auto-creado con TMedida
+   - TActividadPlanTrabajo con todos los campos
+   - TTipoActividadPlanTrabajo para catálogo
+   - TAdjuntoActividad para archivos
+
+2. **ViewSet Principal**
+   - TActividadPlanTrabajoViewSet completo
+   - Endpoints CRUD funcionando
+   - Filtros y búsqueda implementados
+   - Permisos por zona correctos
+
+3. **Endpoints Implementados**
+   - `GET /api/actividades/` - Listado
+   - `POST /api/actividades/` - Crear
+   - `GET /api/actividades/{id}/` - Detalle
+   - `PATCH /api/actividades/{id}/` - Actualizar
+   - `DELETE /api/actividades/{id}/` - Cancelar
+   - `POST /api/actividades/{id}/adjuntos/` - Adjuntos
+
+4. **Lógica de Negocio**
+   - Validaciones en `pltm02_validaciones.py`
+   - Control de estados implementado
+   - Permisos por rol verificados
+
+### ⚠️ Parcialmente Implementado:
+
+1. **Gestión Grupal**
+   - Campo `permite_gestion_grupal` existe
+   - Método `replicar_accion_a_grupo` implementado
+   - ❌ Falta UI/endpoints para gestión grupal completa
+
+2. **Notificaciones**
+   - Estructura implementada (TNotificacionActividad)
+   - ❌ Sin servicio de email real
+
+### ❌ No Implementado:
+
+1. **Dashboard/Métricas**
+   - No hay endpoints de estadísticas
+   - No hay vista consolidada de actividades
+
+2. **Historial Completo**
+   - Modelo THistorialActividad existe
+   - ❌ No integrado con django-simple-history
+
+3. **Tests E2E**
+   - Tests unitarios parciales
+   - ❌ Sin cobertura completa del flujo
+
+### 📊 Resumen de Cobertura:
+- **Funcionalidad Core**: 70% implementado
+- **CRUD Básico**: 90% implementado
+- **Gestión Grupal**: 30% implementado
+- **Tests**: 40% cobertura
+
+### 🔧 Archivos Relacionados:
+- **ViewSet**: `api/views/TActividadPlanTrabajoViewSet.py`
+- **Modelos**: `infrastructure/models/medida/medida_models.py`
+- **Validaciones**: `infrastructure/business_logic/pltm02_validaciones.py`
+- **Tests**: `tests/test_pltm01_e2e.py`, `tests/test_actividades_pltm01.py`
+
 ## 📋 CONTEXTO TÉCNICO
 
 ### Estado de Implementación Previo

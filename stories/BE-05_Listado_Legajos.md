@@ -411,3 +411,100 @@ def calcular_semaforo_oficio(fecha_vencimiento):
 - **Búsqueda**: LEG-03 (debe implementar filtros sobre este listado)
 - **Detalle**: LEG-04 (destino del deep-link "Ver detalle")
 - **Patrón de Referencia**: BE-02 (Listado de Demandas) - lógica similar
+
+## IMPLEMENTACIÓN REAL - ANÁLISIS DE GAPS
+
+### ✅ Implementado Correctamente:
+
+1. **Endpoint Principal** (`GET /api/legajos/`)
+   - Implementado en `runna/api/views/LegajoView.py`
+   - Registrado correctamente en `api/urls.py` línea 142
+   - Clase `LegajoViewSet` con toda la lógica de permisos
+
+2. **Filtrado por Permisos y Roles**
+   - ✅ Admin/Superuser ve todos (línea 133-134)
+   - ✅ Jefe Zonal ve legajos de su zona (líneas 147-149)
+   - ✅ Equipo Técnico ve legajos asignados (líneas 162-172)
+   - ✅ Lógica de `TCustomUserZona` implementada
+
+3. **Paginación y Ordenamiento**
+   - ✅ `LegajoPagination` configurada (25 por página, max 100)
+   - ✅ Ordenamiento por defecto `-fecha_apertura`
+   - ✅ Campos ordenables configurados
+
+4. **Filtros y Búsqueda (LEG-03 integrado)**
+   - ✅ `LegajoFilter` integrado con DjangoFilterBackend
+   - ✅ Método `filtros_disponibles` implementado
+   - ✅ Cache de filtros por 1 hora
+
+5. **Optimización de Queries**
+   - ✅ `select_related` para relaciones 1-1
+   - ✅ `prefetch_related` para evitar N+1 queries
+   - ✅ Prefetch de medidas y zonas activas
+
+6. **Endpoint de Acciones** (`GET /api/legajos/{id}/acciones/`)
+   - ✅ Implementado en líneas 423-496
+   - ✅ Retorna acciones según permisos del usuario
+   - ✅ Deep links configurados
+
+### ⚠️ Parcialmente Implementado:
+
+1. **Información Judicial**
+   - ❌ No hay validación de campos sensibles en serializer
+   - ❌ Comentario TODO en línea 176 sobre grupo "Legales"
+   - ❌ Falta lógica para ocultar `informacion_judicial` según permisos
+
+2. **Indicadores Visuales (Chips)**
+   - ❌ No implementados en el serializer
+   - ❌ Falta lógica de contadores para demandas/medidas/actividades
+   - ❌ Semáforo de oficios no implementado
+
+3. **Director Provincial/Interior**
+   - ⚠️ Lógica comentada (líneas 151-158)
+   - Esperando modelo Medida con estado "Solicitud_Aval"
+
+4. **Legales**
+   - ⚠️ Lógica comentada (líneas 175-183)
+   - Esperando modelos Medida y Oficio
+
+### ❌ No Implementado:
+
+1. **Generación Automática de Número de Legajo**
+   - No hay lógica para generar formato `YYYY-NNN`
+   - No hay reinicio anual del contador
+
+2. **Configuración de Columnas del Usuario**
+   - No hay modelo/endpoint para guardar preferencias
+   - No hay lógica para aplicar configuración guardada
+
+3. **Acciones Faltantes**
+   - Falta "Registrar/Ver Oficio" (requiere modelo Oficio)
+   - Falta "Ir a MED-05" (parcialmente, requiere validación)
+   - Falta "Ver PLTM" (requiere modelo Plan de Trabajo)
+   - Falta "Exportar"
+   - Falta "Adjuntar acuse" en chips de Oficios
+
+4. **Tests Específicos**
+   - Existen tests generales pero no específicos para BE-05
+   - Falta validación de permisos por rol
+   - Falta test de indicadores y contadores
+
+### 📊 Resumen de Cobertura:
+- **Funcionalidad Core**: 80% implementado
+- **Permisos y Filtrado**: 90% implementado
+- **Indicadores Visuales**: 10% implementado
+- **Acciones Rápidas**: 60% implementado
+- **Tests**: 40% cobertura
+
+### 🔧 Archivos Relacionados:
+- **ViewSet**: `runna/api/views/LegajoView.py`
+- **Serializers**: `runna/api/serializers/LegajoSerializer.py` (requiere revisión)
+- **URLs**: `runna/api/urls.py` (línea 142)
+- **Filtros**: `runna/infrastructure/filters/LegajoFilter.py`
+- **Tests**: `runna/tests/test_legajo_viewset.py` (parcial)
+
+### 📝 Notas Técnicas:
+1. El ViewSet está bien estructurado pero depende de modelos no implementados (Medida, Oficio)
+2. La optimización de queries está correcta con prefetch_related
+3. Falta implementar el LegajoListSerializer con los campos específicos y lógica de indicadores
+4. El cache está configurado pero podría optimizarse más

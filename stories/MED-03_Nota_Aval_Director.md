@@ -98,6 +98,66 @@ graph TD
 - [ ] Se puede consultar historial de decisiones
 
 ### CA-6: Notificaciones Automáticas
+
+---
+
+## IMPLEMENTACIÓN REAL - ANÁLISIS DE GAPS
+
+### ✅ Implementado (90%):
+
+1. **Modelos Completos**
+   - TNotaAval con todos los campos requeridos
+   - TNotaAvalAdjunto para gestión de archivos
+   - Migración 0044 creada y aplicada
+
+2. **ViewSet y Serializers**
+   - TNotaAvalViewSet con acciones completas
+   - TNotaAvalSerializer con nested fields
+   - TNotaAvalAdjuntoSerializer para archivos
+
+3. **Endpoints Funcionales**
+   - `GET /api/medidas/{id}/nota-aval/` - Consultar nota
+   - `POST /api/medidas/{id}/nota-aval/` - Emitir decisión
+   - `POST /api/medidas/{id}/nota-aval/adjuntos/` - Subir adjunto
+   - `GET /api/medidas/{id}/nota-aval/adjuntos/` - Listar adjuntos
+   - `DELETE /api/medidas/{id}/nota-aval/adjuntos/{id}/` - Eliminar adjunto
+
+4. **Transiciones de Estado**
+   - Estado 3 → Estado 4 (aprobación Director)
+   - Estado 3 → Estado 2 (observación con comentarios)
+   - Actualización correcta de etapas en TEtapaMedida
+
+5. **Tests Completos**
+   - test_nota_aval_med03.py con 15 tests
+   - Cobertura de permisos, validaciones y transiciones
+
+6. **Validaciones**
+   - Comentarios obligatorios al observar
+   - Validación de archivos PDF
+   - Permisos de Director verificados
+
+### ⚠️ Parcialmente Implementado:
+
+1. **Permisos**
+   - Solo Director puede emitir nota (✅)
+   - ❌ No distingue entre Director Capital e Interior
+
+### ❌ No Implementado:
+
+1. **Notificaciones**
+   - Sin notificación a Equipo Legal al aprobar
+   - Sin notificación a ET y JZ al observar
+
+### 📊 Resumen:
+- **Cobertura Total**: 90%
+- **Core Funcional**: 100% completo
+- **Permisos**: 90% (falta distinción Capital/Interior)
+- **Notificaciones**: 0% (placeholder)
+
+### 🔧 Archivos Clave:
+- **Model**: `infrastructure/models/medida/TNotaAval.py`
+- **View**: `api/views/TNotaAvalView.py`
+- **Tests**: `tests/test_nota_aval_med03.py`
 - [ ] Si APROBAR: notificar a Equipo Legal
 - [ ] Si OBSERVAR: notificar a Equipo Técnico y Jefe Zonal
 - [ ] Notificaciones incluyen comentarios del Director

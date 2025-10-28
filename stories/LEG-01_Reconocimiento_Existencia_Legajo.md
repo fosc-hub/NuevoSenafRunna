@@ -2443,3 +2443,107 @@ indexes = [
 **Fin de User Story LEG-01 v2.0**
 
 *Generado el 2024-10-25 por Claude Code con /sm --persona-architect*
+
+## IMPLEMENTACIÓN REAL - ANÁLISIS DE GAPS
+
+### ✅ Implementado Correctamente:
+
+1. **Modelo TVinculoLegajo**
+   - Implementado en `infrastructure/models/vinculo/TVinculoLegajo.py`
+   - Campos correctos: tipo_vinculo, justificacion, activo (soft delete)
+   - Soporta múltiples tipos de destino (legajo, medida, demanda)
+   - Auditoría completa (creado_por, creado_en, desvinculado_por, etc.)
+
+2. **ViewSet para Vínculos**
+   - `TVinculoLegajoViewSet` en `api/views/TVinculoLegajoViewSet.py`
+   - Endpoints implementados:
+     - ✅ `GET /api/vinculos-legajo/` (lista con filtros)
+     - ✅ `POST /api/vinculos-legajo/` (crear vínculo)
+     - ✅ `GET /api/vinculos-legajo/{id}/` (detalle)
+     - ✅ `POST /api/vinculos-legajo/{id}/desvincular/` (soft delete)
+   - Filtros funcionando: legajo_origen, tipo_vinculo, tipo_destino, activo
+
+3. **Tipos de Vínculo**
+   - Modelo `TTipoVinculo` implementado
+   - ViewSet read-only para tipos disponibles
+   - Endpoint `GET /api/tipos-vinculo/`
+
+4. **Soft Delete con Justificación**
+   - ✅ Método `desvincular` implementado (líneas 122-169)
+   - ✅ Justificación obligatoria con mínimo 20 caracteres
+   - ✅ Registro de usuario y timestamp de desvinculación
+
+5. **Grupo Vinculado**
+   - `LegajoGrupoViewSet` implementado (líneas 172-200+)
+   - Endpoint `GET /api/legajos/{legajo_id}/grupo/`
+   - Retorna estructura completa del grupo
+
+6. **Serializers Específicos**
+   - ✅ TVinculoLegajoListSerializer
+   - ✅ TVinculoLegajoDetailSerializer
+   - ✅ TVinculoLegajoCreateSerializer
+   - ✅ DesvincularSerializer
+   - ✅ GrupoVinculadoSerializer
+
+### ⚠️ Parcialmente Implementado:
+
+1. **Integración con REG-01**
+   - ❌ No hay evidencia de integración en el Paso 3 del registro
+   - ❌ No hay alertas automáticas durante el registro de demanda
+
+### ❌ No Implementado:
+
+1. **Detección Automática de Duplicados**
+   - No existe endpoint `buscar-duplicados`
+   - No hay algoritmo de scoring implementado
+   - No hay búsqueda por similitud (Levenshtein, fuzzy matching)
+
+2. **Búsqueda Manual en Mesa de Legajos**
+   - No hay integración con BE-05 para búsqueda preventiva
+   - No hay pre-carga de datos desde coincidencias encontradas
+
+3. **Alertas y Scoring**
+   - No existe lógica de scoring (1.0, 0.75, 0.50)
+   - No hay clasificación de criticidad (CRITICA, ALTA, MEDIA)
+   - No hay alertas visuales para el usuario
+
+4. **Tests Específicos**
+   - Existe `test_leg01_vinculacion.py` pero necesita verificación de cobertura
+   - Falta testing del algoritmo de detección
+   - Falta testing de integración con REG-01
+
+### 📊 Resumen de Cobertura:
+- **Funcionalidad de Vinculación**: 95% implementado
+- **Detección de Duplicados**: 0% implementado
+- **Integración con REG-01**: 0% implementado
+- **Búsqueda Manual**: 0% implementado
+- **Tests**: 30% cobertura estimada
+
+### 🔧 Archivos Relacionados:
+- **Modelos**:
+  - `infrastructure/models/vinculo/TVinculoLegajo.py`
+  - `infrastructure/models/vinculo/__init__.py`
+- **ViewSets**:
+  - `api/views/TVinculoLegajoViewSet.py`
+- **Serializers**:
+  - `api/serializers/TVinculoLegajoSerializer.py`
+- **URLs**:
+  - `api/urls.py` (líneas 165-166)
+- **Tests**:
+  - `tests/test_leg01_vinculacion.py`
+- **Documentación**:
+  - `claudedocs/LEG01_V2_IMPLEMENTACION_COMPLETA.md`
+
+### 📝 Notas Técnicas:
+1. La parte de vinculación está excelentemente implementada con soft delete y auditoría
+2. Falta completamente la funcionalidad core de detección de duplicados
+3. No hay integración con el flujo de registro de demanda (REG-01)
+4. El modelo soporta vínculos con múltiples tipos de entidades (legajo, medida, demanda)
+
+### 🚨 Acciones Requeridas:
+1. **CRÍTICO**: Implementar endpoint de búsqueda de duplicados con scoring
+2. **CRÍTICO**: Integrar detección en Paso 3 de REG-01
+3. Implementar algoritmo de similitud (Levenshtein, fuzzy matching)
+4. Agregar alertas visuales según score de coincidencia
+5. Integrar búsqueda manual en BE-05
+6. Crear tests para algoritmo de detección

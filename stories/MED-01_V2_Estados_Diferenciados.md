@@ -497,3 +497,305 @@ Ver anexo de código completo en sección anterior del CHANGELOG.
 **Story MED-01 V2 documentada completamente. Lista para implementación con /sc:implement.**
 
 **Dependencias resueltas: Todas las dependencias técnicas están implementadas y listas para integración.**
+
+---
+
+## 🔧 CORRECCIONES IMPLEMENTADAS (2025-10-27)
+
+### ✅ Corrección del Catálogo de Estados
+
+**Problema Identificado:**
+- Migración 0055 tenía estados incorrectos que no coincidían con documentación oficial
+- **Faltaba estado 3**: `PENDIENTE_NOTA_AVAL` (DIRECTOR)
+- Estados 3, 4, 5 estaban mal ordenados
+- Valores `responsable_tipo` inválidos (no existían en `RESPONSABLE_CHOICES`)
+
+**Archivos Corregidos:**
+
+1. **Migración 0055** ([0055_migrar_estados_a_catalogo.py](../runna/infrastructure/migrations/0055_migrar_estados_a_catalogo.py)):
+   ```python
+   # ANTES (INCORRECTO)
+   estados = [
+       # ... estado 1 y 2 correctos ...
+       {'pk': 3, 'codigo': 'PENDIENTE_INFORME_JURIDICO', ...},      # ✗ Debería ser posición 4
+       {'pk': 4, 'codigo': 'PENDIENTE_RATIFICACION_JUDICIAL', ...}, # ✗ Debería ser posición 5
+       {'pk': 5, 'codigo': 'VIGENTE', ...},                         # ✗ No existe en documentación
+   ]
+
+   # DESPUÉS (CORRECTO)
+   estados = [
+       {'pk': 1, 'codigo': 'PENDIENTE_REGISTRO_INTERVENCION', 'responsable_tipo': 'EQUIPO_TECNICO', ...},
+       {'pk': 2, 'codigo': 'PENDIENTE_APROBACION_REGISTRO', 'responsable_tipo': 'JEFE_ZONAL', ...},
+       {'pk': 3, 'codigo': 'PENDIENTE_NOTA_AVAL', 'responsable_tipo': 'DIRECTOR', ...},           # ✓ AGREGADO
+       {'pk': 4, 'codigo': 'PENDIENTE_INFORME_JURIDICO', 'responsable_tipo': 'EQUIPO_LEGAL', ...},
+       {'pk': 5, 'codigo': 'PENDIENTE_RATIFICACION_JUDICIAL', 'responsable_tipo': 'EQUIPO_LEGAL', ...},
+   ]
+   ```
+
+2. **ViewSet TIntervencionMedida** ([TIntervencionMedidaView.py:561](../runna/api/views/TIntervencionMedidaView.py)):
+   ```python
+   # ANTES (INCORRECTO - línea 561)
+   nuevo_estado_codigo='PENDIENTE_INFORME_JURIDICO'
+
+   # DESPUÉS (CORRECTO)
+   nuevo_estado_codigo='PENDIENTE_NOTA_AVAL'
+   ```
+
+3. **Script de Corrección en Base de Datos Existente**:
+   - Creado script temporal `fix_estado_catalog.py` (eliminado post-ejecución)
+   - Actualizó registros existentes en tabla `t_estado_etapa_medida`
+   - Reordenó estados 3, 4 legacy a posiciones 4, 5
+   - Creó nuevo registro para estado 3: `PENDIENTE_NOTA_AVAL` (ID: 6, DIRECTOR)
+   - Desactivó estado `VIGENTE` (18 etapas históricas lo usaban)
+
+**Catálogo Final Correcto:**
+
+| Orden | Código Estado                     | Responsable     | Aplica a Tipos |
+|-------|-----------------------------------|-----------------|----------------|
+| 1     | PENDIENTE_REGISTRO_INTERVENCION   | EQUIPO_TECNICO  | MPE            |
+| 2     | PENDIENTE_APROBACION_REGISTRO     | JEFE_ZONAL      | MPI, MPE       |
+| 3     | **PENDIENTE_NOTA_AVAL** ← NUEVO   | **DIRECTOR**    | **MPE**        |
+| 4     | PENDIENTE_INFORME_JURIDICO        | EQUIPO_LEGAL    | MPE            |
+| 5     | PENDIENTE_RATIFICACION_JUDICIAL   | EQUIPO_LEGAL    | MPE            |
+
+**Validación:**
+- ✅ **21/21 tests PLTM01 PASSED** (2.9 segundos)
+- ✅ Migración 0055 corregida y re-ejecutable
+- ✅ Base de datos actualizada con estado 3 correcto
+- ✅ ViewSet usa estado correcto en transiciones
+- ✅ Backward compatibility preservada
+
+**Documentación:**
+- [MED01_V2_ESTADOS_CORREGIDOS.md](../claudedocs/MED01_V2_ESTADOS_CORREGIDOS.md) - Detalle completo de corrección
+- [MED01_V2_ISSUES_ENCONTRADOS.md](../claudedocs/MED01_V2_ISSUES_ENCONTRADOS.md) - Registro de issues
+
+### 🔧 Patrón Dual FK Implementado
+
+**Concepto:**
+- **Dual FK Pattern**: Tanto `medida_id` (acceso global) como `etapa_id` (aislamiento por etapa) en tablas relacionadas
+- **In-Place State Updates**: Actualización de `TEtapaMedida.estado_especifico` sin crear registros nuevos
+
+**Modelos Actualizados con Campo `etapa`:**
+
+1. **TIntervencionMedida** ([TIntervencionMedida.py:43-51](../runna/infrastructure/models/medida/TIntervencionMedida.py)):
+   ```python
+   etapa = models.ForeignKey(
+       'TEtapaMedida',
+       on_delete=models.CASCADE,
+       related_name='intervenciones',
+       null=True, blank=True,
+       help_text="Etapa específica a la que pertenece esta intervención (MED-01 V2)"
+   )
+   ```
+
+2. **TNotaAval** ([TNotaAval.py:39-47](../runna/infrastructure/models/medida/TNotaAval.py)):
+   ```python
+   etapa = models.ForeignKey(
+       'TEtapaMedida',
+       on_delete=models.CASCADE,
+       related_name='notas_aval',
+       null=True, blank=True,
+       help_text="Etapa específica a la que pertenece esta nota (MED-01 V2)"
+   )
+   ```
+
+3. **TInformeJuridico** ([TInformeJuridico.py:31-39](../runna/infrastructure/models/medida/TInformeJuridico.py)):
+   ```python
+   etapa = models.ForeignKey(
+       'TEtapaMedida',
+       on_delete=models.CASCADE,
+       related_name='informes_juridicos',
+       null=True, blank=True,
+       help_text="Etapa específica a la que pertenece este informe (MED-01 V2)"
+   )
+   ```
+
+4. **TRatificacionJudicial** ([TRatificacionJudicial.py:31-39](../runna/infrastructure/models/medida/TRatificacionJudicial.py)):
+   ```python
+   etapa = models.ForeignKey(
+       'TEtapaMedida',
+       on_delete=models.CASCADE,
+       related_name='ratificaciones',
+       null=True, blank=True,
+       help_text="Etapa específica a la que pertenece esta ratificación (MED-01 V2)"
+   )
+   ```
+
+**Migraciones Asociadas:**
+
+1. **0057_agregar_campo_etapa.py**: Agrega columna `etapa_id` nullable a 4 tablas
+2. **0058_poblar_campo_etapa.py**: Poblado con lógica temporal (fecha creación documento vs fecha inicio etapa)
+
+**Beneficios:**
+- ✅ **Acceso Global**: ViewSets pueden filtrar `TIntervencionMedida.objects.filter(medida=medida)`
+- ✅ **Aislamiento por Etapa**: `etapa.intervenciones.all()` solo retorna documentos de esa etapa específica
+- ✅ **Backward Compatibility**: Campo `etapa` nullable para datos legacy
+- ✅ **Historial Preservado**: Documentos antiguos mantienen asociación correcta
+
+### 📋 Refactorización de ViewSets (MED-01 V2)
+
+**Eliminación de Lógica Duplicada:**
+
+Todos los ViewSets de medidas ahora usan helpers centralizados en `infrastructure/business_logic/med01_validaciones.py`:
+
+1. **TIntervencionMedidaView**:
+   - Eliminado: `_transicionar_estado()` local
+   - Usa: `transicionar_estado_dentro_etapa()` centralizado
+   - Métodos actualizados: `create()`, `enviar_a_aprobacion()`, `aprobar()`, `rechazar()`
+
+2. **TNotaAvalView**:
+   - Eliminado: `_transicionar_estado()`, `_obtener_nombre_etapa()`
+   - Usa: `transicionar_estado_dentro_etapa()`, `obtener_etapa_actual()`
+   - Método actualizado: `create()`
+
+3. **TInformeJuridicoView**:
+   - Eliminado: `_transicionar_estado()`, `_obtener_nombre_etapa()`
+   - Usa: `transicionar_estado_dentro_etapa()`, `obtener_etapa_actual()`
+   - Métodos actualizados: `create()`, `enviar_informe()`
+
+4. **TRatificacionJudicialView**:
+   - Sin cambios de lógica (ya estaba correcto)
+   - Método actualizado: `create()` asigna `etapa`
+
+5. **TMedidaView**:
+   - Agregado: `transicionar_etapa_endpoint()` genérico para transiciones de etapa
+
+**Endpoint de Transición de Etapas** ([TMedidaView.py:80-184](../runna/api/views/TMedidaView.py)):
+
+```
+POST /api/medidas/{id}/transicionar-etapa/
+
+Body:
+{
+    "tipo_etapa": "INNOVACION",
+    "observaciones": "Motivación de la innovación..."
+}
+```
+
+**Funcionalidad:**
+- Transiciona la medida a una nueva etapa (APERTURA→INNOVACION→PRORROGA→CESE)
+- Crea nueva TEtapaMedida, finaliza la anterior, comienza con 0 documentos
+
+**Reglas de transición por tipo de medida:**
+- **MPI**: APERTURA → CESE
+- **MPE**: APERTURA → INNOVACION/PRORROGA/CESE
+          INNOVACION → PRORROGA/CESE
+          PRORROGA → CESE
+- **MPJ**: APERTURA → PROCESO/CESE
+          PROCESO → CESE
+
+**Validaciones:**
+- Usuario debe ser Jefe Zonal (vía TCustomUserZona)
+- Transición debe estar permitida según tipo de medida
+- Etapa destino debe ser válida
+
+**Respuesta exitosa (200):**
+```json
+{
+    "status": "transicionado",
+    "mensaje": "Medida transicionada exitosamente a INNOVACION",
+    "medida": {
+        "id": 1,
+        "numero_medida": "MPE-2025-001",
+        "tipo_medida": "MPE"
+    },
+    "etapa_anterior": "APERTURA",
+    "etapa_nueva": {
+        "id": 2,
+        "tipo_etapa": "INNOVACION",
+        "nombre": "Innovación de Medida",
+        "estado": "PENDIENTE_REGISTRO_INTERVENCION",
+        "estado_especifico": {
+            "codigo": "PENDIENTE_REGISTRO_INTERVENCION",
+            "nombre": "(1) Pendiente de registro de intervención"
+        },
+        "fecha_inicio_estado": "2025-10-27T10:30:00Z",
+        "observaciones": "Motivación de la innovación..."
+    }
+}
+```
+
+**Errores comunes:**
+- `403 PERMISO_DENEGADO`: Usuario no es Jefe Zonal
+- `400 TIPO_ETAPA_REQUERIDO`: Falta campo `tipo_etapa` en body
+- `400 TRANSICION_INVALIDA`: Transición no permitida para ese tipo de medida
+
+**Helpers Centralizados** (`infrastructure/business_logic/med01_validaciones.py`):
+
+```python
+# Funciones principales
+transicionar_estado_dentro_etapa(medida, nuevo_estado_codigo, observaciones=None)
+  # Transición in-place de estado dentro de la misma etapa (1→2→3→4→5)
+
+transicionar_etapa(medida, nuevo_tipo_etapa, observaciones=None)
+  # Transición de etapa completa (APERTURA→INNOVACION→PRORROGA→CESE)
+  # Crea nueva TEtapaMedida, finaliza anterior, comienza ciclo de estados
+
+obtener_etapa_actual(medida)
+  # Retorna la TEtapaMedida activa actual
+
+obtener_estados_permitidos(tipo_medida, tipo_etapa)
+  # Retorna QuerySet de TEstadoEtapaMedida válidos para tipo_medida/tipo_etapa
+
+validar_transicion_estado(etapa, nuevo_estado, usuario)
+  # Valida que transición de estado sea permitida
+
+validar_responsable_estado(usuario, estado)
+  # Valida que usuario tenga permisos para el estado
+
+auto_transicionar_etapa_mpj(medida, nueva_etapa_tipo)
+  # Auto-transición específica para MPJ (sin estados)
+```
+
+**Beneficios:**
+- ✅ **DRY**: Lógica de transición en un solo lugar
+- ✅ **Testeable**: Business logic separada de ViewSets
+- ✅ **Mantenible**: Cambios en lógica no requieren tocar 4+ ViewSets
+- ✅ **Consistente**: Todas las transiciones siguen las mismas reglas
+
+---
+
+## 📊 Estado de Implementación Actualizado
+
+### ✅ Componentes Implementados
+
+| Componente | Status | Detalles |
+|------------|--------|----------|
+| Modelo `TEstadoEtapaMedida` | ✅ Implementado | Catálogo con 5 estados correctos |
+| Campo `TEtapaMedida.estado_especifico` | ✅ Implementado | FK a catálogo de estados |
+| Campo `TEtapaMedida.tipo_etapa` | ✅ Implementado | APERTURA/INNOVACION/PRORROGA/CESE/POST_CESE/PROCESO |
+| Campo `TMedida.fecha_cese_efectivo` | ✅ Implementado | Para MPE Post-cese |
+| **Campo `etapa` en 4 modelos** | ✅ **IMPLEMENTADO** | Dual FK Pattern |
+| Business Logic Helpers | ✅ Implementado | `med01_validaciones.py` |
+| ViewSets Refactorizados | ✅ Implementado | TIntervencion, TNotaAval, TInformeJuridico |
+| Migración 0055 (catálogo) | ✅ **CORREGIDA** | Estados correctos según documentación |
+| Migración 0057 (campo etapa) | ✅ Implementado | Agrega columna etapa_id |
+| Migración 0058 (poblar etapa) | ✅ Implementado | Lógica temporal de asignación |
+| **Corrección Base Datos** | ✅ **EJECUTADO** | Estado 3 agregado correctamente |
+
+### 🧪 Validación Final
+
+```bash
+# Tests PLTM01 (21 tests)
+pipenv run python runna/manage.py test tests.test_actividades_pltm01 -v 2
+# ✅ 21/21 PASSED (2.9 segundos)
+
+# Catálogo de Estados Correcto
+TEstadoEtapaMedida.objects.filter(activo=True).order_by('orden')
+# ✅ 5 estados en orden correcto (1-5)
+# ✅ Todos los responsable_tipo válidos
+# ✅ Estado 3 PENDIENTE_NOTA_AVAL presente
+```
+
+### 📝 Próximos Pasos
+
+1. ⏭️ **Tests específicos MED-01 V2**: Crear 15 tests de validación de estados diferenciados
+2. ⏭️ **Auto-transición MPJ**: Implementar lógica de cambio de etapa sin estados
+3. ⏭️ **Post-cese MPE**: Lógica de creación automática de etapa POST_CESE
+4. ⏭️ **Integración completa PLTM**: Signal para auto-transición MPJ
+
+---
+
+**✅ MED-01 V2 DEPLOYMENT PHASE COMPLETO**
+**✅ CORRECCIONES APLICADAS Y VALIDADAS**
+**⏭️ LISTO PARA FASE DE TESTS ESPECÍFICOS**

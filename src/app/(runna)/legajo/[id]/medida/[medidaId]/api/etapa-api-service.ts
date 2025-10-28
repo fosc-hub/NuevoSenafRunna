@@ -5,7 +5,8 @@
  * Provides functions for explicit etapa creation for Innovación, Prórroga, and Cese stages.
  *
  * Backend Endpoints:
- * - POST /api/medidas/{medida_id}/etapas/ - Create new etapa
+ * - POST /api/medidas/{id}/transicionar-etapa/ - Transition to new etapa (CORRECT)
+ * - POST /api/medidas/{medida_id}/etapas/ - Old endpoint (DEPRECATED)
  */
 
 import { create } from '@/app/api/apiService'
@@ -39,8 +40,48 @@ export interface CreateEtapaResponse extends EtapaMedida {
 // ============================================================================
 
 /**
+ * Transition to a new etapa for a medida (CORRECT ENDPOINT)
+ * POST /api/medidas/{id}/transicionar-etapa/
+ *
+ * This is the correct endpoint according to MED-01 V2 specification.
+ * Creates a new TEtapaMedida record and initializes appropriate estado.
+ *
+ * @param medidaId ID de la medida
+ * @param data Datos de la etapa a crear
+ * @returns Etapa creada con estado inicial
+ */
+export const transicionarEtapa = async (
+  medidaId: number,
+  data: CreateEtapaRequest
+): Promise<CreateEtapaResponse> => {
+  try {
+    console.log(`[EtapaService] Transitioning to new etapa for medida ${medidaId}:`, data)
+
+    // Use correct endpoint: transicionar-etapa
+    const response = await create<CreateEtapaResponse>(
+      `medidas/${medidaId}/transicionar-etapa`,
+      data as Partial<CreateEtapaResponse>
+    )
+
+    console.log('[EtapaService] Etapa transition successful:', response)
+
+    return response
+  } catch (error: any) {
+    console.error(`[EtapaService] Error transitioning etapa for medida ${medidaId}:`, error)
+    console.error('[EtapaService] Error details:', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
+/**
+ * @deprecated Use transicionarEtapa() instead. This uses the old endpoint.
+ *
  * Create a new etapa for a medida
- * POST /api/medidas/{medida_id}/etapas/
+ * POST /api/medidas/{medida_id}/etapas/ (DEPRECATED ENDPOINT)
  *
  * @param medidaId ID de la medida
  * @param data Datos de la etapa a crear
@@ -50,27 +91,9 @@ export const createEtapa = async (
   medidaId: number,
   data: CreateEtapaRequest
 ): Promise<CreateEtapaResponse> => {
-  try {
-    console.log(`[EtapaService] Creating etapa for medida ${medidaId}:`, data)
-
-    // Make API call - create() already adds trailing slash
-    const response = await create<CreateEtapaResponse>(
-      `medidas/${medidaId}/etapas`,
-      data as Partial<CreateEtapaResponse>
-    )
-
-    console.log('[EtapaService] Etapa created successfully:', response)
-
-    return response
-  } catch (error: any) {
-    console.error(`[EtapaService] Error creating etapa for medida ${medidaId}:`, error)
-    console.error('[EtapaService] Error details:', {
-      message: error?.message,
-      response: error?.response?.data,
-      status: error?.response?.status,
-    })
-    throw error
-  }
+  // Redirect to correct implementation for backward compatibility
+  console.warn('[EtapaService] createEtapa is deprecated. Use transicionarEtapa() instead.')
+  return transicionarEtapa(medidaId, data)
 }
 
 // ============================================================================
@@ -107,7 +130,8 @@ export function canCreateEtapa(tipoEtapa: TipoEtapa): boolean {
 // ============================================================================
 
 export const etapaService = {
-  create: createEtapa,
+  transicionar: transicionarEtapa, // Preferred method
+  create: createEtapa, // Deprecated - kept for backward compatibility
   getLabel: getEtapaTipoLabel,
   canCreate: canCreateEtapa,
 }

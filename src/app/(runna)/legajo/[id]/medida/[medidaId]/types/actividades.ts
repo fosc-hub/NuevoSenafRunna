@@ -420,9 +420,9 @@ export interface ReabrirRequest {
  * Endpoint: POST /api/actividades/{id}/transferir/
  */
 export interface TransferirRequest {
-  equipo_destino_id: number
+  equipo_destino: number
   responsable_nuevo_id?: number // Optional: new responsible user
-  motivo: string // Required, min 10 characters
+  motivo: string // Required, min 15 characters
 }
 
 /**

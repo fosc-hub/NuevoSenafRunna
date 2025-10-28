@@ -86,7 +86,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                         {medidaData.urgencia && (
                             <Chip
-                                label={`Urgencia: ${medidaData.urgencia}`}
+                                label={`Urgencia: ${medidaData.urgencia.nombre}`}
                                 color="error"
                                 size="small"
                                 sx={{ fontWeight: 500 }}

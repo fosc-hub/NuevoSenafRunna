@@ -67,7 +67,7 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
               />
               {medidaData.urgencia && (
                 <Chip
-                  label={`Urgencia: ${medidaData.urgencia}`}
+                  label={`Urgencia: ${medidaData.urgencia.nombre}`}
                   color="error"
                   size="small"
                   sx={{ fontWeight: 500 }}

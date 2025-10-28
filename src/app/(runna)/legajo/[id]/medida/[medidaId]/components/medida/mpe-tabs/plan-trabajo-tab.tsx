@@ -26,10 +26,12 @@ import { useState, useEffect } from "react"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
 import CancelIcon from "@mui/icons-material/Cancel"
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"
 import { PlanAccionModal } from "../plan-accion-modal"
 import { ActividadDetailModal } from "../ActividadDetailModal"
 import { EditActividadModal } from "../EditActividadModal"
 import { CancelActividadModal } from "../CancelActividadModal"
+import AsignarActividadModal from "../AsignarActividadModal"
 import { ActividadStatistics } from "../ActividadStatistics"
 import { ResponsablesAvatarGroup } from "../ResponsablesAvatarGroup"
 import { DeadlineIndicator } from "../DeadlineIndicator"
@@ -56,6 +58,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
     const [detailModalOpen, setDetailModalOpen] = useState(false)
     const [editModalOpen, setEditModalOpen] = useState(false)
     const [cancelModalOpen, setCancelModalOpen] = useState(false)
+    const [asignarModalOpen, setAsignarModalOpen] = useState(false)
     const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
 
     // Filters
@@ -131,6 +134,11 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
     const handleCancelActividad = (actividad: TActividadPlanTrabajo) => {
         setSelectedActividad(actividad)
         setCancelModalOpen(true)
+    }
+
+    const handleAsignar = (actividad: TActividadPlanTrabajo) => {
+        setSelectedActividad(actividad)
+        setAsignarModalOpen(true)
     }
 
     // Filter activities by etapa if filterEtapa prop is provided (MPJ)
@@ -435,6 +443,22 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                     >
                                                         <CancelIcon fontSize="small" />
                                                     </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleAsignar(actividad)}
+                                                        title="Asignar responsables"
+                                                        sx={{
+                                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                                            color: 'info.main',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                                                                transform: 'scale(1.1)'
+                                                            },
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <AssignmentIndIcon fontSize="small" />
+                                                    </IconButton>
                                                 </Box>
                                             </TableCell>
                                         </TableRow>
@@ -497,6 +521,16 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                         }}
                         actividadId={selectedActividad.id}
                         actividadNombre={`${selectedActividad.tipo_actividad_info.nombre} - ${selectedActividad.subactividad}`}
+                        onSuccess={loadActividades}
+                    />
+
+                    <AsignarActividadModal
+                        open={asignarModalOpen}
+                        onClose={() => {
+                            setAsignarModalOpen(false)
+                            setSelectedActividad(null)
+                        }}
+                        actividadId={selectedActividad.id}
                         onSuccess={loadActividades}
                     />
                 </>

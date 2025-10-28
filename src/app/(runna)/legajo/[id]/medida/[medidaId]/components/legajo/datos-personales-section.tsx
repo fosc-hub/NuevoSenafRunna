@@ -341,8 +341,8 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
                 Urgencia:
               </Typography>
               <Chip
-                label={legajo?.urgencia || "MEDIA"}
-                color={legajo?.urgencia === "ALTA" ? "error" : "default"}
+                label={legajo?.urgencia?.nombre || "MEDIA"}
+                color={legajo?.urgencia?.nombre === "ALTA" ? "error" : "default"}
                 size="small"
                 sx={{ fontWeight: 500 }}
               />

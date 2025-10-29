@@ -313,6 +313,8 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
         onSuccess={handleInformeCreated}
       />
 
+      {/* RechazarCierreModal deprecated for MPI V2 workflow */}
+      {/*
       <RechazarCierreModal
         open={rechazarModalOpen}
         onClose={() => setRechazarModalOpen(false)}
@@ -320,6 +322,7 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
         informe={informe}
         onSuccess={handleRechazarSuccess}
       />
+      */}
 
       {/* Snackbar for notifications */}
       <Snackbar

@@ -428,6 +428,20 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                         </FormHelperText>
                                     )}
                                 </FormControl>
+
+                                <FormControl fullWidth>
+                                    <InputLabel>Subtipo de dispositivo (opcional)</InputLabel>
+                                    <Select
+                                        value={formData.subtipo_dispositivo || ''}
+                                        onChange={(e) => updateField('subtipo_dispositivo', e.target.value)}
+                                        label="Subtipo de dispositivo (opcional)"
+                                        disabled={!canEdit}
+                                    >
+                                        <MenuItem value="">Sin especificar</MenuItem>
+                                        <MenuItem value="RESIDENCIA CHE GUEVARA">RESIDENCIA CHE GUEVARA</MenuItem>
+                                        <MenuItem value="RESIDENCIA MADRES ADOLESCENTES">RESIDENCIA MADRES ADOLESCENTES</MenuItem>
+                                    </Select>
+                                </FormControl>
                             </Box>
                         </Card>
                     </Box>

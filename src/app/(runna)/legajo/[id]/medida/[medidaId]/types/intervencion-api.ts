@@ -127,6 +127,7 @@ export interface CreateIntervencionRequest {
 
   // Tipo de dispositivo (opcional)
   tipo_dispositivo_id?: number | null
+  subtipo_dispositivo?: string | null
 
   // Motivo y sub-motivo
   motivo_id: number
@@ -181,6 +182,7 @@ export interface IntervencionResponse {
   // Tipo de dispositivo (write + read)
   tipo_dispositivo_id?: number | null // writeOnly - para enviar
   tipo_dispositivo_detalle: { id: number; nombre: string } | null // readOnly - lo que retorna
+  subtipo_dispositivo?: string | null
 
   // Motivo (write + read)
   motivo_id: number // writeOnly - para enviar

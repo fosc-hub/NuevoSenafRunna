@@ -1,14 +1,17 @@
 /**
- * TypeScript interfaces for Informe de Cierre API
+ * TypeScript interfaces for Informe de Cierre API - V2
  *
  * MED-MPI-CIERRE: Informe de Cierre for MPI measures
  * Backend endpoints: /api/medidas/{medida_id}/informe-cierre/
  *
- * Workflow:
- * - Estado 3 (PENDIENTE_DE_INFORME_DE_CIERRE): ET creates informe
- * - Estado 4 (INFORME_DE_CIERRE_REDACTADO): JZ approves/rejects
- * - Approved: medida estado_vigencia = 'CERRADA'
- * - Rejected: back to Estado 3
+ * Simplified Workflow (V2):
+ * - Estado 3 (PENDIENTE_DE_INFORME_DE_CIERRE): ET creates informe → auto-transition to Estado 4
+ * - Estado 4 (INFORME_DE_CIERRE_REDACTADO): Terminal state, 100% completion
+ *
+ * V2 Changes:
+ * - Removed JZ approval/rejection workflow
+ * - Estado 4 is now terminal state (100% progress)
+ * - Deprecated: AprobarCierreResponse, RechazarCierreResponse, RechazarCierreRequest
  */
 
 // ============================================================================
@@ -95,6 +98,10 @@ export interface CreateInformeCierreRequest {
   observaciones: string
 }
 
+/**
+ * @deprecated V2: MPI Cese no longer uses rejection workflow
+ * Estado 4 (INFORME_DE_CIERRE_REDACTADO) is terminal state
+ */
 export interface RechazarCierreRequest {
   observaciones: string
 }
@@ -114,6 +121,10 @@ export interface InformeCierreResponse extends InformeCierre {
   mensaje?: string
 }
 
+/**
+ * @deprecated V2: MPI Cese no longer uses approval workflow
+ * Estado 4 (INFORME_DE_CIERRE_REDACTADO) is terminal state
+ */
 export interface AprobarCierreResponse {
   id: number
   numero_medida: string
@@ -136,6 +147,10 @@ export interface AprobarCierreResponse {
   mensaje: string
 }
 
+/**
+ * @deprecated V2: MPI Cese no longer uses rejection workflow
+ * Estado 4 (INFORME_DE_CIERRE_REDACTADO) is terminal state
+ */
 export interface RechazarCierreResponse {
   id: number
   numero_medida: string

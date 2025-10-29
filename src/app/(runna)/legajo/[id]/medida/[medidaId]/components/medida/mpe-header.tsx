@@ -10,6 +10,8 @@ interface MPEHeaderProps {
     medidaData: {
         numero: string
         fecha: string
+        fecha_apertura?: string
+        fecha_creacion_raw?: string
         juzgado: string
         fecha_resguardo: string
         lugar_resguardo: string
@@ -48,6 +50,96 @@ interface MPEHeaderProps {
 export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progreso }) => {
     const theme = useTheme();
     const [residenciasModalOpen, setResidenciasModalOpen] = useState(false);
+
+    // Calculate progress based on fecha_creacion_raw and 90-day limit
+    const calculateMPEProgress = () => {
+        const MAX_DAYS = 90;
+
+        // Use raw ISO date if available, otherwise fall back to formatted dates
+        const fechaCreacion = medidaData.fecha_creacion_raw || medidaData.fecha_apertura || medidaData.fecha;
+
+        console.log('MPE Progress Debug:', {
+            fecha_creacion_raw: medidaData.fecha_creacion_raw,
+            fecha_apertura: medidaData.fecha_apertura,
+            fecha: medidaData.fecha,
+            fechaCreacion,
+        });
+
+        if (!fechaCreacion) {
+            console.warn('No creation date available for MPE progress calculation');
+            return { percentage: 0, daysElapsed: 0, daysRemaining: MAX_DAYS, status: 'pending' as const };
+        }
+
+        const creationDate = new Date(fechaCreacion);
+
+        // Check if date is valid
+        if (isNaN(creationDate.getTime())) {
+            console.error('Invalid date:', fechaCreacion);
+            return { percentage: 0, daysElapsed: 0, daysRemaining: MAX_DAYS, status: 'pending' as const };
+        }
+
+        const today = new Date();
+
+        // Reset time parts to get accurate day difference
+        creationDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        const diffTime = today.getTime() - creationDate.getTime();
+        const daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.max(MAX_DAYS - daysElapsed, 0);
+        const percentage = Math.min((daysElapsed / MAX_DAYS) * 100, 100);
+
+        console.log('MPE Progress Calculated:', {
+            daysElapsed,
+            daysRemaining,
+            percentage: Math.round(percentage)
+        });
+
+        // Determine status based on days remaining
+        let status: 'normal' | 'warning' | 'critical' | 'exceeded';
+        if (percentage >= 100) {
+            status = 'exceeded';
+        } else if (daysRemaining <= 15) {
+            status = 'critical';
+        } else if (daysRemaining <= 30) {
+            status = 'warning';
+        } else {
+            status = 'normal';
+        }
+
+        return { percentage, daysElapsed, daysRemaining, status };
+    };
+
+    const progress = calculateMPEProgress();
+
+    const getProgressColor = () => {
+        switch (progress.status) {
+            case 'exceeded':
+                return theme.palette.error.main;
+            case 'critical':
+                return theme.palette.error.main;
+            case 'warning':
+                return theme.palette.warning.main;
+            case 'normal':
+            default:
+                return theme.palette.success.main;
+        }
+    };
+
+    const getProgressBackgroundColor = () => {
+        switch (progress.status) {
+            case 'exceeded':
+                return 'rgba(211, 47, 47, 0.1)';
+            case 'critical':
+                return 'rgba(211, 47, 47, 0.1)';
+            case 'warning':
+                return 'rgba(237, 108, 2, 0.1)';
+            case 'normal':
+            default:
+                return 'rgba(46, 125, 50, 0.1)';
+        }
+    };
+
     const getChipColor = (active: boolean, count?: number) => {
         if (count !== undefined) {
             return count > 0 ? "primary" : "default"
@@ -217,99 +309,144 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     </Grid>
                 </Grid>
 
-                {/* Progress Section */}
+                {/* Progress Section - 90 Day Timeline */}
                 <Box sx={{ mb: 3 }}>
-                    {/* Progress Labels */}
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                        <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "primary.main" }}>
-                            Iniciada {progreso.iniciada}%
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "secondary.main" }}>
-                            En seguimiento {progreso.en_seguimiento}%
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "warning.main" }}>
-                            Cierre {progreso.cierre}%
-                        </Typography>
-                    </Box>
-
-                    {/* Main Progress Bar */}
-                    <Box sx={{ position: "relative", borderRadius: 2, overflow: "hidden", height: 40, background: theme.palette.grey[200] }}>
-                        {/* Iniciada */}
-                        <Box
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            fontWeight: 600,
+                            mb: 2,
+                            color: getProgressColor(),
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                        }}
+                    >
+                        Progreso de la Medida MPE
+                        <Chip
+                            label={progress.status === 'exceeded' ? 'EXCEDIDO' : progress.status === 'critical' ? 'CRÍTICO' : progress.status === 'warning' ? 'ATENCIÓN' : 'NORMAL'}
+                            size="small"
                             sx={{
-                                position: "absolute",
-                                left: 0,
-                                top: 0,
-                                bottom: 0,
-                                width: `${progreso.iniciada}%`,
-                                backgroundColor: "primary.main",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                zIndex: 1
-                            }}
-                        >
-                            <Typography variant="caption" sx={{ fontWeight: 500, color: "white" }}>
-                                Iniciada {progreso.iniciada}%
-                            </Typography>
-                        </Box>
-                        {/* En seguimiento */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                left: `${progreso.iniciada}%`,
-                                top: 0,
-                                bottom: 0,
-                                width: `${progreso.en_seguimiento}%`,
-                                backgroundColor: "secondary.main",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                zIndex: 2
-                            }}
-                        >
-                            <Typography variant="caption" sx={{ fontWeight: 500, color: "white" }}>
-                                En seguimiento {progreso.en_seguimiento}%
-                            </Typography>
-                        </Box>
-                        {/* Cierre */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                left: `calc(${progreso.iniciada}% + ${progreso.en_seguimiento}%)`,
-                                top: 0,
-                                bottom: 0,
-                                width: `${progreso.cierre}%`,
-                                backgroundColor: "warning.main",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                zIndex: 3
-                            }}
-                        >
-                            <Typography variant="caption" sx={{ fontWeight: 500, color: "white" }}>
-                                Cierre {progreso.cierre}%
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    {/* Total Progress */}
-                    <Box sx={{ mt: 2 }}>
-                        <LinearProgress
-                            variant="determinate"
-                            value={progreso.total}
-                            sx={{
-                                height: 16,
-                                borderRadius: 2,
-                                backgroundColor: theme.palette.grey[300],
-                                '& .MuiLinearProgress-bar': {
-                                    backgroundColor: theme.palette.primary.main,
-                                },
+                                backgroundColor: getProgressColor(),
+                                color: 'white',
+                                fontWeight: 600,
+                                fontSize: '0.75rem'
                             }}
                         />
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main", mt: 1, textAlign: "center" }}>
-                            {progreso.total}%
-                        </Typography>
+                    </Typography>
+
+                    {/* Progress Information */}
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                        flexWrap: 'wrap',
+                        gap: 2
+                    }}>
+                        <Box>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                                Días transcurridos
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 700, color: getProgressColor() }}>
+                                {progress.daysElapsed} <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>de 90</Typography>
+                            </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                                Días restantes
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 700, color: getProgressColor() }}>
+                                {progress.daysRemaining}
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    {/* Modern Progress Bar */}
+                    <Box sx={{
+                        position: 'relative',
+                        backgroundColor: getProgressBackgroundColor(),
+                        borderRadius: 3,
+                        p: 2,
+                        border: `2px solid ${getProgressColor()}`,
+                    }}>
+                        <Box sx={{
+                            position: 'relative',
+                            height: 32,
+                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)'
+                        }}>
+                            {/* Progress Fill */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: 0,
+                                    bottom: 0,
+                                    width: `${progress.percentage}%`,
+                                    backgroundColor: getProgressColor(),
+                                    transition: 'width 0.5s ease-in-out',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    paddingRight: 2,
+                                    background: `linear-gradient(90deg, ${getProgressColor()} 0%, ${getProgressColor()}dd 100%)`,
+                                    boxShadow: `0 0 10px ${getProgressColor()}44`,
+                                }}
+                            >
+                                {progress.percentage > 10 && (
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            fontWeight: 700,
+                                            color: 'white',
+                                            fontSize: '0.9rem',
+                                            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                        }}
+                                    >
+                                        {Math.round(progress.percentage)}%
+                                    </Typography>
+                                )}
+                            </Box>
+
+                            {/* Percentage outside bar if too small */}
+                            {progress.percentage <= 10 && (
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        position: 'absolute',
+                                        right: 8,
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        fontWeight: 700,
+                                        color: getProgressColor(),
+                                        fontSize: '0.9rem'
+                                    }}
+                                >
+                                    {Math.round(progress.percentage)}%
+                                </Typography>
+                            )}
+                        </Box>
+
+                        {/* Status Message */}
+                        <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'center' }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: getProgressColor(),
+                                    fontWeight: 600,
+                                    fontSize: '0.875rem',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                {progress.status === 'exceeded' && '⚠️ El plazo de 90 días ha sido excedido'}
+                                {progress.status === 'critical' && '🚨 Quedan menos de 15 días para completar la medida'}
+                                {progress.status === 'warning' && '⏰ Quedan menos de 30 días - Acción requerida pronto'}
+                                {progress.status === 'normal' && '✓ La medida se encuentra dentro del plazo establecido'}
+                            </Typography>
+                        </Box>
                     </Box>
                 </Box>
 

@@ -102,6 +102,7 @@ export interface MPEMedidaData extends BaseMedidaData {
   }
   // MPE specific fields
   fecha: string
+  fecha_creacion_raw?: string // Raw ISO date for progress calculations
   fecha_resguardo: string
   lugar_resguardo: string
   zona_trabajo: string

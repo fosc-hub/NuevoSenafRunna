@@ -42,6 +42,7 @@ interface IntervencionFormData {
 
   // Tipo de dispositivo (opcional)
   tipo_dispositivo_id?: number | null
+  subtipo_dispositivo?: string
 
   // Motivo y submotivo
   motivo_id?: number
@@ -85,6 +86,7 @@ export const useRegistroIntervencion = ({
     medida: medidaId,
     fecha_intervencion: new Date().toISOString().split("T")[0], // Hoy por defecto
     tipo_dispositivo_id: null,
+    subtipo_dispositivo: "",
     motivo_id: undefined,
     sub_motivo_id: null,
     categoria_intervencion_id: undefined,
@@ -204,6 +206,7 @@ export const useRegistroIntervencion = ({
         medida: data.medida,
         fecha_intervencion: data.fecha_intervencion,
         tipo_dispositivo_id: data.tipo_dispositivo_id || null,
+        subtipo_dispositivo: data.subtipo_dispositivo || "",
         motivo_id: data.motivo_id,
         sub_motivo_id: data.sub_motivo_id || null,
         categoria_intervencion_id: data.categoria_intervencion_id,
@@ -240,6 +243,7 @@ export const useRegistroIntervencion = ({
         medida: formData.medida,
         fecha_intervencion: formData.fecha_intervencion,
         tipo_dispositivo_id: formData.tipo_dispositivo_id || null,
+        subtipo_dispositivo: formData.subtipo_dispositivo || null,
         motivo_id: formData.motivo_id!,
         sub_motivo_id: formData.sub_motivo_id || null,
         categoria_intervencion_id: formData.categoria_intervencion_id!,
@@ -298,6 +302,7 @@ export const useRegistroIntervencion = ({
       const payload: UpdateIntervencionRequest = {
         fecha_intervencion: formData.fecha_intervencion,
         tipo_dispositivo_id: formData.tipo_dispositivo_id || null,
+        subtipo_dispositivo: formData.subtipo_dispositivo || null,
         motivo_id: formData.motivo_id,
         sub_motivo_id: formData.sub_motivo_id || null,
         categoria_intervencion_id: formData.categoria_intervencion_id,

@@ -111,10 +111,14 @@ const convertMedidaToMedidaData = (
 
   // Add type-specific data
   if (tipoMedida === "MPE") {
+    // Get the raw ISO date for calculations (don't convert to local date string)
+    const fechaCreacionRaw = (medida as any).fecha_creacion || medida.fecha_apertura;
+
     return {
       ...baseData,
       tipo: "MPE" as const,
       fecha: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+      fecha_creacion_raw: fechaCreacionRaw, // Keep as ISO string for accurate calculations
       fecha_resguardo: "",
       lugar_resguardo: "",
       zona_trabajo: "",
@@ -240,12 +244,24 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
         console.log('medida.etapa_actual:', medida.etapa_actual)
         console.log('medida.etapa_actual.estado type:', typeof medida.etapa_actual?.estado)
         console.log('medida.etapa_actual.estado value:', medida.etapa_actual?.estado)
+        console.log('medida.fecha_creacion:', medida.fecha_creacion)
+        console.log('medida.fecha_apertura:', medida.fecha_apertura)
 
         // Store the API response
         setMedidaApiData(medida)
 
         // Convert to MedidaData format
         const convertedData = convertMedidaToMedidaData(medida, legajo)
+
+        // Debug: Log converted MPE data
+        if (convertedData.tipo === 'MPE') {
+          console.log('MPE Converted Data:', {
+            fecha: convertedData.fecha,
+            fecha_creacion_raw: convertedData.fecha_creacion_raw,
+            tipo: convertedData.tipo
+          });
+        }
+
         setMedidaData(convertedData)
 
         // Determine active step based on data

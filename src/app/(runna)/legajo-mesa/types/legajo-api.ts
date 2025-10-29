@@ -18,12 +18,15 @@ export type SemaforoEstado = "verde" | "amarillo" | "rojo"
 
 // Oficio con semáforo de vencimiento
 export interface OficioConSemaforo {
-  id: number
-  tipo: "Ratificación" | "Pedido" | "Orden" | "Otros"
+  id: number | string
+  tipo: "Ratificación" | "Pedido" | "Orden" | "Otros" | string
   vencimiento: string // ISO date string
   semaforo: SemaforoEstado
   estado: string
   numero?: string
+  archivo_url?: string // URL to the file attachment
+  demanda_id?: number // ID of the related demanda
+  tipo_oficio?: string // Type of oficio from demanda
 }
 
 // Indicadores de actividades del Plan de Trabajo

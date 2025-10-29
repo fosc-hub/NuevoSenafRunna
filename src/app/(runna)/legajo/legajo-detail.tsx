@@ -13,7 +13,8 @@ import GavelIcon from "@mui/icons-material/Gavel"
 import RefreshIcon from "@mui/icons-material/Refresh"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { useRouter } from "next/navigation"
-import { fetchLegajoDetail, updateLegajoDatosPersonales } from "../legajo-mesa/api/legajos-api-service"
+import { updateLegajoDatosPersonales } from "../legajo-mesa/api/legajos-api-service"
+import { fetchEnhancedLegajoDetail } from "../legajo-mesa/api/legajo-enhanced-service"
 import type { LegajoDetailResponse, PersonaDetailData } from "../legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
 import { AddIntervencionDialog, NewIntervencion } from "./[id]/medida/[medidaId]/components/dialogs/add-intervencion-dialog"
@@ -71,8 +72,8 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         setIsLoading(true)
         setError(null)
 
-        // Call the real API to fetch legajo detail
-        const response = await fetchLegajoDetail(Number(params.id), {
+        // Call the enhanced API to fetch legajo detail with demanda adjuntos
+        const response = await fetchEnhancedLegajoDetail(Number(params.id), {
           include_history: false, // Set to true if you want to include history
         })
 

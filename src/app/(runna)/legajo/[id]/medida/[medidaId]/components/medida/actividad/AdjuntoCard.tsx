@@ -185,7 +185,7 @@ export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
               fontSize: '0.85rem'
             }}
           >
-            "{adjunto.descripcion}"
+            &ldquo;{adjunto.descripcion}&rdquo;
           </Typography>
         )}
 

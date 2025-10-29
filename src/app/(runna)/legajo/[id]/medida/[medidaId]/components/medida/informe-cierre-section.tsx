@@ -1,23 +1,23 @@
 "use client"
 
 /**
- * Informe de Cierre Section - MED-MPI-CIERRE
+ * Informe de Cierre Section - MED-MPI-CIERRE V2
  *
  * Main section component for MPI closure workflow
  * Displays in unified-workflow-tab when MPI is in Estados 3 or 4
  *
- * Estados:
- * - Estado 3 (PENDIENTE_DE_INFORME_DE_CIERRE): Show "Registrar Informe" button for ET
- * - Estado 4 (INFORME_DE_CIERRE_REDACTADO): Show informe details + approve/reject for JZ
+ * Simplified Workflow (V2):
+ * - Estado 3 (PENDIENTE_DE_INFORME_DE_CIERRE): ET registers informe → auto-transition to Estado 4
+ * - Estado 4 (INFORME_DE_CIERRE_REDACTADO): Terminal state, 100% completion, informe read-only
  *
  * Features:
- * - Conditional rendering based on estado and user role
+ * - Conditional rendering based on estado
  * - Display informe observaciones and metadata
  * - Attachments list with download links
- * - Approve button (JZ only, Estado 4)
- * - Reject button (JZ only, Estado 4)
- * - Integration with modals
  * - Toast notifications for success/error
+ *
+ * NOTE: No approval/rejection workflow for MPI Cese.
+ * Estado 4 is the final state (100% completion).
  */
 
 import React, { useState, useEffect } from "react"
@@ -46,10 +46,12 @@ import AttachFileIcon from "@mui/icons-material/AttachFile"
 import PersonIcon from "@mui/icons-material/Person"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import { InformeCierreModal } from "../dialogs/informe-cierre-modal"
-import { RechazarCierreModal } from "../dialogs/rechazar-cierre-modal"
+// RechazarCierreModal is deprecated for MPI V2 workflow
+// import { RechazarCierreModal } from "../dialogs/rechazar-cierre-modal"
 import {
   getInformeCierreActivo,
-  aprobarCierre,
+  // aprobarCierre is deprecated for MPI V2 workflow
+  // aprobarCierre,
 } from "../../api/informe-cierre-api-service"
 import type { InformeCierre } from "../../types/informe-cierre-api"
 import type { MedidaDetailResponse } from "../../types/medida-api"
@@ -61,7 +63,7 @@ import type { MedidaDetailResponse } from "../../types/medida-api"
 interface InformeCierreSectionProps {
   medidaId: number
   medidaApiData: MedidaDetailResponse
-  isJZ: boolean
+  isJZ: boolean // Deprecated for MPI V2, keeping for backward compatibility
   onRefresh?: () => void
 }
 
@@ -79,8 +81,9 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
   const [informe, setInforme] = useState<InformeCierre | null>(null)
   const [isLoadingInforme, setIsLoadingInforme] = useState(false)
   const [informeCierreModalOpen, setInformeCierreModalOpen] = useState(false)
-  const [rechazarModalOpen, setRechazarModalOpen] = useState(false)
-  const [isApproving, setIsApproving] = useState(false)
+  // Deprecated for MPI V2:
+  // const [rechazarModalOpen, setRechazarModalOpen] = useState(false)
+  // const [isApproving, setIsApproving] = useState(false)
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState<{
@@ -88,6 +91,19 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
     message: string
     severity: "success" | "error" | "warning" | "info"
   }>({ open: false, message: "", severity: "success" })
+
+  // Helper to show snackbar
+  const showSnackbar = (
+    message: string,
+    severity: "success" | "error" | "warning" | "info"
+  ) => {
+    setSnackbar({ open: true, message, severity })
+  }
+
+  // Helper to close snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
+  }
 
   // ========== Estado Detection ==========
   const etapaActual = medidaApiData.etapa_actual
@@ -109,9 +125,7 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
       setInforme(informeActivo)
     } catch (error) {
       console.error("Error loading informe cierre:", error)
-      enqueueSnackbar("Error al cargar el informe de cierre", {
-        variant: "error",
-      })
+      showSnackbar("Error al cargar el informe de cierre", "error")
     } finally {
       setIsLoadingInforme(false)
     }
@@ -123,9 +137,9 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
 
   // ========== Handlers ==========
   const handleInformeCreated = (informeCreado: InformeCierre) => {
-    enqueueSnackbar(
-      "Informe de cierre registrado. Estado actualizado a 'Informe de cierre redactado'",
-      { variant: "success" }
+    showSnackbar(
+      "Informe de cierre registrado exitosamente. Estado: 100% completado.",
+      "success"
     )
 
     // Refresh medida data to get new estado
@@ -137,48 +151,9 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
     setInformeCierreModalOpen(false)
   }
 
-  const handleAprobar = async () => {
-    if (!confirm("¿Está seguro de aprobar este informe y cerrar la medida?")) {
-      return
-    }
-
-    setIsApproving(true)
-    try {
-      await aprobarCierre(medidaId)
-
-      enqueueSnackbar("Medida cerrada exitosamente", {
-        variant: "success",
-      })
-
-      // Refresh medida data
-      if (onRefresh) {
-        onRefresh()
-      }
-    } catch (error: any) {
-      console.error("Error aprobando cierre:", error)
-      enqueueSnackbar(
-        error?.response?.data?.detalle || "Error al aprobar el cierre",
-        { variant: "error" }
-      )
-    } finally {
-      setIsApproving(false)
-    }
-  }
-
-  const handleRechazarSuccess = () => {
-    enqueueSnackbar(
-      "Informe rechazado. Estado vuelto a 'Pendiente de informe de cierre'",
-      { variant: "info" }
-    )
-
-    // Refresh medida data
-    if (onRefresh) {
-      onRefresh()
-    }
-
-    // Close modal
-    setRechazarModalOpen(false)
-  }
+  // Deprecated for MPI V2 workflow
+  // const handleAprobar = async () => { ... }
+  // const handleRechazarSuccess = () => { ... }
 
   // ========== Render ==========
 
@@ -307,35 +282,18 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
                     </Box>
                   )}
 
-                  {/* JZ Actions */}
-                  {isJZ && (
-                    <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={
-                          isApproving ? (
-                            <CircularProgress size={20} />
-                          ) : (
-                            <CheckCircleIcon />
-                          )
-                        }
-                        onClick={handleAprobar}
-                        disabled={isApproving}
-                      >
-                        Aprobar Cierre
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<ErrorIcon />}
-                        onClick={() => setRechazarModalOpen(true)}
-                        disabled={isApproving}
-                      >
-                        Rechazar
-                      </Button>
-                    </Box>
-                  )}
+                  {/* Estado 4 Completion Message */}
+                  <Box sx={{ mt: 3 }}>
+                    <Alert severity="success" icon={<CheckCircleIcon />}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        ✅ Informe de Cierre Completado (100%)
+                      </Typography>
+                      <Typography variant="body2">
+                        El informe de cierre ha sido registrado exitosamente.
+                        Este es el estado final para MPI Cese.
+                      </Typography>
+                    </Alert>
+                  </Box>
                 </>
               ) : (
                 <Alert severity="warning">
@@ -362,6 +320,22 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
         informe={informe}
         onSuccess={handleRechazarSuccess}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   )
 }

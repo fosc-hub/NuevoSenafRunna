@@ -4,10 +4,12 @@
  * MED-MPI-CIERRE: Closure report workflow for MPI measures
  * Backend endpoints: /api/medidas/{medida_id}/informe-cierre/
  *
- * Workflow:
+ * Simplified Workflow (V2):
  * 1. ET creates informe (Estado 3 → Estado 4 transition)
- * 2. JZ approves → medida closes (CERRADA)
- * 3. JZ rejects → back to Estado 3 for corrections
+ * 2. Estado 4 (INFORME_DE_CIERRE_REDACTADO) = 100% progress (terminal state)
+ *
+ * NOTE: No approval/rejection workflow for MPI Cese.
+ * Estado 4 is the final state (100% completion).
  */
 
 import { get, create, put, remove } from "@/app/api/apiService"
@@ -81,6 +83,7 @@ export const getInformeCierreActivo = async (
  * POST /api/medidas/{medida_id}/informe-cierre/
  *
  * IMPORTANT: This triggers automatic state transition Estado 3 → Estado 4
+ * Estado 4 (INFORME_DE_CIERRE_REDACTADO) represents 100% completion for MPI Cese.
  *
  * Validations:
  * - Medida must be MPI
@@ -90,7 +93,7 @@ export const getInformeCierreActivo = async (
  *
  * @param medidaId ID de la medida MPI
  * @param data Observaciones del informe (min 20 chars)
- * @returns Created informe with estado updated to Estado 4
+ * @returns Created informe with estado updated to Estado 4 (100% complete)
  */
 export const createInformeCierre = async (
   medidaId: number,
@@ -123,112 +126,38 @@ export const createInformeCierre = async (
 }
 
 // ============================================================================
-// APPROVAL / REJECTION ACTIONS
+// APPROVAL / REJECTION ACTIONS - DEPRECATED FOR MPI
+// ============================================================================
+// NOTE: These functions are deprecated for MPI workflow V2.
+// MPI Cese no longer requires JZ approval. Estado 4 = 100% completion.
+// Keeping functions for backward compatibility but they should not be used.
 // ============================================================================
 
 /**
+ * @deprecated No longer used in MPI Cese workflow V2
+ *
  * Aprobar cierre de medida (Jefe Zonal)
  * POST /api/medidas/{medida_id}/informe-cierre/aprobar-cierre/
- *
- * IMPORTANT: This closes the medida permanently (estado_vigencia = 'CERRADA')
- *
- * Validations:
- * - Medida must be in Estado 4 (INFORME_DE_CIERRE_REDACTADO)
- * - Active informe must exist
- * - User must be Jefe Zonal of the zone
- *
- * Result:
- * - medida.estado_vigencia = 'CERRADA'
- * - medida.fecha_cierre = now()
- * - informe.aprobado_por_jz = true
- * - Last etapa finalized
- *
- * @param medidaId ID de la medida MPI
- * @returns Closed medida details
  */
 export const aprobarCierre = async (
   medidaId: number
 ): Promise<AprobarCierreResponse> => {
-  try {
-    console.log(`Aprobando cierre for medida ${medidaId}`)
-
-    // Import axiosInstance for custom action endpoint
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // POST to custom action endpoint
-    const response = await axiosInstance.post<AprobarCierreResponse>(
-      `medidas/${medidaId}/informe-cierre/aprobar-cierre/`,
-      {}
-    )
-
-    console.log("Cierre aprobado successfully:", response.data)
-    return response.data
-  } catch (error: any) {
-    console.error(`Error aprobando cierre for medida ${medidaId}:`, error)
-    console.error("Error details:", {
-      message: error?.message,
-      response: error?.response?.data,
-      status: error?.response?.status,
-    })
-    throw error
-  }
+  console.warn('aprobarCierre is deprecated for MPI. Estado 4 is terminal state.')
+  throw new Error('This function is deprecated for MPI Cese workflow V2')
 }
 
 /**
+ * @deprecated No longer used in MPI Cese workflow V2
+ *
  * Rechazar cierre de medida (Jefe Zonal)
  * POST /api/medidas/{medida_id}/informe-cierre/rechazar-cierre/
- *
- * IMPORTANT: This returns medida to Estado 3 for corrections
- *
- * Validations:
- * - Observaciones are required
- * - Medida must be in Estado 4
- * - User must be Jefe Zonal
- *
- * Result:
- * - Medida returns to Estado 3 (PENDIENTE_DE_INFORME_DE_CIERRE)
- * - Current informe marked as rechazado and activo=false
- * - New etapa created with observaciones_rechazo
- * - ET notified to make corrections
- *
- * @param medidaId ID de la medida MPI
- * @param data Observaciones explaining rejection reason
- * @returns Updated medida back in Estado 3
  */
 export const rechazarCierre = async (
   medidaId: number,
   data: RechazarCierreRequest
 ): Promise<RechazarCierreResponse> => {
-  try {
-    console.log(`Rechazando cierre for medida ${medidaId}:`, data)
-
-    // Validate observaciones client-side
-    if (!data.observaciones || data.observaciones.trim().length === 0) {
-      throw new Error(
-        "Las observaciones son obligatorias al rechazar un informe de cierre"
-      )
-    }
-
-    // Import axiosInstance for custom action endpoint
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // POST to custom action endpoint
-    const response = await axiosInstance.post<RechazarCierreResponse>(
-      `medidas/${medidaId}/informe-cierre/rechazar-cierre/`,
-      data
-    )
-
-    console.log("Cierre rechazado successfully:", response.data)
-    return response.data
-  } catch (error: any) {
-    console.error(`Error rechazando cierre for medida ${medidaId}:`, error)
-    console.error("Error details:", {
-      message: error?.message,
-      response: error?.response?.data,
-      status: error?.response?.status,
-    })
-    throw error
-  }
+  console.warn('rechazarCierre is deprecated for MPI. Estado 4 is terminal state.')
+  throw new Error('This function is deprecated for MPI Cese workflow V2')
 }
 
 // ============================================================================

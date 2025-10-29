@@ -44,12 +44,28 @@ export const fetchEnhancedLegajoDetail = async (
 
     if (legajoDetail.demandas_relacionadas?.resultados) {
       legajoDetail.demandas_relacionadas.resultados.forEach((demandaRelacion: any) => {
-        // The structure might be { demanda: { demanda_id: number } } or similar
-        // Adjust based on actual API response structure
+        // Support multiple formats:
+        // Format 1: { id: 4, demanda: { demanda_id: 6, ... } }
+        // Format 2: { id: 1, demanda: { demanda_id: 9, ... } }
+        // Format 3: { id: 9, ... } (direct ID)
+
+        let demandaId: number | null = null
+
+        // Try nested demanda.demanda_id first
         if (demandaRelacion?.demanda?.demanda_id) {
-          demandaIds.push(demandaRelacion.demanda.demanda_id)
-        } else if (demandaRelacion?.id) {
-          demandaIds.push(demandaRelacion.id)
+          demandaId = demandaRelacion.demanda.demanda_id
+        }
+        // Try top-level demanda_id
+        else if (demandaRelacion?.demanda_id) {
+          demandaId = demandaRelacion.demanda_id
+        }
+        // Fallback to top-level id (if it's not just a relation ID)
+        else if (demandaRelacion?.id && !demandaRelacion?.demanda) {
+          demandaId = demandaRelacion.id
+        }
+
+        if (demandaId && !demandaIds.includes(demandaId)) {
+          demandaIds.push(demandaId)
         }
       })
     }

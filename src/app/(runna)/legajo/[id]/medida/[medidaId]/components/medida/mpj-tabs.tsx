@@ -4,9 +4,12 @@ import type React from "react"
 import { useState } from "react"
 import { Box, Tabs, Tab } from "@mui/material"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
+import { MedidaDocumentosSection } from "./medida-documentos-section"
+import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPJTabsProps {
     medidaData: any
+    medidaApiData?: MedidaDetailResponse
     legajoData?: {
         numero: string
         persona_nombre: string
@@ -16,7 +19,7 @@ interface MPJTabsProps {
     planTrabajoId?: number
 }
 
-export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, legajoData, planTrabajoId }) => {
+export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, legajoData, planTrabajoId }) => {
     const [activeTab, setActiveTab] = useState(0)
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -44,45 +47,59 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, legajoData, planTr
                     <Tab label="Apertura" />
                     <Tab label="Proceso" />
                     <Tab label="Cese" />
+                    <Tab label="Documentos Demanda" />
                 </Tabs>
             </Box>
 
             {/* Tab Content - Each tab shows activities filtered by etapa */}
             <Box>
-                {planTrabajoId ? (
-                    <>
-                        {/* Tab Apertura */}
-                        {activeTab === 0 && (
-                            <PlanTrabajoTab
-                                medidaData={medidaData}
-                                planTrabajoId={planTrabajoId}
-                                filterEtapa="APERTURA"
-                            />
-                        )}
-
-                        {/* Tab Proceso */}
-                        {activeTab === 1 && (
-                            <PlanTrabajoTab
-                                medidaData={medidaData}
-                                planTrabajoId={planTrabajoId}
-                                filterEtapa="PROCESO"
-                            />
-                        )}
-
-                        {/* Tab Cese */}
-                        {activeTab === 2 && (
-                            <PlanTrabajoTab
-                                medidaData={medidaData}
-                                planTrabajoId={planTrabajoId}
-                                filterEtapa="CESE"
-                            />
-                        )}
-                    </>
-                ) : (
-                    <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                        No hay Plan de Trabajo asociado a esta medida.
-                    </Box>
+                {/* Tab Apertura */}
+                {activeTab === 0 && (
+                    planTrabajoId ? (
+                        <PlanTrabajoTab
+                            medidaData={medidaData}
+                            planTrabajoId={planTrabajoId}
+                            filterEtapa="APERTURA"
+                        />
+                    ) : (
+                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                            No hay Plan de Trabajo asociado a esta medida.
+                        </Box>
+                    )
                 )}
+
+                {/* Tab Proceso */}
+                {activeTab === 1 && (
+                    planTrabajoId ? (
+                        <PlanTrabajoTab
+                            medidaData={medidaData}
+                            planTrabajoId={planTrabajoId}
+                            filterEtapa="PROCESO"
+                        />
+                    ) : (
+                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                            No hay Plan de Trabajo asociado a esta medida.
+                        </Box>
+                    )
+                )}
+
+                {/* Tab Cese */}
+                {activeTab === 2 && (
+                    planTrabajoId ? (
+                        <PlanTrabajoTab
+                            medidaData={medidaData}
+                            planTrabajoId={planTrabajoId}
+                            filterEtapa="CESE"
+                        />
+                    ) : (
+                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                            No hay Plan de Trabajo asociado a esta medida.
+                        </Box>
+                    )
+                )}
+
+                {/* Tab Documentos Demanda */}
+                {activeTab === 3 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
             </Box>
         </Box>
     )

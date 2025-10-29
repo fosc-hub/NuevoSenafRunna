@@ -10,6 +10,7 @@ import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
 import { CeseTab } from "./mpe-tabs/cese-tab"
 import { HistorialSeguimientoTable } from "./historial-seguimiento-table"
 import { InformesMensualesTable } from "./informes-mensuales-table"
+import { MedidaDocumentosSection } from "./medida-documentos-section"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPETabsProps {
@@ -55,6 +56,7 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                     <Tab label="Plan de trabajo" />
                     <Tab label="Cese" />
                     <Tab label="Post cese" />
+                    <Tab label="Documentos Demanda" />
                 </Tabs>
             </Box>
 
@@ -78,6 +80,7 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                         Contenido de Post cese - En desarrollo
                     </Box>
                 )}
+                {activeTab === 6 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
             </Box>
 
             {/* Tables outside tabs */}

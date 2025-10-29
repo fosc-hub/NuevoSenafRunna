@@ -714,11 +714,12 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
             <Grid item xs={12}>
               <Controller
                 name="institucion"
+                rules={{ required: "Este campo es obligatorio" }}
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label="Nombre de la Institución"
+                    label={<RequiredLabel label="Nombre de la Institución" />}
                     fullWidth
                     error={!!error}
                     helperText={error?.message}
@@ -824,6 +825,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
             <Grid item xs={12}>
               <Controller
                 name="ambito_vulneracion"
+                rules={{ required: "Este campo es obligatorio" }}
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <FormControl fullWidth error={!!error}>
@@ -836,7 +838,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label="Ámbito de Vulneración"
+                          label={<RequiredLabel label="Ámbito de Vulneración" />}
                           error={!!error}
                           helperText={error?.message}
                           size="medium"
@@ -855,25 +857,25 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 rules={{ required: "Este campo es obligatorio" }}
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                    <FormControl fullWidth error={!!error}>
-                      <Autocomplete
-                        disabled={readOnly}
-                        options={dropdownData.objetivo_de_demanda_choices || []}
-                        getOptionLabel={(option: any) => option.value || ""}
-                        value={(dropdownData.objetivo_de_demanda_choices || []).find((item: any) => item.key === field.value) || null}
-                        onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label={<RequiredLabel label="Objetivo de demanda" />}
-                            error={!!error}
-                            helperText={error?.message}
-                            size="medium"
-                          />
-                        )}
-                        size="medium"
-                      />
-                    </FormControl>
+                  <FormControl fullWidth error={!!error}>
+                    <Autocomplete
+                      disabled={readOnly}
+                      options={dropdownData.objetivo_de_demanda_choices || []}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={(dropdownData.objetivo_de_demanda_choices || []).find((item: any) => item.key === field.value) || null}
+                      onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label={<RequiredLabel label="Objetivo de demanda" />}
+                          error={!!error}
+                          helperText={error?.message}
+                          size="medium"
+                        />
+                      )}
+                      size="medium"
+                    />
+                  </FormControl>
                 )}
               />
             </Grid>
@@ -936,86 +938,6 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                           size="medium"
                         />
                       </FormControl>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="numero_expediente"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label="Número de Expediente"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                        InputProps={{ readOnly }}
-                        size="medium"
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Controller
-                    name="caratula"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label="Carátula"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        error={!!error}
-                        helperText={error?.message}
-                        InputProps={{ readOnly }}
-                        size="medium"
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="plazo_dias"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label="Plazo en días"
-                        type="number"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                        InputProps={{ readOnly }}
-                        size="medium"
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="fecha_vencimiento_oficio"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <DatePicker
-                        label="Fecha de Vencimiento"
-                        disabled={readOnly}
-                        value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                        onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!error,
-                            helperText: error?.message,
-                            size: "medium",
-                          },
-                        }}
-                      />
                     )}
                   />
                 </Grid>

@@ -70,6 +70,7 @@ export default function ActionButtons({
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>([])
   const [firmantes, setFirmantes] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [tipoMedidaEvaluado, setTipoMedidaEvaluado] = useState<string>("")
   const user = useUser((state) => state.user)
 
   // Check if user is director
@@ -140,6 +141,14 @@ export default function ActionButtons({
           return
         }
 
+        if (!tipoMedidaEvaluado) {
+          toast.warning("Por favor seleccione el tipo de medida a tomar", {
+            position: "top-center",
+            autoClose: 3000,
+          })
+          return
+        }
+
         // Get the database IDs for the selected children
         const selectedDatabaseIds = selectedChildrenIds.map(selectedId => {
           const child = children.find(c => c.id === selectedId);
@@ -152,6 +161,7 @@ export default function ActionButtons({
           valoracion_profesional_final: valoracionProfesional || "Blank",
           justificacion_tecnico: justificacionTecnico || "Blank",
           solicitud_tecnico: "TOMAR MEDIDA",
+          tipo_medida_evaluado: tipoMedidaEvaluado,
           demanda: demandaId,
           localidad_usuario,
           nombre_usuario,
@@ -372,11 +382,28 @@ export default function ActionButtons({
             </Select>
           </FormControl>
 
+          {/* Tipo de Medida selector */}
+          <FormControl sx={{ minWidth: 250 }}>
+            <InputLabel id="select-tipo-medida-label">Tipo de Medida *</InputLabel>
+            <Select
+              labelId="select-tipo-medida-label"
+              id="select-tipo-medida"
+              value={tipoMedidaEvaluado}
+              onChange={(e) => setTipoMedidaEvaluado(e.target.value)}
+              input={<OutlinedInput label="Tipo de Medida *" />}
+              size="small"
+            >
+              <MenuItem value="MPI">Medida de Protección Integral (MPI)</MenuItem>
+              <MenuItem value="MPE">Medida de Protección Excepcional (MPE)</MenuItem>
+              <MenuItem value="MPJ">Medida Penal Juvenil (MPJ)</MenuItem>
+            </Select>
+          </FormControl>
+
           <Button
             variant="contained"
             color="secondary"
             onClick={() => handleAuthorizationAction("autorizar tomar medida")}
-            disabled={selectedChildrenIds.length === 0 || isSubmitting}
+            disabled={selectedChildrenIds.length === 0 || !tipoMedidaEvaluado || isSubmitting}
           >
             Autorizar tomar medida
           </Button>

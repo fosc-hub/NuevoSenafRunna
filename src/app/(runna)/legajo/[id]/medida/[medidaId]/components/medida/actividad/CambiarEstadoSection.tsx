@@ -22,12 +22,14 @@ import ChangeCircleIcon from '@mui/icons-material/ChangeCircle'
 import type { TActividadPlanTrabajo } from '../../../types/actividades'
 
 // Valid state transitions based on PLTM-02 specification
+// Note: PENDIENTE_VISADO is auto-transitioned by backend when completing activity with requiere_visado_legales=true
+// Note: VISADO_APROBADO/VISADO_CON_OBSERVACION should ONLY be reached via /visar/ endpoint (VisarButton component)
 const TRANSICIONES_PERMITIDAS: Record<string, string[]> = {
   'PENDIENTE': ['EN_PROGRESO', 'CANCELADA'],
   'EN_PROGRESO': ['COMPLETADA', 'CANCELADA', 'PENDIENTE'],
-  'COMPLETADA': ['PENDIENTE_VISADO'], // Auto if requiere_visado_legales=true
-  'PENDIENTE_VISADO': ['VISADO_APROBADO', 'VISADO_CON_OBSERVACION'], // Solo Legal
-  'VISADO_CON_OBSERVACION': ['EN_PROGRESO'],
+  // COMPLETADA state removed - backend auto-transitions to PENDIENTE_VISADO if needed
+  // PENDIENTE_VISADO transitions removed - use VisarButton component with /visar/ endpoint
+  'VISADO_CON_OBSERVACION': ['EN_PROGRESO'], // Can reopen after legal rejection
   'VENCIDA': ['EN_PROGRESO', 'CANCELADA'],
 }
 

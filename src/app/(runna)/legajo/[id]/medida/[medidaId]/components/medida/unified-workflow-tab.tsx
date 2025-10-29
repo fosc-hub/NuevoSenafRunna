@@ -324,9 +324,9 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
           totalSteps={totalSteps}
           status={determineStepStatus(0, activeStep, step1Completed, true)}
           isFirst={true}
-          isLast={false}
+          isLast={isMPI}
           canContinue={step1Completed}
-          onContinue={() => setActiveStep(1)}
+          onContinue={isMPI ? undefined : () => setActiveStep(1)}
           showNavigation={true}
         >
           <AperturaSection
@@ -342,7 +342,8 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         </WorkflowStepContent>
       ),
     },
-    {
+    // Steps 2-4 only for MPE and MPJ (not MPI)
+    ...(!isMPI ? [{
       id: 2,
       label: getStepName(1),
       description: getStepDescription(1),
@@ -383,9 +384,9 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
           totalSteps={totalSteps}
           status={determineStepStatus(2, activeStep, step3Completed, step2Completed)}
           isFirst={false}
-          isLast={isMPI}
+          isLast={false}
           canContinue={step3Completed}
-          onContinue={isMPI ? undefined : () => setActiveStep(3)}
+          onContinue={() => setActiveStep(3)}
           onBack={() => setActiveStep(1)}
           showNavigation={true}
         >
@@ -398,8 +399,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         </WorkflowStepContent>
       ),
     },
-    // Step 4 only for MPE and MPJ (not MPI)
-    ...(!isMPI ? [{
+    {
       id: 4,
       label: getStepName(3),
       description: getStepDescription(3),

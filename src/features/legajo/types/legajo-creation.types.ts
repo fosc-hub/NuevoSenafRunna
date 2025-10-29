@@ -109,9 +109,11 @@ export interface CreateLegajoResponse {
 
 /**
  * Response from PUT /api/evaluaciones/{demanda_pk}/autorizar/
+ * Can be either the expected structure with legajos or just an evaluation object
  */
 export interface AutorizarAdmisionResponse {
-  legajos_creados: Array<{
+  // Expected structure (when endpoint creates legajos)
+  legajos_creados?: Array<{
     id: number
     numero: string
     nnya: {
@@ -120,14 +122,29 @@ export interface AutorizarAdmisionResponse {
       apellido: string
     }
   }>
-  legajos_existentes: Array<{
+  legajos_existentes?: Array<{
     nnya_id: number
     legajo_numero: string
     message: string
   }>
-  total_creados: number
-  total_existentes: number
-  message: string
+  total_creados?: number
+  total_existentes?: number
+  message?: string
+
+  // Actual structure (evaluation object)
+  id?: number
+  evaluacion_personas?: Array<{
+    persona: {
+      id: number
+      nombre: string
+      apellido: string
+      dni: string | null
+    }
+  }>
+  decision_director?: string
+  justificacion_director?: string
+  solicitud_tecnico?: string
+  demanda?: number
 }
 
 // ============================================

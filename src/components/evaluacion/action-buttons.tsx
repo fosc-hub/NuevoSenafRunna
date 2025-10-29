@@ -216,20 +216,8 @@ export default function ActionButtons({
           const response = await autorizarAdmisionYCrearLegajos(demandaId, payload)
           console.log("API Response:", response)
 
-          // Show success message with legajos information
-          const legajosCreados = response.legajos_creados || []
-          if (legajosCreados.length > 0) {
-            const numeros = legajosCreados.map((l: any) => l.numero).join(', ')
-            toast.success(`Admisión autorizada. Legajos creados: ${numeros}`, {
-              position: "top-center",
-              autoClose: 5000,
-            })
-          } else {
-            toast.success("Admisión autorizada exitosamente", {
-              position: "top-center",
-              autoClose: 3000,
-            })
-          }
+          // Response is already handled by autorizarAdmisionYCrearLegajos service
+          // No additional toast needed here as the service already shows appropriate messages
         } else {
           // No autorizar - no crea legajos
           const response = await axiosInstance.put(`/evaluaciones/${demandaId}/autorizar/?autorizar=false`, payload)

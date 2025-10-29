@@ -272,9 +272,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
           <AntecedentesDemanda antecedentes={antecedentes} setAntecedentes={setAntecedentes} />
         </TabPanel>
 
-
-
-        <TabPanel value={tabValue} index={9}>
+        <TabPanel value={tabValue} index={8}>
           <AdjuntosTab adjuntos={adjuntos} setAdjuntos={setAdjuntos} />
         </TabPanel>
       </Box>

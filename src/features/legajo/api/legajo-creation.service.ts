@@ -110,7 +110,7 @@ export const createLegajo = async (
 
 /**
  * Autorizar admision and create legajos automatically
- * PUT /api/evaluaciones/{demanda_pk}/autorizar/
+ * PUT /api/evaluaciones/{demanda_pk}/autorizar/?autorizar=true
  *
  * @param demandaId - ID of the demanda being authorized
  * @param data - Authorization data (decision, justification)
@@ -123,50 +123,69 @@ export const autorizarAdmisionYCrearLegajos = async (
   try {
     console.log(`Authorizing admision for demanda ${demandaId}:`, data)
 
-    // Call API - put() requires ID as second parameter
-    const response = await put<AutorizarAdmisionResponse>(
-      'evaluaciones',
-      demandaId,
+    // Import axiosInstance for direct call with correct endpoint format
+    const axiosInstance = (await import('@/app/api/utils/axiosInstance')).default
+
+    // Call API with correct endpoint format: /evaluaciones/{id}/autorizar/?autorizar=true
+    const response = await axiosInstance.put<AutorizarAdmisionResponse>(
+      `/evaluaciones/${demandaId}/autorizar/?autorizar=true`,
       {
         decision: data.decision || 'AUTORIZAR_ADMISION',
         justificacion_director: data.justificacion_director || 'Autorizado por Director',
         ...data
-      },
-      false // Don't show default toast
+      }
     )
 
-    console.log('Admision authorized successfully:', response)
+    console.log('Admision authorized successfully:', response.data)
 
-    // Show custom success toast with summary
-    const { total_creados, total_existentes } = response
-    const successMsg = total_existentes > 0
-      ? `${total_creados} legajo(s) creado(s), ${total_existentes} vinculado(s) a legajos existentes`
-      : `${total_creados} legajo(s) creado(s) exitosamente`
+    // Check if response has legajos_creados field (expected structure)
+    // or if it's just an evaluation response (actual structure)
+    if (response.data.legajos_creados !== undefined) {
+      // Expected response structure with legajos
+      const { total_creados, total_existentes } = response.data
+      const successMsg = total_existentes > 0
+        ? `${total_creados} legajo(s) creado(s), ${total_existentes} vinculado(s) a legajos existentes`
+        : `${total_creados} legajo(s) creado(s) exitosamente`
 
-    toast.success(successMsg, {
-      position: 'top-center',
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: 'colored',
-    })
-
-    // Show individual legajo creation toasts
-    response.legajos_creados.forEach((legajo) => {
-      toast.info(`Legajo ${legajo.numero} creado para ${legajo.nnya.nombre} ${legajo.nnya.apellido}`, {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: true,
+      toast.success(successMsg, {
+        position: 'top-center',
+        autoClose: 5000,
+        hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-        theme: 'info',
+        theme: 'colored',
       })
-    })
 
-    return response
+      // Show individual legajo creation toasts
+      response.data.legajos_creados.forEach((legajo: any) => {
+        toast.info(`Legajo ${legajo.numero} creado para ${legajo.nnya.nombre} ${legajo.nnya.apellido}`, {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'info',
+        })
+      })
+    } else {
+      // Actual response structure - just evaluation object
+      const nnyaCount = response.data.evaluacion_personas?.length || 0
+      const successMsg = `Admisión autorizada para ${nnyaCount} NNyA`
+
+      toast.success(successMsg, {
+        position: 'top-center',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+      })
+    }
+
+    return response.data
   } catch (error: any) {
     console.error(`Error authorizing admision for demanda ${demandaId}:`, error)
     console.error('Error details:', {

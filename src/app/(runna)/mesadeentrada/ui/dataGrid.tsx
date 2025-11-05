@@ -649,10 +649,24 @@ const DemandaTableContent: React.FC = () => {
       {
         field: "id",
         headerName: "ID",
-        width: 80,
+        width: 100,
         renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "4px" }}>
             {params.value}
+            {params.row.hasLegajo && (
+              <Tooltip title={`Legajo: ${params.row.legajoNumero}`}>
+                <Chip
+                  label="📋"
+                  size="small"
+                  color="success"
+                  sx={{
+                    height: "20px",
+                    fontSize: "12px",
+                    "& .MuiChip-label": { px: 0.5 }
+                  }}
+                />
+              </Tooltip>
+            )}
             {params.row.calificacion === "URGENTE" && (
               <Tooltip title="Urgente">
                 <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
@@ -955,6 +969,8 @@ const DemandaTableContent: React.FC = () => {
         origen: demanda.bloque_datos_remitente?.nombre || "N/A",
         nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
         dni: demanda.nnya_principal?.dni || "N/A",
+        hasLegajo: !!(demanda.nnya_principal?.legajo),
+        legajoNumero: demanda.nnya_principal?.legajo?.numero || "N/A",
         calificacion: demanda.calificacion?.estado_calificacion || null,
         ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
           day: "2-digit",

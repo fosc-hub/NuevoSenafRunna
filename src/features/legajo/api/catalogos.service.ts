@@ -34,7 +34,6 @@ export const getUrgencias = async (): Promise<UrgenciaVulneracion[]> => {
       { id: 1, nombre: 'Baja', descripcion: 'Urgencia baja' },
       { id: 2, nombre: 'Media', descripcion: 'Urgencia media' },
       { id: 3, nombre: 'Alta', descripcion: 'Urgencia alta' },
-      { id: 4, nombre: 'Muy Alta', descripcion: 'Urgencia muy alta' },
     ]
 
     return mockUrgencias

@@ -188,8 +188,12 @@ export interface UserInfo {
   username: string
   first_name?: string
   last_name?: string
-  nombre_completo: string  // Campo calculado read-only en backend
+  nombre_completo?: string  // Campo calculado (puede venir del backend o generarse en frontend)
   nivel?: string
+  email?: string
+  is_active?: boolean
+  is_staff?: boolean
+  zonas?: any[]
 }
 
 export interface LocalCentroVida {

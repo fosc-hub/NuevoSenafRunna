@@ -109,8 +109,17 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
     // 4. Filtrar solo los usuarios que están en la zona
     const usersInZona = allUsers.filter(user => userIds.includes(user.id))
 
-    console.log(`Users for zona ${zonaId} fetched:`, usersInZona)
-    return usersInZona
+    // 5. Asegurar que cada usuario tenga nombre_completo
+    const usersWithNombreCompleto = usersInZona.map(user => ({
+      ...user,
+      nombre_completo: user.nombre_completo ||
+                       (user.first_name && user.last_name
+                         ? `${user.first_name} ${user.last_name}`.trim()
+                         : user.username)
+    }))
+
+    console.log(`Users for zona ${zonaId} fetched:`, usersWithNombreCompleto)
+    return usersWithNombreCompleto
   } catch (error) {
     console.error(`Error fetching users for zona ${zonaId}:`, error)
     return []

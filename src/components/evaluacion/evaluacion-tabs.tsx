@@ -56,10 +56,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   const [tabValue, setTabValue] = useState(0)
   const user = useUser((state) => state.user)
 
-  // Check if user is director
+  // Check if user is director (superuser, staff, or has Director group, or has director role in zonas)
   const isDirector =
     user?.is_superuser ||
-    user?.is_staff
+    user?.is_staff ||
+    user?.groups?.some((group: any) => group.name === "Director") ||
+    user?.zonas?.some((zona: any) => zona.director === true)
 
   const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
     Array.isArray(data.IndicadoresEvaluacion) ? data.IndicadoresEvaluacion.map((indicator: any, index: number) => {

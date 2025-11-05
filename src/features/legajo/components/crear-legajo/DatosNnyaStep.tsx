@@ -34,7 +34,7 @@ const nnyaSchema = z.object({
   fecha_nacimiento: z.date().optional(),
   edad_aproximada: z.number().optional(),
   nacionalidad: z.enum(['ARGENTINA', 'EXTRANJERA']),
-  genero: z.enum(['MASCULINO', 'FEMENINO', 'OTRO', 'NO_ESPECIFICA']),
+  genero: z.enum(['MASCULINO', 'FEMENINO', 'NO_BINARIO']),
   domicilio_calle: z.string().optional(),
   domicilio_numero: z.string().optional(),
   domicilio_localidad: z.string().optional(),
@@ -59,7 +59,7 @@ export default function DatosNnyaStep({ nnyaSeleccionado, modoCreacion, onComple
       dni: nnyaSeleccionado?.dni || undefined,
       situacion_dni: 'VALIDO',
       nacionalidad: 'ARGENTINA',
-      genero: 'NO_ESPECIFICA',
+      genero: 'MASCULINO',
     },
     mode: 'onChange',
   })
@@ -237,8 +237,7 @@ export default function DatosNnyaStep({ nnyaSeleccionado, modoCreacion, onComple
                   <Select {...field} label="Género *">
                     <MenuItem value="MASCULINO">Masculino</MenuItem>
                     <MenuItem value="FEMENINO">Femenino</MenuItem>
-                    <MenuItem value="OTRO">Otro</MenuItem>
-                    <MenuItem value="NO_ESPECIFICA">No Especifica</MenuItem>
+                    <MenuItem value="NO_BINARIO">No Binario</MenuItem>
                   </Select>
                 </FormControl>
               )}

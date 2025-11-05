@@ -19,6 +19,9 @@ import {
   Typography,
   Chip,
   Paper,
+  Tabs,
+  Tab,
+  Grid,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
@@ -33,12 +36,20 @@ interface Props {
 }
 
 export default function BusquedaNnyaStep({ onSelect, onCrearNuevo }: Props) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const { searching, results, search, hasResults } = useSearchNnya()
+  const [searchMode, setSearchMode] = useState<'dni' | 'nombre'>('dni')
+  const [dniSearch, setDniSearch] = useState('')
+  const [nombreSearch, setNombreSearch] = useState('')
+  const [apellidoSearch, setApellidoSearch] = useState('')
+  const { searching, results, searchByDni, searchByNombre, hasResults } = useSearchNnya()
 
   const handleSearch = async () => {
-    if (!searchTerm.trim()) return
-    await search(searchTerm)
+    if (searchMode === 'dni') {
+      if (!dniSearch.trim()) return
+      await searchByDni(dniSearch)
+    } else {
+      if (!nombreSearch.trim() && !apellidoSearch.trim()) return
+      await searchByNombre(nombreSearch, apellidoSearch)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -63,31 +74,83 @@ export default function BusquedaNnyaStep({ onSelect, onCrearNuevo }: Props) {
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Busque por <strong>DNI, nombre o apellido</strong> para verificar si el NNyA ya existe en el sistema.
+        Busque por <strong>DNI o nombre completo</strong> para verificar si el NNyA ya existe en el sistema.
         Esto previene la creación de legajos duplicados (LEG-01).
       </Typography>
 
-      {/* Search Box */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            label="DNI, Nombre o Apellido"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={handleKeyPress}
-            fullWidth
-            placeholder="Ej: 12345678 o Juan Pérez"
-            disabled={searching}
-          />
-          <Button
-            variant="contained"
-            onClick={handleSearch}
-            disabled={searching || !searchTerm.trim()}
-            startIcon={searching ? <CircularProgress size={20} /> : <SearchIcon />}
-            sx={{ minWidth: 120 }}
-          >
-            {searching ? 'Buscando...' : 'Buscar'}
-          </Button>
+      {/* Search Mode Tabs */}
+      <Paper variant="outlined" sx={{ mb: 3 }}>
+        <Tabs
+          value={searchMode}
+          onChange={(_, value) => setSearchMode(value)}
+          sx={{ borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab label="Buscar por DNI" value="dni" />
+          <Tab label="Buscar por Nombre" value="nombre" />
+        </Tabs>
+
+        {/* Search Box */}
+        <Box sx={{ p: 2 }}>
+          {searchMode === 'dni' ? (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="DNI"
+                value={dniSearch}
+                onChange={(e) => setDniSearch(e.target.value)}
+                onKeyPress={handleKeyPress}
+                fullWidth
+                placeholder="Ej: 12345678"
+                disabled={searching}
+                type="number"
+              />
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                disabled={searching || !dniSearch.trim()}
+                startIcon={searching ? <CircularProgress size={20} /> : <SearchIcon />}
+                sx={{ minWidth: 120 }}
+              >
+                {searching ? 'Buscando...' : 'Buscar'}
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={5}>
+                <TextField
+                  label="Nombre"
+                  value={nombreSearch}
+                  onChange={(e) => setNombreSearch(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  fullWidth
+                  placeholder="Ej: Juan"
+                  disabled={searching}
+                />
+              </Grid>
+              <Grid item xs={12} sm={5}>
+                <TextField
+                  label="Apellido"
+                  value={apellidoSearch}
+                  onChange={(e) => setApellidoSearch(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  fullWidth
+                  placeholder="Ej: Pérez"
+                  disabled={searching}
+                />
+              </Grid>
+              <Grid item xs={12} sm={2}>
+                <Button
+                  variant="contained"
+                  onClick={handleSearch}
+                  disabled={searching || (!nombreSearch.trim() && !apellidoSearch.trim())}
+                  startIcon={searching ? <CircularProgress size={20} /> : <SearchIcon />}
+                  fullWidth
+                  sx={{ height: '56px' }}
+                >
+                  {searching ? 'Buscando...' : 'Buscar'}
+                </Button>
+              </Grid>
+            </Grid>
+          )}
         </Box>
       </Paper>
 
@@ -146,7 +209,7 @@ export default function BusquedaNnyaStep({ onSelect, onCrearNuevo }: Props) {
                             <strong>Fecha Nacimiento:</strong> {nnya.fecha_nacimiento || 'No especificada'}
                           </Typography>
 
-                          {hasLegajo && (
+                          {hasLegajo && nnya.legajo_existente && (
                             <Alert severity="error" sx={{ mt: 2 }}>
                               <Typography variant="body2">
                                 <strong>Legajo Existente:</strong> {nnya.legajo_existente.numero}
@@ -179,9 +242,14 @@ export default function BusquedaNnyaStep({ onSelect, onCrearNuevo }: Props) {
       )}
 
       {/* No Results Message */}
-      {!searching && searchTerm && !hasResults && (
+      {!searching && !hasResults && (dniSearch || nombreSearch || apellidoSearch) && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          No se encontraron resultados para <strong>{searchTerm}</strong>.
+          No se encontraron resultados para{' '}
+          <strong>
+            {searchMode === 'dni'
+              ? `DNI: ${dniSearch}`
+              : `${nombreSearch} ${apellidoSearch}`.trim()}
+          </strong>.
           Puede crear un nuevo NNyA usando el botón de abajo.
         </Alert>
       )}

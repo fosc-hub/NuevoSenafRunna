@@ -3,7 +3,7 @@
  * Endpoint: POST /api/demanda-busqueda-vinculacion/
  */
 
-import { create } from '@/app/api/apiService'
+import { create, get } from '@/app/api/apiService'
 import type { BusquedaNnyaResult } from '../types/legajo-creation.types'
 
 /**
@@ -25,24 +25,55 @@ export const buscarNnyaPorDni = async (dni: string): Promise<BusquedaNnyaResult[
     console.log('Search response:', response)
 
     // Parse response according to backend structure
-    // Adjust this based on actual API response format
-    const personas = response.personas || response.results || []
+    // Response format: { demanda_ids: [], match_descriptions: [], legajos: [] }
+    const legajos = response.legajos || []
 
-    // Map to BusquedaNnyaResult format
-    const mappedResults: BusquedaNnyaResult[] = personas.map((persona: any) => ({
-      id: persona.id,
-      nombre: persona.nombre,
-      apellido: persona.apellido,
-      dni: persona.dni,
-      fecha_nacimiento: persona.fecha_nacimiento,
-      legajo_existente: persona.legajo ? {
-        id: persona.legajo.id,
-        numero: persona.legajo.numero,
-        fecha_apertura: persona.legajo.fecha_apertura,
-      } : undefined,
-    }))
+    if (legajos.length === 0) {
+      console.log('No existing legajos found for this DNI')
+      return []
+    }
 
-    console.log(`Found ${mappedResults.length} matching NNyA(s)`)
+    // Fetch full persona details for each nnya ID found in legajos
+    const personaPromises = legajos.map(async (legajo: any) => {
+      const nnyaId = typeof legajo.nnya === 'number' ? legajo.nnya : legajo.nnya?.id
+
+      try {
+        // Fetch full persona details from /api/persona/{id}/
+        const persona = await get<any>(`persona/${nnyaId}/`)
+
+        return {
+          id: persona.id,
+          nombre: persona.nombre,
+          apellido: persona.apellido,
+          dni: persona.dni,
+          fecha_nacimiento: persona.fecha_nacimiento,
+          legajo_existente: {
+            id: legajo.id,
+            numero: legajo.numero,
+            fecha_apertura: legajo.fecha_apertura,
+          },
+        } as BusquedaNnyaResult
+      } catch (error) {
+        console.error(`Error fetching persona ${nnyaId}:`, error)
+        // Fallback to minimal data if persona fetch fails
+        return {
+          id: nnyaId,
+          nombre: 'Desconocido',
+          apellido: 'Desconocido',
+          dni: 0,
+          fecha_nacimiento: '',
+          legajo_existente: {
+            id: legajo.id,
+            numero: legajo.numero,
+            fecha_apertura: legajo.fecha_apertura,
+          },
+        } as BusquedaNnyaResult
+      }
+    })
+
+    const mappedResults = await Promise.all(personaPromises)
+
+    console.log(`Found ${mappedResults.length} matching NNyA(s) with existing legajos`)
 
     return mappedResults
   } catch (error: any) {
@@ -82,22 +113,55 @@ export const buscarNnyaPorNombre = async (
     console.log('Search response:', response)
 
     // Parse response (same structure as DNI search)
-    const personas = response.personas || response.results || []
+    // Response format: { demanda_ids: [], match_descriptions: [], legajos: [] }
+    const legajos = response.legajos || []
 
-    const mappedResults: BusquedaNnyaResult[] = personas.map((persona: any) => ({
-      id: persona.id,
-      nombre: persona.nombre,
-      apellido: persona.apellido,
-      dni: persona.dni,
-      fecha_nacimiento: persona.fecha_nacimiento,
-      legajo_existente: persona.legajo ? {
-        id: persona.legajo.id,
-        numero: persona.legajo.numero,
-        fecha_apertura: persona.legajo.fecha_apertura,
-      } : undefined,
-    }))
+    if (legajos.length === 0) {
+      console.log('No existing legajos found for this name')
+      return []
+    }
 
-    console.log(`Found ${mappedResults.length} matching NNyA(s)`)
+    // Fetch full persona details for each nnya ID found in legajos
+    const personaPromises = legajos.map(async (legajo: any) => {
+      const nnyaId = typeof legajo.nnya === 'number' ? legajo.nnya : legajo.nnya?.id
+
+      try {
+        // Fetch full persona details from /api/persona/{id}/
+        const persona = await get<any>(`persona/${nnyaId}/`)
+
+        return {
+          id: persona.id,
+          nombre: persona.nombre,
+          apellido: persona.apellido,
+          dni: persona.dni,
+          fecha_nacimiento: persona.fecha_nacimiento,
+          legajo_existente: {
+            id: legajo.id,
+            numero: legajo.numero,
+            fecha_apertura: legajo.fecha_apertura,
+          },
+        } as BusquedaNnyaResult
+      } catch (error) {
+        console.error(`Error fetching persona ${nnyaId}:`, error)
+        // Fallback to minimal data if persona fetch fails
+        return {
+          id: nnyaId,
+          nombre: 'Desconocido',
+          apellido: 'Desconocido',
+          dni: 0,
+          fecha_nacimiento: '',
+          legajo_existente: {
+            id: legajo.id,
+            numero: legajo.numero,
+            fecha_apertura: legajo.fecha_apertura,
+          },
+        } as BusquedaNnyaResult
+      }
+    })
+
+    const mappedResults = await Promise.all(personaPromises)
+
+    console.log(`Found ${mappedResults.length} matching NNyA(s) with existing legajos`)
 
     return mappedResults
   } catch (error: any) {

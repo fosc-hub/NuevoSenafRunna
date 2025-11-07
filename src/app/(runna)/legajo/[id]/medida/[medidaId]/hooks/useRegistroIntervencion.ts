@@ -16,6 +16,9 @@ import {
   uploadAdjunto,
   getAdjuntos,
   deleteAdjunto,
+  getCategorias,
+  getTiposDispositivo,
+  getCategoriasIntervencion,
 } from "../api/intervenciones-api-service"
 import type {
   CreateIntervencionRequest,
@@ -518,41 +521,51 @@ export const useRegistroIntervencion = ({
   // ============================================================================
 
   /**
-   * Load all catalog data
-   * TODO: Replace with real API calls when catalog endpoints are available
+   * Load all catalog data from API
+   * Uses unified /api/categorias/ endpoint for motivos and submotivos
    */
   const loadCatalogs = async () => {
     setIsLoadingCatalogs(true)
 
     try {
-      // TODO: Replace with real API calls
-      // For now, using mock data
-      setTiposDispositivo([
-        { id: 1, nombre: "Residencia", activo: true },
-        { id: 2, nombre: "Hogar Convivencial", activo: true },
-        { id: 3, nombre: "Familia Cuidadora", activo: true },
+      // Fetch all catalogs in parallel
+      const [categoriasResponse, tiposDispositivoData, categoriasIntervencionData] = await Promise.all([
+        getCategorias(),
+        getTiposDispositivo(),
+        getCategoriasIntervencion(),
       ])
 
-      setMotivos([
-        { id: 1, nombre: "Vulneración de derechos", activo: true },
-        { id: 2, nombre: "Seguimiento", activo: true },
-        { id: 3, nombre: "Evaluación", activo: true },
-      ])
+      // Map categorias_motivo to MotivoIntervencion format
+      const motivosData: MotivoIntervencion[] = categoriasResponse.categorias_motivo.map((motivo) => ({
+        id: motivo.id,
+        nombre: motivo.nombre,
+        activo: true,
+      }))
 
-      setSubMotivos([
-        { id: 1, motivo_id: 1, nombre: "Maltrato físico", activo: true },
-        { id: 2, motivo_id: 1, nombre: "Maltrato psicológico", activo: true },
-        { id: 3, motivo_id: 2, nombre: "Seguimiento periódico", activo: true },
-      ])
+      // Map categorias_submotivo to SubMotivoIntervencion format
+      const subMotivosData: SubMotivoIntervencion[] = categoriasResponse.categorias_submotivo.map((submotivo) => ({
+        id: submotivo.id,
+        motivo_id: submotivo.motivo, // Map 'motivo' to 'motivo_id'
+        nombre: submotivo.nombre,
+        activo: true,
+      }))
 
-      setCategorias([
-        { id: 1, nombre: "Categoría A", activo: true },
-        { id: 2, nombre: "Categoría B", activo: true },
-        { id: 3, nombre: "Categoría C", activo: true },
-      ])
+      // Update state
+      setTiposDispositivo(tiposDispositivoData)
+      setMotivos(motivosData)
+      setSubMotivos(subMotivosData)
+      setCategorias(categoriasIntervencionData)
+
+      console.log("Catalogs loaded successfully:", {
+        motivos: motivosData.length,
+        subMotivos: subMotivosData.length,
+        tiposDispositivo: tiposDispositivoData.length,
+        categorias: categoriasIntervencionData.length,
+      })
     } catch (err: any) {
       console.error("Error loading catalogs:", err)
       // Don't set global error for catalog loading failure
+      // Keep empty arrays so the UI can still render
     } finally {
       setIsLoadingCatalogs(false)
     }

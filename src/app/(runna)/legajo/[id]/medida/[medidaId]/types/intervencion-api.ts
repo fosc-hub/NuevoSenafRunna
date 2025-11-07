@@ -71,6 +71,34 @@ export interface CategoriaIntervencion {
   activo?: boolean
 }
 
+/**
+ * Response from /api/categorias/ endpoint
+ * Returns both motivos and submotivos in a single call
+ */
+export interface CategoriasResponse {
+  categorias_motivo: CategoriaMotivo[]
+  categorias_submotivo: CategoriaSubMotivo[]
+}
+
+/**
+ * Categoria Motivo from /api/categorias/ endpoint
+ */
+export interface CategoriaMotivo {
+  id: number
+  nombre: string
+  peso?: number
+}
+
+/**
+ * Categoria SubMotivo from /api/categorias/ endpoint
+ */
+export interface CategoriaSubMotivo {
+  id: number
+  nombre: string
+  peso?: number
+  motivo: number // ID del motivo al que pertenece
+}
+
 // ============================================================================
 // ADJUNTOS
 // ============================================================================
@@ -148,7 +176,7 @@ export interface CreateIntervencionRequest {
 /**
  * Request para actualización parcial (PATCH)
  */
-export interface UpdateIntervencionRequest extends Partial<CreateIntervencionRequest> {}
+export interface UpdateIntervencionRequest extends Partial<CreateIntervencionRequest> { }
 
 // ============================================================================
 // RESPONSE (READ) - Todos los campos del backend

@@ -20,6 +20,9 @@ import type {
   RechazarIntervencionResponse,
   AdjuntoIntervencion,
   AdjuntosQueryParams,
+  CategoriasResponse,
+  TipoDispositivo,
+  CategoriaIntervencion,
 } from "../types/intervencion-api"
 
 // ============================================================================
@@ -520,6 +523,84 @@ export const deleteAdjunto = async (
       response: error?.response?.data,
       status: error?.response?.status,
     })
+    throw error
+  }
+}
+
+// ============================================================================
+// CATALOG ENDPOINTS
+// ============================================================================
+
+/**
+ * Get categorias (motivos and submotivos) from unified endpoint
+ * GET /api/categorias/
+ *
+ * @returns Combined categorias_motivo and categorias_submotivo
+ */
+export const getCategorias = async (): Promise<CategoriasResponse> => {
+  try {
+    console.log("Fetching categorias from /api/categorias/")
+
+    const response = await get<CategoriasResponse>("categorias/")
+
+    console.log("Categorias retrieved successfully:", response)
+
+    return response
+  } catch (error: any) {
+    console.error("Error fetching categorias:", error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
+/**
+ * Get tipos de dispositivo
+ * GET /api/tipos-dispositivos/
+ * TODO: Replace with actual endpoint when available
+ */
+export const getTiposDispositivo = async (): Promise<TipoDispositivo[]> => {
+  try {
+    console.log("Fetching tipos dispositivo")
+
+    // TODO: Replace with actual endpoint
+    // const response = await get<TipoDispositivo[]>("tipos-dispositivos/")
+
+    // Mock data for now
+    return [
+      { id: 1, nombre: "Residencia", activo: true },
+      { id: 2, nombre: "Hogar Convivencial", activo: true },
+      { id: 3, nombre: "Familia Cuidadora", activo: true },
+    ]
+  } catch (error: any) {
+    console.error("Error fetching tipos dispositivo:", error)
+    throw error
+  }
+}
+
+/**
+ * Get categorias de intervencion
+ * GET /api/categorias-intervencion/
+ * TODO: Replace with actual endpoint when available
+ */
+export const getCategoriasIntervencion = async (): Promise<CategoriaIntervencion[]> => {
+  try {
+    console.log("Fetching categorias intervencion")
+
+    // TODO: Replace with actual endpoint
+    // const response = await get<CategoriaIntervencion[]>("categorias-intervencion/")
+
+    // Mock data for now
+    return [
+      { id: 1, nombre: "Categoría A", activo: true },
+      { id: 2, nombre: "Categoría B", activo: true },
+      { id: 3, nombre: "Categoría C", activo: true },
+    ]
+  } catch (error: any) {
+    console.error("Error fetching categorias intervencion:", error)
     throw error
   }
 }

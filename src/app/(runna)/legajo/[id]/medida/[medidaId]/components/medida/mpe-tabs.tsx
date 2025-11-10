@@ -76,9 +76,13 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                 )}
                 {activeTab === 4 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
                 {activeTab === 5 && (
-                    <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                        Contenido de Post cese - En desarrollo
-                    </Box>
+                    planTrabajoId ? (
+                        <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
+                    ) : (
+                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                            No hay Plan de Trabajo asociado a esta medida.
+                        </Box>
+                    )
                 )}
                 {activeTab === 6 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
             </Box>

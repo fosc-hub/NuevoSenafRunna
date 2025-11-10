@@ -6,6 +6,13 @@ import {
   Paper,
   Box,
   Chip,
+  Grid,
+  Card,
+  CardContent,
+  IconButton,
+  Tooltip,
+} from "@mui/material"
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
@@ -13,12 +20,7 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-  Grid,
-  Card,
-  CardContent,
-  IconButton,
-  Tooltip,
-} from "@mui/material"
+} from "@mui/lab"
 import HistoryIcon from "@mui/icons-material/History"
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline"
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"

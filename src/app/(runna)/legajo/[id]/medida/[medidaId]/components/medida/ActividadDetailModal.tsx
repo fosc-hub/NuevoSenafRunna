@@ -29,7 +29,6 @@ import { useActividadActions } from '../../hooks/useActividadActions'
 
 // Import all components
 import { EditableFields } from './actividad/EditableFields'
-import { ResponsablesSection } from './actividad/ResponsablesSection'
 import { QuickLinksSection } from './actividad/QuickLinksSection'
 import { CambiarEstadoSection } from './actividad/CambiarEstadoSection'
 import { ReabrirButton } from './actividad/ReabrirButton'
@@ -176,24 +175,6 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
               onSave={async (updatedFields) => {
                 // TODO: Implement update actividad fields API call
                 console.log('Update fields:', updatedFields)
-                return null
-              }}
-              loading={actions.loading}
-              onSuccess={handleSuccess}
-            />
-
-            {/* Responsables */}
-            <ResponsablesSection
-              actividad={actividad}
-              canEdit={permissions.canEdit}
-              onAsignarResponsable={async (usuarioId, esPrincipal) => {
-                // TODO: Implement assign responsable API call
-                console.log('Assign responsable:', usuarioId, esPrincipal)
-                return null
-              }}
-              onRemoverResponsable={async (usuarioId) => {
-                // TODO: Implement remove responsable API call
-                console.log('Remove responsable:', usuarioId)
                 return null
               }}
               loading={actions.loading}

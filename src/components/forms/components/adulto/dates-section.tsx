@@ -4,10 +4,10 @@ import type React from "react"
 import { Grid, TextField } from "@mui/material"
 import { Controller, type Control } from "react-hook-form"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
-import { format, parse } from "date-fns"
 import { CalendarMonth as CalendarIcon } from "@mui/icons-material"
 import FormSection from "../form-section"
 import type { FormData } from "../../types/formTypes"
+import { parseDateSafely, formatDateSafely } from "../../utils/dateUtils"
 
 interface DatesSectionProps {
   index: number
@@ -27,8 +27,8 @@ const DatesSection: React.FC<DatesSectionProps> = ({ index, control, readOnly })
               <DatePicker
                 label="Fecha de Nacimiento"
                 disabled={readOnly}
-                value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                value={parseDateSafely(field.value)}
+                onChange={(date) => field.onChange(formatDateSafely(date))}
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -49,8 +49,8 @@ const DatesSection: React.FC<DatesSectionProps> = ({ index, control, readOnly })
               <DatePicker
                 label="Fecha de Defunción"
                 disabled={readOnly}
-                value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                value={parseDateSafely(field.value)}
+                onChange={(date) => field.onChange(formatDateSafely(date))}
                 slotProps={{
                   textField: {
                     fullWidth: true,

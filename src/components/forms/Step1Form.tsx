@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react"
 import { useWatch, useFormContext } from "react-hook-form"
 import { type Control, Controller, useFieldArray, useController } from "react-hook-form"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
-import { format, parse } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
+import { parseDateSafely, formatDateSafely } from "./utils/dateUtils"
 import {
   TextField,
   Grid,
@@ -550,8 +550,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                   <DatePicker
                     label={<RequiredLabel label="Fecha de oficio/documento" />}
                     disabled={readOnly}
-                    value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                    onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                    value={parseDateSafely(field.value)}
+                    onChange={(date) => field.onChange(formatDateSafely(date))}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -573,8 +573,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                   <DatePicker
                     label={<RequiredLabel label="Fecha de ingreso SENAF" />}
                     disabled={readOnly}
-                    value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                    onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                    value={parseDateSafely(field.value)}
+                    onChange={(date) => field.onChange(formatDateSafely(date))}
                     slotProps={{
                       textField: {
                         fullWidth: true,

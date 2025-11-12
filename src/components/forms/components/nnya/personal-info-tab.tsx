@@ -14,7 +14,6 @@ import {
 } from "@mui/material"
 import { Controller, type Control } from "react-hook-form"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
-import { format, parse } from "date-fns"
 import {
   Person as PersonIcon,
   CalendarMonth as CalendarIcon,
@@ -22,6 +21,7 @@ import {
   Link as LinkIcon,
   Notes as NotesIcon,
 } from "@mui/icons-material"
+import { parseDateSafely, formatDateSafely } from "../../utils/dateUtils"
 import FormSection from "../form-section"
 import RequiredLabel from "../required-label"
 import LocalizacionFields from "../../LocalizacionFields"
@@ -208,8 +208,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
               render={({ field }) => (
                 <DatePicker
                   label="Fecha de Nacimiento"
-                  value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                  onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                  value={parseDateSafely(field.value)}
+                  onChange={(date) => field.onChange(formatDateSafely(date))}
                   disabled={readOnly}
                   slotProps={{
                     textField: {
@@ -230,8 +230,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
               render={({ field }) => (
                 <DatePicker
                   label="Fecha de Defunción"
-                  value={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                  onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                  value={parseDateSafely(field.value)}
+                  onChange={(date) => field.onChange(formatDateSafely(date))}
                   disabled={readOnly}
                   slotProps={{
                     textField: {

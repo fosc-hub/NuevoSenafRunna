@@ -26,6 +26,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { create } from "@/app/api/apiService"
 import { toast } from "react-toastify"
+import { parseDateSafely, formatDateSafely } from "./utils/dateUtils"
 
 // Define the schema based on the API endpoint structure
 const registroLegajoSchema = z.object({
@@ -118,8 +119,8 @@ const RegistroLegajoForm: React.FC<RegistroLegajoFormProps> = ({
             // Transform the data to match API expectations
             const apiData = {
                 ...data,
-                fecha_nacimiento: data.fecha_nacimiento?.toISOString().split("T")[0],
-                fecha_defuncion: data.fecha_defuncion?.toISOString().split("T")[0],
+                fecha_nacimiento: formatDateSafely(parseDateSafely(data.fecha_nacimiento)),
+                fecha_defuncion: formatDateSafely(parseDateSafely(data.fecha_defuncion)),
                 // Convert undefined values to null for API compatibility
                 edad_aproximada: data.edad_aproximada || null,
                 dni: data.dni || null,

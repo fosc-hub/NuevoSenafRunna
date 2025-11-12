@@ -147,7 +147,6 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
               <TipoActividadSelect
                 value={field.value}
                 onChange={field.onChange}
-                actor={actividad.actor}
                 error={!!errors.tipo_actividad}
                 helperText={errors.tipo_actividad?.message}
               />

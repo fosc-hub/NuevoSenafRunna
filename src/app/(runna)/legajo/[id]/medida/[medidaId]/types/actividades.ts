@@ -292,7 +292,6 @@ export interface UpdateActividadRequest {
 
 export interface ActividadFilters {
   estado?: string
-  actor?: string
   responsable_principal?: number
   fecha_desde?: string
   fecha_hasta?: string

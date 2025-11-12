@@ -66,7 +66,6 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
     // Filters
     const [filters, setFilters] = useState<ActividadFilters>({
         estado: '',
-        actor: '',
         search: ''
     })
 
@@ -179,7 +178,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
 
                         {/* Filters */}
                         <Grid container spacing={2}>
-                            <Grid item xs={12} sm={4}>
+                            <Grid item xs={12} sm={6}>
                                 <TextField
                                     fullWidth
                                     size="small"
@@ -188,7 +187,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid item xs={12} sm={6}>
                                 <FormControl fullWidth size="small">
                                     <InputLabel>Estado</InputLabel>
                                     <Select
@@ -205,22 +204,6 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12} sm={4}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Actor</InputLabel>
-                                    <Select
-                                        value={filters.actor || ''}
-                                        onChange={(e) => setFilters({ ...filters, actor: e.target.value })}
-                                        label="Actor"
-                                    >
-                                        <MenuItem value="">Todos</MenuItem>
-                                        <MenuItem value="EQUIPO_TECNICO">Equipo Técnico</MenuItem>
-                                        <MenuItem value="EQUIPOS_RESIDENCIALES">Equipos Residenciales</MenuItem>
-                                        <MenuItem value="ADULTOS_INSTITUCION">Adultos/Institución</MenuItem>
-                                        <MenuItem value="EQUIPO_LEGAL">Equipo Legal</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
                         </Grid>
                     </Box>
 
@@ -234,9 +217,6 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                 }}>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
                                         Tipo / Subactividad
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
-                                        Actor
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
                                         Responsables
@@ -258,11 +238,11 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center">Cargando...</TableCell>
+                                        <TableCell colSpan={6} align="center">Cargando...</TableCell>
                                     </TableRow>
                                 ) : !filteredActividades || filteredActividades.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center">
+                                        <TableCell colSpan={6} align="center">
                                             <Box sx={{ py: 8, textAlign: 'center' }}>
                                                 <Typography variant="h6" color="text.secondary" gutterBottom>
                                                     No hay actividades en el plan de trabajo
@@ -352,11 +332,6 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                         )}
                                                     </Box>
                                                 </Box>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography variant="body2">
-                                                    {actividad.actor_display}
-                                                </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <ResponsablesAvatarGroup

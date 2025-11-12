@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {typescript: {ignoreBuildErrors: true},  experimental: {
+const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true
+  },
+  experimental: {
     esmExternals: 'loose', // habilita carga ESM en cliente
-  },};
+  },
+  images: {
+    remotePatterns: [],
+    unoptimized: false,
+  },
+};
 
 export default nextConfig;

@@ -27,6 +27,7 @@ import type {
   VincularDemandaRequest,
   CrearConDuplicadoRequest,
 } from "@/app/(runna)/legajo-mesa/types/legajo-duplicado-types"
+import { parseDateSafely, formatDateSafely } from "./utils/dateUtils"
 
 interface Step3FormProps {
   dropdownData: DropdownData
@@ -209,11 +210,15 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
         // Guardar el índice del NNyA actual
         setCurrentNnyaIndex(index)
 
+        // Convertir fechaNacimiento a formato yyyy-MM-dd de forma segura
+        const fechaNacimientoDate = parseDateSafely(nnya.fechaNacimiento)
+        const fechaNacimientoStr = formatDateSafely(fechaNacimientoDate)
+
         const searchData = {
           dni: dniValue > 0 ? dniValue : null,
           nombre: nombre,
           apellido: apellido,
-          fecha_nacimiento: nnya.fechaNacimiento ? nnya.fechaNacimiento.toISOString().split('T')[0] : null,
+          fecha_nacimiento: fechaNacimientoStr,
           genero: nnya.genero || null,
           nombre_autopercibido: null,
         }

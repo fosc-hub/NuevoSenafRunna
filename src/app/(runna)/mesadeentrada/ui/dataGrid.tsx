@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useMemo, useEffect } from "react"
+import NextLink from "next/link"
 import {
   Paper,
   Button,
@@ -27,11 +28,12 @@ import {
   GridToolbarFilterButton,
 } from "@mui/x-data-grid"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh } from "@mui/icons-material"
+import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, FilterList } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
+import SearchButton from "./search-button"
 import * as XLSX from "xlsx"
 import { DownloadRounded } from "@mui/icons-material"
 import { useUser } from "@/utils/auth/userZustand"
@@ -321,6 +323,11 @@ const DemandaTableContent: React.FC = () => {
     estado_demanda: null,
     objetivo_de_demanda: null,
   })
+
+  // Check if user has permission to add demandas
+  const hasAddPermission = user?.all_permissions?.includes('add_tdemanda') ||
+    user?.is_superuser ||
+    user?.is_staff
 
   // Check if user has permission to assign demandas
   const hasAssignPermission = user?.all_permissions?.includes('add_tdemandazona') ||
@@ -1062,20 +1069,132 @@ const DemandaTableContent: React.FC = () => {
           width: "100%",
           overflow: "hidden",
           borderRadius: 2,
-          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+          boxShadow: "0 4px 20px rgba(0, 80, 140, 0.08)",
+          border: "1px solid rgba(0, 188, 212, 0.1)",
         }}
       >
-        <Box sx={{ p: 2, borderBottom: "1px solid #e0e0e0", bgcolor: "#f9f9f9" }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>
+        {/* Barra 1: Título + Búsqueda + Acción Principal */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid rgba(0, 188, 212, 0.15)",
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fcff 100%)",
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 700,
+              background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.5px",
+            }}
+          >
             Gestión de Demandas
           </Typography>
-          <div className="flex gap-4 relative z-10">
-            <Buttons
-              isLoading={isLoading}
-              handleNuevoRegistro={handleNuevoRegistro}
-              onFilterChange={handleFilterChange}
+
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <SearchButton
+              buttonText="Buscar por ID, DNI, Número..."
+              buttonSx={{
+                borderRadius: 2,
+                px: 2.5,
+                py: 1,
+                border: "1px solid rgba(0, 80, 140, 0.2)",
+                color: "#00508C",
+                "&:hover": {
+                  borderColor: "#00BCD4",
+                  backgroundColor: "rgba(0, 188, 212, 0.04)",
+                },
+              }}
             />
-          </div>
+
+            {hasAddPermission && (
+              <Button
+                component={NextLink}
+                href="/nuevoingreso"
+                variant="contained"
+                onClick={handleNuevoRegistro}
+                startIcon={<PersonAdd />}
+                sx={{
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
+                  boxShadow: "0 4px 12px rgba(0, 188, 212, 0.3)",
+                  fontWeight: 600,
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #003D6E 0%, #009AAC 100%)",
+                    boxShadow: "0 6px 16px rgba(0, 188, 212, 0.4)",
+                  },
+                }}
+              >
+                Nueva Demanda
+              </Button>
+            )}
+          </Box>
+        </Box>
+
+        {/* Barra 2: Filtros y Herramientas Secundarias */}
+        <Box
+          sx={{
+            px: 3,
+            py: 1.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            borderBottom: "1px solid #e0e0e0",
+            bgcolor: "#fafafa",
+          }}
+        >
+          <Buttons
+            isLoading={isLoading}
+            handleNuevoRegistro={handleNuevoRegistro}
+            onFilterChange={handleFilterChange}
+          />
+
+          <Button
+            size="small"
+            startIcon={<DownloadRounded />}
+            onClick={handleExportXlsx}
+            sx={{
+              px: 2,
+              py: 0.75,
+              borderRadius: 1.5,
+              color: "#00508C",
+              border: "1px solid rgba(0, 80, 140, 0.15)",
+              textTransform: "none",
+              fontWeight: 500,
+              "&:hover": {
+                backgroundColor: "rgba(0, 188, 212, 0.04)",
+                borderColor: "#00BCD4",
+              },
+            }}
+          >
+            Exportar Excel
+          </Button>
+
+          <IconButton
+            size="small"
+            onClick={() => refetch()}
+            sx={{
+              color: "#00508C",
+              border: "1px solid rgba(0, 80, 140, 0.15)",
+              borderRadius: 1.5,
+              padding: 1,
+              "&:hover": {
+                backgroundColor: "rgba(0, 188, 212, 0.04)",
+                borderColor: "#00BCD4",
+              },
+            }}
+          >
+            <Refresh fontSize="small" />
+          </IconButton>
         </Box>
         <div style={{ height: 600, width: "100%" }}>
           <DataGrid
@@ -1172,9 +1291,6 @@ const DemandaTableContent: React.FC = () => {
                   handleOpenModal(params.row.id)
                 }
               }
-            }}
-            slots={{
-              toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} />,
             }}
             sx={{
               cursor: "pointer",

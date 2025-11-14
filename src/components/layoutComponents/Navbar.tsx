@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useState } from "react"
-import { Bell, LogOut, UserIcon } from "lucide-react"
+import { Bell, LogOut, UserIcon, ChevronDown } from "lucide-react"
 import UserAvatar from "./UserAvatar"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -25,8 +26,8 @@ export default function Header() {
     async function fetchUser() {
       if (!user || Object.keys(user).length === 0) {
         const userData = await getSession(true)
-        if (userData) {
-          useUser.setState({ user: userData })
+        if (userData && typeof userData === 'object') {
+          useUser.setState({ user: userData as UserPermissions })
         }
       }
       setLoadingUser(false)
@@ -51,57 +52,150 @@ export default function Header() {
 
   if (!isClient || loadingUser) {
     return (
-      <header className="bg-sky-500 text-white p-4 flex justify-between items-center h-[72px]">
+      <header
+        className="text-white p-4 flex justify-between items-center h-[72px] shadow-md"
+        style={{ background: 'linear-gradient(90deg, #00508C 0%, #006BA6 100%)' }}
+      >
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-sky-400 rounded-full animate-pulse"></div>
-          <div className="h-4 w-24 bg-sky-400 rounded animate-pulse"></div>
+          <div className="w-32 h-10 bg-white/20 rounded animate-pulse"></div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="w-40 h-8 bg-sky-400 rounded animate-pulse"></div>
-          <div className="w-6 h-6 bg-sky-400 rounded animate-pulse"></div>
-          <div className="w-20 h-8 bg-sky-400 rounded animate-pulse"></div>
+        <div className="flex items-center space-x-3">
+          <div className="w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
+          <div className="w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
+          <div className="w-6 h-6 bg-white/20 rounded-full animate-pulse"></div>
+          <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse"></div>
         </div>
       </header>
     )
   }
 
   return (
-    <header className="bg-sky-500 text-white p-4 flex justify-between items-center">
-      <Link href="/mesadeentrada">
-        <UserAvatar
-          initials={user?.first_name && user?.last_name ? `${user.first_name[0]}${user.last_name[0]}` : "?"}
-          name={user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : "Invitado"}
-          role={user?.groups?.[0]?.name || "Sin rol"}
-        />
+    <header
+      className="text-white px-6 py-3 flex justify-between items-center shadow-md"
+      style={{ background: 'linear-gradient(90deg, #00508C 0%, #006BA6 100%)' }}
+    >
+      {/* Logo RUNNA - Lado Izquierdo (Branding) */}
+      <Link href="/mesadeentrada" className="flex-shrink-0 transition-opacity hover:opacity-90">
+        <div className="relative h-12 w-44">
+          <Image
+            src="/img/Logo RUNNA nuevo.png"
+            alt="Logo RUNNA"
+            fill
+            style={{ objectFit: 'contain' }}
+            priority
+          />
+        </div>
       </Link>
 
-      <div className="flex items-center space-x-4">
-        <div className="flex space-x-2">
+      {/* Navegación y Usuario - Lado Derecho */}
+      <div className="flex items-center gap-3">
+        {/* Botones de Navegación */}
+        <div className="flex gap-2">
           <Link href="/mesadeentrada">
-            <button className="bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded text-sm font-medium transition-colors">
+            <button
+              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
+              }}
+            >
               Mesa de Entradas
             </button>
           </Link>
           <Link href="/legajo-mesa">
-            <button className="bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded text-sm font-medium transition-colors">
+            <button
+              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
+              }}
+            >
               Bandeja de legajos
             </button>
           </Link>
         </div>
-        <Bell size={24} className="cursor-pointer hover:text-sky-200 transition-colors" />
-        <div className="relative" onClick={() => setShowMenu(!showMenu)}>
-          <button className="flex items-center space-x-2 bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded text-sm transition-colors">
-            <UserIcon size={18} />
-            <span>Menu</span>
+
+        {/* Notificaciones */}
+        <button
+          className="p-2 rounded-full transition-all duration-200 hover:scale-110"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
+          }}
+        >
+          <Bell size={20} />
+        </button>
+
+        {/* Avatar y Menú de Usuario */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 hover:scale-105"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(8px)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                {user?.first_name && user?.last_name
+                  ? `${user.first_name[0]}${user.last_name[0]}`
+                  : "?"}
+              </div>
+              <div className="text-left hidden md:block">
+                <div className="text-sm font-medium">
+                  {user?.first_name && user?.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : "Invitado"}
+                </div>
+                <div className="text-xs opacity-80">
+                  {user?.groups?.[0]?.name || "Sin rol"}
+                </div>
+              </div>
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`}
+              />
+            </div>
           </button>
+
+          {/* Dropdown Menu */}
           {showMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+            <div
+              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 overflow-hidden"
+              style={{
+                border: '1px solid rgba(0, 188, 212, 0.2)',
+              }}
+            >
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-3 text-left text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all duration-200"
               >
-                <LogOut size={18} />
-                <span>Logout</span>
+                <LogOut size={18} className="text-red-600" />
+                <span className="font-medium">Cerrar Sesión</span>
               </button>
             </div>
           )}

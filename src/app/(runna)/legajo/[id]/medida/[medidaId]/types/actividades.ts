@@ -394,36 +394,39 @@ export interface THistorialActividad {
  */
 export interface TTransferenciaActividad {
   id: number
-  actividad_id: number
-  equipo_origen: {
+  actividad: number
+  equipo_origen: number
+  equipo_origen_info: {
     id: number
-    nombre: string
-    zona: string
+    zona: number
   }
-  equipo_destino: {
+  equipo_destino: number
+  equipo_destino_info: {
     id: number
-    nombre: string
-    zona: string
+    zona: number
   }
-  responsable_anterior?: {
+  responsable_anterior: number | null
+  responsable_anterior_info: {
     id: number
     username: string
     nombre_completo: string
-  }
-  responsable_nuevo?: {
+  } | null
+  responsable_nuevo: number | null
+  responsable_nuevo_info: {
     id: number
     username: string
     nombre_completo: string
-  }
-  transferido_por: {
+  } | null
+  transferido_por: number
+  transferido_por_info: {
     id: number
     username: string
     nombre_completo: string
-    nivel: number
   }
   fecha_transferencia: string
   motivo: string
   estado_transferencia: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'COMPLETADA'
+  estado_transferencia_display: string
   observaciones?: string
 }
 

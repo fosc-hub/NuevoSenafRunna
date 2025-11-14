@@ -4,19 +4,21 @@ import React, { useEffect, useState } from 'react'
 import {
   Box,
   Typography,
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
-  TimelineOppositeContent,
   Paper,
   Chip,
   CircularProgress,
   Alert,
   Avatar
 } from '@mui/material'
+import {
+  Timeline,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot,
+  TimelineOppositeContent
+} from '@mui/lab'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import type { TTransferenciaActividad } from '../../../types/actividades'
 
@@ -111,11 +113,11 @@ export const TransferenciasTab: React.FC<TransferenciasTabProps> = ({
                 {/* Header */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <Avatar sx={{ width: 32, height: 32, bgcolor: 'warning.main' }}>
-                    {transferencia.transferido_por.nombre_completo.charAt(0)}
+                    {transferencia.transferido_por_info?.nombre_completo?.charAt(0) || '?'}
                   </Avatar>
                   <Box>
                     <Typography variant="body2" fontWeight={600}>
-                      {transferencia.transferido_por.nombre_completo}
+                      {transferencia.transferido_por_info?.nombre_completo || 'Usuario desconocido'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       Realizó la transferencia
@@ -126,7 +128,7 @@ export const TransferenciasTab: React.FC<TransferenciasTabProps> = ({
                 {/* Transfer Details: Origin → Destination */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 2 }}>
                   <Chip
-                    label={transferencia.equipo_origen_display}
+                    label={`Equipo ${transferencia.equipo_origen_info?.id || transferencia.equipo_origen} - Zona ${transferencia.equipo_origen_info?.zona || ''}`}
                     size="small"
                     variant="outlined"
                     color="default"
@@ -135,27 +137,27 @@ export const TransferenciasTab: React.FC<TransferenciasTabProps> = ({
                     →
                   </Typography>
                   <Chip
-                    label={transferencia.equipo_destino_display}
+                    label={`Equipo ${transferencia.equipo_destino_info?.id || transferencia.equipo_destino} - Zona ${transferencia.equipo_destino_info?.zona || ''}`}
                     size="small"
                     color="warning"
                   />
                 </Box>
 
                 {/* Responsable Change (if applicable) */}
-                {transferencia.responsable_anterior && transferencia.responsable_nuevo && (
+                {transferencia.responsable_anterior_info && transferencia.responsable_nuevo_info && (
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                       Cambio de Responsable:
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 2 }}>
                       <Typography variant="body2">
-                        {transferencia.responsable_anterior.nombre_completo}
+                        {transferencia.responsable_anterior_info.nombre_completo}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         →
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
-                        {transferencia.responsable_nuevo.nombre_completo}
+                        {transferencia.responsable_nuevo_info.nombre_completo}
                       </Typography>
                     </Box>
                   </Box>

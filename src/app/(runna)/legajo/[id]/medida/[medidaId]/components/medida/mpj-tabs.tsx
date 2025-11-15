@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Box, Tabs, Tab } from "@mui/material"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
+import { HistorialSeguimientoTable } from "./historial-seguimiento-table"
+import { InformesMensualesTable } from "./informes-mensuales-table"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPJTabsProps {
@@ -101,6 +103,10 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
                 {/* Tab Documentos Demanda */}
                 {activeTab === 3 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
             </Box>
+
+            {/* Tables outside tabs */}
+            <HistorialSeguimientoTable />
+            <InformesMensualesTable />
         </Box>
     )
 }

@@ -16,6 +16,8 @@ import { PlanEvaluacionSection } from "./[medidaId]/components/medida/plan-evalu
 import { EvaluacionFamiliarSection } from "./[medidaId]/components/medida/evaluacion-familiar-section"
 import { LegajosAfectadosSection } from "./[medidaId]/components/medida/legajos-afectados-section"
 import { HistorialSeguimientoSection } from "./[medidaId]/components/medida/historial-seguimiento-section"
+import { HistorialSeguimientoTable } from "./[medidaId]/components/medida/historial-seguimiento-table"
+import { InformesMensualesTable } from "./[medidaId]/components/medida/informes-mensuales-table"
 import { CierreSection } from "./[medidaId]/components/medida/cierre-section"
 import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-informe-section"
 import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-dialog"
@@ -635,31 +637,14 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 )}
               </Grid>
 
-              {/* Historial de seguimiento Section */}
-              <Grid item xs={12} md={4}>
-                <HistorialSeguimientoSection
-                  items={medidaData.etapas.historial_seguimiento}
-                  onAddSeguimiento={handleAddSeguimiento}
-                  onViewAttachment={handleOpenAttachment}
-                />
+              {/* Historial de seguimiento - Detailed Table */}
+              <Grid item xs={12}>
+                <HistorialSeguimientoTable />
               </Grid>
 
-              {/* Último informe Section */}
-              <Grid item xs={12} md={4}>
-                <UltimoInformeSection
-                  data={medidaData.ultimo_informe}
-                  onViewAttachment={handleOpenAttachment}
-                  onDownload={handleDownloadAttachment}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <CierreSection
-                  data={medidaData.etapas.cierre}
-                  isActive={activeStep === 2}
-                  isCompleted={activeStep === 2}
-                  onCloseMeasure={handleCloseMeasure}
-                />
+              {/* Informes Mensuales - Detailed Table */}
+              <Grid item xs={12}>
+                <InformesMensualesTable />
               </Grid>
             </Grid>
           </>

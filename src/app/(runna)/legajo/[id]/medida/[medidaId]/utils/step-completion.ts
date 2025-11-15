@@ -333,7 +333,7 @@ export function validateStepIndex(
 export function getStepName(stepIndex: number): string {
   const stepNames = [
     "Registro de Intervención",
-    "Nota de Aval",
+    "Aprobación de Superior",
     "Informe Jurídico",
     "Ratificación Judicial",
   ]

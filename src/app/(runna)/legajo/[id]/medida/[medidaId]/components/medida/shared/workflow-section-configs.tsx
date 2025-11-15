@@ -215,22 +215,22 @@ export const intervencionSectionConfig: SectionConfig = {
 }
 
 // ============================================================================
-// 2. NOTA DE AVAL SECTION CONFIG
+// 2. APROBACIÓN DE SUPERIOR SECTION CONFIG
 // ============================================================================
 
 export const notaAvalSectionConfig: SectionConfig = {
   // Display Configuration
-  title: "Nota de Aval",
+  title: "Aprobación de Superior",
   icon: <ApprovalIcon color="primary" />,
   description: "Aprobación por Director de Zona",
-  emptyStateMessage: "No hay notas de aval registradas",
+  emptyStateMessage: "No hay aprobaciones registradas",
 
   // API Integration
   apiService: notaAvalApiAdapter,
 
   // Modal Configuration
   modalConfig: {
-    title: "Nota de Aval",
+    title: "Aprobación de Superior",
     width: "md",
 
     // Form Fields
@@ -265,7 +265,7 @@ export const notaAvalSectionConfig: SectionConfig = {
     // File Upload Configuration
     fileUploadConfig: {
       allowed: true,
-      types: [{ value: "PDF", label: "Nota de Aval (PDF)" }],
+      types: [{ value: "PDF", label: "Aprobación de Superior (PDF)" }],
       maxSize: 10 * 1024 * 1024,
       acceptedFormats: ["application/pdf"],
       required: true,

@@ -240,7 +240,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
       >
         <Box>
           <Typography variant="h6" gutterBottom>
-            Nota de Aval del Director
+            Aprobación por el Director de Zona
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Revisión y decisión del Director sobre la intervención cargada
@@ -256,7 +256,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
             onClick={handleOpenDialog}
             sx={{ textTransform: "none" }}
           >
-            Emitir Nota de Aval
+            Emitir Aprobación
           </Button>
         )}
       </Box>
@@ -264,7 +264,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
       {/* ESTADO INFO */}
       {isPendingNotaAval(estadoActual) && !shouldShowEmitButton && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          La medida está pendiente de Nota de Aval del Director. Solo el Director o Superusuario puede emitir la decisión.
+          La medida está pendiente de Aprobación del Director de Zona. Solo el Director o Superusuario puede emitir la decisión.
         </Alert>
       )}
 
@@ -273,10 +273,10 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <DescriptionIcon sx={{ fontSize: 60, color: "text.disabled", mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            Sin Notas de Aval
+            Sin Aprobación de Superior
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Aún no se ha emitido ninguna Nota de Aval para esta medida
+            Aún no se ha emitido ninguna Aprobación para esta medida
           </Typography>
           {shouldShowEmitButton && (
             <Button
@@ -285,7 +285,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
               onClick={handleOpenDialog}
               sx={{ mt: 2, textTransform: "none" }}
             >
-              Emitir Primera Nota de Aval
+              Emitir Aprobación
             </Button>
           )}
         </Paper>

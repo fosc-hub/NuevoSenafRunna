@@ -115,7 +115,7 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
       // Show success toast
       const message =
         data.decision === 'APROBADO'
-          ? 'Nota de Aval aprobada exitosamente. Medida avanzó a Informe Jurídico.'
+          ? 'Aprobación emitida exitosamente. Medida avanzó a Informe Jurídico.'
           : 'Intervención observada exitosamente. Equipo Técnico ha sido notificado.'
 
       toast.success(message, {
@@ -129,7 +129,7 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
         error?.message ||
-        'Error al emitir Nota de Aval'
+        'Error al emitir Aprobación'
 
       // Show error toast
       toast.error(errorMessage, {
@@ -317,7 +317,7 @@ export const useCreateNotaAval = (
       // Show toast
       const message =
         data.decision === 'APROBADO'
-          ? 'Nota de Aval aprobada exitosamente'
+          ? 'Aprobación emitida exitosamente'
           : 'Intervención observada exitosamente'
 
       toast.success(message, {
@@ -331,7 +331,7 @@ export const useCreateNotaAval = (
 
       // Show toast
       const errorMessage =
-        error?.response?.data?.detail || error?.message || 'Error al emitir Nota de Aval'
+        error?.response?.data?.detail || error?.message || 'Error al emitir Aprobación'
 
       toast.error(errorMessage, {
         position: 'top-center',

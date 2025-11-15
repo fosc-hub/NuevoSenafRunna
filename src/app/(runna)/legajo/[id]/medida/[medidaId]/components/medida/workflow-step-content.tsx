@@ -197,11 +197,11 @@ function getCompletionGuidance(stepNumber: number): React.ReactNode {
         </Box>
       )
 
-    case 1: // Nota de Aval
+    case 1: // Aprobación de Superior
       return (
         <Box component="ul" sx={{ pl: 2, mt: 1, mb: 0 }}>
           <Typography component="li" variant="body2">
-            El Director de Zona debe crear la Nota de Aval
+            El Director de Zona debe crear la Aprobación
           </Typography>
           <Typography component="li" variant="body2">
             Seleccione una decisión: APROBAR u OBSERVAR
@@ -210,7 +210,7 @@ function getCompletionGuidance(stepNumber: number): React.ReactNode {
             Agregue comentarios (obligatorio)
           </Typography>
           <Typography component="li" variant="body2">
-            Suba el archivo PDF de la Nota de Aval oficial
+            Suba el archivo PDF de la Aprobación oficial
           </Typography>
         </Box>
       )

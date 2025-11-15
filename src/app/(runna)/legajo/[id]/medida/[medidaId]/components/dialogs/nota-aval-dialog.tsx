@@ -261,7 +261,7 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
       {/* HEADER */}
       <DialogTitle>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6">Emitir Nota de Aval</Typography>
+          <Typography variant="h6">Emitir Aprobación de Superior</Typography>
           <IconButton
             onClick={handleClose}
             disabled={isCreating || isUploading}
@@ -377,8 +377,8 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
               comentariosError && comentarios.length > 0
                 ? comentariosError
                 : isObservado
-                ? `Mínimo ${comentariosMinLength} caracteres (actual: ${comentarios.trim().length})`
-                : `Caracteres: ${comentarios.trim().length}`
+                  ? `Mínimo ${comentariosMinLength} caracteres (actual: ${comentarios.trim().length})`
+                  : `Caracteres: ${comentarios.trim().length}`
             }
             disabled={isCreating}
             fullWidth
@@ -511,10 +511,10 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
             {isCreating
               ? "Emitiendo..."
               : isUploading
-              ? "Subiendo archivos..."
-              : decision === "APROBADO"
-              ? "Aprobar Intervención"
-              : "Observar Intervención"}
+                ? "Subiendo archivos..."
+                : decision === "APROBADO"
+                  ? "Aprobar Intervención"
+                  : "Observar Intervención"}
           </Button>
         ) : (
           <Button

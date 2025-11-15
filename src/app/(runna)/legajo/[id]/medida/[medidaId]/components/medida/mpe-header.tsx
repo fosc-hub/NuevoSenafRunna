@@ -12,6 +12,7 @@ interface MPEHeaderProps {
         fecha: string
         fecha_apertura?: string
         fecha_creacion_raw?: string
+        tipo_display?: string
         juzgado: string
         fecha_resguardo: string
         lugar_resguardo: string
@@ -165,9 +166,11 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
             }}
         >
             {/* MPE Title */}
-            <Typography variant="h4" sx={{ textAlign: "center", fontWeight: 600, mb: 3, color: "primary.main" }}>
-                MPE
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {medidaData.tipo_display || "MPE"}: {medidaData.numero}
+                </Typography>
+            </Box>
 
             {/* Estado de Medida Section */}
             <Box sx={{ mb: 3 }}>

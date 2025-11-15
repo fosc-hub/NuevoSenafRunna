@@ -53,7 +53,6 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                     <Tab label="Apertura" />
                     <Tab label="Innovación" />
                     <Tab label="Prórroga" />
-                    <Tab label="Plan de trabajo" />
                     <Tab label="Cese" />
                     <Tab label="Post cese" />
                     <Tab label="Documentos Demanda" />
@@ -65,7 +64,8 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                 {activeTab === 0 && <AperturaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
                 {activeTab === 1 && <InnovacionTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
                 {activeTab === 2 && <ProrrogaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
-                {activeTab === 3 && (
+                {activeTab === 3 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
+                {activeTab === 4 && (
                     planTrabajoId ? (
                         <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
                     ) : (
@@ -74,17 +74,18 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                         </Box>
                     )
                 )}
-                {activeTab === 4 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
-                {activeTab === 5 && (
-                    planTrabajoId ? (
-                        <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
-                    ) : (
-                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                            No hay Plan de Trabajo asociado a esta medida.
-                        </Box>
-                    )
+                {activeTab === 5 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
+            </Box>
+
+            {/* Plan de Trabajo - Always visible */}
+            <Box sx={{ mt: 4 }}>
+                {planTrabajoId ? (
+                    <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
+                ) : (
+                    <Paper sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                        No hay Plan de Trabajo asociado a esta medida.
+                    </Paper>
                 )}
-                {activeTab === 6 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
             </Box>
 
             {/* Tables outside tabs */}

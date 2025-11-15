@@ -140,7 +140,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
           <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Medidas de Protección Activas
+            Registro de medidas tomadas
           </Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
@@ -169,7 +169,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Medidas de Protección Activas
+              Registro de medidas tomadas
             </Typography>
           </Box>
           {showAddButton && onAddMedida && (
@@ -206,7 +206,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Medidas de Protección Activas
+              Registro de medidas tomadas
             </Typography>
           </Box>
           {showAddButton && onAddMedida && (
@@ -221,7 +221,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
           )}
         </Box>
         <Typography variant="body1" color="text.secondary">
-          No hay medidas de protección activas registradas.
+          No hay Registro de medidas tomadas registradas.
         </Typography>
       </Paper>
     )
@@ -241,7 +241,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Medidas de Protección Activas
+            Registro de medidas tomadas
           </Typography>
           <Chip
             label={`${medidas.length} activa${medidas.length !== 1 ? "s" : ""}`}

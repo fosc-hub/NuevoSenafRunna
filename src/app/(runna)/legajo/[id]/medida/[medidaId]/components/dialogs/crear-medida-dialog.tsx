@@ -189,7 +189,7 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Tomar Medida de Protección</DialogTitle>
+      <DialogTitle>Registro de Medidas</DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>

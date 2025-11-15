@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -19,6 +19,23 @@ import {
 } from "@mui/material"
 import { createMedida } from "@/app/(runna)/legajo-mesa/api/medidas-api-service"
 import type { CreateMedidaRequest, TipoMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
+import { get } from "@/app/api/apiService"
+
+interface UrgenciaVulneracion {
+  id: number
+  nombre: string
+  peso: number
+}
+
+interface Juzgado {
+  id: number
+  nombre: string
+  tipo: string
+  tipo_display: string
+  jurisdiccion: string
+  jurisdiccion_display: string
+  activo: boolean
+}
 
 interface CrearMedidaDialogProps {
   open: boolean
@@ -41,6 +58,37 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
   })
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // State for dropdown data
+  const [juzgados, setJuzgados] = useState<Juzgado[]>([])
+  const [urgencias, setUrgencias] = useState<UrgenciaVulneracion[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(false)
+
+  // Fetch juzgados and urgencias when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadDropdownData()
+    }
+  }, [open])
+
+  const loadDropdownData = async () => {
+    try {
+      setIsLoadingData(true)
+
+      // Fetch juzgados (active ones only)
+      const juzgadosData = await get<Juzgado[]>("juzgados/")
+      setJuzgados(juzgadosData)
+
+      // Fetch urgencias ordered by peso
+      const urgenciasData = await get<UrgenciaVulneracion[]>("urgencia-vulneracion/")
+      setUrgencias(urgenciasData)
+    } catch (err) {
+      console.error("Error loading dropdown data:", err)
+      // Not setting error here as this is not critical for form submission
+    } finally {
+      setIsLoadingData(false)
+    }
+  }
 
   const handleChange = (field: keyof CreateMedidaRequest) => (
     event: React.ChangeEvent<HTMLInputElement>
@@ -149,6 +197,15 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
           </Alert>
         )}
 
+        {isLoadingData && (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 2 }}>
+            <CircularProgress size={24} sx={{ mr: 2 }} />
+            <Typography variant="body2" color="text.secondary">
+              Cargando datos...
+            </Typography>
+          </Box>
+        )}
+
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
           Complete los datos para registrar una nueva medida de protección para este legajo.
         </Typography>
@@ -179,34 +236,48 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
               </Typography>
             </Grid>
 
-            {/* Juzgado ID */}
-            <Grid item xs={12} sm={6}>
+            {/* Juzgado */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                type="number"
-                label="ID Juzgado"
+                select
+                label="Juzgado"
                 value={formData.juzgado ?? ""}
                 onChange={handleChange("juzgado")}
-                helperText="ID del juzgado que interviene (opcional para MPI)"
-                InputProps={{
-                  inputProps: { min: 1 },
-                }}
-              />
+                helperText="Seleccione el juzgado que interviene (opcional)"
+                disabled={isLoadingData}
+              >
+                <MenuItem value="">
+                  <em>Ninguno</em>
+                </MenuItem>
+                {juzgados.map((juzgado) => (
+                  <MenuItem key={juzgado.id} value={juzgado.id}>
+                    {juzgado.nombre} ({juzgado.tipo_display})
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
-            {/* Urgencia ID */}
-            <Grid item xs={12} sm={6}>
+            {/* Urgencia */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                type="number"
-                label="ID Urgencia"
+                select
+                label="Nivel de Urgencia"
                 value={formData.urgencia ?? ""}
                 onChange={handleChange("urgencia")}
-                helperText="ID del nivel de urgencia"
-                InputProps={{
-                  inputProps: { min: 1 },
-                }}
-              />
+                helperText="Seleccione el nivel de urgencia (opcional)"
+                disabled={isLoadingData}
+              >
+                <MenuItem value="">
+                  <em>Ninguno</em>
+                </MenuItem>
+                {urgencias.map((urgencia) => (
+                  <MenuItem key={urgencia.id} value={urgencia.id}>
+                    {urgencia.nombre}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
             {/* Número SAC */}

@@ -6,6 +6,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react"
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
 import {
   createIntervencion,
   updateIntervencion,
@@ -20,6 +22,7 @@ import {
   getTiposDispositivo,
   getCategoriasIntervencion,
 } from "../api/intervenciones-api-service"
+import { medidaKeys } from './useMedidaDetail'
 import type {
   CreateIntervencionRequest,
   UpdateIntervencionRequest,
@@ -82,6 +85,9 @@ export const useRegistroIntervencion = ({
   intervencionId,
   autoLoadCatalogs = true,
 }: UseRegistroIntervencionOptions) => {
+  // Query client for cache invalidation
+  const queryClient = useQueryClient()
+
   // ----------------------------------------------------------------------------
   // STATE - Form Data
   // ----------------------------------------------------------------------------
@@ -259,12 +265,28 @@ export const useRegistroIntervencion = ({
       const data = await createIntervencion(medidaId, payload)
       setIntervencion(data)
 
+      // Invalidate and refetch medida detail to refresh estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active'
+      })
+
+      toast.success('Registro de Intervención creado exitosamente', {
+        position: 'top-center',
+        autoClose: 3000,
+      })
+
       return data
     } catch (err: any) {
       console.error("Error creating intervención:", err)
       const errorMessage =
         err?.response?.data?.detail || "Error al crear la intervención"
       setError(errorMessage)
+
+      toast.error(errorMessage, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
 
       // Handle validation errors from backend
       if (err?.response?.data?.errors) {
@@ -318,12 +340,28 @@ export const useRegistroIntervencion = ({
       const data = await updateIntervencion(medidaId, intervencionId, payload)
       setIntervencion(data)
 
+      // Invalidate and refetch medida detail to refresh estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active'
+      })
+
+      toast.success('Registro de Intervención actualizado exitosamente', {
+        position: 'top-center',
+        autoClose: 3000,
+      })
+
       return data
     } catch (err: any) {
       console.error("Error updating intervención:", err)
       const errorMessage =
         err?.response?.data?.detail || "Error al actualizar la intervención"
       setError(errorMessage)
+
+      toast.error(errorMessage, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
 
       // Handle validation errors from backend
       if (err?.response?.data?.errors) {
@@ -371,12 +409,27 @@ export const useRegistroIntervencion = ({
     try {
       const response = await enviarIntervencion(medidaId, intervencionId)
       setIntervencion(response.intervencion)
+
+      // Invalidate and refetch medida detail to refresh estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active' // Force refetch of active queries
+      })
+
+      toast.success('Intervención enviada exitosamente', {
+        position: 'top-center',
+        autoClose: 3000,
+      })
+
       return true
     } catch (err: any) {
       console.error("Error enviando intervención:", err)
-      setError(
-        err?.response?.data?.detail || "Error al enviar la intervención"
-      )
+      const errorMsg = err?.response?.data?.detail || "Error al enviar la intervención"
+      setError(errorMsg)
+      toast.error(errorMsg, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
       return false
     } finally {
       setIsEnviando(false)
@@ -399,12 +452,27 @@ export const useRegistroIntervencion = ({
     try {
       const response = await aprobarIntervencion(medidaId, intervencionId)
       setIntervencion(response.intervencion)
+
+      // Invalidate and refetch medida detail to refresh estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active'
+      })
+
+      toast.success('Intervención aprobada exitosamente', {
+        position: 'top-center',
+        autoClose: 3000,
+      })
+
       return true
     } catch (err: any) {
       console.error("Error aprobando intervención:", err)
-      setError(
-        err?.response?.data?.detail || "Error al aprobar la intervención"
-      )
+      const errorMsg = err?.response?.data?.detail || "Error al aprobar la intervención"
+      setError(errorMsg)
+      toast.error(errorMsg, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
       return false
     } finally {
       setIsAprobando(false)
@@ -434,12 +502,27 @@ export const useRegistroIntervencion = ({
         observaciones_jz: observaciones,
       })
       setIntervencion(response.intervencion)
+
+      // Invalidate and refetch medida detail to refresh estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active'
+      })
+
+      toast.info('Intervención rechazada. Se notificó al equipo técnico', {
+        position: 'top-center',
+        autoClose: 3000,
+      })
+
       return true
     } catch (err: any) {
       console.error("Error rechazando intervención:", err)
-      setError(
-        err?.response?.data?.detail || "Error al rechazar la intervención"
-      )
+      const errorMsg = err?.response?.data?.detail || "Error al rechazar la intervención"
+      setError(errorMsg)
+      toast.error(errorMsg, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
       return false
     } finally {
       setIsRechazando(false)

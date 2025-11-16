@@ -32,6 +32,10 @@ interface AperturaSectionProps {
    * NEW: Replaces internal data fetching to ensure etapa isolation
    */
   intervenciones?: IntervencionResponse[]
+  /**
+   * Callback to force parent workflow refresh after creating/updating intervenciones
+   */
+  onWorkflowRefresh?: () => void
 }
 
 export const AperturaSection: React.FC<AperturaSectionProps> = ({
@@ -43,6 +47,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
   tipoMedida = "MPI",
   legajoData,
   intervenciones = [], // Default to empty array
+  onWorkflowRefresh,
 }) => {
   const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
   const [lastIntervencionId, setLastIntervencionId] = useState<number | undefined>(undefined)
@@ -75,8 +80,13 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
 
   const handleModalClose = () => {
     setRegistroModalOpen(false)
-    // Parent will handle data refresh when needed
-    // No need to refetch here since parent owns the data
+  }
+
+  const handleIntervencionSaved = () => {
+    // Close modal first to give immediate feedback
+    setRegistroModalOpen(false)
+    // Inform parent so it can refetch etapa detail + medida states
+    onWorkflowRefresh?.()
   }
 
   return (
@@ -140,7 +150,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
         intervencionId={lastIntervencionId}
         legajoData={legajoData}
         tipoMedida={tipoMedida}
-        onSaved={handleModalClose}
+        onSaved={handleIntervencionSaved}
       />
     </>
   )

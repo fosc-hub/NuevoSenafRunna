@@ -25,6 +25,7 @@ import {
   createNotaAval,
   getMostRecentNotaAval,
 } from '../api/nota-aval-api-service'
+import { medidaKeys } from './useMedidaDetail'
 
 // ============================================================================
 // QUERY KEYS
@@ -105,12 +106,21 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
     CreateNotaAvalRequest
   >({
     mutationFn: (data: CreateNotaAvalRequest) => createNotaAval(medidaId, data),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Invalidate queries to refetch updated data
-      queryClient.invalidateQueries({ queryKey: notaAvalKeys.list(medidaId) })
-      queryClient.invalidateQueries({ queryKey: notaAvalKeys.recent(medidaId) })
-      // Also invalidate medida detail to update estado
-      queryClient.invalidateQueries({ queryKey: ['medidas', 'detail', medidaId] })
+      await queryClient.invalidateQueries({
+        queryKey: notaAvalKeys.list(medidaId),
+        refetchType: 'active'
+      })
+      await queryClient.invalidateQueries({
+        queryKey: notaAvalKeys.recent(medidaId),
+        refetchType: 'active'
+      })
+      // Also invalidate medida detail to update estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active'
+      })
 
       // Show success toast
       const message =

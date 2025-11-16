@@ -20,6 +20,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react"
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
 import type {
   RatificacionJudicial,
   CreateRatificacionJudicialRequest,
@@ -33,6 +35,7 @@ import {
   isFinalState,
 } from "../types/ratificacion-judicial-api"
 import RatificacionJudicialAPI from "../api/ratificacion-judicial-api-service"
+import { medidaKeys } from './useMedidaDetail'
 
 // ============================================================================
 // HOOK INTERFACE
@@ -83,6 +86,9 @@ export function useRatificacionJudicial({
   medidaId,
   autoFetch = true,
 }: UseRatificacionJudicialParams): UseRatificacionJudicialReturn {
+  // Query client for cache invalidation
+  const queryClient = useQueryClient()
+
   // ============================================================================
   // STATE
   // ============================================================================
@@ -223,18 +229,33 @@ export function useRatificacionJudicial({
 
         setRatificacion(newRatificacion)
 
+        // Invalidate and refetch medida detail to refresh estado immediately
+        await queryClient.invalidateQueries({
+          queryKey: medidaKeys.detail(medidaId),
+          refetchType: 'active'
+        })
+
         // Re-fetch para asegurar datos actualizados
         await fetchRatificacion()
+
+        toast.success('Ratificación Judicial creada exitosamente', {
+          position: 'top-center',
+          autoClose: 3000,
+        })
       } catch (err: any) {
         const errorMessage =
           err.message || "Error al crear ratificación judicial"
         setError(errorMessage)
+        toast.error(errorMessage, {
+          position: 'top-center',
+          autoClose: 5000,
+        })
         throw new Error(errorMessage)
       } finally {
         setIsLoading(false)
       }
     },
-    [medidaId, fetchRatificacion]
+    [medidaId, fetchRatificacion, queryClient]
   )
 
   /**
@@ -271,18 +292,33 @@ export function useRatificacionJudicial({
 
         setRatificacion(updatedRatificacion)
 
+        // Invalidate and refetch medida detail to refresh estado immediately
+        await queryClient.invalidateQueries({
+          queryKey: medidaKeys.detail(medidaId),
+          refetchType: 'active'
+        })
+
         // Re-fetch para asegurar datos actualizados
         await fetchRatificacion()
+
+        toast.success('Ratificación Judicial actualizada exitosamente', {
+          position: 'top-center',
+          autoClose: 3000,
+        })
       } catch (err: any) {
         const errorMessage =
           err.message || "Error al actualizar ratificación judicial"
         setError(errorMessage)
+        toast.error(errorMessage, {
+          position: 'top-center',
+          autoClose: 5000,
+        })
         throw new Error(errorMessage)
       } finally {
         setIsLoading(false)
       }
     },
-    [medidaId, ratificacion, fetchRatificacion]
+    [medidaId, ratificacion, fetchRatificacion, queryClient]
   )
 
   /**

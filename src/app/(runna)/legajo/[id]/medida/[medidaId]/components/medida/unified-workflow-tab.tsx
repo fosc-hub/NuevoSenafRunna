@@ -20,7 +20,7 @@
  * Medida types: MPE, MPI, MPJ
  */
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Box, CircularProgress, Button, Alert } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
 import { useUser } from "@/utils/auth/userZustand"
@@ -162,6 +162,12 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   const [iniciarEtapaDialogOpen, setIniciarEtapaDialogOpen] = useState(false)
   const [isCreatingEtapa, setIsCreatingEtapa] = useState(false)
   const [createEtapaError, setCreateEtapaError] = useState<string | null>(null)
+  const [workflowRefreshKey, setWorkflowRefreshKey] = useState(0)
+
+  // Allow children sections to force a workflow reload without reloading the page
+  const refreshWorkflowData = useCallback(() => {
+    setWorkflowRefreshKey((prev) => prev + 1)
+  }, [])
 
   /**
    * CRITICAL FIX: Use estado from the SPECIFIC etapa being viewed, not the current medida estado
@@ -248,7 +254,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     }
 
     fetchEtapaDetail()
-  }, [medidaData.id, workflowPhase])
+  }, [medidaData.id, workflowPhase, workflowRefreshKey])
 
   // ========== V2 Estados Catalog (REMOVED - no longer needed) ==========
   /**
@@ -338,6 +344,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             tipoMedida={medidaData.tipo_medida}
             legajoData={legajoData}
             intervenciones={etapaDetail?.etapa.documentos.intervenciones ?? []}
+            onWorkflowRefresh={refreshWorkflowData}
           />
         </WorkflowStepContent>
       ),
@@ -367,7 +374,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             estadoActual={estadoActual}
             userLevel={userLevel}
             isSuperuser={isSuperuser}
-            onNotaAvalCreated={() => window.location.reload()}
+            onNotaAvalCreated={refreshWorkflowData}
           />
         </WorkflowStepContent>
       ),
@@ -395,6 +402,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             isEquipoLegal={isEquipoLegal}
             isSuperuser={isSuperuser}
             estadoActual={estadoActual}
+            onInformeEnviado={refreshWorkflowData}
           />
         </WorkflowStepContent>
       ),
@@ -423,6 +431,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             isJZ={isJZ}
             isSuperuser={isSuperuser}
             estadoActual={estadoActual}
+            onRatificacionRegistrada={refreshWorkflowData}
           />
         </WorkflowStepContent>
       ),
@@ -592,7 +601,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
               medidaId={medidaData.id}
               medidaApiData={medidaApiData}
               isJZ={isJZ}
-              onRefresh={() => window.location.reload()}
+              onRefresh={refreshWorkflowData}
             />
           </Box>
         )}
@@ -617,7 +626,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             medidaId={medidaData.id}
             medidaApiData={medidaApiData}
             isJZ={isJZ}
-            onRefresh={() => window.location.reload()}
+            onRefresh={refreshWorkflowData}
           />
         </Box>
       )}

@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { CircularProgress, Typography, IconButton, Box, Alert, Grid } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { useRouter } from "next/navigation"
@@ -26,10 +26,10 @@ import { InformeJuridicoSection } from "./[medidaId]/components/medida/informe-j
 import { RatificacionJudicialSection } from "./[medidaId]/components/medida/ratificacion-judicial-section"
 import { UnifiedWorkflowTab } from "./[medidaId]/components/medida/unified-workflow-tab"
 import { useUser } from "@/utils/auth/userZustand"
+import { useMedidaDetail } from "./[medidaId]/hooks/useMedidaDetail"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
-import { getMedidaDetail } from "../../../legajo-mesa/api/medidas-api-service"
 import type { LegajoDetailResponse } from "../../../legajo-mesa/types/legajo-api"
 import type { MedidaDetailResponse } from "../../../legajo-mesa/types/medida-api"
 
@@ -184,11 +184,26 @@ const convertMedidaToMedidaData = (
 }
 
 export default function MedidaDetail({ params, onClose, isFullPage = false }: MedidaDetailProps) {
-  const [medidaData, setMedidaData] = useState<MedidaData | null>(null)
-  const [medidaApiData, setMedidaApiData] = useState<MedidaDetailResponse | null>(null)
+  // Validate params
+  const medidaIdNum = params.medidaId ? Number(params.medidaId) : null
+  const legajoIdNum = params.id ? Number(params.id) : null
+  const isValidMedidaId = medidaIdNum !== null && !isNaN(medidaIdNum)
+
+  // Use React Query for medida data
+  const {
+    data: medidaApiData,
+    isLoading: isMedidaLoading,
+    error: medidaError,
+  } = useMedidaDetail(medidaIdNum!, {
+    enabled: isValidMedidaId,
+  })
+
+  // State for legajo data (could also be migrated to React Query in the future)
   const [legajoData, setLegajoData] = useState<LegajoDetailResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isLegajoLoading, setIsLegajoLoading] = useState(true)
+  const [legajoError, setLegajoError] = useState<string | null>(null)
+
+  // UI state
   const [openAddTaskDialog, setOpenAddTaskDialog] = useState(false)
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null)
   const [newTask, setNewTask] = useState<NewTask>({
@@ -212,94 +227,78 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const isJZ = user?.zonas?.some(z => z.jefe) || false
   const isEquipoLegal = false // TODO: Add legal flag to user zonas data
 
+  // Load legajo data
   useEffect(() => {
-    const loadData = async () => {
-      if (!params.id || !params.medidaId) {
-        setError("Faltan parámetros requeridos")
-        setIsLoading(false)
-        return
-      }
-
-      // Validate medidaId is numeric
-      const medidaIdNum = Number(params.medidaId)
-      if (isNaN(medidaIdNum)) {
-        setError(
-          `ID de medida inválido: "${params.medidaId}". Debe ser un número, no el tipo de medida (MPI, MPE, MPJ).`
-        )
-        setIsLoading(false)
+    const loadLegajo = async () => {
+      if (!legajoIdNum || isNaN(legajoIdNum)) {
+        setLegajoError("ID de legajo inválido")
+        setIsLegajoLoading(false)
         return
       }
 
       try {
-        setIsLoading(true)
-        setError(null)
-
-        // Fetch legajo data from API
-        const legajoIdNum = Number(params.id)
+        setIsLegajoLoading(true)
+        setLegajoError(null)
         const legajo = await fetchLegajoDetail(legajoIdNum)
         setLegajoData(legajo)
-
-        // Fetch medida data from API
-        const medida = await getMedidaDetail(medidaIdNum)
-
-        // Debug: Log the etapa_actual structure
-        console.log('medida.etapa_actual:', medida.etapa_actual)
-        console.log('medida.etapa_actual.estado type:', typeof medida.etapa_actual?.estado)
-        console.log('medida.etapa_actual.estado value:', medida.etapa_actual?.estado)
-        console.log('medida.fecha_creacion:', medida.fecha_creacion)
-        console.log('medida.fecha_apertura:', medida.fecha_apertura)
-
-        // Store the API response
-        setMedidaApiData(medida)
-
-        // Convert to MedidaData format
-        const convertedData = convertMedidaToMedidaData(medida, legajo)
-
-        // Debug: Log converted MPE data
-        if (convertedData.tipo === 'MPE') {
-          console.log('MPE Converted Data:', {
-            fecha: convertedData.fecha,
-            fecha_creacion_raw: convertedData.fecha_creacion_raw,
-            tipo: convertedData.tipo
-          });
-        }
-
-        setMedidaData(convertedData)
-
-        // Determine active step based on data
-        if (medida.estado_vigencia === "CERRADA") {
-          setActiveStep(2)
-        } else if (medida.etapa_actual) {
-          // Map estado to step
-          const estadoMap: Record<string, number> = {
-            PENDIENTE_REGISTRO_INTERVENCION: 0,
-            PENDIENTE_APROBACION_REGISTRO: 1,
-            PENDIENTE_NOTA_AVAL: 1,
-            PENDIENTE_INFORME_JURIDICO: 1,
-            PENDIENTE_RATIFICACION_JUDICIAL: 1,
-          }
-          setActiveStep(estadoMap[medida.etapa_actual.estado] ?? 1)
-        } else {
-          setActiveStep(0)
-        }
       } catch (err: any) {
-        console.error("Error loading data:", err)
-
-        // Better error messages
-        if (err?.response?.status === 404) {
-          setError(`No se encontró la medida con ID ${params.medidaId} para el legajo ${params.id}`)
-        } else if (err?.message) {
-          setError(`Error al cargar los datos: ${err.message}`)
-        } else {
-          setError("Error al cargar los datos. Por favor, intente nuevamente.")
-        }
+        console.error("Error loading legajo:", err)
+        setLegajoError(err?.message || "Error al cargar el legajo")
       } finally {
-        setIsLoading(false)
+        setIsLegajoLoading(false)
       }
     }
 
-    loadData()
-  }, [params.id, params.medidaId])
+    loadLegajo()
+  }, [legajoIdNum])
+
+  // Convert medida API data to MedidaData format
+  const medidaData = useMemo(() => {
+    if (!medidaApiData || !legajoData) return null
+    return convertMedidaToMedidaData(medidaApiData, legajoData)
+  }, [medidaApiData, legajoData])
+
+  // Update active step based on medida estado
+  useEffect(() => {
+    if (!medidaApiData) return
+
+    if (medidaApiData.estado_vigencia === "CERRADA") {
+      setActiveStep(2)
+    } else if (medidaApiData.etapa_actual) {
+      // Map estado to step
+      const estadoMap: Record<string, number> = {
+        PENDIENTE_REGISTRO_INTERVENCION: 0,
+        PENDIENTE_APROBACION_REGISTRO: 1,
+        PENDIENTE_NOTA_AVAL: 1,
+        PENDIENTE_INFORME_JURIDICO: 1,
+        PENDIENTE_RATIFICACION_JUDICIAL: 1,
+      }
+      setActiveStep(estadoMap[medidaApiData.etapa_actual.estado] ?? 1)
+    } else {
+      setActiveStep(0)
+    }
+  }, [medidaApiData])
+
+  // Combined loading and error states
+  const isLoading = isMedidaLoading || isLegajoLoading
+  const error = (() => {
+    if (!params.id || !params.medidaId) {
+      return "Faltan parámetros requeridos"
+    }
+    if (!isValidMedidaId) {
+      return `ID de medida inválido: "${params.medidaId}". Debe ser un número, no el tipo de medida (MPI, MPE, MPJ).`
+    }
+    if (medidaError) {
+      if ((medidaError as any)?.response?.status === 404) {
+        return `No se encontró la medida con ID ${params.medidaId} para el legajo ${params.id}`
+      }
+      return `Error al cargar la medida: ${medidaError.message}`
+    }
+    if (legajoError) {
+      return `Error al cargar el legajo: ${legajoError}`
+    }
+    return null
+  })()
 
   // Handlers for task management
   const handleAddTask = () => {
@@ -370,7 +369,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
       }
     }
 
-    setMedidaData(updatedMedidaData)
+    // TODO: These local task updates don't persist to API
+    // This functionality should be migrated to use API mutations
+    // setMedidaData(updatedMedidaData)
     setOpenAddTaskDialog(false)
   }
 
@@ -388,18 +389,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   // Other handlers
   const handleCloseMeasure = () => {
     console.log("Close measure clicked")
-    // Implement the action for closing the measure
-    if (medidaData) {
-      const updatedMedidaData = { ...medidaData }
-      updatedMedidaData.etapas.cierre.estado = "Cerrado"
-      updatedMedidaData.etapas.cierre.fecha = new Date().toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-      })
-      setMedidaData(updatedMedidaData)
-      setActiveStep(2)
-    }
+    // TODO: This should call an API endpoint to close the medida
+    // The medida detail will automatically refresh via React Query
+    setActiveStep(2)
   }
 
   const handleViewForm = () => {

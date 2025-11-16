@@ -4,6 +4,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react"
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
 import {
   getInformesJuridicosByMedida,
   getInformeJuridicoDetail,
@@ -17,6 +19,7 @@ import {
   hasInformeJuridico as checkHasInformeJuridico,
   canSendInformeJuridico as checkCanSendInformeJuridico,
 } from "../api/informe-juridico-api-service"
+import { medidaKeys } from './useMedidaDetail'
 import type {
   InformeJuridicoResponse,
   InformeJuridicoBasicResponse,
@@ -81,6 +84,9 @@ export const useInformeJuridico = (
   options: UseInformeJuridicoOptions
 ): UseInformeJuridicoReturn => {
   const { medidaId, autoLoad = true, loadAdjuntos = true } = options
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient()
 
   // ============================================================================
   // STATE
@@ -209,20 +215,35 @@ export const useInformeJuridico = (
 
         const newInforme = await createInformeJuridico(medidaId, data)
 
+        // Invalidate and refetch medida detail to refresh estado immediately
+        await queryClient.invalidateQueries({
+          queryKey: medidaKeys.detail(medidaId),
+          refetchType: 'active'
+        })
+
         // Refetch to get complete data
         await fetchInforme()
+
+        toast.success('Informe Jurídico creado exitosamente', {
+          position: 'top-center',
+          autoClose: 3000,
+        })
 
         return newInforme
       } catch (error: any) {
         console.error("Error creating informe jurídico:", error)
         const errorMsg = error.message || "Error al crear informe jurídico"
         setInformeError(errorMsg)
+        toast.error(errorMsg, {
+          position: 'top-center',
+          autoClose: 5000,
+        })
         throw new Error(errorMsg)
       } finally {
         setIsLoadingInforme(false)
       }
     },
-    [medidaId, fetchInforme]
+    [medidaId, fetchInforme, queryClient]
   )
 
   /**
@@ -244,20 +265,35 @@ export const useInformeJuridico = (
 
         const updatedInforme = await updateInformeJuridico(medidaId, informeJuridico.id, data)
 
+        // Invalidate and refetch medida detail to refresh estado immediately
+        await queryClient.invalidateQueries({
+          queryKey: medidaKeys.detail(medidaId),
+          refetchType: 'active'
+        })
+
         // Refetch to get complete data
         await fetchInforme()
+
+        toast.success('Informe Jurídico actualizado exitosamente', {
+          position: 'top-center',
+          autoClose: 3000,
+        })
 
         return updatedInforme
       } catch (error: any) {
         console.error("Error updating informe jurídico:", error)
         const errorMsg = error.message || "Error al actualizar informe jurídico"
         setInformeError(errorMsg)
+        toast.error(errorMsg, {
+          position: 'top-center',
+          autoClose: 5000,
+        })
         throw new Error(errorMsg)
       } finally {
         setIsLoadingInforme(false)
       }
     },
-    [medidaId, informeJuridico, fetchInforme]
+    [medidaId, informeJuridico, fetchInforme, queryClient]
   )
 
   /**
@@ -359,19 +395,34 @@ export const useInformeJuridico = (
 
       const response = await enviarInformeJuridico(medidaId)
 
+      // Invalidate and refetch medida detail to refresh estado immediately
+      await queryClient.invalidateQueries({
+        queryKey: medidaKeys.detail(medidaId),
+        refetchType: 'active'
+      })
+
       // Refetch to update estado
       await fetchInforme()
+
+      toast.success('Informe Jurídico enviado exitosamente', {
+        position: 'top-center',
+        autoClose: 3000,
+      })
 
       return response
     } catch (error: any) {
       console.error("Error enviando informe jurídico:", error)
       const errorMsg = error.message || "Error al enviar informe jurídico"
       setInformeError(errorMsg)
+      toast.error(errorMsg, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
       throw new Error(errorMsg)
     } finally {
       setIsLoadingInforme(false)
     }
-  }, [medidaId, canSend, fetchInforme])
+  }, [medidaId, canSend, fetchInforme, queryClient])
 
   // ============================================================================
   // EFFECTS

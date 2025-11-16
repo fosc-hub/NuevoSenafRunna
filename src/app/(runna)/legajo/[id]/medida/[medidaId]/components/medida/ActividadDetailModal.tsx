@@ -194,7 +194,7 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
         <TabPanel value={currentTab} index={1}>
           <UnifiedActivityTab
             actividadId={actividad.id}
-            canEdit={permissions.canEdit}
+            canEdit={permissions.canAddActivity}
             onSuccess={handleSuccess}
           />
         </TabPanel>

@@ -8,6 +8,7 @@ import type { TActividadPlanTrabajo } from '../types/actividades'
  *
  * Permission Rules:
  * - canEdit: Responsable OR JZ OR Director OR Admin
+ * - canAddActivity: Any user can add comments/files (unless activity is locked)
  * - canReopen: JZ OR Director OR Admin (only for locked activities)
  * - canTransfer: JZ OR Director (nivel 3-4)
  * - canVisar: Legal team members OR Admin (estado must be PENDIENTE_VISADO)
@@ -21,6 +22,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     if (!user || !actividad) {
       return {
         canEdit: false,
+        canAddActivity: false,
         canReopen: false,
         canTransfer: false,
         canVisar: false,
@@ -63,6 +65,9 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     // canEdit: responsable OR JZ OR Director OR Admin
     const canEdit = !isLocked && (isResponsable || isJZ || isDirector || isAdmin)
 
+    // canAddActivity: Any user can add comments/files (unless activity is locked)
+    const canAddActivity = !isLocked
+
     // canReopen: JZ OR Director OR Admin (only for locked activities)
     const canReopen = isLocked && (isJZ || isDirector || isAdmin)
 
@@ -74,6 +79,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
 
     return {
       canEdit,
+      canAddActivity,
       canReopen,
       canTransfer,
       canVisar,

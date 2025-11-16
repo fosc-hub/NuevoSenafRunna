@@ -10,6 +10,8 @@ import {
   MenuItem,
   Chip,
   OutlinedInput,
+  Autocomplete,
+  TextField,
   type SelectChangeEvent,
 } from "@mui/material"
 import { toast } from "react-toastify"
@@ -18,6 +20,8 @@ import { Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
 import axiosInstance from '@/app/api/utils/axiosInstance';
 import { useUser } from "@/utils/auth/userZustand"
 import { autorizarAdmisionYCrearLegajos } from "@/features/legajo/api/legajo-creation.service"
+import { fetchUsuarios } from "@/app/(runna)/legajo-mesa/api/legajo-asignacion-api-service"
+import type { Usuario } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
 
 // Dynamic import para evitar errores SSR con Next.js
 const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
@@ -48,14 +52,39 @@ interface ChildOption {
   databaseId?: string | number
 }
 
-// Lista de firmantes disponibles
-const firmantesDisponibles = [
-  { id: 1, nombre: "María Sosa", cargo: "Trabajador Social" },
-  { id: 2, nombre: "Juan Pérez", cargo: "Psicólogo" },
-  { id: 3, nombre: "Ana García", cargo: "Abogada" },
-  { id: 4, nombre: "Carlos Rodríguez", cargo: "Director" },
-  { id: 5, nombre: "Laura Martínez", cargo: "Coordinadora" },
-]
+interface Firmante {
+  id: number
+  nombre: string
+  cargo: string
+}
+
+// Helper function to derive cargo from user data
+const derivarCargo = (usuario: any): string => {
+  // Check if user is director
+  if (usuario.is_superuser || usuario.is_staff) {
+    return "Director/Administrador"
+  }
+
+  // Check groups
+  if (usuario.groups && usuario.groups.length > 0) {
+    const groupName = usuario.groups[0].name
+    return groupName
+  }
+
+  // Check zonas for director or jefe role
+  if (usuario.zonas && usuario.zonas.length > 0) {
+    const zona = usuario.zonas[0]
+    if (zona.director) {
+      return "Director"
+    }
+    if (zona.jefe) {
+      return "Jefe"
+    }
+  }
+
+  // Default to Técnico
+  return "Técnico"
+}
 
 export default function ActionButtons({
   generatePDF,
@@ -68,7 +97,8 @@ export default function ActionButtons({
   nnyaIds,
 }: ActionButtonsProps) {
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>([])
-  const [firmantes, setFirmantes] = useState<number[]>([])
+  const [firmantes, setFirmantes] = useState<Firmante[]>([])
+  const [firmantesDisponibles, setFirmantesDisponibles] = useState<Firmante[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [tipoMedidaEvaluado, setTipoMedidaEvaluado] = useState<string>("")
   const user = useUser((state) => state.user)
@@ -85,6 +115,78 @@ export default function ActionButtons({
     }
   }, [nnyaIds]);
 
+  // Fetch users from API for firmantes filtered by zona
+  useEffect(() => {
+    const loadUsuarios = async () => {
+      try {
+        // Get zona ID from demanda data
+        const zonaId = data?.relacion_demanda?.demanda_zona?.zona ||
+                       data?.registrado_por_user_zona?.id ||
+                       null
+
+        console.log("Loading usuarios for zona:", zonaId)
+
+        // Fetch all usuarios (API doesn't properly filter by zona)
+        const allUsuarios = await fetchUsuarios()
+
+        // Filter usuarios by zona and active status on the client side
+        let usuarios = allUsuarios
+        if (zonaId) {
+          usuarios = allUsuarios.filter((usuario: any) => {
+            // Only include active users who belong to the target zona
+            return usuario.is_active &&
+                   usuario.zonas &&
+                   usuario.zonas.some((userZona: any) => userZona.zona === zonaId)
+          })
+          console.log(`Filtered ${usuarios.length} active usuarios for zona ${zonaId}`)
+        } else {
+          // If no zona specified, still filter by active status
+          usuarios = allUsuarios.filter((usuario: any) => usuario.is_active)
+        }
+
+        // Transform usuarios to firmantes format
+        const firmantesFromAPI: Firmante[] = usuarios.map((usuario: any) => ({
+          id: usuario.id,
+          nombre: usuario.nombre_completo || `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username,
+          cargo: derivarCargo(usuario) // Use derivarCargo for all users to get proper role
+        }))
+
+        // Add current logged-in user if not already in the list
+        if (user) {
+          const currentUserExists = firmantesFromAPI.some(f => f.id === user.id)
+          const currentUserFirmante: Firmante = {
+            id: user.id,
+            nombre: `${user.first_name} ${user.last_name}`.trim() || user.username,
+            cargo: derivarCargo(user)
+          }
+
+          if (!currentUserExists) {
+            firmantesFromAPI.unshift(currentUserFirmante)
+          } else {
+            // Update the cargo for the current user with derived cargo
+            const index = firmantesFromAPI.findIndex(f => f.id === user.id)
+            if (index !== -1) {
+              firmantesFromAPI[index].cargo = derivarCargo(user)
+            }
+          }
+
+          // Auto-select current user as default firmante
+          setFirmantes([currentUserFirmante])
+        }
+
+        setFirmantesDisponibles(firmantesFromAPI)
+      } catch (error) {
+        console.error("Error loading usuarios for firmantes:", error)
+        toast.error("Error al cargar lista de usuarios", {
+          position: "top-center",
+          autoClose: 3000,
+        })
+      }
+    }
+
+    loadUsuarios()
+  }, [user, data])
+
   const handleChildChange = (event: SelectChangeEvent<typeof selectedChildrenIds>) => {
     const {
       target: { value },
@@ -92,13 +194,6 @@ export default function ActionButtons({
 
     // On autofill we get a stringified value.
     setSelectedChildrenIds(typeof value === "string" ? value.split(",") : value)
-  }
-
-  const handleFirmantesChange = (event: SelectChangeEvent<typeof firmantes>) => {
-    const {
-      target: { value },
-    } = event
-    setFirmantes(typeof value === "string" ? value.split(",").map(Number) : value)
   }
 
   // Get children from data with their IDs
@@ -264,61 +359,55 @@ export default function ActionButtons({
     ...data,
     // Asegurarse de que todos los datos necesarios estén disponibles
     // Esto se puede expandir según sea necesario
-    firmantes: firmantes.map((id) => firmantesDisponibles.find((f) => f.id === id)).filter(Boolean),
+    firmantes: firmantes,
   }
 
   return (
     <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
       <DownloadPDFButton data={combinedData} onGenerate={handlePDFGenerated} />
 
-      {/* Selector de firmantes */}
-      <FormControl sx={{ minWidth: 180 }}>
-        <InputLabel id="select-firmantes-label" size="small">
-          Firmantes
-        </InputLabel>
-        <Select
-          labelId="select-firmantes-label"
-          id="select-firmantes"
-          multiple
-          value={firmantes}
-          onChange={handleFirmantesChange}
-          input={<OutlinedInput id="select-multiple-firmantes" label="Firmantes" />}
-          renderValue={(selected) => (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {selected.map((value) => {
-                const firmante = firmantesDisponibles.find((f) => f.id === value)
-                return (
-                  <Chip
-                    key={value}
-                    label={firmante?.nombre}
-                    size="small"
-                    icon={<PersonIcon fontSize="small" />}
-                    onDelete={() => {
-                      setFirmantes(firmantes.filter((id) => id !== value))
-                    }}
-                    deleteIcon={<CancelIcon onMouseDown={(event) => event.stopPropagation()} />}
-                  />
-                )
-              })}
-            </Box>
-          )}
-          size="small"
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 224,
-                width: 250,
-              },
-            },
-          }}
-        >
-          {firmantesDisponibles.map((firmante) => (
-            <MenuItem key={firmante.id} value={firmante.id}>
-              {firmante.nombre} ({firmante.cargo})
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Selector de firmantes con búsqueda */}
+      <Autocomplete
+        multiple
+        id="firmantes-autocomplete"
+        options={firmantesDisponibles}
+        value={firmantes}
+        onChange={(event, newValue) => {
+          setFirmantes(newValue)
+        }}
+        getOptionLabel={(option) => `${option.nombre} (${option.cargo})`}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Firmantes"
+            placeholder="Buscar firmantes..."
+            size="small"
+          />
+        )}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option.id}
+              label={option.nombre}
+              size="small"
+              icon={<PersonIcon fontSize="small" />}
+            />
+          ))
+        }
+        sx={{ minWidth: 300 }}
+        size="small"
+        limitTags={2}
+        filterOptions={(options, state) => {
+          const inputValue = state.inputValue.toLowerCase()
+          return options.filter(
+            (option) =>
+              option.nombre.toLowerCase().includes(inputValue) ||
+              option.cargo.toLowerCase().includes(inputValue)
+          )
+        }}
+      />
 
       {/* Show these buttons only if user is NOT a director */}
       {!isDirector && (

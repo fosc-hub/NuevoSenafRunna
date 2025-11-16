@@ -157,6 +157,10 @@ export interface CreateIntervencionRequest {
   tipo_dispositivo_id?: number | null
   subtipo_dispositivo?: string | null
 
+  // Tipo de cese (opcional, solo para etapa CESE)
+  tipo_cese?: string | null
+  subtipo_cese?: string | null
+
   // Motivo y sub-motivo
   motivo_id: number
   sub_motivo_id?: number | null

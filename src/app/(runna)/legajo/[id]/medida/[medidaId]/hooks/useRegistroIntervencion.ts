@@ -50,6 +50,10 @@ interface IntervencionFormData {
   tipo_dispositivo_id?: number | null
   subtipo_dispositivo?: string
 
+  // Tipo de cese (solo para etapa CESE)
+  tipo_cese?: string | null
+  subtipo_cese?: string | null
+
   // Motivo y submotivo
   motivo_id?: number
   sub_motivo_id?: number | null
@@ -96,6 +100,8 @@ export const useRegistroIntervencion = ({
     fecha_intervencion: new Date().toISOString().split("T")[0], // Hoy por defecto
     tipo_dispositivo_id: null,
     subtipo_dispositivo: "",
+    tipo_cese: null,
+    subtipo_cese: null,
     motivo_id: undefined,
     sub_motivo_id: null,
     categoria_intervencion_id: undefined,

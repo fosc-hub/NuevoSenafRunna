@@ -28,6 +28,11 @@ interface AperturaSectionProps {
     zona_nombre: string
   }
   /**
+   * Workflow phase (apertura, innovacion, prorroga, cese)
+   * Passed to modal for conditional field rendering
+   */
+  workflowPhase?: 'apertura' | 'innovacion' | 'prorroga' | 'cese'
+  /**
    * Pre-fetched interventions for this etapa (from parent)
    * NEW: Replaces internal data fetching to ensure etapa isolation
    */
@@ -46,6 +51,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
   medidaId,
   tipoMedida = "MPI",
   legajoData,
+  workflowPhase,
   intervenciones = [], // Default to empty array
   onWorkflowRefresh,
 }) => {
@@ -150,6 +156,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
         intervencionId={lastIntervencionId}
         legajoData={legajoData}
         tipoMedida={tipoMedida}
+        workflowPhase={workflowPhase}
         onSaved={handleIntervencionSaved}
       />
     </>

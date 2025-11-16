@@ -343,6 +343,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             medidaId={medidaData.id}
             tipoMedida={medidaData.tipo_medida}
             legajoData={legajoData}
+            workflowPhase={workflowPhase}
             intervenciones={etapaDetail?.etapa.documentos.intervenciones ?? []}
             onWorkflowRefresh={refreshWorkflowData}
           />

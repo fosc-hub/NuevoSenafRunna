@@ -444,6 +444,65 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                 </FormControl>
                             </Box>
                         </Card>
+
+                        {/* Tipo de Cese Section - Only for CESE workflow phase */}
+                        {workflowPhase === 'cese' && (
+                            <Card elevation={2} sx={{ p: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                    <BusinessIcon sx={{ color: 'error.main', mr: 1 }} />
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        Tipo de Cese
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Tipo de cese</InputLabel>
+                                        <Select
+                                            value={formData.tipo_cese || ''}
+                                            onChange={(e) => updateField('tipo_cese', e.target.value || null)}
+                                            label="Tipo de cese"
+                                            disabled={!canEdit}
+                                        >
+                                            <MenuItem value="">Sin especificar</MenuItem>
+                                            <MenuItem value="RESTITUCION_DERECHOS">Restitución de los derechos</MenuItem>
+                                            <MenuItem value="ADOPCION">Adopción</MenuItem>
+                                            <MenuItem value="OTRA_MEDIDA">Cese de la medida porque corresponde otro tipo de medida</MenuItem>
+                                        </Select>
+                                    </FormControl>
+
+                                    <FormControl fullWidth>
+                                        <InputLabel>Subtipo de cese</InputLabel>
+                                        <Select
+                                            value={formData.subtipo_cese || ''}
+                                            onChange={(e) => updateField('subtipo_cese', e.target.value || null)}
+                                            label="Subtipo de cese"
+                                            disabled={!canEdit || !formData.tipo_cese}
+                                        >
+                                            <MenuItem value="">Sin especificar</MenuItem>
+                                            {formData.tipo_cese === 'RESTITUCION_DERECHOS' && (
+                                                <>
+                                                    <MenuItem value="RESTITUCION_FAMILIA_ORIGEN">Restitución a familia de origen</MenuItem>
+                                                    <MenuItem value="RESTITUCION_FAMILIA_AMPLIADA">Restitución a familia ampliada</MenuItem>
+                                                </>
+                                            )}
+                                            {formData.tipo_cese === 'ADOPCION' && (
+                                                <>
+                                                    <MenuItem value="ADOPCION_PLENA">Adopción plena</MenuItem>
+                                                    <MenuItem value="ADOPCION_SIMPLE">Adopción simple</MenuItem>
+                                                </>
+                                            )}
+                                            {formData.tipo_cese === 'OTRA_MEDIDA' && (
+                                                <>
+                                                    <MenuItem value="CAMBIO_MPE">Cambio a otra MPE</MenuItem>
+                                                    <MenuItem value="CAMBIO_MPI">Cambio a MPI</MenuItem>
+                                                    <MenuItem value="CAMBIO_MPJ">Cambio a MPJ</MenuItem>
+                                                </>
+                                            )}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            </Card>
+                        )}
                     </Box>
                 )
 

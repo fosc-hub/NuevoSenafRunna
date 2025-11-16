@@ -58,6 +58,19 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
   const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
   const [lastIntervencionId, setLastIntervencionId] = useState<number | undefined>(undefined)
 
+  // Get display name for current workflow phase
+  const getEtapaDisplayName = (phase?: string): string => {
+    const names: Record<string, string> = {
+      'apertura': 'Apertura',
+      'innovacion': 'Innovación',
+      'prorroga': 'Prórroga',
+      'cese': 'Cese'
+    }
+    return phase ? (names[phase] || 'Apertura') : 'Apertura'
+  }
+
+  const etapaName = getEtapaDisplayName(workflowPhase)
+
   /**
    * NEW APPROACH: Use pre-fetched interventions from parent
    * This ensures we only show interventions for THIS etapa (Apertura),
@@ -98,7 +111,7 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
   return (
     <>
       <SectionCard
-        title="Apertura"
+        title={etapaName}
         icon={<AssignmentIcon color="primary" />}
         isActive={isActive}
         isCompleted={isCompleted}

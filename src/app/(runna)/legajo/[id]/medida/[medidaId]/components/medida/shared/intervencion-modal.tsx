@@ -851,8 +851,20 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         { label: 'Configuración Adicional', content: getStepContent(3) },
     ]
 
-    // Dynamic title based on tipoMedida
-    const modalTitle = `Registro de Intervención ${tipoMedida}${workflowPhase ? ` - ${workflowPhase.charAt(0).toUpperCase() + workflowPhase.slice(1)}` : ''}`
+    // Get display name for workflow phase
+    const getWorkflowPhaseDisplayName = (phase?: string): string => {
+        const names: Record<string, string> = {
+            'apertura': 'Apertura',
+            'innovacion': 'Innovación',
+            'prorroga': 'Prórroga',
+            'cese': 'Cese'
+        }
+        return phase ? (names[phase] || phase) : ''
+    }
+
+    // Dynamic title based on tipoMedida and workflowPhase
+    const workflowPhaseDisplay = getWorkflowPhaseDisplayName(workflowPhase)
+    const modalTitle = `Registro de Intervención ${tipoMedida}${workflowPhaseDisplay ? ` - ${workflowPhaseDisplay}` : ''}`
 
     // ============================================================================
     // RENDER

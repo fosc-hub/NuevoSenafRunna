@@ -149,6 +149,14 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
           estado_demanda: "EVALUACION",
         })
       }
+
+      // Si NO es página completa (es modal/drawer), cerrar automáticamente después de enviar exitosamente
+      if (!isFullPage && onClose) {
+        // Esperar un momento para que el usuario vea el mensaje de éxito antes de cerrar
+        setTimeout(() => {
+          onClose()
+        }, 1500)
+      }
     } catch (err) {
       console.error("Error updating case status:", err)
       // El manejo del error se realiza en el servicio API

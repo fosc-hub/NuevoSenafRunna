@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, IconButton } from "@mui/material"
+import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { ResidenciasTab } from "./mpe-tabs/residencias-tab"
 import { useState } from "react"
@@ -29,6 +29,8 @@ interface MPEHeaderProps {
         articulacion_area_local: boolean
         urgencia?: string
         estado_actual?: string
+        tipo_dispositivo_mpe?: string
+        subtipo_dispositivo_mpe?: string
     }
     estados: {
         inicial: boolean
@@ -46,11 +48,82 @@ interface MPEHeaderProps {
         cierre: number
         total: number
     }
+    onFieldChange?: (field: string, value: string) => void
 }
 
-export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progreso }) => {
+export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progreso, onFieldChange }) => {
     const theme = useTheme();
     const [residenciasModalOpen, setResidenciasModalOpen] = useState(false);
+    const [tipoDispositivoMPE, setTipoDispositivoMPE] = useState(medidaData.tipo_dispositivo_mpe || '');
+    const [subtipoDispositivoMPE, setSubtipoDispositivoMPE] = useState(medidaData.subtipo_dispositivo_mpe || '');
+
+    const handleTipoDispositivoMPEChange = (value: string) => {
+        console.log('MPE Tipo changed to:', value);
+        setTipoDispositivoMPE(value);
+        setSubtipoDispositivoMPE(''); // Reset subtipo when tipo changes
+        onFieldChange?.('tipo_dispositivo_mpe', value);
+    };
+
+    const handleSubtipoDispositivoMPEChange = (value: string) => {
+        console.log('MPE Subtipo changed to:', value);
+        setSubtipoDispositivoMPE(value);
+        onFieldChange?.('subtipo_dispositivo_mpe', value);
+    };
+
+    // Log current state for debugging
+    console.log('MPEHeader render - tipoDispositivoMPE:', tipoDispositivoMPE, 'subtipoDispositivoMPE:', subtipoDispositivoMPE);
+
+    // Generate subtipo options based on tipo
+    const getSubtipoOptions = () => {
+        const options: JSX.Element[] = [];
+
+        if (tipoDispositivoMPE === 'CENTRO_RESIDENCIAL') {
+            options.push(
+                <MenuItem key="ACHÁVAL_RODRIGUEZ" value="ACHÁVAL_RODRIGUEZ">Achával Rodriguez</MenuItem>,
+                <MenuItem key="ALFONORNI" value="ALFONORNI">Alfonsina Storni</MenuItem>,
+                <MenuItem key="ANTONIO_VISO" value="ANTONIO_VISO">Antonio Del Viso</MenuItem>,
+                <MenuItem key="ARGÜELLO_INFANCIA" value="ARGÜELLO_INFANCIA">Argüello Infancia</MenuItem>,
+                <MenuItem key="ARGÜELLO_MUJERES" value="ARGÜELLO_MUJERES">Argüello Mujeres</MenuItem>,
+                <MenuItem key="BAIGORRI" value="BAIGORRI">Baigorri</MenuItem>,
+                <MenuItem key="CASA_SUQUÍA" value="CASA_SUQUÍA">Casa Suquía</MenuItem>,
+                <MenuItem key="CHE_GUEVARA" value="CHE_GUEVARA">Che Guevara</MenuItem>,
+                <MenuItem key="EVA_PERÓN" value="EVA_PERÓN">Eva Perón</MenuItem>,
+                <MenuItem key="INFANTOJUVENIL_SF" value="INFANTOJUVENIL_SF">Infanto Juvenil San Francisco</MenuItem>,
+                <MenuItem key="LONIOS" value="LONIOS">Lonios</MenuItem>,
+                <MenuItem key="RÍO_BAMBA" value="RÍO_BAMBA">Río Bamba</MenuItem>,
+                <MenuItem key="INFANTOJUVENIL_RC" value="INFANTOJUVENIL_RC">Infanto Juvenil Río Cuarto</MenuItem>,
+                <MenuItem key="SANTA_CRUZ" value="SANTA_CRUZ">Santa Cruz</MenuItem>,
+                <MenuItem key="FELISA_SOAJE" value="FELISA_SOAJE">Felisa Soaje</MenuItem>,
+                <MenuItem key="WENCESLAO_ESCALANTE" value="WENCESLAO_ESCALANTE">Wenceslao Escalante</MenuItem>
+            );
+        } else if (tipoDispositivoMPE === 'ONG') {
+            options.push(
+                <MenuItem key="SIERRA_DORADA" value="SIERRA_DORADA">Fundación Sierra Dorada San Marcos Sierras</MenuItem>,
+                <MenuItem key="DESDE_CORAZON" value="DESDE_CORAZON">Asociación Civil Hogar De Niños Desde El Corazón</MenuItem>,
+                <MenuItem key="ANGELES_CUSTODIOS" value="ANGELES_CUSTODIOS">Asociación Civil De Los Santos Ángeles Custodios</MenuItem>,
+                <MenuItem key="CIUDAD_NIÑOS" value="CIUDAD_NIÑOS">Fundación San Martín De Porres - Hogar Ciudad De Los Niños</MenuItem>,
+                <MenuItem key="GRANJA_SIQUEM" value="GRANJA_SIQUEM">Asociación Civil Granja Siquem</MenuItem>,
+                <MenuItem key="ANGEL_GUARDA" value="ANGEL_GUARDA">Asociación Civil Nuestra Señora - Hogar De Niños Ángel De La Guarda</MenuItem>,
+                <MenuItem key="BETHEL" value="BETHEL">Asociación Civil Bethel Casas De Dios</MenuItem>,
+                <MenuItem key="MADRE_TERESA" value="MADRE_TERESA">Asociación Civil Hogar De María Madre Teresa De Calcuta</MenuItem>,
+                <MenuItem key="ALDEAS_SOS" value="ALDEAS_SOS">Asociación Civil Aldeas Infantiles S.O.S Argentina</MenuItem>,
+                <MenuItem key="BETHEL_EVANG" value="BETHEL_EVANG">Fundación Evangélica Hogar De Niños Bethel</MenuItem>,
+                <MenuItem key="JOSE_BAINOTTI" value="JOSE_BAINOTTI">Fundación Manos Abiertas Hogar De Niños Jose Bainotti</MenuItem>,
+                <MenuItem key="SAN_JOSE_MALDONADO" value="SAN_JOSE_MALDONADO">Fundación Moviendo Montañas. Casa San José Maldonado</MenuItem>,
+                <MenuItem key="BROCHERO" value="BROCHERO">Fundación Moviendo Montañas. Casa Brochero</MenuItem>,
+                <MenuItem key="NAZARETH" value="NAZARETH">Fundación Moviendo Montañas. Casa Nazareth El Diquecito</MenuItem>,
+                <MenuItem key="CASA_SAN_JOSE" value="CASA_SAN_JOSE">Asociación Civil Dando Se Recibe "Casa San Jose"</MenuItem>,
+                <MenuItem key="CASA_SAN_FRANCISCO" value="CASA_SAN_FRANCISCO">Asociación Civil Dando Se Recibe "Casa San Francisco"</MenuItem>,
+                <MenuItem key="BERTI" value="BERTI">Hogar De Candelaria Berti - Dependencia Municipalidad De Rio III</MenuItem>,
+                <MenuItem key="REMAR" value="REMAR">Asociación Civil Remar Argentina</MenuItem>,
+                <MenuItem key="SAN_ALBERTO" value="SAN_ALBERTO">Instituto De Vida Consagrada Hogar San Alberto</MenuItem>,
+                <MenuItem key="FUSANA" value="FUSANA">Fusana</MenuItem>
+            );
+        }
+
+        console.log('getSubtipoOptions called - tipo:', tipoDispositivoMPE, 'options count:', options.length);
+        return options;
+    };
 
     // Calculate progress based on fecha_creacion_raw and 90-day limit
     const calculateMPEProgress = () => {
@@ -181,7 +254,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                         {medidaData.urgencia && (
                             <Chip
-                                label={`Urgencia: ${medidaData.urgencia.nombre}`}
+                                label={`Urgencia: ${medidaData.urgencia}`}
                                 color="error"
                                 size="small"
                                 sx={{ fontWeight: 500 }}
@@ -311,6 +384,50 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                         </Box>
                     </Grid>
                 </Grid>
+
+                {/* MPE Specific Fields */}
+                <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2, mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+                        Información específica MPE
+                    </Typography>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Tipo de Dispositivo (MPE)</InputLabel>
+                                <Select
+                                    value={tipoDispositivoMPE}
+                                    onChange={(e) => handleTipoDispositivoMPEChange(e.target.value)}
+                                    label="Tipo de Dispositivo (MPE)"
+                                >
+                                    <MenuItem value="">Sin especificar</MenuItem>
+                                    <MenuItem value="CENTRO_RESIDENCIAL">Centro Cuidado Residencial</MenuItem>
+                                    <MenuItem value="ONG">ONG</MenuItem>
+                                    <MenuItem value="FAMILIA_EXTENSA">Familia Extensa</MenuItem>
+                                    <MenuItem value="FAMILIA_COMUNITARIA">Familia Comunitaria</MenuItem>
+                                    <MenuItem value="FAMILIA_ACOGIMIENTO">Familia de Acogimiento</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Subtipo (MPE)</InputLabel>
+                                <Select
+                                    value={subtipoDispositivoMPE}
+                                    onChange={(e) => {
+                                        console.log('Subtipo onChange fired! Event value:', e.target.value);
+                                        handleSubtipoDispositivoMPEChange(e.target.value);
+                                    }}
+                                    onOpen={() => console.log('Subtipo dropdown opened. tipoDispositivoMPE:', tipoDispositivoMPE, 'disabled:', !tipoDispositivoMPE)}
+                                    label="Subtipo (MPE)"
+                                    disabled={!tipoDispositivoMPE}
+                                >
+                                    <MenuItem key="empty" value="">Sin especificar</MenuItem>
+                                    {getSubtipoOptions()}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+                </Box>
 
                 {/* Progress Section - 90 Day Timeline */}
                 <Box sx={{ mb: 3 }}>

@@ -33,6 +33,24 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
 
   const loc = localizacion.localizacion
 
+  if (!loc) {
+    return (
+      <Paper
+        elevation={2}
+        sx={{
+          width: "100%",
+          mb: 4,
+          p: 3,
+          borderRadius: 2,
+        }}
+      >
+        <Typography variant="body1" color="text.secondary">
+          No hay información de localización registrada.
+        </Typography>
+      </Paper>
+    )
+  }
+
   // Build full address
   const buildFullAddress = () => {
     const parts: string[] = []

@@ -40,11 +40,13 @@ import {
   derivarLegajo,
   asignarLegajo,
   reasignarLegajo,
+  rederivarLegajo,
   fetchHistorialAsignaciones,
   fetchZonas,
   fetchLocalesCentroVida,
   fetchUsuarios,
   fetchUsersZonas,
+  fetchLegajoParaAsignacion,
 } from "../api/legajo-asignacion-api-service"
 import type {
   TipoResponsabilidad,
@@ -77,6 +79,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   const [localesCentroVida, setLocalesCentroVida] = useState<LocalCentroVida[]>([])
   const [historial, setHistorial] = useState<HistorialAsignacion[]>([])
   const [userZonas, setUserZonas] = useState<Array<{ user: number; zona: number }>>([])
+  const [legajoData, setLegajoData] = useState<any>(null)
 
   // Loading states
   const [isLoading, setIsLoading] = useState(false)
@@ -125,12 +128,13 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
 
     setIsLoading(true)
     try {
-      const [zonasData, usuariosData, localesData, userZonasData, historialData] = await Promise.all([
+      const [zonasData, usuariosData, localesData, userZonasData, historialData, legajoInfo] = await Promise.all([
         fetchZonas(),
         fetchUsuarios(),
         fetchLocalesCentroVida(),
         fetchUsersZonas(),
-        fetchHistorialAsignaciones(legajoId), // Cargar historial inmediatamente
+        fetchHistorialAsignaciones(legajoId),
+        fetchLegajoParaAsignacion(legajoId), // Cargar info del legajo
       ])
 
       setZonas(zonasData)
@@ -138,6 +142,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       setLocalesCentroVida(localesData)
       setUserZonas(userZonasData)
       setHistorial(historialData)
+      setLegajoData(legajoInfo)
 
       // Extraer derivaciones y asignaciones actuales del historial
       const derivacionesActivas = extractDerivacionesActuales(historialData)
@@ -172,7 +177,9 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
 
   /**
    * Extrae las derivaciones actuales del historial (para Tab 1 - Derivar)
-   * Una derivación asigna el legajo a una ZONA sin usuario específico
+   * Una derivación asigna el legajo a una ZONA (con o sin usuario específico)
+   * NOTA: Para re-derivar necesitamos saber si existe CUALQUIER asignación activa del tipo,
+   * independientemente de si tiene usuario asignado o no.
    */
   const extractDerivacionesActuales = (historialData: HistorialAsignacion[]): AsignacionActual[] => {
     const derivacionesPorTipo: Record<TipoResponsabilidad, HistorialAsignacion | null> = {
@@ -197,8 +204,9 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
         continue
       }
 
-      // Solo contar DERIVACION (sin usuario responsable)
-      if (record.accion === "DERIVACION") {
+      // Contar CUALQUIER asignación activa (DERIVACION, ASIGNACION, MODIFICACION)
+      // porque necesitamos saber si existe una asignación del tipo para usar /rederivar/
+      if (record.accion === "DERIVACION" || record.accion === "ASIGNACION" || record.accion === "MODIFICACION") {
         derivacionesPorTipo[tipo] = record
       }
     }
@@ -213,7 +221,14 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
             id: record.zona,
             nombre: record.zona_nombre,
           },
-          user_responsable: undefined,
+          user_responsable: record.user_responsable ? {
+            id: record.user_responsable,
+            nombre_completo: record.user_responsable_nombre || undefined,
+            username: record.user_responsable_nombre || "",
+            first_name: "",
+            last_name: "",
+            email: "",
+          } : undefined,
           local_centro_vida: undefined,
           esta_activo: true,
           fecha_asignacion: record.fecha_accion,
@@ -303,16 +318,51 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       return
     }
 
+    // Validar comentarios para re-derivación
+    const asignacionActivaEnLegajo = legajoData?.asignaciones_activas?.find(
+      (a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion
+    )
+    const derivacionExistentePrevia = derivacionesActuales.find(
+      (d) => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo
+    )
+
+    if ((derivacionExistentePrevia || asignacionActivaEnLegajo) && !comentariosDerivacion.trim()) {
+      toast.error("Los comentarios son obligatorios para re-derivar")
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      await derivarLegajo(legajoId, {
-        zona_destino_id: selectedZonaDerivacion,
-        tipo_responsabilidad: tipoResponsabilidadDerivacion,
-        comentarios: comentariosDerivacion,
-        notificar_equipo: notificarEquipo,
-      })
+      // Determinar si es derivación nueva o re-derivación
+      // 1. Buscar en el historial de asignaciones
+      const derivacionExistente = derivacionesActuales.find(
+        (d) => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo
+      )
 
-      toast.success("Legajo derivado exitosamente")
+      // 2. Buscar en asignaciones_activas del legajo
+      const asignacionActivaEnLegajo = legajoData?.asignaciones_activas?.find(
+        (a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion
+      )
+
+      if (derivacionExistente || asignacionActivaEnLegajo) {
+        // Re-derivar a otra zona (desactiva asignación actual + crea nueva)
+        await rederivarLegajo(legajoId, {
+          tipo_responsabilidad: tipoResponsabilidadDerivacion,
+          zona_destino_id: selectedZonaDerivacion,
+          comentarios: comentariosDerivacion,
+        })
+        toast.success("Legajo re-derivado exitosamente a nueva zona")
+      } else {
+        // Derivar por primera vez
+        await derivarLegajo(legajoId, {
+          zona_destino_id: selectedZonaDerivacion,
+          tipo_responsabilidad: tipoResponsabilidadDerivacion,
+          comentarios: comentariosDerivacion,
+          notificar_equipo: notificarEquipo,
+        })
+        toast.success("Legajo derivado exitosamente")
+      }
+
       setComentariosDerivacion("")
       await loadHistorial()
       onAsignacionComplete?.()
@@ -486,7 +536,50 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                     Derivar el legajo a una zona específica para su gestión.
                   </Alert>
 
-                  {/* Mostrar derivaciones actuales si existen */}
+                  {/* Advertencia de re-derivación */}
+                  {(derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                    legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) && (
+                    <Alert severity="warning">
+                      <strong>Re-derivación:</strong> El legajo ya tiene una asignación activa de tipo{" "}
+                      <strong>{getTipoLabel(tipoResponsabilidadDerivacion)}</strong>. Al continuar, la asignación actual será
+                      desactivada y se creará una nueva en la zona seleccionada.
+                    </Alert>
+                  )}
+
+                  {/* Mostrar asignaciones activas del legajo (si existen) */}
+                  {legajoData?.asignaciones_activas?.length > 0 && (
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: "success.50",
+                        border: "1px solid",
+                        borderColor: "success.200",
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography variant="subtitle2" color="success.dark" sx={{ mb: 1, fontWeight: 600 }}>
+                        Asignaciones Activas del Legajo:
+                      </Typography>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {legajoData.asignaciones_activas.map((asig: any) => (
+                            <Box
+                              key={asig.tipo_responsabilidad}
+                              sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
+                            >
+                              <Chip label={getTipoLabel(asig.tipo_responsabilidad)} size="small" color="primary" />
+                              <Typography variant="body2">
+                                {asig.zona?.nombre || `Zona ID: ${asig.zona}`}
+                                {asig.user_responsable && (
+                                  <> → {asig.user_responsable.nombre_completo || asig.user_responsable.username || `Usuario ID: ${asig.user_responsable}`}</>
+                                )}
+                              </Typography>
+                            </Box>
+                          ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Mostrar derivaciones actuales del historial si existen */}
                   {derivacionesActuales.length > 0 && (
                     <Box
                       sx={{
@@ -509,10 +602,15 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                             <Chip label={getTipoLabel(deriv.tipo_responsabilidad)} size="small" color="primary" />
                             <Typography variant="body2">
                               {deriv.zona?.nombre}
+                              {deriv.user_responsable && (
+                                <> → {deriv.user_responsable.nombre_completo || deriv.user_responsable.username}</>
+                              )}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              (Sin usuario responsable asignado)
-                            </Typography>
+                            {!deriv.user_responsable && (
+                              <Typography variant="caption" color="text.secondary">
+                                (Sin usuario responsable asignado)
+                              </Typography>
+                            )}
                           </Box>
                         ))}
                       </Box>
@@ -551,15 +649,38 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                   <FormControl fullWidth>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                       Comentarios
+                      {(derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                        legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) && (
+                        <Typography component="span" color="error" sx={{ ml: 0.5 }}>
+                          *
+                        </Typography>
+                      )}
                     </Typography>
                     <TextField
                       multiline
                       rows={3}
                       value={comentariosDerivacion}
                       onChange={(e) => setComentariosDerivacion(e.target.value)}
-                      placeholder="Añada comentarios sobre esta derivación..."
+                      placeholder={
+                        (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                         legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion))
+                          ? "Comentarios obligatorios para re-derivación..."
+                          : "Añada comentarios sobre esta derivación..."
+                      }
                       size="small"
                       disabled={isSubmitting}
+                      error={
+                        (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                         legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) &&
+                        !comentariosDerivacion.trim()
+                      }
+                      helperText={
+                        (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                         legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) &&
+                        !comentariosDerivacion.trim()
+                          ? "Este campo es obligatorio para re-derivación"
+                          : ""
+                      }
                     />
                   </FormControl>
                 </Box>
@@ -821,13 +942,21 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
               variant="contained"
               color="primary"
               onClick={handleDerivar}
-              disabled={isSubmitting || !selectedZonaDerivacion}
+              disabled={
+                isSubmitting ||
+                !selectedZonaDerivacion ||
+                // Comentarios obligatorios para re-derivación
+                ((derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                  legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) &&
+                 !comentariosDerivacion.trim())
+              }
               startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
             >
               {isSubmitting
                 ? "Procesando..."
-                : derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion)
-                  ? "Re-derivar"
+                : (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
+                   legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion))
+                  ? "Re-derivar a Nueva Zona"
                   : "Derivar"
               }
             </Button>

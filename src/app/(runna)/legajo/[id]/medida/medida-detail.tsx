@@ -76,8 +76,8 @@ const convertMedidaToMedidaData = (
     tipo_display: medida.tipo_medida_display,  // Add display name for proper header rendering
     numero: numeroMedida,
     persona: {
-      nombre: legajo.nnya ? `${legajo.nnya.apellido} ${legajo.nnya.nombre}` : "N/A",
-      dni: legajo.nnya?.dni ? String(legajo.nnya.dni) : "N/A",
+      nombre: legajo.persona ? `${legajo.persona.apellido} ${legajo.persona.nombre}` : "N/A",
+      dni: legajo.persona?.dni ? String(legajo.persona.dni) : "N/A",
     },
     fecha_apertura: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
     ubicacion: "", // TODO: Get from legajo location data
@@ -533,10 +533,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               }}
               medidaApiData={medidaApiData || undefined}
               legajoData={legajoData ? {
-                numero: legajoData.numero,
-                persona_nombre: legajoData.nnya?.nombre || "",
-                persona_apellido: legajoData.nnya?.apellido || "",
-                zona_nombre: legajoData.zona?.nombre || ""
+                numero: legajoData.legajo?.numero || "",
+                persona_nombre: legajoData.persona?.nombre || "",
+                persona_apellido: legajoData.persona?.apellido || "",
+                zona_nombre: legajoData.asignaciones_activas?.[0]?.zona?.nombre || ""
               } : undefined}
               planTrabajoId={medidaApiData?.plan_trabajo_id}
             />
@@ -563,10 +563,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               }}
               medidaApiData={medidaApiData}
               legajoData={legajoData ? {
-                numero: legajoData.numero,
-                persona_nombre: legajoData.nnya?.nombre || "",
-                persona_apellido: legajoData.nnya?.apellido || "",
-                zona_nombre: legajoData.zona?.nombre || ""
+                numero: legajoData.legajo?.numero || "",
+                persona_nombre: legajoData.persona?.nombre || "",
+                persona_apellido: legajoData.persona?.apellido || "",
+                zona_nombre: legajoData.asignaciones_activas?.[0]?.zona?.nombre || ""
               } : undefined}
               planTrabajoId={medidaApiData?.plan_trabajo_id}
             />
@@ -597,10 +597,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 }}
                 medidaApiData={medidaApiData}
                 legajoData={legajoData ? {
-                  numero: legajoData.numero,
-                  persona_nombre: legajoData.nnya?.nombre || "",
-                  persona_apellido: legajoData.nnya?.apellido || "",
-                  zona_nombre: legajoData.zona?.nombre || ""
+                  numero: legajoData.legajo?.numero || "",
+                  persona_nombre: legajoData.persona?.nombre || "",
+                  persona_apellido: legajoData.persona?.apellido || "",
+                  zona_nombre: legajoData.asignaciones_activas?.[0]?.zona?.nombre || ""
                 } : undefined}
                 workflowPhase="apertura"
               />

@@ -175,6 +175,9 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         }
     }, [open, clearErrors])
 
+    // Check if legajo data is available
+    const hasLegajoData = !!(legajoData?.numero && legajoData?.persona_nombre && legajoData?.persona_apellido)
+
     // ============================================================================
     // HANDLERS - Navigation
     // ============================================================================
@@ -377,6 +380,15 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                         {error && (
                             <Alert severity="error" onClose={clearErrors}>
                                 {error}
+                            </Alert>
+                        )}
+
+                        {/* Warning: Legajo data not available yet */}
+                        {!hasLegajoData && !intervencion && (
+                            <Alert severity="info">
+                                <Typography variant="body2">
+                                    Los datos del legajo se están cargando... Si no aparecen, por favor cierre y vuelva a abrir el formulario.
+                                </Typography>
                             </Alert>
                         )}
 

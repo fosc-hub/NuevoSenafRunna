@@ -74,6 +74,13 @@ const WorkflowSectionComponent: React.FC<WorkflowSectionProps> = ({
     }
   }, [items, onDataChange])
 
+  // Check if legajo data is available (only for intervention sections)
+  const hasLegajoData = sectionType !== 'intervencion' || !!(
+    legajoData?.numero &&
+    legajoData?.persona_nombre &&
+    legajoData?.persona_apellido
+  )
+
   // Get display title (e.g., "Intervención", "Nota de Aval", etc.)
   const itemTypeName = config.title.replace('Registro de ', '').replace('Nota de ', '')
 
@@ -227,7 +234,8 @@ const WorkflowSectionComponent: React.FC<WorkflowSectionProps> = ({
             color="primary"
             startIcon={isLoading ? <CircularProgress size={20} /> : <DescriptionIcon />}
             onClick={handleViewLast}
-            disabled={isLoading || !lastItem || !permissions.canView}
+            disabled={isLoading || !lastItem || !permissions.canView || !hasLegajoData}
+            title={!hasLegajoData ? "Esperando datos del legajo..." : lastItem ? `Ver último ${itemTypeName.toLowerCase()}` : `No hay ${itemTypeName.toLowerCase()}s`}
             sx={{
               borderRadius: 8,
               textTransform: "none",
@@ -251,7 +259,8 @@ const WorkflowSectionComponent: React.FC<WorkflowSectionProps> = ({
               color="primary"
               startIcon={<PostAddIcon />}
               onClick={handleCreateNew}
-              disabled={isLoading}
+              disabled={isLoading || !hasLegajoData}
+              title={!hasLegajoData ? "Esperando datos del legajo..." : `Crear nuevo ${itemTypeName.toLowerCase()}`}
               sx={{
                 borderRadius: 8,
                 textTransform: "none",

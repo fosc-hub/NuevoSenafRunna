@@ -431,7 +431,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
         )}
 
         {/* REG-01: Global VinculosManager - accessible from all steps */}
-        {dropdownData && (
+        {/* Hide VinculosManager when viewing/editing existing demanda (id exists) - use Conexiones tab instead */}
+        {dropdownData && !id && (
           <Box sx={{ px: 3, pt: 3 }} data-section="vinculos">
             <FormSection title="Vínculos con Legajos y Medidas" collapsible={true} defaultExpanded={false}>
               <VinculosManager dropdownData={dropdownData} readOnly={isReadOnly} />

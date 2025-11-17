@@ -108,6 +108,13 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
     onWorkflowRefresh?.()
   }
 
+  // Check if legajo data is available
+  const hasLegajoData = !!(
+    legajoData?.numero &&
+    legajoData?.persona_nombre &&
+    legajoData?.persona_apellido
+  )
+
   return (
     <>
       <SectionCard
@@ -132,7 +139,8 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
             color="primary"
             startIcon={<DescriptionIcon />}
             onClick={handleFormularioClick}
-            disabled={!lastIntervencionId}
+            disabled={!lastIntervencionId || !hasLegajoData}
+            title={!hasLegajoData ? "Esperando datos del legajo..." : lastIntervencionId ? "Ver última intervención registrada" : "No hay intervenciones"}
             sx={{
               borderRadius: 8,
               textTransform: "none",
@@ -150,6 +158,8 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
             color="primary"
             startIcon={<PostAddIcon />}
             onClick={handleCargarInformesClick}
+            disabled={!hasLegajoData}
+            title={!hasLegajoData ? "Esperando datos del legajo..." : "Crear nueva intervención"}
             sx={{
               borderRadius: 8,
               textTransform: "none",

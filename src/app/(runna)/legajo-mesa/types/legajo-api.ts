@@ -37,6 +37,13 @@ export interface ActividadesPTIndicadores {
   realizadas: number
 }
 
+// Alerta individual
+export interface Alerta {
+  tipo: string
+  severidad: "baja" | "media" | "alta"
+  mensaje: string
+}
+
 // Estado del andarivel de medidas
 export type AndarielEstado = "Intervención" | "Aval" | "Informe Jurídico" | "Ratificación"
 
@@ -60,7 +67,7 @@ export interface IndicadoresLegajo {
   }
   medida_andarivel: MedidaAndarivel | AndarielEstado | null
   pt_actividades: ActividadesPTIndicadores
-  alertas: string[] // Lista de mensajes de alerta
+  alertas: Alerta[] // Lista de alertas con tipo, severidad y mensaje
 }
 
 // Medida activa básica

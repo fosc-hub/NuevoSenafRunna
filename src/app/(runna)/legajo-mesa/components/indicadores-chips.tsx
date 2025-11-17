@@ -16,6 +16,7 @@ import type {
   SemaforoEstado,
   AndarielEstado,
   MedidaAndarivel,
+  Alerta,
 } from "../types/legajo-api"
 import {
   SEMAFORO_COLORS,
@@ -303,7 +304,7 @@ export const ContadoresPT: React.FC<{
 /**
  * Chip de Alertas
  */
-export const AlertasChip: React.FC<{ alertas: string[] }> = ({ alertas }) => {
+export const AlertasChip: React.FC<{ alertas: Alerta[] }> = ({ alertas }) => {
   if (alertas.length === 0) {
     return null
   }
@@ -312,7 +313,7 @@ export const AlertasChip: React.FC<{ alertas: string[] }> = ({ alertas }) => {
     <Box>
       {alertas.map((alerta, index) => (
         <Typography key={index} variant="caption" sx={{ display: "block", mb: 0.5 }}>
-          • {alerta}
+          • {alerta.mensaje}
         </Typography>
       ))}
     </Box>

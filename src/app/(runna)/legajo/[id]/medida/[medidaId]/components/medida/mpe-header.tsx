@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Box, Chip, Grid, Typography, Button, Paper, LinearProgress, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
+import { Box, Chip, Grid, Typography, Button, Paper, useTheme, Dialog, DialogTitle, DialogContent, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { ResidenciasTab } from "./mpe-tabs/residencias-tab"
 import { useState } from "react"
@@ -112,8 +112,8 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                 <MenuItem key="SAN_JOSE_MALDONADO" value="SAN_JOSE_MALDONADO">Fundación Moviendo Montañas. Casa San José Maldonado</MenuItem>,
                 <MenuItem key="BROCHERO" value="BROCHERO">Fundación Moviendo Montañas. Casa Brochero</MenuItem>,
                 <MenuItem key="NAZARETH" value="NAZARETH">Fundación Moviendo Montañas. Casa Nazareth El Diquecito</MenuItem>,
-                <MenuItem key="CASA_SAN_JOSE" value="CASA_SAN_JOSE">Asociación Civil Dando Se Recibe "Casa San Jose"</MenuItem>,
-                <MenuItem key="CASA_SAN_FRANCISCO" value="CASA_SAN_FRANCISCO">Asociación Civil Dando Se Recibe "Casa San Francisco"</MenuItem>,
+                <MenuItem key="CASA_SAN_JOSE" value="CASA_SAN_JOSE">Asociación Civil Dando Se Recibe &quot;Casa San Jose&quot;</MenuItem>,
+                <MenuItem key="CASA_SAN_FRANCISCO" value="CASA_SAN_FRANCISCO">Asociación Civil Dando Se Recibe &quot;Casa San Francisco&quot;</MenuItem>,
                 <MenuItem key="BERTI" value="BERTI">Hogar De Candelaria Berti - Dependencia Municipalidad De Rio III</MenuItem>,
                 <MenuItem key="REMAR" value="REMAR">Asociación Civil Remar Argentina</MenuItem>,
                 <MenuItem key="SAN_ALBERTO" value="SAN_ALBERTO">Instituto De Vida Consagrada Hogar San Alberto</MenuItem>,

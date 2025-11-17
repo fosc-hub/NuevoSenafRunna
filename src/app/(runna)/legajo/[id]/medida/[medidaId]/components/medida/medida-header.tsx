@@ -29,9 +29,6 @@ interface MedidaHeaderProps {
     // MPJ specific fields
     tipo_medida_mpj?: string
     subtipo_medida_mpj?: string
-    // MPE specific fields
-    tipo_dispositivo_mpe?: string
-    subtipo_dispositivo_mpe?: string
   }
   isActive: boolean
   onViewPersonalData?: () => void
@@ -41,11 +38,8 @@ interface MedidaHeaderProps {
 export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive, onViewPersonalData, onFieldChange }) => {
   const [tipoMedidaMPJ, setTipoMedidaMPJ] = useState(medidaData.tipo_medida_mpj || '')
   const [subtipoMedidaMPJ, setSubtipoMedidaMPJ] = useState(medidaData.subtipo_medida_mpj || '')
-  const [tipoDispositivoMPE, setTipoDispositivoMPE] = useState(medidaData.tipo_dispositivo_mpe || '')
-  const [subtipoDispositivoMPE, setSubtipoDispositivoMPE] = useState(medidaData.subtipo_dispositivo_mpe || '')
 
   const isMPJ = medidaData.tipo === 'MPJ'
-  const isMPE = medidaData.tipo === 'MPE'
 
   // Generate subtipo options for MPJ based on tipo
   const getSubtipoOptionsMPJ = () => {
@@ -81,19 +75,6 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
     console.log('MPJ Subtipo changed to:', value)
     setSubtipoMedidaMPJ(value)
     onFieldChange?.('subtipo_medida_mpj', value)
-  }
-
-  const handleTipoDispositivoMPEChange = (value: string) => {
-    console.log('MPE Tipo changed to:', value)
-    setTipoDispositivoMPE(value)
-    setSubtipoDispositivoMPE('') // Reset subtipo when tipo changes
-    onFieldChange?.('tipo_dispositivo_mpe', value)
-  }
-
-  const handleSubtipoDispositivoMPEChange = (value: string) => {
-    console.log('MPE Subtipo changed to:', value)
-    setSubtipoDispositivoMPE(value)
-    onFieldChange?.('subtipo_dispositivo_mpe', value)
   }
 
   return (
@@ -274,96 +255,6 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
                       >
                         <MenuItem key="empty" value="">Sin especificar</MenuItem>
                         {getSubtipoOptionsMPJ()}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Grid>
-          )}
-
-          {/* MPE Specific Fields */}
-          {isMPE && (
-            <Grid item xs={12}>
-              <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2, mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
-                  Información específica MPE
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Tipo de Dispositivo (MPE)</InputLabel>
-                      <Select
-                        value={tipoDispositivoMPE}
-                        onChange={(e) => handleTipoDispositivoMPEChange(e.target.value)}
-                        label="Tipo de Dispositivo (MPE)"
-                      >
-                        <MenuItem value="">Sin especificar</MenuItem>
-                        <MenuItem value="CENTRO_RESIDENCIAL">Centro Cuidado Residencial</MenuItem>
-                        <MenuItem value="ONG">ONG</MenuItem>
-                        <MenuItem value="FAMILIA_EXTENSA">Familia Extensa</MenuItem>
-                        <MenuItem value="FAMILIA_COMUNITARIA">Familia Comunitaria</MenuItem>
-                        <MenuItem value="FAMILIA_ACOGIMIENTO">Familia de Acogimiento</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Subtipo (MPE)</InputLabel>
-                      <Select
-                        value={subtipoDispositivoMPE}
-                        onChange={(e) => {
-                          setSubtipoDispositivoMPE(e.target.value)
-                          onFieldChange?.('subtipo_dispositivo_mpe', e.target.value)
-                        }}
-                        label="Subtipo (MPE)"
-                        disabled={!tipoDispositivoMPE}
-                      >
-                        <MenuItem value="">Sin especificar</MenuItem>
-                        {tipoDispositivoMPE === 'CENTRO_RESIDENCIAL' && (
-                          <>
-                            <MenuItem value="ACHÁVAL_RODRIGUEZ">Achával Rodriguez</MenuItem>
-                            <MenuItem value="ALFONORNI">Alfonsina Storni</MenuItem>
-                            <MenuItem value="ANTONIO_VISO">Antonio Del Viso</MenuItem>
-                            <MenuItem value="ARGÜELLO_INFANCIA">Argüello Infancia</MenuItem>
-                            <MenuItem value="ARGÜELLO_MUJERES">Argüello Mujeres</MenuItem>
-                            <MenuItem value="BAIGORRI">Baigorri</MenuItem>
-                            <MenuItem value="CASA_SUQUÍA">Casa Suquía</MenuItem>
-                            <MenuItem value="CHE_GUEVARA">Che Guevara</MenuItem>
-                            <MenuItem value="EVA_PERÓN">Eva Perón</MenuItem>
-                            <MenuItem value="INFANTOJUVENIL_SF">Infanto Juvenil San Francisco</MenuItem>
-                            <MenuItem value="LONIOS">Lonios</MenuItem>
-                            <MenuItem value="RÍO_BAMBA">Río Bamba</MenuItem>
-                            <MenuItem value="INFANTOJUVENIL_RC">Infanto Juvenil Río Cuarto</MenuItem>
-                            <MenuItem value="SANTA_CRUZ">Santa Cruz</MenuItem>
-                            <MenuItem value="FELISA_SOAJE">Felisa Soaje</MenuItem>
-                            <MenuItem value="WENCESLAO_ESCALANTE">Wenceslao Escalante</MenuItem>
-                          </>
-                        )}
-                        {tipoDispositivoMPE === 'ONG' && (
-                          <>
-                            <MenuItem value="SIERRA_DORADA">Fundación Sierra Dorada San Marcos Sierras</MenuItem>
-                            <MenuItem value="DESDE_CORAZON">Asociación Civil Hogar De Niños Desde El Corazón</MenuItem>
-                            <MenuItem value="ANGELES_CUSTODIOS">Asociación Civil De Los Santos Ángeles Custodios</MenuItem>
-                            <MenuItem value="CIUDAD_NIÑOS">Fundación San Martín De Porres - Hogar Ciudad De Los Niños</MenuItem>
-                            <MenuItem value="GRANJA_SIQUEM">Asociación Civil Granja Siquem</MenuItem>
-                            <MenuItem value="ANGEL_GUARDA">Asociación Civil Nuestra Señora - Hogar De Niños Ángel De La Guarda</MenuItem>
-                            <MenuItem value="BETHEL">Asociación Civil Bethel Casas De Dios</MenuItem>
-                            <MenuItem value="MADRE_TERESA">Asociación Civil Hogar De María Madre Teresa De Calcuta</MenuItem>
-                            <MenuItem value="ALDEAS_SOS">Asociación Civil Aldeas Infantiles S.O.S Argentina</MenuItem>
-                            <MenuItem value="BETHEL_EVANG">Fundación Evangélica Hogar De Niños Bethel</MenuItem>
-                            <MenuItem value="JOSE_BAINOTTI">Fundación Manos Abiertas Hogar De Niños Jose Bainotti</MenuItem>
-                            <MenuItem value="SAN_JOSE_MALDONADO">Fundación Moviendo Montañas. Casa San José Maldonado</MenuItem>
-                            <MenuItem value="BROCHERO">Fundación Moviendo Montañas. Casa Brochero</MenuItem>
-                            <MenuItem value="NAZARETH">Fundación Moviendo Montañas. Casa Nazareth El Diquecito</MenuItem>
-                            <MenuItem value="CASA_SAN_JOSE">Asociación Civil Dando Se Recibe "Casa San Jose"</MenuItem>
-                            <MenuItem value="CASA_SAN_FRANCISCO">Asociación Civil Dando Se Recibe "Casa San Francisco"</MenuItem>
-                            <MenuItem value="BERTI">Hogar De Candelaria Berti - Dependencia Municipalidad De Rio III</MenuItem>
-                            <MenuItem value="REMAR">Asociación Civil Remar Argentina</MenuItem>
-                            <MenuItem value="SAN_ALBERTO">Instituto De Vida Consagrada Hogar San Alberto</MenuItem>
-                            <MenuItem value="FUSANA">Fusana</MenuItem>
-                          </>
-                        )}
                       </Select>
                     </FormControl>
                   </Grid>

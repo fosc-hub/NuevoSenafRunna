@@ -54,7 +54,7 @@ export const useFilterOptions = (): FilterOptions => {
 
         // Fetch all options in parallel
         const [zonasRes, locRes] = await Promise.all([
-          get<FilterOption[]>("zona/").catch(() => []),
+          get<FilterOption[]>("zonas/").catch(() => []),
           get<FilterOption[]>("localidad/").catch(() => []),
         ])
 

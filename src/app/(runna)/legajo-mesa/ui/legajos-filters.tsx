@@ -20,11 +20,8 @@ import {
   InputLabel,
 } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
-import { Check, AlertCircle, FileText, Clock, Shield, Calendar, Hash, Users, Filter } from "lucide-react"
+import { Check, AlertCircle, FileText, Clock, Shield, Filter } from "lucide-react"
 import { get } from "@/app/api/apiService"
-import DateRangeFilter from "../components/filters/DateRangeFilter"
-import NumericFilter from "../components/filters/NumericFilter"
-import ResponsableFilter from "../components/filters/ResponsableFilter"
 import AdvancedFiltersPanel from "../components/filters/AdvancedFiltersPanel"
 import { useFilterOptions } from "../hooks/useFilterOptions"
 
@@ -75,9 +72,6 @@ interface Zona {
 
 const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [dateAnchorEl, setDateAnchorEl] = useState<null | HTMLElement>(null)
-  const [numericAnchorEl, setNumericAnchorEl] = useState<null | HTMLElement>(null)
-  const [responsableAnchorEl, setResponsableAnchorEl] = useState<null | HTMLElement>(null)
   const [advancedAnchorEl, setAdvancedAnchorEl] = useState<null | HTMLElement>(null)
   const [zonas, setZonas] = useState<Zona[]>([])
   const filterOptions = useFilterOptions()
@@ -210,53 +204,6 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
     onFilterChange(newState)
   }
 
-  const handleDateFilter = (startDate: string | null, endDate: string | null, preset?: string) => {
-    const newState = {
-      ...filterState,
-      fecha_apertura__gte: startDate,
-      fecha_apertura__lte: endDate,
-      fecha_apertura__ultimos_dias: preset ? null : filterState.fecha_apertura__ultimos_dias,
-    }
-    setFilterState(newState)
-    onFilterChange(newState)
-    setDateAnchorEl(null)
-  }
-
-  const handleNumericFilter = (mode: string, value1: number | null, value2?: number | null) => {
-    const newState: LegajoFiltersState = {
-      ...filterState,
-      id__gt: null,
-      id__lt: null,
-      id__gte: null,
-      id__lte: null,
-    }
-
-    if (mode === "exact" && value1 !== null) {
-      newState.id__gte = value1
-      newState.id__lte = value1
-    } else if (mode === "greater" && value1 !== null) {
-      newState.id__gt = value1
-    } else if (mode === "less" && value1 !== null) {
-      newState.id__lt = value1
-    } else if (mode === "between" && value1 !== null && value2 !== null) {
-      newState.id__gte = value1
-      newState.id__lte = value2
-    }
-
-    setFilterState(newState)
-    onFilterChange(newState)
-    setNumericAnchorEl(null)
-  }
-
-  const handleResponsableFilter = (filters: Partial<LegajoFiltersState>) => {
-    const newState = {
-      ...filterState,
-      ...filters,
-    }
-    setFilterState(newState)
-    onFilterChange(newState)
-  }
-
   const hasActiveFilters = Object.values(filterState).some((value) => value !== null)
 
   return (
@@ -296,137 +243,6 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
             }}
           >
             {Object.values(filterState).filter((v) => v !== null).length}
-          </Box>
-        )}
-      </Button>
-
-      {/* Date Filter Button */}
-      <Button
-        onClick={(e) => setDateAnchorEl(e.currentTarget)}
-        variant="outlined"
-        size="small"
-        className="flex items-center gap-2 px-4 py-2 bg-white"
-        sx={{
-          border: "1px solid rgba(0, 0, 0, 0.12)",
-          boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-          borderRadius: "4px",
-          "&:hover": {
-            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-          },
-          ...((filterState.fecha_apertura__gte || filterState.fecha_apertura__lte) && {
-            borderColor: "primary.main",
-            backgroundColor: "primary.50",
-          }),
-        }}
-      >
-        <Calendar className="h-4 w-4" />
-        <span>Fecha</span>
-        {(filterState.fecha_apertura__gte || filterState.fecha_apertura__lte) && (
-          <Box
-            component="span"
-            sx={{
-              ml: 1,
-              px: 0.75,
-              py: 0.25,
-              borderRadius: "10px",
-              backgroundColor: "primary.main",
-              color: "white",
-              fontSize: "0.75rem",
-              fontWeight: "bold",
-            }}
-          >
-            1
-          </Box>
-        )}
-      </Button>
-
-      {/* Numeric Filter Button */}
-      <Button
-        onClick={(e) => setNumericAnchorEl(e.currentTarget)}
-        variant="outlined"
-        size="small"
-        className="flex items-center gap-2 px-4 py-2 bg-white"
-        sx={{
-          border: "1px solid rgba(0, 0, 0, 0.12)",
-          boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-          borderRadius: "4px",
-          "&:hover": {
-            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-          },
-          ...((filterState.id__gt || filterState.id__lt || filterState.id__gte || filterState.id__lte) && {
-            borderColor: "primary.main",
-            backgroundColor: "primary.50",
-          }),
-        }}
-      >
-        <Hash className="h-4 w-4" />
-        <span>ID</span>
-        {(filterState.id__gt || filterState.id__lt || filterState.id__gte || filterState.id__lte) && (
-          <Box
-            component="span"
-            sx={{
-              ml: 1,
-              px: 0.75,
-              py: 0.25,
-              borderRadius: "10px",
-              backgroundColor: "primary.main",
-              color: "white",
-              fontSize: "0.75rem",
-              fontWeight: "bold",
-            }}
-          >
-            1
-          </Box>
-        )}
-      </Button>
-
-      {/* Responsables Filter Button */}
-      <Button
-        onClick={(e) => setResponsableAnchorEl(e.currentTarget)}
-        variant="outlined"
-        size="small"
-        className="flex items-center gap-2 px-4 py-2 bg-white"
-        sx={{
-          border: "1px solid rgba(0, 0, 0, 0.12)",
-          boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-          borderRadius: "4px",
-          "&:hover": {
-            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-          },
-          ...((filterState.jefe_zonal ||
-            filterState.director ||
-            filterState.equipo_trabajo ||
-            filterState.equipo_centro_vida) && {
-            borderColor: "primary.main",
-            backgroundColor: "primary.50",
-          }),
-        }}
-      >
-        <Users className="h-4 w-4" />
-        <span>Responsables</span>
-        {(filterState.jefe_zonal ||
-          filterState.director ||
-          filterState.equipo_trabajo ||
-          filterState.equipo_centro_vida) && (
-          <Box
-            component="span"
-            sx={{
-              ml: 1,
-              px: 0.75,
-              py: 0.25,
-              borderRadius: "10px",
-              backgroundColor: "primary.main",
-              color: "white",
-              fontSize: "0.75rem",
-              fontWeight: "bold",
-            }}
-          >
-            {[
-              filterState.jefe_zonal,
-              filterState.director,
-              filterState.equipo_trabajo,
-              filterState.equipo_centro_vida,
-            ].filter((v) => v !== null).length}
           </Box>
         )}
       </Button>
@@ -676,97 +492,6 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
             </ListItem>
           </List>
         </Box>
-      </Popover>
-
-      {/* Date Filter Popover */}
-      <Popover
-        id="date-filter-menu"
-        open={Boolean(dateAnchorEl)}
-        anchorEl={dateAnchorEl}
-        onClose={() => setDateAnchorEl(null)}
-        elevation={4}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "left",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        sx={{
-          "& .MuiPopover-paper": {
-            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-            borderRadius: "8px",
-            marginTop: "4px",
-          },
-        }}
-      >
-        <DateRangeFilter
-          onApply={handleDateFilter}
-          startDate={filterState.fecha_apertura__gte || null}
-          endDate={filterState.fecha_apertura__lte || null}
-        />
-      </Popover>
-
-      {/* Numeric Filter Popover */}
-      <Popover
-        id="numeric-filter-menu"
-        open={Boolean(numericAnchorEl)}
-        anchorEl={numericAnchorEl}
-        onClose={() => setNumericAnchorEl(null)}
-        elevation={4}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "left",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        sx={{
-          "& .MuiPopover-paper": {
-            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-            borderRadius: "8px",
-            marginTop: "4px",
-          },
-        }}
-      >
-        <NumericFilter
-          onApply={handleNumericFilter}
-          currentValue1={filterState.id__gte || filterState.id__gt || null}
-          currentValue2={filterState.id__lte || null}
-        />
-      </Popover>
-
-      {/* Responsables Filter Popover */}
-      <Popover
-        id="responsable-filter-menu"
-        open={Boolean(responsableAnchorEl)}
-        anchorEl={responsableAnchorEl}
-        onClose={() => setResponsableAnchorEl(null)}
-        elevation={4}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "left",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        sx={{
-          "& .MuiPopover-paper": {
-            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-            borderRadius: "8px",
-            marginTop: "4px",
-          },
-        }}
-      >
-        <ResponsableFilter
-          filters={filterState}
-          onApply={handleResponsableFilter}
-          onClose={() => setResponsableAnchorEl(null)}
-          filterOptions={filterOptions}
-        />
       </Popover>
 
       {/* Advanced Filters Popover */}

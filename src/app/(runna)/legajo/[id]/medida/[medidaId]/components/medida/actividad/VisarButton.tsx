@@ -19,19 +19,22 @@ import {
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
+import { toast } from 'react-toastify'
 
 interface VisarButtonProps {
   actividadId: number
   canVisar: boolean
   onVisar: (aprobado: boolean, observaciones?: string) => Promise<any>
   loading: boolean
+  onSuccess?: () => void
 }
 
 export const VisarButton: React.FC<VisarButtonProps> = ({
   actividadId,
   canVisar,
   onVisar,
-  loading
+  loading,
+  onSuccess
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [aprobado, setAprobado] = useState<'true' | 'false'>('true')
@@ -74,15 +77,44 @@ export const VisarButton: React.FC<VisarButtonProps> = ({
     setSubmitting(true)
     setError(null)
 
-    const result = await onVisar(aprobadoBool, observaciones || undefined)
+    try {
+      const result = await onVisar(aprobadoBool, observaciones || undefined)
 
-    if (result) {
-      handleCloseDialog()
-    } else {
-      setError('Error al procesar el visado')
+      if (result) {
+        // Show success toast
+        const mensajeExito = aprobadoBool
+          ? '✅ Visado aprobado exitosamente. La actividad ha sido completada.'
+          : '⚠️ Visado rechazado. La actividad vuelve a estado "En Progreso" para correcciones.'
+
+        toast.success(mensajeExito, {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        })
+
+        // Close dialog
+        handleCloseDialog()
+
+        // Call success callback to close modal and refresh
+        if (onSuccess) {
+          onSuccess()
+        }
+      } else {
+        setError('Error al procesar el visado')
+      }
+    } catch (error: any) {
+      console.error('Error al visar actividad:', error)
+      setError(error?.message || 'Error al procesar el visado')
+      toast.error('Error al procesar el visado', {
+        position: 'top-center',
+        autoClose: 4000,
+      })
+    } finally {
+      setSubmitting(false)
     }
-
-    setSubmitting(false)
   }
 
   return (

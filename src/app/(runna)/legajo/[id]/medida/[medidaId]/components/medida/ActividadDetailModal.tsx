@@ -241,6 +241,10 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
               actions.visar(actividad.id, { aprobado, observaciones })
             }
             loading={actions.loading}
+            onSuccess={() => {
+              handleSuccess()
+              onClose()
+            }}
           />
 
           {/* Transfer */}

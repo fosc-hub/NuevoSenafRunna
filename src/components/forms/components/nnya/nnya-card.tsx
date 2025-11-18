@@ -96,7 +96,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
   }
 
   const age = calculateAge(watchedField.fechaNacimiento)
-  const hasVulnerabilities = (watchedField.condicionesVulnerabilidad?.condicion_vulnerabilidad || []).length > 0
+  const hasVulnerabilities = (watchedField.condicionesVulnerabilidad || []).length > 0
   const hasVulneraciones = (watchedField.vulneraciones || []).length > 0
   const legajoVinculado = watchedField.legajo_existente_vinculado
 
@@ -142,7 +142,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
             badgeContent={
               hasVulnerabilities ? (
                 <Tooltip
-                  title={`${watchedField.condicionesVulnerabilidad?.condicion_vulnerabilidad?.length || 0} condiciones de vulnerabilidad`}
+                  title={`${watchedField.condicionesVulnerabilidad?.length || 0} condiciones de vulnerabilidad`}
                 >
                   <WarningIcon color="warning" fontSize="small" />
                 </Tooltip>

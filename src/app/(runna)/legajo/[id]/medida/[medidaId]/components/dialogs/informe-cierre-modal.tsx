@@ -40,6 +40,11 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
@@ -55,7 +60,11 @@ import {
   formatFileSize,
   getAcceptAttribute,
 } from "../../utils/file-validation"
-import type { InformeCierre } from "../../types/informe-cierre-api"
+import type {
+  InformeCierre,
+  TipoCeseMPI,
+} from "../../types/informe-cierre-api"
+import { TipoCeseMPILabels } from "../../types/informe-cierre-api"
 
 // ============================================================================
 // PROPS
@@ -79,6 +88,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
   onSuccess,
 }) => {
   // ========== State ==========
+  const [tipoCese, setTipoCese] = useState<TipoCeseMPI | "">("")
   const [observaciones, setObservaciones] = useState("")
   const [archivos, setArchivos] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -86,7 +96,8 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
 
   // ========== Validation ==========
   const isObservacionesValid = observaciones.trim().length >= 20
-  const canSubmit = isObservacionesValid && !isSubmitting
+  const isTipoCeseValid = tipoCese !== ""
+  const canSubmit = isObservacionesValid && isTipoCeseValid && !isSubmitting
 
   // ========== File Handlers ==========
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +127,12 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
   const handleSubmit = async () => {
     setError(null)
 
+    // Validate tipo cese
+    if (!isTipoCeseValid) {
+      setError("Debe seleccionar un tipo de cese")
+      return
+    }
+
     // Validate observaciones
     if (!isObservacionesValid) {
       setError("Las observaciones deben tener al menos 20 caracteres")
@@ -128,6 +145,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
       // Step 1: Create informe de cierre
       // This triggers Estado 3 → Estado 4 transition automatically
       const informeCreado = await createInformeCierre(medidaId, {
+        tipo_cese: tipoCese as TipoCeseMPI,
         observaciones: observaciones.trim(),
       })
 
@@ -181,6 +199,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
     if (isSubmitting) return // Prevent close during submission
 
     // Reset state
+    setTipoCese("")
     setObservaciones("")
     setArchivos([])
     setError(null)
@@ -215,6 +234,36 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
             {error}
           </Alert>
         )}
+
+        {/* Tipo de Cese Selector */}
+        <FormControl
+          fullWidth
+          required
+          error={tipoCese === "" && !isSubmitting}
+          sx={{ mb: 3 }}
+        >
+          <InputLabel id="tipo-cese-label">Tipo de Cese *</InputLabel>
+          <Select
+            labelId="tipo-cese-label"
+            id="tipo-cese-select"
+            value={tipoCese}
+            label="Tipo de Cese *"
+            onChange={(e) => setTipoCese(e.target.value as TipoCeseMPI)}
+            disabled={isSubmitting}
+          >
+            <MenuItem value="">
+              <em>Seleccione un tipo de cese</em>
+            </MenuItem>
+            {(Object.entries(TipoCeseMPILabels) as [TipoCeseMPI, string][]).map(([key, label]) => (
+              <MenuItem key={key} value={key}>
+                {label}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>
+            Seleccione el tipo de cese que corresponde a esta medida
+          </FormHelperText>
+        </FormControl>
 
         {/* Observaciones Field */}
         <TextField

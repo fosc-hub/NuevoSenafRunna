@@ -15,6 +15,59 @@
  */
 
 // ============================================================================
+// TIPO DE CESE
+// ============================================================================
+
+/**
+ * Tipos de cese para MPI (Medida de Protección Integral)
+ */
+export type TipoCeseMPI =
+  | "INICIO_MPJ"                // I. ARCHIVO DE MPI - INICIO MEDIDA PENAL JUVENIL (MPJ)
+  | "DERIVADA_OLP"             // II. ARCHIVO MPI DERIVADA AL ORGANISMO LOCAL DE PROTECCIÓN
+  | "CESADA_VALORA_MPE"        // III. ARCHIVO DE MPI CESADA - VALORA MPE
+  | "CESADA"                   // IV. ARCHIVO DE MPI CESADA
+  | "NO_PERTINENTE"            // V. ARCHIVO NO PERTINENTE
+
+/**
+ * Tipos de cese para MPE (Medida de Protección Excepcional)
+ */
+export type TipoCeseMPE =
+  | "PROYECTO_AUTONOMIA"       // 1. MPE CESADA POR PROYECTO DE AUTONOMIA - CONTINUIDAD EN DISPOSITIVO
+  | "ESTADO_ADOPTABILIDAD"     // 2. MPE CESADA - SOLICITUD ESTADO DE ADOPTABILIDAD
+  | "RESTITUCION_FAMILIAR"     // 3. MPE CESADA POR RESTITUCIÓN FAMILIAR
+  | "MAYORIA_EDAD"             // 4. MPE CESADA POR MAYORÍA DE EDAD
+  | "FALLECIMIENTO"            // 5. MPE CESADA POR FALLECIMIENTO
+  | "RESTITUCION_DERECHOS_RD"  // 6. MPE CESADA - RESTITUCIÓN DE DERECHOS CON CONTINUIDAD DE RESGUARDO POR RD
+
+/**
+ * Union type for all tipo cese
+ */
+export type TipoCese = TipoCeseMPI | TipoCeseMPE
+
+/**
+ * Display labels for MPI tipo cese
+ */
+export const TipoCeseMPILabels: Record<TipoCeseMPI, string> = {
+  INICIO_MPJ: "I. ARCHIVO DE MPI - INICIO MEDIDA PENAL JUVENIL (MPJ)",
+  DERIVADA_OLP: "II. ARCHIVO MPI DERIVADA AL ORGANISMO LOCAL DE PROTECCIÓN",
+  CESADA_VALORA_MPE: "III. ARCHIVO DE MPI CESADA - VALORA MPE",
+  CESADA: "IV. ARCHIVO DE MPI CESADA",
+  NO_PERTINENTE: "V. ARCHIVO NO PERTINENTE"
+}
+
+/**
+ * Display labels for MPE tipo cese
+ */
+export const TipoCeseMPELabels: Record<TipoCeseMPE, string> = {
+  PROYECTO_AUTONOMIA: "1. MPE CESADA POR PROYECTO DE AUTONOMIA - CONTINUIDAD EN DISPOSITIVO",
+  ESTADO_ADOPTABILIDAD: "2. MPE CESADA - SOLICITUD ESTADO DE ADOPTABILIDAD",
+  RESTITUCION_FAMILIAR: "3. MPE CESADA POR RESTITUCIÓN FAMILIAR",
+  MAYORIA_EDAD: "4. MPE CESADA POR MAYORÍA DE EDAD",
+  FALLECIMIENTO: "5. MPE CESADA POR FALLECIMIENTO",
+  RESTITUCION_DERECHOS_RD: "6. MPE CESADA - RESTITUCIÓN DE DERECHOS CON CONTINUIDAD DE RESGUARDO POR RD"
+}
+
+// ============================================================================
 // ADJUNTO TYPES
 // ============================================================================
 
@@ -62,6 +115,11 @@ export interface InformeCierre {
     nombre_completo: string
     username: string
   }
+
+  /** Tipo de cese (MPI o MPE) */
+  tipo_cese: TipoCese
+  tipo_cese_display: string
+
   observaciones: string
   fecha_registro: string
   fecha_modificacion: string
@@ -95,6 +153,10 @@ export interface InformeCierre {
 // ============================================================================
 
 export interface CreateInformeCierreRequest {
+  /** Tipo de cese (requerido) */
+  tipo_cese: TipoCese
+
+  /** Observaciones del informe (min 20 caracteres) */
   observaciones: string
 }
 

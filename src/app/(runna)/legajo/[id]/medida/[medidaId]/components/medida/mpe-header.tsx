@@ -22,6 +22,7 @@ interface MPEHeaderProps {
         articulacion_local: boolean
         persona: {
             nombre: string
+            id?: number
         }
         ubicacion: string
         numero_sac: string
@@ -32,6 +33,7 @@ interface MPEHeaderProps {
         tipo_dispositivo_mpe?: string
         subtipo_dispositivo_mpe?: string
     }
+    demandaData?: any // Full demanda data from the full-detail endpoint
     estados: {
         inicial: boolean
         apertura: boolean
@@ -51,7 +53,7 @@ interface MPEHeaderProps {
     onFieldChange?: (field: string, value: string) => void
 }
 
-export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progreso, onFieldChange }) => {
+export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, estados, progreso, onFieldChange }) => {
     const theme = useTheme();
     const [residenciasModalOpen, setResidenciasModalOpen] = useState(false);
     const [tipoDispositivoMPE, setTipoDispositivoMPE] = useState(medidaData.tipo_dispositivo_mpe || '');
@@ -583,7 +585,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                         fontSize: "1rem"
                     }}
                 >
-                    Carga para residencias
+                    SEGUIMIENTO EN DISPOSITIVO
                 </Button>
             </Box>
 
@@ -608,7 +610,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     pb: 1,
                     borderBottom: '1px solid #e0e0e0'
                 }}>
-                    Carga para Residencias
+                    SEGUIMIENTO EN DISPOSITIVO
                     <IconButton
                         onClick={() => setResidenciasModalOpen(false)}
                         sx={{
@@ -622,7 +624,10 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, estados, progr
                     </IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ p: 0, overflow: 'auto' }}>
-                    <ResidenciasTab />
+                    <ResidenciasTab
+                        demandaData={demandaData}
+                        personaId={medidaData.persona?.id}
+                    />
                 </DialogContent>
             </Dialog>
         </Paper>

@@ -21,6 +21,7 @@
  */
 
 import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import {
   Card,
   CardContent,
@@ -77,6 +78,9 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
   isJZ,
   onRefresh,
 }) => {
+  // ========== Router ==========
+  const router = useRouter()
+
   // ========== State ==========
   const [informe, setInforme] = useState<InformeCierre | null>(null)
   const [isLoadingInforme, setIsLoadingInforme] = useState(false)
@@ -142,13 +146,16 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
       "success"
     )
 
-    // Refresh medida data to get new estado
+    // Close modal first
+    setInformeCierreModalOpen(false)
+
+    // Soft reload: revalidate data from server
+    router.refresh()
+
+    // Also call parent refresh if provided
     if (onRefresh) {
       onRefresh()
     }
-
-    // Close modal
-    setInformeCierreModalOpen(false)
   }
 
   // Deprecated for MPI V2 workflow
@@ -222,6 +229,20 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
                         variant="outlined"
                       />
                     </Stack>
+
+                    {/* Tipo de Cese */}
+                    {informe.tipo_cese_display && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle2" gutterBottom color="primary">
+                          Tipo de Cese
+                        </Typography>
+                        <Alert severity="info" icon={false} sx={{ py: 0.5 }}>
+                          <Typography variant="body2" fontWeight={600}>
+                            {informe.tipo_cese_display}
+                          </Typography>
+                        </Alert>
+                      </Box>
+                    )}
 
                     {informe.rechazado && informe.observaciones_rechazo && (
                       <Alert severity="warning" sx={{ mt: 2 }}>

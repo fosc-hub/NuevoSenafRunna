@@ -24,7 +24,7 @@ export interface AdultoData {
   vinculacion: string
   vinculo_con_nnya_principal: number
   vinculo_demanda: string
-  condicionesVulnerabilidad: string[]
+  condicionesVulnerabilidad: (string | number)[]
   nacionalidad: string
   localizacion?: {
     calle: string
@@ -97,7 +97,7 @@ export interface NnyaData {
     vinculo_demanda: string
     vinculo_con_nnya_principal: string
   }
-  condicionesVulnerabilidad: string[]
+  condicionesVulnerabilidad: (string | number)[]
   vulneraciones: string[]
   // LEG-01: Duplicate detection and legajo linking
   legajo_existente_vinculado?: {

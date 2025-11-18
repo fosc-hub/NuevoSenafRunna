@@ -8,6 +8,7 @@ import { AddTaskDialog, NewTask } from "./[medidaId]/components/dialogs/add-task
 import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[medidaId]/components/navigation-breadcrumbs"
 import { MedidaHeader } from "./[medidaId]/components/medida/medida-header"
 import { MPEHeader } from "./[medidaId]/components/medida/mpe-header"
+import { MPJHeader } from "./[medidaId]/components/medida/mpj-header"
 import { MPETabs } from "./[medidaId]/components/medida/mpe-tabs"
 import { MPJTabs } from "./[medidaId]/components/medida/mpj-tabs"
 import { AperturaSection } from "./[medidaId]/components/medida/apertura-section"
@@ -30,6 +31,7 @@ import { useMedidaDetail } from "./[medidaId]/hooks/useMedidaDetail"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
+import { get } from "@/app/api/apiService"
 import type { LegajoDetailResponse } from "../../../legajo-mesa/types/legajo-api"
 import type { MedidaDetailResponse } from "../../../legajo-mesa/types/medida-api"
 
@@ -203,6 +205,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const [isLegajoLoading, setIsLegajoLoading] = useState(true)
   const [legajoError, setLegajoError] = useState<string | null>(null)
 
+  // State for demanda data (for seguimiento dispositivo)
+  const [demandaData, setDemandaData] = useState<any>(null)
+
   // UI state
   const [openAddTaskDialog, setOpenAddTaskDialog] = useState(false)
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null)
@@ -251,6 +256,29 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
     loadLegajo()
   }, [legajoIdNum])
+
+  // Load demanda full-detail data for seguimiento dispositivo
+  useEffect(() => {
+    const loadDemanda = async () => {
+      if (!legajoData?.demandas_relacionadas?.resultados) return
+
+      // Get the first active demanda or the first demanda if no active ones
+      const demandas = legajoData.demandas_relacionadas.resultados
+      if (demandas.length === 0) return
+
+      const activeDemanda = demandas.find((d: any) => d.estado === 'ACTIVA') || demandas[0]
+      if (!activeDemanda?.id) return
+
+      try {
+        const fullDemanda = await get<any>(`registro-demanda-form/${activeDemanda.id}/full-detail/`)
+        setDemandaData(fullDemanda)
+      } catch (err: any) {
+        console.error('Error loading demanda full-detail:', err)
+      }
+    }
+
+    loadDemanda()
+  }, [legajoData])
 
   // Convert medida API data to MedidaData format
   const medidaData = useMemo(() => {
@@ -516,6 +544,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           <>
             <MPEHeader
               medidaData={medidaData}
+              demandaData={demandaData}
               estados={medidaData.estados}
               progreso={medidaData.progreso}
             />
@@ -543,7 +572,11 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           </>
         ) : medidaData.tipo === "MPJ" ? (
           <>
-            <MedidaHeader medidaData={medidaData} isActive={activeStep !== 2} onViewPersonalData={handleViewPersonalData} />
+            <MPJHeader
+              medidaData={medidaData}
+              demandaData={demandaData}
+              estados={{ apertura: true, proceso: false, cese: false }}
+            />
 
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
               Etapas de la medida

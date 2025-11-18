@@ -18,11 +18,16 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    MenuItem
+    MenuItem,
+    Grid
 } from "@mui/material"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import { PlanTrabajoTab } from "./plan-trabajo-tab"
+import { InformacionEducativaSection } from "../shared/InformacionEducativaSection"
+import { InformacionSaludSection } from "../shared/InformacionSaludSection"
+import { TalleresSection } from "../shared/TalleresSection"
+import { mapEducacionFromDemanda, mapSaludFromDemandaEnhanced } from "../../../utils/seguimiento-mapper"
 
 interface SituacionCritica {
     id: number
@@ -159,6 +164,71 @@ const mockNotas = [
     { id: 2, fecha: "12/12/2025", detalle: "Detalle de la nota" },
 ]
 
+// Situación del NNyA en Residencia (MPE specific) - Moved outside parent component
+const SituacionResidenciaSection = () => {
+    const [tipoSituacion, setTipoSituacion] = useState<'AUTORIZACION' | 'PERMISO' | 'PERMISO_PROLONGADO'>('AUTORIZACION')
+    const [fechaSituacion, setFechaSituacion] = useState('')
+    const [observaciones, setObservaciones] = useState('')
+
+    return (
+        <Box>
+            <Typography variant="h6" align="center" sx={{ fontWeight: 600, mb: 2 }}>
+                Situación del NNyA en Residencia
+            </Typography>
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                        <FormControl component="fieldset">
+                            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                                Tipo de Situación
+                            </Typography>
+                            <RadioGroup
+                                row
+                                value={tipoSituacion}
+                                onChange={(e) => setTipoSituacion(e.target.value as 'AUTORIZACION' | 'PERMISO' | 'PERMISO_PROLONGADO')}
+                            >
+                                <FormControlLabel value="AUTORIZACION" control={<Radio />} label="Autorización" />
+                                <FormControlLabel value="PERMISO" control={<Radio />} label="Permiso" />
+                                <FormControlLabel value="PERMISO_PROLONGADO" control={<Radio />} label="Permiso Prolongado" />
+                            </RadioGroup>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <TextField
+                            fullWidth
+                            type="date"
+                            label="Fecha"
+                            value={fechaSituacion}
+                            onChange={(e) => setFechaSituacion(e.target.value)}
+                            size="small"
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            label="Observaciones"
+                            value={observaciones}
+                            onChange={(e) => setObservaciones(e.target.value)}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{ textTransform: 'none', borderRadius: 2 }}
+                        >
+                            Guardar Situación
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Paper>
+        </Box>
+    )
+}
+
 const NotasSeguimientoSection = () => {
     const [nota, setNota] = useState("")
     const [fecha, setFecha] = useState("12/12/2025")
@@ -244,17 +314,38 @@ const NotasSeguimientoSection = () => {
     )
 }
 
-export const ResidenciasTab: React.FC = () => {
-    const [selectedSection, setSelectedSection] = useState<string>("situaciones-criticas")
+interface ResidenciasTabProps {
+    demandaData?: any // Full demanda data from the full-detail endpoint
+    personaId?: number // Optional specific persona ID to use
+}
+
+export const ResidenciasTab: React.FC<ResidenciasTabProps> = ({
+    demandaData,
+    personaId
+}) => {
+    const [selectedSection, setSelectedSection] = useState<string>("situacion-residencia")
     const [selectedTipo, setSelectedTipo] = useState<string>("RSA")
     const [fecha, setFecha] = useState<string>("12/12/2025")
     const [situaciones] = useState<SituacionCritica[]>(mockSituaciones)
 
+    // Transform demanda data to seguimiento format
+    const educacionData = useMemo(() => {
+        if (!demandaData) return undefined
+        return mapEducacionFromDemanda(demandaData, personaId)
+    }, [demandaData, personaId])
+
+    const saludData = useMemo(() => {
+        if (!demandaData) return undefined
+        return mapSaludFromDemandaEnhanced(demandaData, personaId)
+    }, [demandaData, personaId])
+
     const sidebarOptions = [
-        { id: "plan-acompaniamiento", label: "Plan de acompañamiento" },
-        { id: "situaciones-criticas", label: "Situaciones críticas" },
-        { id: "cambio-lugar", label: "Cambio de lugar de resguardo" },
-        { id: "notas-seguimiento", label: "Notas de seguimiento" }
+        { id: "situacion-residencia", label: "Situación del NNyA en Residencia" },
+        { id: "informacion-educativa", label: "Información Educativa" },
+        { id: "informacion-salud", label: "Información de Salud" },
+        { id: "talleres", label: "Talleres Recreativos y Sociolaborales" },
+        { id: "cambio-lugar", label: "Cambio de Lugar de Resguardo" },
+        { id: "notas-seguimiento", label: "Notas de Seguimiento" }
     ]
 
     const handleTipoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -366,16 +457,20 @@ export const ResidenciasTab: React.FC = () => {
 
     const renderContent = () => {
         switch (selectedSection) {
-            case "plan-acompaniamiento":
-                return <PlanTrabajoTab medidaData={{}} />
+            case "situacion-residencia":
+                return <SituacionResidenciaSection />
+            case "informacion-educativa":
+                return <InformacionEducativaSection data={educacionData} />
+            case "informacion-salud":
+                return <InformacionSaludSection data={saludData} />
+            case "talleres":
+                return <TalleresSection maxTalleres={5} />
             case "cambio-lugar":
                 return <CambioLugarResguardoSection />
             case "notas-seguimiento":
                 return <NotasSeguimientoSection />
-            case "situaciones-criticas":
-                return renderSituacionesCriticas()
             default:
-                return renderSituacionesCriticas()
+                return <SituacionResidenciaSection />
         }
     }
 

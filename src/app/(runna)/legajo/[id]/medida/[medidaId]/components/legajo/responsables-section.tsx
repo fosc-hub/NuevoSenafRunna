@@ -16,16 +16,18 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
   if (!responsables || Object.keys(responsables).length === 0) {
     return (
       <Paper
-        elevation={2}
+        elevation={0}
         sx={{
           width: "100%",
           mb: 4,
           p: 3,
           borderRadius: 2,
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <GroupIcon sx={{ mr: 1, color: "primary.main" }} />
+          <GroupIcon sx={{ mr: 1, color: "text.secondary" }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Responsables
           </Typography>
@@ -46,17 +48,19 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
         width: "100%",
         mb: 4,
         p: 3,
         borderRadius: 2,
+        border: "1px solid",
+        borderColor: "divider",
       }}
     >
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <GroupIcon sx={{ mr: 1, color: "primary.main" }} />
+        <GroupIcon sx={{ mr: 1, color: "text.secondary" }} />
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Responsables
         </Typography>
@@ -64,6 +68,7 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
           label={`${responsablesEntries.length} tipo${responsablesEntries.length !== 1 ? "s" : ""}`}
           color="primary"
           size="small"
+          variant="outlined"
           sx={{ ml: 2 }}
         />
       </Box>
@@ -81,13 +86,14 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
                 elevation={0}
                 sx={{
                   p: 3,
-                  bgcolor: "primary.light",
+                  border: "1px solid",
+                  borderColor: "divider",
                   borderLeft: "4px solid",
                   borderLeftColor: "primary.main",
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-                  <PersonIcon sx={{ mr: 2, color: "primary.main", mt: 0.5 }} />
+                  <PersonIcon sx={{ mr: 2, color: "text.secondary", mt: 0.5 }} />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                       {formatTipoResponsabilidad(key)}
@@ -171,7 +177,15 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
       </Grid>
 
       {/* Info adicional */}
-      <Box sx={{ mt: 3, p: 2, bgcolor: "info.light", borderRadius: 1 }}>
+      <Box
+        sx={{
+          mt: 3,
+          p: 2,
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 1
+        }}
+      >
         <Typography variant="caption" color="text.secondary">
           Los responsables tienen distintos niveles de acceso y permisos sobre este legajo según su tipo de responsabilidad.
         </Typography>

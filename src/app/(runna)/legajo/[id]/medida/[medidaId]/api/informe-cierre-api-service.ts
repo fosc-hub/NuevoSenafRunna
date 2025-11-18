@@ -102,6 +102,11 @@ export const createInformeCierre = async (
   try {
     console.log(`Creating informe cierre for medida ${medidaId}:`, data)
 
+    // Validate tipo_cese client-side
+    if (!data.tipo_cese) {
+      throw new Error("Debe seleccionar un tipo de cese")
+    }
+
     // Validate observaciones client-side
     if (data.observaciones.trim().length < 20) {
       throw new Error("Las observaciones deben tener al menos 20 caracteres")

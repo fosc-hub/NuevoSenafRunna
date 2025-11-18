@@ -270,6 +270,8 @@ const transformApiData = (apiData: any) => {
     JustificacionDirector: justificacionDirector,
     SolicitudTecnico: solicitudTecnico,
     adjuntos: adjuntos,
+    // Preserve latest_evaluacion for file management and other components
+    latest_evaluacion: apiData.latest_evaluacion,
     // Add scores data from API with enriched NNyA information (top-level or nested)
     scores: (() => {
       const rawScoresTop = Array.isArray(apiData.scores) ? apiData.scores : []

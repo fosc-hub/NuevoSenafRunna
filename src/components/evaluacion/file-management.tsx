@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react"
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -32,19 +32,59 @@ interface FileInfo {
   date: string
   url: string
   archivo?: string
+  file?: File // Store the original File object
 }
 
 interface FileManagementProps {
   demandaId?: number | null
+  existingAdjuntos?: Array<{ archivo: string }>
 }
 
 // Export the handle type for TypeScript support
 export interface FileManagementHandle {
   addGeneratedPDF: (pdfBlob: Blob, fileName: string) => FileInfo
+  getFiles: () => File[] // Add method to get original File objects
 }
 
-const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ demandaId }, ref) => {
+const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ demandaId, existingAdjuntos = [] }, ref) => {
   const [files, setFiles] = useState<FileInfo[]>([])
+
+  // Load existing adjuntos when component mounts or when existingAdjuntos changes
+  useEffect(() => {
+    if (existingAdjuntos && existingAdjuntos.length > 0) {
+      const existingFiles = existingAdjuntos.map((adjunto, index) => {
+        // Extract filename from URL
+        const url = adjunto.archivo
+        const fileName = url.split('/').pop() || `archivo_${index + 1}`
+
+        // Determine if it's a full URL or relative path
+        const fileUrl = url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_API_URL || ''}${url}`
+
+        // Detect file type from extension
+        let fileType = 'application/octet-stream'
+        const extension = fileName.split('.').pop()?.toLowerCase()
+        if (extension === 'pdf') {
+          fileType = 'application/pdf'
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension || '')) {
+          fileType = `image/${extension}`
+        } else if (['doc', 'docx'].includes(extension || '')) {
+          fileType = 'application/msword'
+        }
+
+        return {
+          id: `existing_${index}`,
+          name: fileName,
+          type: fileType,
+          size: 0, // Unknown size for existing files
+          date: 'Archivo existente',
+          url: fileUrl,
+          archivo: url,
+          // No File object for existing files from server
+        }
+      })
+      setFiles(existingFiles)
+    }
+  }, [existingAdjuntos])
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -53,6 +93,9 @@ const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ 
     addGeneratedPDF: (pdfBlob: Blob, fileName = "informe_valoracion.pdf") => {
       // Crear un objeto URL para el blob
       const blobUrl = URL.createObjectURL(pdfBlob)
+
+      // Convert Blob to File
+      const file = new File([pdfBlob], fileName, { type: "application/pdf" })
 
       // Crear un nuevo archivo en el formato esperado por la API
       const newFile = {
@@ -63,6 +106,7 @@ const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ 
         date: new Date().toLocaleString(),
         url: blobUrl,
         archivo: `/media/TDemandaAdjunto/archivo_${Math.floor(Math.random() * 1000)}/${fileName}`,
+        file: file, // Store the File object
       }
 
       setFiles((prev) => [...prev, newFile])
@@ -80,6 +124,10 @@ const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ 
       })
 
       return newFile
+    },
+    getFiles: () => {
+      // Return only the File objects from files that have them
+      return files.filter(f => f.file).map(f => f.file!)
     },
   }))
 
@@ -130,6 +178,7 @@ const FileManagement = forwardRef<FileManagementHandle, FileManagementProps>(({ 
       size: file.size,
       date: new Date().toLocaleString(),
       url: URL.createObjectURL(file),
+      file: file, // Store the original File object
     }))
 
     setFiles((prev) => [...prev, ...newFiles])

@@ -19,7 +19,6 @@ import dynamic from "next/dynamic"
 import { Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
 import axiosInstance from '@/app/api/utils/axiosInstance';
 import { useUser } from "@/utils/auth/userZustand"
-import { autorizarAdmisionYCrearLegajos } from "@/features/legajo/api/legajo-creation.service"
 import { fetchUsuarios } from "@/app/(runna)/legajo-mesa/api/legajo-asignacion-api-service"
 import type { Usuario } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
 
@@ -43,6 +42,8 @@ interface ActionButtonsProps {
   justificacionTecnico?: string
   demandaId?: number | null
   nnyaIds?: (string | number)[]
+  adjuntos?: any[]
+  fileManagementRef?: React.RefObject<any> // Add ref to get files on demand
 }
 
 interface ChildOption {
@@ -95,6 +96,8 @@ export default function ActionButtons({
   justificacionTecnico,
   demandaId,
   nnyaIds,
+  adjuntos = [],
+  fileManagementRef,
 }: ActionButtonsProps) {
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<(string | number)[]>([])
   const [firmantes, setFirmantes] = useState<Firmante[]>([])
@@ -224,6 +227,14 @@ export default function ActionButtons({
         return
       }
 
+      // Get all adjuntos: existing ones + new files from FileManagement
+      const newFiles = fileManagementRef?.current?.getFiles() || []
+      const allAdjuntos = [...adjuntos, ...newFiles]
+
+      console.log("Total adjuntos to send:", allAdjuntos.length)
+      console.log("Existing adjuntos:", adjuntos.length)
+      console.log("New files from FileManagement:", newFiles.length)
+
       // Get user data for all authorization actions
       const localidad_usuario = data?.InformacionGeneral?.Localidad || "string"
       const nombre_usuario = data?.InformacionGeneral?.NombreApellido || "string"
@@ -252,22 +263,40 @@ export default function ActionButtons({
           return child?.databaseId || selectedId;
         });
 
-        const payload = {
-          nnyas_evaluados_id: selectedDatabaseIds,
-          descripcion_de_la_situacion: descripcionSituacion || "Blank",
-          valoracion_profesional_final: valoracionProfesional || "Blank",
-          justificacion_tecnico: justificacionTecnico || "Blank",
-          solicitud_tecnico: "TOMAR MEDIDA",
-          tipo_medida_evaluado: tipoMedidaEvaluado,
-          demanda: demandaId,
-          localidad_usuario,
-          nombre_usuario,
-          rol_usuario
-        }
+        // Create FormData for multipart/form-data submission
+        const formData = new FormData()
 
-        console.log("Sending payload:", payload)
+        // Append each nnyas_evaluados_id individually (backend expects multiple fields with same name)
+        selectedDatabaseIds.forEach((id) => {
+          formData.append("nnyas_evaluados_id", String(id))
+        })
 
-        const response = await axiosInstance.post("/evaluaciones/", payload)
+        // Append all other fields
+        formData.append("descripcion_de_la_situacion", descripcionSituacion || "Blank")
+        formData.append("valoracion_profesional_final", valoracionProfesional || "Blank")
+        formData.append("justificacion_tecnico", justificacionTecnico || "Blank")
+        formData.append("solicitud_tecnico", "TOMAR MEDIDA")
+        formData.append("tipo_medida_evaluado", tipoMedidaEvaluado)
+        formData.append("demanda", String(demandaId))
+        formData.append("localidad_usuario", localidad_usuario)
+        formData.append("nombre_usuario", nombre_usuario)
+        formData.append("rol_usuario", rol_usuario)
+
+        // Append files using the field name "uploaded_files" as specified in API docs
+        const newFilesToUpload = allAdjuntos.filter(adjunto => adjunto instanceof File)
+        newFilesToUpload.forEach((file) => {
+          console.log("Appending File:", file.name)
+          formData.append("uploaded_files", file)
+        })
+
+        console.log("Sending FormData with", newFilesToUpload.length, "files")
+
+        // Send as multipart/form-data
+        const response = await axiosInstance.post("/evaluaciones/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
         console.log("API Response:", response.data)
 
         toast.success("Solicitud de tomar medida enviada exitosamente", {
@@ -281,21 +310,39 @@ export default function ActionButtons({
           return child?.databaseId || selectedId;
         });
 
-        const payload = {
-          nnyas_evaluados_id: selectedDatabaseIds,
-          descripcion_de_la_situacion: descripcionSituacion || "Blank",
-          valoracion_profesional_final: valoracionProfesional || "Blank",
-          justificacion_tecnico: justificacionTecnico || "Blank",
-          solicitud_tecnico: "ARCHIVAR",
-          demanda: demandaId,
-          localidad_usuario,
-          nombre_usuario,
-          rol_usuario
-        }
+        // Create FormData for multipart/form-data submission
+        const formData = new FormData()
 
-        console.log("Sending payload:", payload)
+        // Append each nnyas_evaluados_id individually
+        selectedDatabaseIds.forEach((id) => {
+          formData.append("nnyas_evaluados_id", String(id))
+        })
 
-        const response = await axiosInstance.post("/evaluaciones/", payload)
+        // Append all other fields
+        formData.append("descripcion_de_la_situacion", descripcionSituacion || "Blank")
+        formData.append("valoracion_profesional_final", valoracionProfesional || "Blank")
+        formData.append("justificacion_tecnico", justificacionTecnico || "Blank")
+        formData.append("solicitud_tecnico", "ARCHIVAR")
+        formData.append("demanda", String(demandaId))
+        formData.append("localidad_usuario", localidad_usuario)
+        formData.append("nombre_usuario", nombre_usuario)
+        formData.append("rol_usuario", rol_usuario)
+
+        // Append files using the field name "uploaded_files"
+        const newFilesToUpload = allAdjuntos.filter(adjunto => adjunto instanceof File)
+        newFilesToUpload.forEach((file) => {
+          console.log("Appending File:", file.name)
+          formData.append("uploaded_files", file)
+        })
+
+        console.log("Sending FormData with", newFilesToUpload.length, "files")
+
+        // Send as multipart/form-data
+        const response = await axiosInstance.post("/evaluaciones/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
         console.log("API Response:", response.data)
 
         toast.success("Solicitud de archivar enviada exitosamente", {
@@ -303,31 +350,64 @@ export default function ActionButtons({
           autoClose: 3000,
         })
       } else if (action === "autorizar" || action === "no autorizar") {
-        const payload = {
-          descripcion_de_la_situacion: descripcionSituacion || "El niño refiere problemas de alimentación y estudio.",
-          valoracion_profesional_final: valoracionProfesional || "Se propone acompañamiento psicosocial.",
-          justificacion_tecnico: justificacionTecnico || "Informe de trabajador social adjunto.",
-          justificacion_director: "Aprobado por coordinación.",
-          solicitud_tecnico: "TOMAR MEDIDA",
-          decision_director: action === "autorizar" ? "AUTORIZAR" : "NO AUTORIZAR",
-          demanda: demandaId,
-          localidad_usuario,
-          nombre_usuario,
-          rol_usuario
+        // Create FormData for multipart/form-data submission
+        const formData = new FormData()
+
+        // Append all fields
+        formData.append("descripcion_de_la_situacion", descripcionSituacion || "El niño refiere problemas de alimentación y estudio.")
+        formData.append("valoracion_profesional_final", valoracionProfesional || "Se propone acompañamiento psicosocial.")
+        formData.append("justificacion_tecnico", justificacionTecnico || "Informe de trabajador social adjunto.")
+        formData.append("justificacion_director", "Aprobado por coordinación.")
+        formData.append("solicitud_tecnico", "TOMAR MEDIDA")
+        formData.append("decision_director", action === "autorizar" ? "AUTORIZAR" : "NO AUTORIZAR")
+        formData.append("demanda", String(demandaId))
+        formData.append("localidad_usuario", localidad_usuario)
+        formData.append("nombre_usuario", nombre_usuario)
+        formData.append("rol_usuario", rol_usuario)
+
+        if (action === "autorizar") {
+          formData.append("decision", "AUTORIZAR_ADMISION")
         }
 
-        console.log("Sending payload:", payload)
+        // Append files using the field name "uploaded_files"
+        const newFilesToUpload = allAdjuntos.filter(adjunto => adjunto instanceof File)
+        newFilesToUpload.forEach((file) => {
+          console.log("Appending File:", file.name)
+          formData.append("uploaded_files", file)
+        })
+
+        console.log("Sending FormData with", newFilesToUpload.length, "files")
 
         if (action === "autorizar") {
           // LEG-02: Autorizar admisión y crear legajos automáticamente
-          const response = await autorizarAdmisionYCrearLegajos(demandaId, payload)
-          console.log("API Response:", response)
+          const response = await axiosInstance.put(
+            `/evaluaciones/${demandaId}/autorizar/?autorizar=true`,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          )
+          console.log("API Response:", response.data)
 
-          // Response is already handled by autorizarAdmisionYCrearLegajos service
-          // No additional toast needed here as the service already shows appropriate messages
+          // Show success message
+          const nnyaCount = response.data.evaluacion_personas?.length || 0
+          toast.success(`Admisión autorizada para ${nnyaCount} NNyA`, {
+            position: "top-center",
+            autoClose: 3000,
+          })
         } else {
           // No autorizar - no crea legajos
-          const response = await axiosInstance.put(`/evaluaciones/${demandaId}/autorizar/?autorizar=false`, payload)
+          const response = await axiosInstance.put(
+            `/evaluaciones/${demandaId}/autorizar/?autorizar=false`,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          )
           console.log("API Response:", response.data)
 
           toast.success("Solicitud no autorizar enviada exitosamente", {

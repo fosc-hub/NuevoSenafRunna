@@ -392,7 +392,11 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       </Accordion>
 
       {/* File Management Section */}
-      <FileManagement ref={fileManagementRef} demandaId={demandaId} />
+      <FileManagement
+        ref={fileManagementRef}
+        demandaId={demandaId}
+        existingAdjuntos={data.latest_evaluacion?.adjuntos || []}
+      />
 
       <ActionButtons
         generatePDF={() => Promise.resolve(collectUpdatedData())}
@@ -403,6 +407,8 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
         valoracionProfesional={valoracionProfesional}
         justificacionTecnico={justificacionTecnico}
         descripcionSituacion={descripcionSituacion}
+        adjuntos={adjuntos}
+        fileManagementRef={fileManagementRef}
       />
     </Box>
   )

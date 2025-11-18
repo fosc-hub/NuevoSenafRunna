@@ -78,7 +78,7 @@ export default function Header() {
       <Link href="/mesadeentrada" className="flex-shrink-0 transition-opacity hover:opacity-90">
         <div className="relative h-12 w-44">
           <Image
-            src="/img/Logo RUNNA nuevo.png"
+            src="/img/PNG STICKER.png"
             alt="Logo RUNNA"
             fill
             style={{ objectFit: 'contain' }}

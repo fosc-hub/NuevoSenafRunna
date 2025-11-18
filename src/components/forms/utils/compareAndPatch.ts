@@ -549,8 +549,8 @@ function addFullNnyaData(personaData: any, nnya: any, index: number): void {
     vinculo_con_nnya_principal: nnya.demanda_persona?.vinculo_con_nnya_principal || null,
   }
 
-  if (nnya.condicionesVulnerabilidad && nnya.condicionesVulnerabilidad.condicion_vulnerabilidad) {
-    personaData.condiciones_vulnerabilidad = nnya.condicionesVulnerabilidad.condicion_vulnerabilidad.map(
+  if (nnya.condicionesVulnerabilidad && Array.isArray(nnya.condicionesVulnerabilidad)) {
+    personaData.condiciones_vulnerabilidad = nnya.condicionesVulnerabilidad.map(
       (condicion: number) => ({
         si_no: true,
         condicion_vulnerabilidad: condicion,

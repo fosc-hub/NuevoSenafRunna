@@ -5,6 +5,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
+import { PersonAdd } from "@mui/icons-material"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
 import SearchButton from "../app/(runna)/mesadeentrada/ui/search-button"
 import { useUser } from "@/utils/auth/userZustand"
@@ -95,33 +96,62 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 component="a"
                 variant="contained"
                 onClick={handleNuevoRegistro}
-                sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" } }}
+                startIcon={<PersonAdd />}
+                sx={{
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
+                  boxShadow: "0 4px 12px rgba(0, 188, 212, 0.3)",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #003D6E 0%, #009AAC 100%)",
+                    boxShadow: "0 6px 16px rgba(0, 188, 212, 0.4)",
+                  },
+                }}
               >
-                + Nuevo Registro
+                Nueva Demanda
               </Button>
             </Link>
           )}
+
+          <SearchButton
+            buttonText="Buscar por ID, DNI, Número..."
+            buttonSx={{
+              borderRadius: 2,
+              px: 2.5,
+              py: 1,
+              border: "1px solid rgba(0, 80, 140, 0.2)",
+              color: "#00508C",
+              "&:hover": {
+                borderColor: "#00BCD4",
+                backgroundColor: "rgba(0, 188, 212, 0.04)",
+              },
+            }}
+          />
 
           <Button
             onClick={handleFilterClick}
             variant="outlined"
             size="small"
-            className="flex items-center gap-2 px-4 py-2 bg-white"
             sx={{
-              border: "1px solid rgba(0, 0, 0, 0.12)",
-              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-              borderRadius: "4px",
+              px: 2.5,
+              py: 1,
+              borderRadius: 2,
+              border: "1px solid rgba(0, 80, 140, 0.2)",
+              color: "#00508C",
+              textTransform: "none",
+              fontWeight: 500,
               "&:hover": {
-                boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+                borderColor: "#00BCD4",
+                backgroundColor: "rgba(0, 188, 212, 0.04)",
               },
             }}
           >
-            <FilterList className="h-4 w-4" />
-            <span>Filtros</span>
+            <FilterList sx={{ mr: 1, fontSize: "1.2rem" }} />
+            Filtros
           </Button>
-
-          {/* Add the Search Button component */}
-          <SearchButton />
 
           <Popover
             id="filter-menu"

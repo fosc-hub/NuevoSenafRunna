@@ -96,9 +96,7 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
           vinculo_con_nnya_principal: nnya.demanda_persona.vinculo_con_nnya_principal,
         },
 
-        condicionesVulnerabilidad: {
-          condicion_vulnerabilidad: nnya.condiciones_vulnerabilidad.map((cv: any) => cv.condicion_vulnerabilidad),
-        },
+        condicionesVulnerabilidad: (nnya.condiciones_vulnerabilidad || []).map((cv: any) => cv.condicion_vulnerabilidad),
 
         vulneraciones: (nnya.vulneraciones || []).map((vulneracion: any) => ({
           id: vulneracion.id || 0,
@@ -144,7 +142,7 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
         vinculacion: adulto.demanda_persona.vinculo_demanda,
         vinculo_con_nnya_principal: adulto.demanda_persona.vinculo_con_nnya_principal,
 
-        condicionesVulnerabilidad: adulto.condiciones_vulnerabilidad.map((cv: any) => cv.condicion_vulnerabilidad),
+        condicionesVulnerabilidad: (adulto.condiciones_vulnerabilidad || []).map((cv: any) => cv.condicion_vulnerabilidad),
       })),
   }
 }

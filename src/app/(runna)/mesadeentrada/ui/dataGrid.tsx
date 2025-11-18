@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState, useMemo, useEffect } from "react"
-import NextLink from "next/link"
 import {
   Paper,
   Button,
@@ -33,7 +32,6 @@ import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
-import SearchButton from "./search-button"
 import * as XLSX from "xlsx"
 import { DownloadRounded } from "@mui/icons-material"
 import { useUser } from "@/utils/auth/userZustand"
@@ -323,11 +321,6 @@ const DemandaTableContent: React.FC = () => {
     estado_demanda: null,
     objetivo_de_demanda: null,
   })
-
-  // Check if user has permission to add demandas
-  const hasAddPermission = user?.all_permissions?.includes('add_tdemanda') ||
-    user?.is_superuser ||
-    user?.is_staff
 
   // Check if user has permission to assign demandas
   const hasAssignPermission = user?.all_permissions?.includes('add_tdemandazona') ||
@@ -1073,7 +1066,7 @@ const DemandaTableContent: React.FC = () => {
           border: "1px solid rgba(0, 188, 212, 0.1)",
         }}
       >
-        {/* Barra 1: Título + Búsqueda + Acción Principal */}
+        {/* Barra 1: Título */}
         <Box
           sx={{
             px: 3,
@@ -1097,50 +1090,9 @@ const DemandaTableContent: React.FC = () => {
           >
             Gestión de Demandas
           </Typography>
-
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            <SearchButton
-              buttonText="Buscar por ID, DNI, Número..."
-              buttonSx={{
-                borderRadius: 2,
-                px: 2.5,
-                py: 1,
-                border: "1px solid rgba(0, 80, 140, 0.2)",
-                color: "#00508C",
-                "&:hover": {
-                  borderColor: "#00BCD4",
-                  backgroundColor: "rgba(0, 188, 212, 0.04)",
-                },
-              }}
-            />
-
-            {hasAddPermission && (
-              <Button
-                component={NextLink}
-                href="/nuevoingreso"
-                variant="contained"
-                onClick={handleNuevoRegistro}
-                startIcon={<PersonAdd />}
-                sx={{
-                  px: 2.5,
-                  py: 1,
-                  borderRadius: 2,
-                  background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
-                  boxShadow: "0 4px 12px rgba(0, 188, 212, 0.3)",
-                  fontWeight: 600,
-                  "&:hover": {
-                    background: "linear-gradient(135deg, #003D6E 0%, #009AAC 100%)",
-                    boxShadow: "0 6px 16px rgba(0, 188, 212, 0.4)",
-                  },
-                }}
-              >
-                Nueva Demanda
-              </Button>
-            )}
-          </Box>
         </Box>
 
-        {/* Barra 2: Filtros y Herramientas Secundarias */}
+        {/* Barra 2: Acciones (Nuevo Registro, Búsqueda, Filtros, Exportar, Refrescar) */}
         <Box
           sx={{
             px: 3,

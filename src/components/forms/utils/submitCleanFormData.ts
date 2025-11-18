@@ -286,7 +286,7 @@ function createCleanNnyaData(nnya: NnyaData, index: number, existingIds?: any): 
       ...(nnya.observaciones ? { observaciones: nnya.observaciones } : {}),
     },
 
-    condiciones_vulnerabilidad: ((nnya.condicionesVulnerabilidad || {}).condicion_vulnerabilidad || []).map(
+    condiciones_vulnerabilidad: (nnya.condicionesVulnerabilidad || []).map(
       (condicion: number) => ({
         si_no: true,
         condicion_vulnerabilidad: condicion,

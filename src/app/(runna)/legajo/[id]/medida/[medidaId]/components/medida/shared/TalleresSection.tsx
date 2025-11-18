@@ -178,7 +178,7 @@ export const TalleresSection: React.FC<TalleresSectionProps> = ({
       {talleres.length === 0 && (
         <Paper elevation={1} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            No hay talleres registrados. Haga clic en "Agregar Taller" para comenzar.
+            No hay talleres registrados. Haga clic en &ldquo;Agregar Taller&rdquo; para comenzar.
           </Typography>
         </Paper>
       )}

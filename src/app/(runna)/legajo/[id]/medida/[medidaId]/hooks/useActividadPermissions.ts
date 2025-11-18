@@ -46,7 +46,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
       groupNames.includes('director provincial') ||
       groupNames.includes('director interior') ||
       groupNames.includes('director')
-    const isLegal = groupNames.includes('legales') || groupNames.includes('equipo legal') || user.legal === true
+    const isLegal = groupNames.includes('legal') || groupNames.includes('legales') || groupNames.includes('equipo legal') || user.legal === true
 
     // Determine user level (1-4)
     let userLevel = 1

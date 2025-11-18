@@ -48,6 +48,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import {
   createInformeCierre,
   uploadAdjuntoInformeCierre,
+  getInformeCierreActivo,
 } from "../../api/informe-cierre-api-service"
 import {
   validateFile,
@@ -148,9 +149,13 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
         console.log("All files uploaded successfully")
       }
 
-      // Step 3: Success - notify parent and close
-      if (onSuccess) {
-        onSuccess(informeCreado)
+      // Step 3: Fetch the updated informe with adjuntos
+      // This ensures onSuccess receives complete data including uploaded files
+      const informeCompleto = await getInformeCierreActivo(medidaId)
+
+      // Step 4: Success - notify parent and close
+      if (onSuccess && informeCompleto) {
+        onSuccess(informeCompleto)
       }
 
       // Close modal and reset

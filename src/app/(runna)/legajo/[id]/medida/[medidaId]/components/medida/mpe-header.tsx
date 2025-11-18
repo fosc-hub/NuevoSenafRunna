@@ -98,7 +98,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, e
                 <MenuItem key="FELISA_SOAJE" value="FELISA_SOAJE">Felisa Soaje</MenuItem>,
                 <MenuItem key="WENCESLAO_ESCALANTE" value="WENCESLAO_ESCALANTE">Wenceslao Escalante</MenuItem>
             );
-        } else if (tipoDispositivoMPE === 'ONG') {
+        } else if (tipoDispositivoMPE === 'OGA') {
             options.push(
                 <MenuItem key="SIERRA_DORADA" value="SIERRA_DORADA">Fundación Sierra Dorada San Marcos Sierras</MenuItem>,
                 <MenuItem key="DESDE_CORAZON" value="DESDE_CORAZON">Asociación Civil Hogar De Niños Desde El Corazón</MenuItem>,
@@ -347,22 +347,22 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, e
                         </Box>
 
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Fecha:</strong> {medidaData.fecha_resguardo}
+                            <strOGA>Fecha:</strOGA> {medidaData.fecha_resguardo}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Lugar de resguardo:</strong> {medidaData.lugar_resguardo}
+                            <strOGA>Lugar de resguardo:</strOGA> {medidaData.lugar_resguardo}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Origen de la demanda:</strong> {medidaData.origen_demanda}
+                            <strOGA>Origen de la demanda:</strOGA> {medidaData.origen_demanda}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Zona Uder de Trabajo:</strong> {medidaData.zona_trabajo}
+                            <strOGA>Zona Uder de Trabajo:</strOGA> {medidaData.zona_trabajo}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Zona Uder centro de vida:</strong> {medidaData.zona_centro_vida}
+                            <strOGA>Zona Uder centro de vida:</strOGA> {medidaData.zona_centro_vida}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>Articulación con área local:</strong> {medidaData.articulacion_local ? "Sí" : "No"}
+                            <strOGA>Articulación con área local:</strOGA> {medidaData.articulacion_local ? "Sí" : "No"}
                         </Typography>
                     </Grid>
 
@@ -372,16 +372,16 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, e
                                 {medidaData.persona.nombre}
                             </Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strong>Ubicación del NNyA:</strong> {medidaData.ubicacion}
+                                <strOGA>Ubicación del NNyA:</strOGA> {medidaData.ubicacion}
                             </Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strong>Número de Sac:</strong> {medidaData.numero_sac}
+                                <strOGA>Número de Sac:</strOGA> {medidaData.numero_sac}
                             </Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strong>Equipos:</strong> {medidaData.equipos}
+                                <strOGA>Equipos:</strOGA> {medidaData.equipos}
                             </Typography>
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strong>Articulación con área local:</strong> {medidaData.articulacion_area_local ? "Sí" : "No"}
+                                <strOGA>Articulación con área local:</strOGA> {medidaData.articulacion_area_local ? "Sí" : "No"}
                             </Typography>
                         </Box>
                     </Grid>
@@ -403,7 +403,7 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, e
                                 >
                                     <MenuItem value="">Sin especificar</MenuItem>
                                     <MenuItem value="CENTRO_RESIDENCIAL">Centro Cuidado Residencial</MenuItem>
-                                    <MenuItem value="ONG">ONG</MenuItem>
+                                    <MenuItem value="OGA">OGA</MenuItem>
                                     <MenuItem value="FAMILIA_EXTENSA">Familia Extensa</MenuItem>
                                     <MenuItem value="FAMILIA_COMUNITARIA">Familia Comunitaria</MenuItem>
                                     <MenuItem value="FAMILIA_ACOGIMIENTO">Familia de Acogimiento</MenuItem>

@@ -202,8 +202,8 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
               </Paper>
             </Box>
 
-            {/* NNyA Scores - Right Side */}
-            <Box sx={{ flex: "1 1 40%", minWidth: 300 }}>
+            {/* NNyA Scores - Right Side - HIDDEN */}
+            {/* <Box sx={{ flex: "1 1 40%", minWidth: 300 }}>
               <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9", mb: 2 }}>
                 SCORES NNyA
               </Typography>
@@ -213,7 +213,6 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                   <Box key={scoreItem.id} sx={{ mb: 3 }}>
                     {index > 0 && <Divider sx={{ my: 2 }} />}
 
-                    {/* NNyA Information */}
                     <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
                       {(() => {
                         const nnyObj: any = (scoreItem as any).nnya
@@ -234,7 +233,6 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                       <Chip label="NNyA Principal" size="small" color="primary" sx={{ mt: 1, fontSize: "0.7rem" }} />
                     </Box>
 
-                    {/* Score Table */}
                     <TableContainer component={Paper} variant="outlined">
                       <Table size="small">
                         <TableBody>
@@ -283,7 +281,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                   </Table>
                 </TableContainer>
               )}
-            </Box>
+            </Box> */}
           </Box>
         </Paper>
       </Box>

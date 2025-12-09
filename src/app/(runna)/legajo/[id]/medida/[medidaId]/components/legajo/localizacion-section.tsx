@@ -1,17 +1,156 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import type React from "react"
-import { Typography, Paper, Grid, Chip, Box } from "@mui/material"
+import { Typography, Paper, Grid, Chip, Box, CircularProgress, Alert } from "@mui/material"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import HomeIcon from "@mui/icons-material/Home"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { get } from "@/app/api/apiService"
 
 interface LocalizacionSectionProps {
   legajoData: LegajoDetailResponse
 }
 
 export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajoData }) => {
-  const localizacion = legajoData.localizacion_actual
+  const [localizacion, setLocalizacion] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchLocalizacion = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        // Get demanda ID from demandas_relacionadas
+        const demandas = legajoData?.demandas_relacionadas?.resultados || []
+
+        if (demandas.length === 0) {
+          console.log("LocalizacionSection - No demandas relacionadas found")
+          // Fallback to legajo localizacion_actual
+          if (legajoData?.localizacion_actual?.localizacion) {
+            setLocalizacion(legajoData.localizacion_actual.localizacion)
+          } else {
+            setLocalizacion(null)
+          }
+          setLoading(false)
+          return
+        }
+
+        // Extract demanda ID
+        let demandaId: number | null = null
+        const firstDemanda = demandas[0]
+
+        if (firstDemanda?.demanda?.demanda_id) {
+          demandaId = firstDemanda.demanda.demanda_id
+        } else if (firstDemanda?.demanda_id) {
+          demandaId = firstDemanda.demanda_id
+        } else if (firstDemanda?.id) {
+          demandaId = firstDemanda.id
+        }
+
+        if (!demandaId) {
+          console.log("LocalizacionSection - Could not extract demanda ID")
+          // Fallback to legajo localizacion_actual
+          if (legajoData?.localizacion_actual?.localizacion) {
+            setLocalizacion(legajoData.localizacion_actual.localizacion)
+          } else {
+            setLocalizacion(null)
+          }
+          setLoading(false)
+          return
+        }
+
+        console.log(`LocalizacionSection - Fetching full-detail for demanda ${demandaId}`)
+
+        // Fetch full-detail
+        const response = await get<any>(`registro-demanda-form/${demandaId}/full-detail/`)
+
+        console.log("LocalizacionSection - Full-detail response:", response)
+
+        // Try to get localizacion from different sources
+        let foundLocalizacion = null
+
+        // 1. Try from personas array (matching persona ID)
+        if (response?.personas && legajoData?.persona?.id) {
+          const persona = response.personas.find((p: any) => p.persona?.id === legajoData.persona.id)
+          if (persona?.localizacion) {
+            console.log("LocalizacionSection - Using localizacion from persona in personas array")
+            foundLocalizacion = persona.localizacion
+          }
+        }
+
+        // 2. Try from first persona if exists
+        if (!foundLocalizacion && response?.personas?.[0]?.localizacion) {
+          console.log("LocalizacionSection - Using localizacion from first persona")
+          foundLocalizacion = response.personas[0].localizacion
+        }
+
+        // 3. Try root localizacion
+        if (!foundLocalizacion && response?.localizacion) {
+          console.log("LocalizacionSection - Using root localizacion from response")
+          foundLocalizacion = response.localizacion
+        }
+
+        // 4. Fallback to legajo localizacion_actual
+        if (!foundLocalizacion && legajoData?.localizacion_actual?.localizacion) {
+          console.log("LocalizacionSection - Using fallback legajoData.localizacion_actual.localizacion")
+          foundLocalizacion = legajoData.localizacion_actual.localizacion
+        }
+
+        console.log("LocalizacionSection - Final localizacion:", foundLocalizacion)
+        setLocalizacion(foundLocalizacion)
+      } catch (err) {
+        console.error("LocalizacionSection - Error fetching localizacion:", err)
+        setError("Error al cargar la información de localización")
+        // Try fallback
+        if (legajoData?.localizacion_actual?.localizacion) {
+          setLocalizacion(legajoData.localizacion_actual.localizacion)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLocalizacion()
+  }, [legajoData])
+
+  if (loading) {
+    return (
+      <Paper
+        elevation={2}
+        sx={{
+          width: "100%",
+          mb: 4,
+          p: 3,
+          borderRadius: 2,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 200,
+        }}
+      >
+        <CircularProgress />
+      </Paper>
+    )
+  }
+
+  if (error) {
+    return (
+      <Paper
+        elevation={2}
+        sx={{
+          width: "100%",
+          mb: 4,
+          p: 3,
+          borderRadius: 2,
+        }}
+      >
+        <Alert severity="error">{error}</Alert>
+      </Paper>
+    )
+  }
 
   if (!localizacion) {
     return (
@@ -24,29 +163,7 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
           borderRadius: 2,
         }}
       >
-        <Typography variant="body1" color="text.secondary">
-          No hay información de localización registrada.
-        </Typography>
-      </Paper>
-    )
-  }
-
-  const loc = localizacion.localizacion
-
-  if (!loc) {
-    return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Typography variant="body1" color="text.secondary">
-          No hay información de localización registrada.
-        </Typography>
+        <Alert severity="info">No hay información de localización registrada.</Alert>
       </Paper>
     )
   }
@@ -54,13 +171,13 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
   // Build full address
   const buildFullAddress = () => {
     const parts: string[] = []
-    if (loc.tipo_calle && loc.calle) {
-      parts.push(`${loc.tipo_calle} ${loc.calle}`)
+    if (localizacion.tipo_calle && localizacion.calle) {
+      parts.push(`${localizacion.tipo_calle} ${localizacion.calle}`)
     }
-    if (loc.casa_nro) parts.push(`N° ${loc.casa_nro}`)
-    if (loc.piso_depto) parts.push(`Piso ${loc.piso_depto}`)
-    if (loc.lote) parts.push(`Lote ${loc.lote}`)
-    if (loc.mza) parts.push(`Mza ${loc.mza}`)
+    if (localizacion.casa_nro) parts.push(`N° ${localizacion.casa_nro}`)
+    if (localizacion.piso_depto) parts.push(`Piso ${localizacion.piso_depto}`)
+    if (localizacion.lote) parts.push(`Lote ${localizacion.lote}`)
+    if (localizacion.mza) parts.push(`Mza ${localizacion.mza}`)
     return parts.length > 0 ? parts.join(", ") : "N/A"
   }
 
@@ -82,14 +199,6 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Localización Actual
             </Typography>
-            {localizacion.principal && (
-              <Chip
-                label="Principal"
-                color="primary"
-                size="small"
-                sx={{ ml: 2 }}
-              />
-            )}
           </Box>
         </Grid>
 
@@ -123,7 +232,7 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
           </Typography>
 
           <Grid container spacing={2}>
-            {loc.tipo_calle && (
+            {localizacion.tipo_calle && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -131,12 +240,12 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">{loc.tipo_calle}</Typography>
+                  <Typography variant="body2">{localizacion.tipo_calle}</Typography>
                 </Grid>
               </>
             )}
 
-            {loc.calle && (
+            {localizacion.calle && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -144,12 +253,12 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">{loc.calle}</Typography>
+                  <Typography variant="body2">{localizacion.calle}</Typography>
                 </Grid>
               </>
             )}
 
-            {loc.casa_nro && (
+            {localizacion.casa_nro && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -157,12 +266,12 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">{loc.casa_nro}</Typography>
+                  <Typography variant="body2">{localizacion.casa_nro}</Typography>
                 </Grid>
               </>
             )}
 
-            {loc.piso_depto && (
+            {localizacion.piso_depto && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -170,12 +279,12 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">{loc.piso_depto}</Typography>
+                  <Typography variant="body2">{localizacion.piso_depto}</Typography>
                 </Grid>
               </>
             )}
 
-            {loc.lote && (
+            {localizacion.lote && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -183,12 +292,12 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">{loc.lote}</Typography>
+                  <Typography variant="body2">{localizacion.lote}</Typography>
                 </Grid>
               </>
             )}
 
-            {loc.mza && (
+            {localizacion.mza && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -196,7 +305,7 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2">{loc.mza}</Typography>
+                  <Typography variant="body2">{localizacion.mza}</Typography>
                 </Grid>
               </>
             )}
@@ -217,11 +326,11 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
             </Grid>
             <Grid item xs={6}>
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {loc.localidad_nombre || "N/A"}
+                {localizacion.localidad?.nombre || localizacion.localidad_nombre || "N/A"}
               </Typography>
             </Grid>
 
-            {loc.barrio_nombre && (
+            {(localizacion.barrio?.nombre || localizacion.barrio_nombre || localizacion.barrio) && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -230,13 +339,13 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {loc.barrio_nombre}
+                    {localizacion.barrio?.nombre || localizacion.barrio_nombre || localizacion.barrio}
                   </Typography>
                 </Grid>
               </>
             )}
 
-            {loc.cpc_nombre && (
+            {(localizacion.cpc || localizacion.cpc_nombre) && (
               <>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -245,33 +354,33 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {loc.cpc_nombre}
+                    {localizacion.cpc || localizacion.cpc_nombre}
                   </Typography>
                 </Grid>
               </>
             )}
 
-            {loc.referencia_geo && (
+            {localizacion.referencia_geo && (
               <>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     Referencia geográfica:
                   </Typography>
                   <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-                    {loc.referencia_geo}
+                    {localizacion.referencia_geo}
                   </Typography>
                 </Grid>
               </>
             )}
 
-            {loc.geolocalizacion && (
+            {localizacion.geolocalizacion && (
               <>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     Geolocalización:
                   </Typography>
                   <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-                    {loc.geolocalizacion}
+                    {localizacion.geolocalizacion}
                   </Typography>
                 </Grid>
               </>

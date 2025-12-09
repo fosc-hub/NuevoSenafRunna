@@ -35,6 +35,7 @@ import { HistorialCambiosSection } from "./[id]/medida/[medidaId]/components/leg
 import { PlanTrabajoSection } from "./[id]/medida/[medidaId]/components/legajo/plan-trabajo-section"
 import { HistorialAsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/historial-asignaciones-section"
 import { MedidasActivasSection } from "./[id]/medida/[medidaId]/components/legajo/medidas-activas-section"
+import PersonaDetailModal from "./[id]/medida/[medidaId]/components/dialogs/persona-detail-modal"
 
 // Importar tipos
 
@@ -56,6 +57,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   const [openAddIntervencionDialog, setOpenAddIntervencionDialog] = useState(false)
   const [openEditDatosDialog, setOpenEditDatosDialog] = useState(false)
   const [openCrearMedidaDialog, setOpenCrearMedidaDialog] = useState(false)
+  const [openPersonaDetailModal, setOpenPersonaDetailModal] = useState(false)
   const [medidasRefreshTrigger, setMedidasRefreshTrigger] = useState(0)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const openMedidaMenu = Boolean(anchorEl)
@@ -150,7 +152,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   }
 
   const handleViewAllPersonalData = () => {
-    setActiveTab(0) // Switch to General tab (includes datos personales)
+    setOpenPersonaDetailModal(true) // Open the detailed persona modal
   }
 
   const handleOpenAttachment = (fileName: string) => {
@@ -398,6 +400,19 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         legajoId={Number(params.id)}
         onClose={() => setOpenCrearMedidaDialog(false)}
         onSuccess={handleCrearMedidaSuccess}
+      />
+
+      <PersonaDetailModal
+        open={openPersonaDetailModal}
+        onClose={() => setOpenPersonaDetailModal(false)}
+        legajoData={legajoData || {}}
+        readOnly={!legajoData?.permisos_usuario?.puede_editar && !isAdmin}
+        onEdit={(section) => {
+          setOpenPersonaDetailModal(false)
+          if (section === "personal") {
+            setOpenEditDatosDialog(true)
+          }
+        }}
       />
     </Box>
   )

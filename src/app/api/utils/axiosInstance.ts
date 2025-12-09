@@ -31,11 +31,17 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    const method = error.config?.method?.toUpperCase();
-    const endpoint = error.config?.url || 'Unknown endpoint';
-    const errorDetails = `Código de error: ${error.code}\nRespuesta del servidor: ${JSON.stringify(error?.response?.data)}`;
-    if (method && method !== 'GET') {
-      handleApiError(error, endpoint);
+    // Log errors for debugging but don't call client-side functions from here
+    // as this interceptor can be called from server-side code
+    if (typeof window !== 'undefined') {
+      // Only log in browser environment
+      const method = error.config?.method?.toUpperCase();
+      const endpoint = error.config?.url || 'Unknown endpoint';
+      console.error(`API Error - ${endpoint}:`, {
+        method,
+        status: error.response?.status,
+        data: error.response?.data
+      });
     }
     return Promise.reject(error);
   }

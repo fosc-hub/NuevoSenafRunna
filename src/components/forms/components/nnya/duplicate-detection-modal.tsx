@@ -284,8 +284,8 @@ const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = ({
               }
               secondary={
                 <Box>
-                  {/* Scoring progress bar */}
-                  <Box sx={{ mb: 1 }}>
+                  {/* Scoring progress bar - HIDDEN */}
+                  {/* <Box sx={{ mb: 1 }}>
                     <ScoringProgressBar
                       score={match.score}
                       alertLevel={match.nivel_alerta}
@@ -293,7 +293,7 @@ const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = ({
                       size="medium"
                       showTooltip={true}
                     />
-                  </Box>
+                  </Box> */}
 
                   {/* Info del legajo */}
                   <Grid container spacing={1} sx={{ mt: 1 }}>

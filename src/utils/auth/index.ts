@@ -19,30 +19,42 @@ export async function decodeToken(accessToken?: string) {
 }
 
 export async function login(username: string, password: string) {
-  const response = await axiosInstance.post('/token/', { username, password });
+  try {
+    const response = await axiosInstance.post('/token/', { username, password });
 
-  const tokens = {
-    refresh: response.data.refresh,
-    access: response.data.access,
-  };
+    const tokens = {
+      refresh: response.data.refresh,
+      access: response.data.access,
+    };
 
-  const cookieStore = cookies();
+    const cookieStore = cookies();
 
-  cookieStore.set("refreshToken", tokens.refresh, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    secure: true,
-  });
+    cookieStore.set("refreshToken", tokens.refresh, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: true,
+    });
 
-  cookieStore.set("accessToken", tokens.access, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    secure: true,
-  });
+    cookieStore.set("accessToken", tokens.access, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: true,
+    });
 
-  return tokens.access;
+    return { success: true, accessToken: tokens.access };
+  } catch (error: any) {
+    // Return error details to be handled on the client side
+    return {
+      success: false,
+      error: {
+        message: error.response?.data?.detail || error.message || 'Login failed',
+        status: error.response?.status,
+        details: error.response?.data
+      }
+    };
+  }
 }
 
 export const getSession = async (returnUserData: boolean = false): Promise<string | UserPermissions | null> => {

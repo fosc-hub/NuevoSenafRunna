@@ -223,7 +223,7 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
 
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">
-                Barrio:
+                Barriooo:
               </Typography>
             </Grid>
             <Grid item xs={6}>

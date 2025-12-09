@@ -1,8 +1,14 @@
 "use client"
 
 import type React from "react"
-import { Box, Typography, Grid, Button, Paper, Chip } from "@mui/material"
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import { Box, Typography, Grid, Button, Paper, Chip, Avatar } from "@mui/material"
+import {
+  ArrowForward as ArrowForwardIcon,
+  Badge as BadgeIcon,
+  LocationOn as LocationOnIcon,
+  Person as PersonIcon,
+  CalendarToday as CalendarIcon,
+} from "@mui/icons-material"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface LegajoHeaderProps {
@@ -16,6 +22,48 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
   const legajo = legajoData.legajo
   const localizacion = legajoData.localizacion_actual?.localizacion
   const asignacion = legajoData.asignaciones_activas?.[0]
+
+  // Helper to get initials
+  const getInitials = (nombre: string = "", apellido: string = ""): string => {
+    const n = nombre?.charAt(0) || ""
+    const a = apellido?.charAt(0) || ""
+    return `${n}${a}`.toUpperCase() || "??"
+  }
+
+  // Helper to get avatar color
+  const getAvatarColor = (nombre: string = ""): string => {
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#FFA07A",
+      "#98D8C8",
+      "#F7DC6F",
+      "#BB8FCE",
+      "#85C1E2",
+    ]
+    const index = nombre.charCodeAt(0) % colors.length
+    return colors[index] || colors[0]
+  }
+
+  // Calculate edad
+  const calcularEdad = (fechaNacimiento: string | null | undefined): number | null => {
+    if (!fechaNacimiento) return null
+    try {
+      const fecha = new Date(fechaNacimiento)
+      const hoy = new Date()
+      let edad = hoy.getFullYear() - fecha.getFullYear()
+      const mes = hoy.getMonth() - fecha.getMonth()
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+        edad--
+      }
+      return edad
+    } catch {
+      return null
+    }
+  }
+
+  const edad = calcularEdad(persona?.fecha_nacimiento) || persona?.edad_aproximada || persona?.edad_calculada
 
   // Build address string
   const buildAddress = () => {
@@ -74,114 +122,119 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
           top: 0,
           bottom: 0,
           width: "6px",
-          backgroundColor: "#e53935",
+          backgroundColor: legajo?.urgencia === "ALTA" ? "#e53935" : "#1976d2",
         },
       }}
     >
       <Box sx={{ pl: 2, py: 1 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Legajo número: {legajo?.numero || "N/A"}
-              </Typography>
+        {/* Header con Avatar y Nombre */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: getAvatarColor(persona?.nombre || ""),
+              fontSize: "1.2rem",
+              fontWeight: "bold",
+            }}
+          >
+            {getInitials(persona?.nombre, persona?.apellido)}
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {persona?.nombre} {persona?.apellido}
+            </Typography>
+            {persona?.nombre_autopercibido && (
               <Typography variant="body2" color="text.secondary">
-                Fecha de apertura: {formatFecha(legajo?.fecha_apertura)}
+                "{persona.nombre_autopercibido}"
               </Typography>
-              <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500, mt: 0.5 }}>
-                Días desde apertura: {calcularDiasDesdeApertura(legajo?.fecha_apertura)} días
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: { xs: "flex-start", md: "flex-end" } }}>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                DNI: {persona?.dni || "N/A"}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Profesional asignado: {asignacion?.user_responsable?.nombre_completo || "Sin asignar"}
-              </Typography>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: "flex", mb: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
-                  Nombre:
-                </Typography>
-                <Typography variant="body2">
-                  {persona?.nombre} {persona?.apellido}
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", mb: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
-                  Alias:
-                </Typography>
-                <Typography variant="body2">{persona?.nombre_autopercibido || "N/A"}</Typography>
-              </Box>
-              <Box sx={{ display: "flex" }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "60px" }}>
-                  Edad:
-                </Typography>
-                <Typography variant="body2">
-                  {persona?.edad_aproximada || persona?.edad_calculada || "N/A"} años
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: "flex", mb: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
-                  Ubicación:
-                </Typography>
-                <Typography variant="body2">{buildAddress()}</Typography>
-              </Box>
-              <Box sx={{ display: "flex", mb: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
-                  Localidad:
-                </Typography>
-                <Typography variant="body2">{localizacion?.localidad_nombre || "N/A"}</Typography>
-              </Box>
-              <Box sx={{ display: "flex" }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: "90px" }}>
-                  Equipo:
-                </Typography>
-                <Typography variant="body2">{asignacion?.user_responsable?.nombre_completo || "N/A"}</Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-              <Button
-                endIcon={<ArrowForwardIcon />}
+            )}
+            {/* Chips de estado rápido */}
+            <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
+              <Chip
+                icon={<BadgeIcon />}
+                label={`DNI: ${persona?.dni || "N/A"}`}
                 size="small"
-                onClick={onViewAllPersonalData}
-                sx={{ textTransform: "none" }}
-              >
-                Ver todos los datos personales
-              </Button>
+                variant="outlined"
+              />
+              <Chip icon={<PersonIcon />} label={`${edad || "N/A"} años`} size="small" variant="outlined" />
+              {legajo?.urgencia === "ALTA" && <Chip label="URGENTE" color="error" size="small" />}
+              {asignacion?.zona && (
+                <Chip
+                  icon={<LocationOnIcon />}
+                  label={asignacion.zona.nombre}
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                />
+              )}
+            </Box>
+          </Box>
+          <Box>
+            <Button
+              variant="outlined"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+              onClick={onViewAllPersonalData}
+              sx={{ textTransform: "none" }}
+            >
+              Ver todos los datos
+            </Button>
+          </Box>
+        </Box>
+
+        <Grid container spacing={2}>
+          {/* Información del Legajo */}
+          <Grid item xs={12} md={4}>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Legajo
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {legajo?.numero || "N/A"}
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+                <CalendarIcon fontSize="small" color="action" />
+                <Typography variant="caption" color="text.secondary">
+                  {formatFecha(legajo?.fecha_apertura)}
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
+                {calcularDiasDesdeApertura(legajo?.fecha_apertura)} días desde apertura
+              </Typography>
+            </Box>
+          </Grid>
+
+          {/* Profesional Asignado */}
+          <Grid item xs={12} md={4}>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Profesional Asignado
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {asignacion?.user_responsable?.nombre_completo || "Sin asignar"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {asignacion?.zona?.nombre || "Sin zona"}
+              </Typography>
+            </Box>
+          </Grid>
+
+          {/* Ubicación */}
+          <Grid item xs={12} md={4}>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Ubicación
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {buildAddress()}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {localizacion?.localidad_nombre || "N/A"}
+              </Typography>
             </Box>
           </Grid>
         </Grid>
-
-        <Box sx={{ ml: "auto", display: "flex", alignItems: "flex-start" }}>
-          {legajo?.urgencia === "ALTA" && (
-            <Chip
-              label="URGENTE"
-              color="error"
-              size="small"
-              sx={{
-                borderRadius: 1,
-                fontWeight: 600,
-                px: 1,
-              }}
-            />
-          )}
-        </Box>
       </Box>
     </Paper>
   )

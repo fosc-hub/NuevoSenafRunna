@@ -54,15 +54,23 @@ export default function Login() {
   const onSubmit = async (data: LoginFormInputs) => {
     try {
       // First get the token
-      const accessToken = await login(data.username, data.password);
-      if (!accessToken) {
-        throw new Error('Failed to get access token');
+      const result = await login(data.username, data.password);
+
+      // Check if login was successful
+      if (!result.success) {
+        const details = `Credenciales Inválidas\nCódigo: ${result.error?.status || 'Desconocido'}\nRespuesta del servidor: ${JSON.stringify(result.error?.details || result.error?.message)}`;
+        setErrorDetails(details);
+        setError("username", {
+          type: "manual",
+          message: result.error?.message || "Nombre de usuario o contraseña incorrectos.",
+        });
+        return;
       }
 
       // Use axiosInstance with the token for this specific request
       const userResponse = await axiosInstance.get<UserPermissions>('/user/me/', {
         headers: {
-          Authorization: `Bearer ${accessToken}`
+          Authorization: `Bearer ${result.accessToken}`
         }
       });
 
@@ -78,11 +86,11 @@ export default function Login() {
       const message = errorMessages[statusCode] || "Ocurrió un error";
       const errorCode = error?.response?.status || "Desconocido";
       const errorMessage = error?.response?.data?.message || "Sin detalles adicionales.";
-      const details = `Credenciales Inválidas${errorCode}\nRespuesta del servidor: ${JSON.stringify(error?.response?.data)}`;
+      const details = `Error de conexión\nCódigo: ${errorCode}\nRespuesta del servidor: ${JSON.stringify(error?.response?.data)}`;
       setErrorDetails(details);
       setError("username", {
         type: "manual",
-        message: "Nombre de usuario o contraseña incorrectos.",
+        message: "Error al conectar con el servidor.",
       });
     }
   };

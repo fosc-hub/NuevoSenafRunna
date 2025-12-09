@@ -675,22 +675,23 @@ const DemandaTableContent: React.FC = () => {
           </div>
         ),
       },
-      {
-        field: "score",
-        headerName: "Nivel de Riesgo / Score",
-        width: 80,
-        renderCell: (params) => (
-          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-            <Chip
-              label={params.value}
-              size="small"
-              variant="outlined"
-              color={Number(params.value) > 70 ? "error" : Number(params.value) > 40 ? "warning" : "default"}
-              sx={{ minWidth: 40, justifyContent: "center" }}
-            />
-          </div>
-        ),
-      },
+      // SCORE COLUMN - HIDDEN
+      // {
+      //   field: "score",
+      //   headerName: "Nivel de Riesgo / Score",
+      //   width: 80,
+      //   renderCell: (params) => (
+      //     <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+      //       <Chip
+      //         label={params.value}
+      //         size="small"
+      //         variant="outlined"
+      //         color={Number(params.value) > 70 ? "error" : Number(params.value) > 40 ? "warning" : "default"}
+      //         sx={{ minWidth: 40, justifyContent: "center" }}
+      //       />
+      //     </div>
+      //   ),
+      // },
       {
         field: "nombre",
         headerName: "Nombre",
@@ -965,7 +966,7 @@ const DemandaTableContent: React.FC = () => {
     demandasData?.results.map((demanda: TDemanda) => {
       return {
         id: demanda.id,
-        score: demanda.demanda_score?.score || "N/A",
+        // score: demanda.demanda_score?.score || "N/A", // HIDDEN
         origen: demanda.bloque_datos_remitente?.nombre || "N/A",
         nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
         dni: demanda.nnya_principal?.dni || "N/A",
@@ -1004,7 +1005,7 @@ const DemandaTableContent: React.FC = () => {
         // Create a clean object for export, formatting data as needed
         return {
           ID: row.id,
-          Score: row.score,
+          // Score: row.score, // HIDDEN
           Nombre: row.nombre,
           DNI: row.dni,
           Calificación: formatUnderscoreText(row.calificacion),
@@ -1023,7 +1024,7 @@ const DemandaTableContent: React.FC = () => {
     // Set column widths
     const columnWidths = [
       { wch: 10 }, // ID
-      { wch: 10 }, // Score
+      // { wch: 10 }, // Score - HIDDEN
       { wch: 30 }, // Nombre
       { wch: 15 }, // DNI
       { wch: 20 }, // Calificación

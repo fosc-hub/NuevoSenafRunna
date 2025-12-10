@@ -199,7 +199,7 @@ export default function AdultosNoConvivientes({
                     InputProps={{ readOnly: true }}
                   />
                   <TextField
-                    label="Número"
+                    label="Altura"
                     value={adulto.localizacion?.casa_nro || adulto.NumeroCasa || ""}
                     fullWidth
                     size="small"

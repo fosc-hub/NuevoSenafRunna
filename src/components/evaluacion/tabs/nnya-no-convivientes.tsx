@@ -189,7 +189,7 @@ export default function NnyaNoConvivientes({ nnyaNoConvivientes, setNnyaNoConviv
                     InputProps={{ readOnly: true }}
                   />
                   <TextField
-                    label="Número"
+                    label="Altura"
                     value={nnya.localizacion?.casa_nro || nnya.NumeroCasa || ""}
                     fullWidth
                     size="small"

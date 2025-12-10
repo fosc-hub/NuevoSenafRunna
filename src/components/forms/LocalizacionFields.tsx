@@ -82,7 +82,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
           />
         </Grid>
 
-        {/* Número de Casa y Piso/Depto */}
+        {/* Altura y Piso/Depto */}
         <Grid item xs={12} md={6}>
           <Controller
             name={`${prefix}.casa_nro`}
@@ -91,7 +91,7 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label={<RequiredLabel label="Número de Casa" />}
+                label={<RequiredLabel label="Altura" />}
                 fullWidth
                 type="number"
                 error={!!error}

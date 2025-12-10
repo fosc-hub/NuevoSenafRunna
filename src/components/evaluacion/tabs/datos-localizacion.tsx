@@ -47,7 +47,7 @@ export default function DatosLocalizacion({ data }: DatosLocalizacionProps) {
               fullWidth
             />
             <TextField
-              label="Número de Casa"
+              label="Altura"
               name="NumeroCasa"
               value={numeroCasa}
               InputProps={{ readOnly: true }}

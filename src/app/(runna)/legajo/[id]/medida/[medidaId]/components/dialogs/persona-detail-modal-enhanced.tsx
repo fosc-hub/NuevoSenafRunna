@@ -51,11 +51,12 @@ import {
   usePersonaCondicionesVulnerabilidad,
 } from "../../hooks/usePersonaData"
 import { buildFullAddress } from "../../api/localizacion-api-service"
+import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface PersonaDetailModalProps {
   open: boolean
   onClose: () => void
-  legajoData: any // LegajoDetailResponse
+  legajoData: LegajoDetailResponse
   readOnly?: boolean
   onEdit?: (section: "personal" | "location" | "legajo") => void
 }
@@ -236,7 +237,7 @@ export default function PersonaDetailModalEnhanced({
               </Typography>
               {persona?.nombre_autopercibido && (
                 <Typography variant="body2" color="text.secondary">
-                  "{persona.nombre_autopercibido}"
+                  &ldquo;{persona.nombre_autopercibido}&rdquo;
                 </Typography>
               )}
               <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>

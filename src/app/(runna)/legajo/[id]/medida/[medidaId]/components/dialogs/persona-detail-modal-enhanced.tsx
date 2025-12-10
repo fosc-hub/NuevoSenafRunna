@@ -925,7 +925,17 @@ export default function PersonaDetailModalEnhanced({
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Estado
                 </Typography>
-                <Chip label={legajo?.estado || "N/A"} color="primary" variant="outlined" />
+                <Chip
+                  label={
+                    typeof legajo?.estado === 'string'
+                      ? legajo.estado
+                      : (typeof legajo?.estado === 'object' && legajo.estado && 'estado' in legajo.estado)
+                        ? legajo.estado.estado
+                        : "N/A"
+                  }
+                  color="primary"
+                  variant="outlined"
+                />
               </Paper>
             </Grid>
 
@@ -1038,15 +1048,36 @@ export default function PersonaDetailModalEnhanced({
                     Medidas Activas Detalle
                   </Typography>
                   <List dense>
-                    {medidasActivas.map((medida: any, idx: number) => (
-                      <ListItem key={idx}>
-                        <ListItemText
-                          primary={medida.numero_medida}
-                          secondary={`${medida.tipo_medida_display} - ${medida.estado_vigencia_display}`}
-                        />
-                        <Chip label={medida.tipo_medida} size="small" variant="outlined" />
-                      </ListItem>
-                    ))}
+                    {medidasActivas.map((medida: any, idx: number) => {
+                      // Safely extract string values from potentially nested objects
+                      const numeroMedida = typeof medida.numero_medida === 'string'
+                        ? medida.numero_medida
+                        : (medida.numero || `M-${medida.id}`)
+
+                      const tipoMedidaDisplay = typeof medida.tipo_medida_display === 'string'
+                        ? medida.tipo_medida_display
+                        : (typeof medida.tipo_medida === 'string' ? medida.tipo_medida : 'N/A')
+
+                      const estadoDisplay = typeof medida.estado_vigencia_display === 'string'
+                        ? medida.estado_vigencia_display
+                        : (typeof medida.estado_vigencia === 'string'
+                          ? medida.estado_vigencia
+                          : (typeof medida.estado === 'string' ? medida.estado : 'N/A'))
+
+                      const tipoMedida = typeof medida.tipo_medida === 'string'
+                        ? medida.tipo_medida
+                        : (typeof medida.tipo === 'string' ? medida.tipo : 'N/A')
+
+                      return (
+                        <ListItem key={idx}>
+                          <ListItemText
+                            primary={numeroMedida}
+                            secondary={`${tipoMedidaDisplay} - ${estadoDisplay}`}
+                          />
+                          <Chip label={tipoMedida} size="small" variant="outlined" />
+                        </ListItem>
+                      )
+                    })}
                   </List>
                 </Paper>
               </Grid>

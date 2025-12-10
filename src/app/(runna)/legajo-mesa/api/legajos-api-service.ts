@@ -281,9 +281,19 @@ export const updateLegajoPrioridad = async (
   prioridad: "ALTA" | "MEDIA" | "BAJA"
 ): Promise<LegajoApiResponse> => {
   try {
+    // Map prioridad string to urgencia numeric value
+    // ALTA = 1, MEDIA = 2, BAJA = 3
+    const urgenciaMap: Record<string, number> = {
+      ALTA: 1,
+      MEDIA: 2,
+      BAJA: 3,
+    }
+
+    const urgencia = urgenciaMap[prioridad]
+
     // Import patch from apiService
     const { patch } = await import("@/app/api/apiService")
-    const response = await patch<LegajoApiResponse>("/legajos", id, { prioridad })
+    const response = await patch<LegajoApiResponse>("/legajos", id, { urgencia })
     return response
   } catch (error) {
     console.error(`Error updating legajo ${id} prioridad:`, error)

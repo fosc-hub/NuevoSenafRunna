@@ -95,7 +95,8 @@ export interface LegajoApiResponse {
   fecha_apertura: string
   fecha_ultima_actualizacion: string
   nnya: NnyaData
-  prioridad: string | null // "ALTA", "MEDIA", "BAJA"
+  prioridad: string | null // "ALTA", "MEDIA", "BAJA" (deprecated, use urgencia)
+  urgencia?: number | null // 1 = ALTA, 2 = MEDIA, 3 = BAJA
   zona: string // Serialized zona name
   jefe_zonal: string | null // Serialized user name
   director: string | null // Serialized director name

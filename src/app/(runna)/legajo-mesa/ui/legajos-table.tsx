@@ -326,12 +326,25 @@ const LegajoTable: React.FC = () => {
     setIsUpdating(true)
     try {
       // Call the API to update the prioridad
-      await updateLegajoPrioridad(legajoId, newValue as "ALTA" | "MEDIA" | "BAJA")
+      const updatedLegajo = await updateLegajoPrioridad(legajoId, newValue as "ALTA" | "MEDIA" | "BAJA")
 
-      // Update the local state to reflect the changes
+      // Map urgencia number back to prioridad string for display
+      const urgenciaToPrioridadMap: Record<number, "ALTA" | "MEDIA" | "BAJA"> = {
+        1: "ALTA",
+        2: "MEDIA",
+        3: "BAJA",
+      }
+
+      const prioridadFromResponse = updatedLegajo.urgencia
+        ? urgenciaToPrioridadMap[updatedLegajo.urgencia]
+        : newValue as "ALTA" | "MEDIA" | "BAJA"
+
+      // Update the local state to reflect the changes from API response
       if (legajosData) {
         const updatedResults = legajosData.results.map((legajo) =>
-          legajo.id === legajoId ? { ...legajo, prioridad: newValue as "ALTA" | "MEDIA" | "BAJA" } : legajo,
+          legajo.id === legajoId
+            ? { ...legajo, prioridad: prioridadFromResponse, urgencia: updatedLegajo.urgencia }
+            : legajo,
         )
         setLegajosData({
           ...legajosData,

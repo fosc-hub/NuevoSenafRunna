@@ -30,10 +30,11 @@ export const getUrgencias = async (): Promise<UrgenciaVulneracion[]> => {
     console.warn('⚠️ Endpoint de urgencias no existe - usando datos mock temporales')
 
     // MOCK DATA TEMPORAL - Reemplazar cuando exista el endpoint real
+    // Orden correcto: Alta (1) = más urgente, Baja (3) = menos urgente
     const mockUrgencias: UrgenciaVulneracion[] = [
-      { id: 1, nombre: 'Baja', descripcion: 'Urgencia baja' },
+      { id: 1, nombre: 'Alta', descripcion: 'Urgencia alta' },
       { id: 2, nombre: 'Media', descripcion: 'Urgencia media' },
-      { id: 3, nombre: 'Alta', descripcion: 'Urgencia alta' },
+      { id: 3, nombre: 'Baja', descripcion: 'Urgencia baja' },
     ]
 
     return mockUrgencias

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -44,13 +44,18 @@ import {
   MedicalServices as MedicalIcon,
   LocalHospital as LocalHospitalIcon,
 } from "@mui/icons-material"
-import { get } from "@/app/api/apiService"
-import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import {
+  usePersonaLocalizacion,
+  usePersonaEducacion,
+  usePersonaCoberturaMedica,
+  usePersonaCondicionesVulnerabilidad,
+} from "../../hooks/usePersonaData"
+import { buildFullAddress } from "../../api/localizacion-api-service"
 
 interface PersonaDetailModalProps {
   open: boolean
   onClose: () => void
-  legajoData: LegajoDetailResponse
+  legajoData: any // LegajoDetailResponse
   readOnly?: boolean
   onEdit?: (section: "personal" | "location" | "legajo") => void
 }
@@ -139,14 +144,13 @@ const getAvatarColor = (nombre: string = ""): string => {
 const copyToClipboard = async (text: string, label: string) => {
   try {
     await navigator.clipboard.writeText(text)
-    // Could add snackbar notification here
     console.log(`${label} copiado al portapapeles`)
   } catch (error) {
     console.error("Error al copiar:", error)
   }
 }
 
-export default function PersonaDetailModal({
+export default function PersonaDetailModalEnhanced({
   open,
   onClose,
   legajoData,
@@ -156,12 +160,6 @@ export default function PersonaDetailModal({
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"))
   const [activeTab, setActiveTab] = useState(0)
-  const [personaCompleta, setPersonaCompleta] = useState<Record<string, unknown> | null>(null)
-  const [loadingPersona, setLoadingPersona] = useState(false)
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
 
   // Extract data
   const persona = legajoData?.persona
@@ -170,94 +168,31 @@ export default function PersonaDetailModal({
   const medidasActivas = legajoData?.medidas_activas || []
   const demandas = legajoData?.demandas_relacionadas
   const permisos = legajoData?.permisos_usuario
+  const personaId = persona?.id
 
-  // Fetch complete persona data including education, health, vulnerability from demanda
-  useEffect(() => {
-    const fetchPersonaCompleta = async () => {
-      if (!open || !persona?.id) return
+  // Fetch persona data using React Query hooks
+  const { data: localizacion, isLoading: loadingLocalizacion } = usePersonaLocalizacion(personaId, {
+    enabled: open && !!personaId,
+  })
 
-      setLoadingPersona(true)
-      try {
-        // Get the first demanda ID from demandas_relacionadas
-        const demandas = legajoData?.demandas_relacionadas?.resultados || []
+  const { data: educacion, isLoading: loadingEducacion } = usePersonaEducacion(personaId, {
+    enabled: open && !!personaId && activeTab === 2, // Only load when Education tab is active
+  })
 
-        if (demandas.length === 0) {
-          console.log("No demandas relacionadas found")
-          setPersonaCompleta(null)
-          setLoadingPersona(false)
-          return
-        }
+  const { data: saludData, isLoading: loadingSalud } = usePersonaCoberturaMedica(personaId, {
+    enabled: open && !!personaId && activeTab === 3, // Only load when Health tab is active
+  })
 
-        // Get demanda ID (support multiple formats)
-        let demandaId: number | null = null
-        const firstDemanda = demandas[0]
-
-        if (firstDemanda?.demanda?.demanda_id) {
-          demandaId = firstDemanda.demanda.demanda_id
-        } else if (firstDemanda?.demanda_id) {
-          demandaId = firstDemanda.demanda_id
-        } else if (firstDemanda?.id) {
-          demandaId = firstDemanda.id
-        }
-
-        if (!demandaId) {
-          console.log("Could not extract demanda ID")
-          setPersonaCompleta(null)
-          setLoadingPersona(false)
-          return
-        }
-
-        console.log(`Fetching full-detail for demanda ${demandaId}`)
-
-        // Fetch demanda full-detail which includes personas with education, health, vulnerability
-        const response = await get<Record<string, unknown>>(`registro-demanda-form/${demandaId}/full-detail/`)
-
-        console.log("Full-detail response:", response)
-        console.log("Response has root localizacion?", response?.localizacion)
-
-        // Find the persona in the personas array
-        const personas = response?.personas || []
-        console.log("Personas array length:", personas.length)
-        if (personas.length > 0) {
-          console.log("First persona structure:", personas[0])
-          console.log("First persona has localizacion?", personas[0]?.localizacion)
-        }
-
-        const personaEnDemanda = personas.find((p: Record<string, unknown>) => (p.persona as Record<string, unknown>)?.id === persona.id)
-
-        if (personaEnDemanda) {
-          console.log("Found persona in demanda:", personaEnDemanda)
-          console.log("PersonaEnDemanda.localizacion:", personaEnDemanda.localizacion)
-
-          // If persona doesn't have localizacion, try fallbacks
-          if (!personaEnDemanda.localizacion) {
-            // Try root localizacion from response
-            if (response?.localizacion) {
-              console.log("Using root localizacion from response")
-              personaEnDemanda.localizacion = response.localizacion
-            }
-            // Try legajo localizacion_actual as last resort
-            else if (legajoData?.localizacion_actual?.localizacion) {
-              console.log("Using legajoData.localizacion_actual.localizacion")
-              personaEnDemanda.localizacion = legajoData.localizacion_actual.localizacion
-            }
-          }
-
-          setPersonaCompleta(personaEnDemanda)
-        } else {
-          console.log("Persona not found in demanda personas array")
-          setPersonaCompleta(null)
-        }
-      } catch (error) {
-        console.error("Error fetching persona completa:", error)
-        setPersonaCompleta(null)
-      } finally {
-        setLoadingPersona(false)
-      }
+  const { data: vulnerabilidadData, isLoading: loadingVulnerabilidad } = usePersonaCondicionesVulnerabilidad(
+    personaId,
+    {
+      enabled: open && !!personaId && activeTab === 4, // Only load when Vulnerability tab is active
     }
+  )
 
-    fetchPersonaCompleta()
-  }, [open, persona?.id, legajoData])
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue)
+  }
 
   // Calculate edad
   const edad =
@@ -265,6 +200,9 @@ export default function PersonaDetailModal({
 
   // Get avatar color
   const avatarColor = getAvatarColor(persona?.nombre)
+
+  // Full address for location tab
+  const fullAddress = localizacion ? buildFullAddress(localizacion) : "N/A"
 
   return (
     <Dialog
@@ -298,7 +236,7 @@ export default function PersonaDetailModal({
               </Typography>
               {persona?.nombre_autopercibido && (
                 <Typography variant="body2" color="text.secondary">
-                  &ldquo;{persona.nombre_autopercibido}&rdquo;
+                  "{persona.nombre_autopercibido}"
                 </Typography>
               )}
               <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
@@ -342,7 +280,7 @@ export default function PersonaDetailModal({
       </Tabs>
 
       <DialogContent sx={{ p: 0 }}>
-        {/* Tab 1: Información Personal */}
+        {/* Tab 0: Información Personal */}
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -496,7 +434,7 @@ export default function PersonaDetailModal({
           </Grid>
         </TabPanel>
 
-        {/* Tab 2: Ubicación y Contacto */}
+        {/* Tab 1: Ubicación y Contacto */}
         <TabPanel value={activeTab} index={1}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -516,11 +454,11 @@ export default function PersonaDetailModal({
             )}
           </Box>
 
-          {loadingPersona ? (
+          {loadingLocalizacion ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : personaCompleta?.localizacion ? (
+          ) : localizacion ? (
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
@@ -531,84 +469,82 @@ export default function PersonaDetailModal({
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {personaCompleta.localizacion.tipo_calle || ""} {personaCompleta.localizacion.calle || ""}
-                    {personaCompleta.localizacion.casa_nro ? ` N° ${personaCompleta.localizacion.casa_nro}` : ""}
-                    {personaCompleta.localizacion.piso_depto ? `, Piso ${personaCompleta.localizacion.piso_depto}` : ""}
+                    {fullAddress}
                   </Typography>
                 </Paper>
               </Grid>
 
-              {personaCompleta.localizacion.barrio && (
+              {localizacion.barrio && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Barrio
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.localizacion.barrio}
+                      {localizacion.barrio}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.localizacion.localidad?.nombre && (
+              {localizacion.localidad?.nombre && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Localidad
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.localizacion.localidad.nombre}
+                      {localizacion.localidad.nombre}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.localizacion.cpc && (
+              {localizacion.cpc && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       CPC
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.localizacion.cpc}
+                      {localizacion.cpc}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.localizacion.referencia_geo && (
+              {localizacion.referencia_geo && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Referencia Geográfica
                     </Typography>
-                    <Typography variant="body1">{personaCompleta.localizacion.referencia_geo}</Typography>
+                    <Typography variant="body1">{localizacion.referencia_geo}</Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.localizacion.mza && (
+              {localizacion.mza && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Manzana
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.localizacion.mza}
+                      {localizacion.mza}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.localizacion.lote && (
+              {localizacion.lote && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Lote
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.localizacion.lote}
+                      {localizacion.lote}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -640,17 +576,17 @@ export default function PersonaDetailModal({
           )}
         </TabPanel>
 
-        {/* Tab 3: Información Educativa */}
+        {/* Tab 2: Información Educativa */}
         <TabPanel value={activeTab} index={2}>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Información Educativa
           </Typography>
 
-          {loadingPersona ? (
+          {loadingEducacion ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : personaCompleta?.educacion ? (
+          ) : educacion ? (
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
@@ -661,7 +597,7 @@ export default function PersonaDetailModal({
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {personaCompleta.educacion.institucion_educativa?.nombre || "No especificada"}
+                    {educacion.institucion_educativa?.nombre || "No especificada"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -672,7 +608,7 @@ export default function PersonaDetailModal({
                     Nivel Alcanzado
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {personaCompleta.educacion.nivel_alcanzado || "N/A"}
+                    {educacion.nivel_alcanzado || "N/A"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -683,46 +619,46 @@ export default function PersonaDetailModal({
                     Estado de Escolarización
                   </Typography>
                   <Chip
-                    label={personaCompleta.educacion.esta_escolarizado ? "Escolarizado" : "No escolarizado"}
-                    color={personaCompleta.educacion.esta_escolarizado ? "success" : "default"}
+                    label={educacion.esta_escolarizado ? "Escolarizado" : "No escolarizado"}
+                    color={educacion.esta_escolarizado ? "success" : "default"}
                     variant="outlined"
                   />
                 </Paper>
               </Grid>
 
-              {personaCompleta.educacion.ultimo_cursado && (
+              {educacion.ultimo_cursado && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Último Cursado
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.educacion.ultimo_cursado}
+                      {educacion.ultimo_cursado}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.educacion.tipo_escuela && (
+              {educacion.tipo_escuela && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Tipo de Escuela
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {personaCompleta.educacion.tipo_escuela}
+                      {educacion.tipo_escuela}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.educacion.comentarios_educativos && (
+              {educacion.comentarios_educativos && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Comentarios Educativos
                     </Typography>
-                    <Typography variant="body1">{personaCompleta.educacion.comentarios_educativos}</Typography>
+                    <Typography variant="body1">{educacion.comentarios_educativos}</Typography>
                   </Paper>
                 </Grid>
               )}
@@ -734,17 +670,17 @@ export default function PersonaDetailModal({
           )}
         </TabPanel>
 
-        {/* Tab 4: Información de Salud */}
+        {/* Tab 3: Información de Salud */}
         <TabPanel value={activeTab} index={3}>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Información de Salud
           </Typography>
 
-          {loadingPersona ? (
+          {loadingSalud ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : personaCompleta?.cobertura_medica ? (
+          ) : saludData?.cobertura_medica ? (
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
@@ -755,7 +691,7 @@ export default function PersonaDetailModal({
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {personaCompleta.cobertura_medica.institucion_sanitaria?.nombre || "No especificada"}
+                    {saludData.cobertura_medica.institucion_sanitaria?.nombre || "No especificada"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -766,7 +702,7 @@ export default function PersonaDetailModal({
                     Obra Social
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {personaCompleta.cobertura_medica.obra_social || "N/A"}
+                    {saludData.cobertura_medica.obra_social || "N/A"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -777,7 +713,7 @@ export default function PersonaDetailModal({
                     Tipo de Intervención
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {personaCompleta.cobertura_medica.intervencion || "N/A"}
+                    {saludData.cobertura_medica.intervencion || "N/A"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -788,47 +724,47 @@ export default function PersonaDetailModal({
                     Asignación Universal por Hijo (AUH)
                   </Typography>
                   <Chip
-                    label={personaCompleta.cobertura_medica.auh ? "Sí" : "No"}
-                    color={personaCompleta.cobertura_medica.auh ? "success" : "default"}
+                    label={saludData.cobertura_medica.auh ? "Sí" : "No"}
+                    color={saludData.cobertura_medica.auh ? "success" : "default"}
                     variant="outlined"
                   />
                 </Paper>
               </Grid>
 
-              {personaCompleta.cobertura_medica.medico_cabecera && (
+              {saludData.cobertura_medica.medico_cabecera && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
                       Médico de Cabecera
                     </Typography>
                     <Grid container spacing={2}>
-                      {personaCompleta.cobertura_medica.medico_cabecera.nombre && (
+                      {saludData.cobertura_medica.medico_cabecera.nombre && (
                         <Grid item xs={12} md={4}>
                           <Typography variant="caption" color="text.secondary">
                             Nombre
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {personaCompleta.cobertura_medica.medico_cabecera.nombre}
+                            {saludData.cobertura_medica.medico_cabecera.nombre}
                           </Typography>
                         </Grid>
                       )}
-                      {personaCompleta.cobertura_medica.medico_cabecera.mail && (
+                      {saludData.cobertura_medica.medico_cabecera.mail && (
                         <Grid item xs={12} md={4}>
                           <Typography variant="caption" color="text.secondary">
                             Email
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {personaCompleta.cobertura_medica.medico_cabecera.mail}
+                            {saludData.cobertura_medica.medico_cabecera.mail}
                           </Typography>
                         </Grid>
                       )}
-                      {personaCompleta.cobertura_medica.medico_cabecera.telefono && (
+                      {saludData.cobertura_medica.medico_cabecera.telefono && (
                         <Grid item xs={12} md={4}>
                           <Typography variant="caption" color="text.secondary">
                             Teléfono
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {personaCompleta.cobertura_medica.medico_cabecera.telefono}
+                            {saludData.cobertura_medica.medico_cabecera.telefono}
                           </Typography>
                         </Grid>
                       )}
@@ -837,28 +773,28 @@ export default function PersonaDetailModal({
                 </Grid>
               )}
 
-              {personaCompleta.cobertura_medica.observaciones && (
+              {saludData.cobertura_medica.observaciones && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Observaciones Médicas
                     </Typography>
-                    <Typography variant="body1">{personaCompleta.cobertura_medica.observaciones}</Typography>
+                    <Typography variant="body1">{saludData.cobertura_medica.observaciones}</Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {personaCompleta.persona_enfermedades && personaCompleta.persona_enfermedades.length > 0 && (
+              {saludData.persona_enfermedades && saludData.persona_enfermedades.length > 0 && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Enfermedades Registradas
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-                      {(personaCompleta.persona_enfermedades as Array<Record<string, unknown>>).map((enfermedad: Record<string, unknown>, idx: number) => (
+                      {saludData.persona_enfermedades.map((enfermedad: any, idx: number) => (
                         <Chip
                           key={idx}
-                          label={(enfermedad.nombre as string) || String(enfermedad)}
+                          label={enfermedad.enfermedad?.nombre || enfermedad.nombre || "Enfermedad"}
                           variant="outlined"
                           color="warning"
                           size="small"
@@ -876,21 +812,21 @@ export default function PersonaDetailModal({
           )}
         </TabPanel>
 
-        {/* Tab 5: Condiciones de Vulnerabilidad */}
+        {/* Tab 4: Condiciones de Vulnerabilidad */}
         <TabPanel value={activeTab} index={4}>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Condiciones de Vulnerabilidad
           </Typography>
 
-          {loadingPersona ? (
+          {loadingVulnerabilidad ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : personaCompleta?.condiciones_vulnerabilidad && personaCompleta.condiciones_vulnerabilidad.length > 0 ? (
+          ) : vulnerabilidadData?.condiciones_vulnerabilidad && vulnerabilidadData.condiciones_vulnerabilidad.length > 0 ? (
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Alert severity="warning" icon={<WarningIcon />}>
-                  Se han identificado {personaCompleta.condiciones_vulnerabilidad.length} condiciones de vulnerabilidad
+                  Se han identificado {vulnerabilidadData.condiciones_vulnerabilidad.length} condiciones de vulnerabilidad
                 </Alert>
               </Grid>
 
@@ -900,8 +836,8 @@ export default function PersonaDetailModal({
                     Condiciones Identificadas
                   </Typography>
                   <List dense>
-                    {(personaCompleta.condiciones_vulnerabilidad as Array<Record<string, unknown>>).map((condicion: Record<string, unknown>, idx: number) => (
-                      <ListItem key={idx} divider={idx < (personaCompleta.condiciones_vulnerabilidad as Array<Record<string, unknown>>).length - 1}>
+                    {vulnerabilidadData.condiciones_vulnerabilidad.map((condicion: any, idx: number) => (
+                      <ListItem key={idx} divider={idx < vulnerabilidadData.condiciones_vulnerabilidad.length - 1}>
                         <ListItemIcon>
                           <WarningIcon color="warning" />
                         </ListItemIcon>
@@ -927,14 +863,14 @@ export default function PersonaDetailModal({
                 </Paper>
               </Grid>
 
-              {personaCompleta.condiciones_vulnerabilidad.length > 0 && (
+              {vulnerabilidadData.condiciones_vulnerabilidad.length > 0 && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2, bgcolor: "warning.light", color: "warning.contrastText" }}>
                     <Typography variant="subtitle2" gutterBottom>
                       Peso Total de Vulnerabilidad
                     </Typography>
                     <Typography variant="h4">
-                      {personaCompleta.condiciones_vulnerabilidad.reduce(
+                      {vulnerabilidadData.condiciones_vulnerabilidad.reduce(
                         (sum: number, c: any) =>
                           sum + (c.condicion_vulnerabilidad?.peso || c.peso || 0),
                         0
@@ -951,7 +887,7 @@ export default function PersonaDetailModal({
           )}
         </TabPanel>
 
-        {/* Tab 6: Información del Legajo */}
+        {/* Tab 5: Información del Legajo */}
         <TabPanel value={activeTab} index={5}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -1051,7 +987,7 @@ export default function PersonaDetailModal({
           </Grid>
         </TabPanel>
 
-        {/* Tab 7: Contexto Adicional */}
+        {/* Tab 6: Contexto Adicional */}
         <TabPanel value={activeTab} index={6}>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Contexto Adicional

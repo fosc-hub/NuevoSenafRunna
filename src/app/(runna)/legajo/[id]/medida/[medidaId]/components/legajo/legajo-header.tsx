@@ -146,7 +146,7 @@ export const LegajoHeader: React.FC<LegajoHeaderProps> = ({ legajoData, onViewAl
             </Typography>
             {persona?.nombre_autopercibido && (
               <Typography variant="body2" color="text.secondary">
-                "{persona.nombre_autopercibido}"
+                &ldquo;{persona.nombre_autopercibido}&rdquo;
               </Typography>
             )}
             {/* Chips de estado rápido */}

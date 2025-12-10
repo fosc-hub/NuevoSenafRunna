@@ -25,7 +25,7 @@ import { DatosPersonalesSection } from "./[id]/medida/[medidaId]/components/lega
 import { LegajoHeader } from "./[id]/medida/[medidaId]/components/legajo/legajo-header"
 import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[id]/medida/[medidaId]/components/navigation-breadcrumbs"
 // New components
-import { LocalizacionSection } from "./[id]/medida/[medidaId]/components/legajo/localizacion-section"
+import { LocalizacionSection } from "./[id]/medida/[medidaId]/components/legajo/localizacion-section-refactored"
 import { AsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/asignaciones-section"
 import { OficiosSection } from "./[id]/medida/[medidaId]/components/legajo/oficios-section"
 import { DemandasSection } from "./[id]/medida/[medidaId]/components/legajo/demandas-section"
@@ -35,7 +35,7 @@ import { HistorialCambiosSection } from "./[id]/medida/[medidaId]/components/leg
 import { PlanTrabajoSection } from "./[id]/medida/[medidaId]/components/legajo/plan-trabajo-section"
 import { HistorialAsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/historial-asignaciones-section"
 import { MedidasActivasSection } from "./[id]/medida/[medidaId]/components/legajo/medidas-activas-section"
-import PersonaDetailModal from "./[id]/medida/[medidaId]/components/dialogs/persona-detail-modal"
+import PersonaDetailModal from "./[id]/medida/[medidaId]/components/dialogs/persona-detail-modal-enhanced"
 
 // Importar tipos
 

@@ -25,7 +25,8 @@
       "Bash(wc:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(if exist \".next\" rmdir /s /q .next)"
     ],
     "deny": [],
     "ask": []

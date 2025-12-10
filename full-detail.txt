@@ -1,0 +1,3365 @@
+{
+    "id": 11,
+    "latest_evaluacion": {
+        "id": 14,
+        "adjuntos": [
+            {
+                "archivo": "/media/TEvaluacionAdjunto/archivo_43/informe_valoracion_11_2025-11-18.pdf"
+            }
+        ],
+        "tecnico_solicitante": {
+            "id": 43,
+            "username": "UsuarioTecnico",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "fecha_nacimiento": null,
+            "genero": "",
+            "telefono": null,
+            "is_staff": false,
+            "is_active": true,
+            "is_superuser": false,
+            "groups": [
+                {
+                    "id": 3,
+                    "name": "Técnico"
+                }
+            ],
+            "user_permissions": [],
+            "zonas": [
+                {
+                    "id": 11,
+                    "director": false,
+                    "jefe": false,
+                    "legal": false,
+                    "user": 43,
+                    "zona": 3,
+                    "localidad": 3
+                }
+            ],
+            "zonas_ids": [
+                3
+            ],
+            "all_permissions": [
+                "add_tactividad",
+                "change_tactividad",
+                "delete_tactividad",
+                "view_tactividad",
+                "add_tcalificaciondemanda",
+                "change_tcalificaciondemanda",
+                "delete_tcalificaciondemanda",
+                "view_tcalificaciondemanda",
+                "add_tdemanda",
+                "change_tdemanda",
+                "delete_tdemanda",
+                "view_tdemanda",
+                "add_tdemandavinculada",
+                "change_tdemandavinculada",
+                "delete_tdemandavinculada",
+                "view_tdemandavinculada",
+                "view_tdemandazona",
+                "add_tevaluacion",
+                "change_tevaluacion",
+                "delete_tevaluacion",
+                "view_tevaluacion",
+                "add_trespuesta",
+                "change_trespuesta",
+                "delete_trespuesta",
+                "view_trespuesta"
+            ]
+        },
+        "director_decisor": {
+            "id": 44,
+            "username": "UsuarioDirector",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "fecha_nacimiento": null,
+            "genero": "",
+            "telefono": null,
+            "is_staff": false,
+            "is_active": true,
+            "is_superuser": false,
+            "groups": [
+                {
+                    "id": 4,
+                    "name": "Director"
+                }
+            ],
+            "user_permissions": [],
+            "zonas": [
+                {
+                    "id": 12,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 1,
+                    "localidad": null
+                },
+                {
+                    "id": 13,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 2,
+                    "localidad": null
+                },
+                {
+                    "id": 14,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 3,
+                    "localidad": null
+                },
+                {
+                    "id": 15,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 4,
+                    "localidad": null
+                },
+                {
+                    "id": 16,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 5,
+                    "localidad": null
+                },
+                {
+                    "id": 17,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 6,
+                    "localidad": null
+                },
+                {
+                    "id": 18,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 7,
+                    "localidad": null
+                },
+                {
+                    "id": 19,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 8,
+                    "localidad": null
+                },
+                {
+                    "id": 20,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 9,
+                    "localidad": null
+                },
+                {
+                    "id": 21,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 10,
+                    "localidad": null
+                },
+                {
+                    "id": 22,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 11,
+                    "localidad": null
+                },
+                {
+                    "id": 23,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 12,
+                    "localidad": null
+                },
+                {
+                    "id": 24,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 13,
+                    "localidad": null
+                },
+                {
+                    "id": 25,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 14,
+                    "localidad": null
+                },
+                {
+                    "id": 26,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 15,
+                    "localidad": null
+                },
+                {
+                    "id": 27,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 16,
+                    "localidad": null
+                },
+                {
+                    "id": 28,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 17,
+                    "localidad": null
+                },
+                {
+                    "id": 29,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 18,
+                    "localidad": null
+                },
+                {
+                    "id": 30,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 19,
+                    "localidad": null
+                },
+                {
+                    "id": 31,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 20,
+                    "localidad": null
+                },
+                {
+                    "id": 32,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 21,
+                    "localidad": null
+                },
+                {
+                    "id": 33,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 22,
+                    "localidad": null
+                },
+                {
+                    "id": 34,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 23,
+                    "localidad": null
+                },
+                {
+                    "id": 35,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 24,
+                    "localidad": null
+                },
+                {
+                    "id": 36,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 25,
+                    "localidad": null
+                },
+                {
+                    "id": 37,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 26,
+                    "localidad": null
+                },
+                {
+                    "id": 38,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 27,
+                    "localidad": null
+                },
+                {
+                    "id": 39,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 28,
+                    "localidad": null
+                },
+                {
+                    "id": 40,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 29,
+                    "localidad": null
+                },
+                {
+                    "id": 41,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 30,
+                    "localidad": null
+                },
+                {
+                    "id": 42,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 31,
+                    "localidad": null
+                },
+                {
+                    "id": 43,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 32,
+                    "localidad": null
+                },
+                {
+                    "id": 44,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 33,
+                    "localidad": null
+                },
+                {
+                    "id": 45,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 34,
+                    "localidad": null
+                },
+                {
+                    "id": 46,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 35,
+                    "localidad": null
+                },
+                {
+                    "id": 47,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 36,
+                    "localidad": null
+                },
+                {
+                    "id": 48,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 37,
+                    "localidad": null
+                },
+                {
+                    "id": 49,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 38,
+                    "localidad": null
+                },
+                {
+                    "id": 50,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 39,
+                    "localidad": null
+                },
+                {
+                    "id": 51,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 40,
+                    "localidad": null
+                },
+                {
+                    "id": 52,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 41,
+                    "localidad": null
+                },
+                {
+                    "id": 53,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 42,
+                    "localidad": null
+                },
+                {
+                    "id": 54,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 43,
+                    "localidad": null
+                },
+                {
+                    "id": 55,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 44,
+                    "localidad": null
+                },
+                {
+                    "id": 56,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 45,
+                    "localidad": null
+                },
+                {
+                    "id": 57,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 46,
+                    "localidad": null
+                },
+                {
+                    "id": 58,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 47,
+                    "localidad": null
+                },
+                {
+                    "id": 59,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 48,
+                    "localidad": null
+                },
+                {
+                    "id": 60,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 49,
+                    "localidad": null
+                },
+                {
+                    "id": 61,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 50,
+                    "localidad": null
+                },
+                {
+                    "id": 62,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 51,
+                    "localidad": null
+                },
+                {
+                    "id": 63,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 52,
+                    "localidad": null
+                },
+                {
+                    "id": 64,
+                    "director": false,
+                    "jefe": false,
+                    "legal": true,
+                    "user": 44,
+                    "zona": 53,
+                    "localidad": null
+                }
+            ],
+            "zonas_ids": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+                35,
+                36,
+                37,
+                38,
+                39,
+                40,
+                41,
+                42,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                49,
+                50,
+                51,
+                52,
+                53
+            ],
+            "all_permissions": [
+                "add_tactividad",
+                "change_tactividad",
+                "delete_tactividad",
+                "view_tactividad",
+                "add_tcalificaciondemanda",
+                "change_tcalificaciondemanda",
+                "delete_tcalificaciondemanda",
+                "view_tcalificaciondemanda",
+                "add_tdemanda",
+                "change_tdemanda",
+                "delete_tdemanda",
+                "view_tdemanda",
+                "add_tdemandavinculada",
+                "change_tdemandavinculada",
+                "delete_tdemandavinculada",
+                "view_tdemandavinculada",
+                "add_tdemandazona",
+                "change_tdemandazona",
+                "delete_tdemandazona",
+                "view_tdemandazona",
+                "add_tevaluacion",
+                "change_tevaluacion",
+                "delete_tevaluacion",
+                "view_tevaluacion",
+                "add_tlegajozona",
+                "change_tlegajozona",
+                "delete_tlegajozona",
+                "view_tlegajozona",
+                "view_tlegajozonahistorial",
+                "view_tlocalcentrovida",
+                "add_trespuesta",
+                "change_trespuesta",
+                "delete_trespuesta",
+                "view_trespuesta"
+            ]
+        },
+        "evaluacion_personas": [
+            {
+                "persona": {
+                    "id": 35,
+                    "deleted": false,
+                    "nombre": "Juan",
+                    "nombre_autopercibido": null,
+                    "apellido": "Perez",
+                    "fecha_nacimiento": "2025-11-03",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 12,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 46037183,
+                    "situacion_dni": "VALIDO",
+                    "genero": "MASCULINO",
+                    "observaciones": null,
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": null
+                }
+            }
+        ],
+        "localidad_usuario": "INFORMATICA",
+        "nombre_usuario": "string",
+        "rol_usuario": "Técnico",
+        "tipo_medida_evaluado": "MPE",
+        "fecha_y_hora": "2025-11-18T18:16:31.513771Z",
+        "descripcion_de_la_situacion": "Descripcion",
+        "valoracion_profesional_final": "Blank",
+        "justificacion_tecnico": "Blank",
+        "justificacion_director": "Aprobado por coordinación.",
+        "solicitud_tecnico": "TOMAR MEDIDA",
+        "decision_director": "AUTORIZAR",
+        "is_lastest": true,
+        "demanda_log": {
+            "id": 54,
+            "fecha_y_hora": "2025-11-18T18:14:55.632538Z",
+            "log": {
+                "id": 11,
+                "valoraciones_seleccionadas": [
+                    {
+                        "indicador": 1,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 2,
+                        "checked": true
+                    },
+                    {
+                        "indicador": 3,
+                        "checked": true
+                    },
+                    {
+                        "indicador": 4,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 5,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 6,
+                        "checked": true
+                    },
+                    {
+                        "indicador": 7,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 8,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 9,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 10,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 11,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 12,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 13,
+                        "checked": false
+                    },
+                    {
+                        "indicador": 14,
+                        "checked": false
+                    }
+                ],
+                "scores": [
+                    {
+                        "id": 19,
+                        "ultima_actualizacion": "2025-11-18T18:01:39.397814Z",
+                        "score": -17.0,
+                        "score_condiciones_vulnerabilidad": 0.0,
+                        "score_vulneracion": 0.0,
+                        "score_valoracion": -17.0,
+                        "nnya": {
+                            "id": 19,
+                            "deleted": false,
+                            "nombre": "Richard",
+                            "nombre_autopercibido": null,
+                            "apellido": "Wiggins",
+                            "fecha_nacimiento": "2014-05-11",
+                            "fecha_defuncion": null,
+                            "edad_aproximada": 10,
+                            "nacionalidad": "ARGENTINA",
+                            "dni": 47039885,
+                            "situacion_dni": "VALIDO",
+                            "genero": "FEMENINO",
+                            "observaciones": "NNyA de prueba 19",
+                            "adulto": false,
+                            "nnya": true,
+                            "telefono": 3217449
+                        },
+                        "nnya_id": 19,
+                        "decision": "RECHAZAR CASO",
+                        "reason": "El score del NNyA (-17.0), no supone un riesgo, por lo tanto la sugerencia es RECHAZAR CASO."
+                    },
+                    {
+                        "id": 25,
+                        "ultima_actualizacion": "2025-11-18T18:01:39.399027Z",
+                        "score": 81.0,
+                        "score_condiciones_vulnerabilidad": 18.0,
+                        "score_vulneracion": 80.0,
+                        "score_valoracion": -17.0,
+                        "nnya": {
+                            "id": 35,
+                            "deleted": false,
+                            "nombre": "Juan",
+                            "nombre_autopercibido": null,
+                            "apellido": "Perez",
+                            "fecha_nacimiento": "2025-11-03",
+                            "fecha_defuncion": null,
+                            "edad_aproximada": 12,
+                            "nacionalidad": "ARGENTINA",
+                            "dni": 46037183,
+                            "situacion_dni": "VALIDO",
+                            "genero": "MASCULINO",
+                            "observaciones": null,
+                            "adulto": false,
+                            "nnya": true,
+                            "telefono": null
+                        },
+                        "nnya_id": 35,
+                        "decision": "ADMITIR CASO",
+                        "reason": "Dado el alto score del NNyA (81.0), la decision sugerida es ADMISION DE CASO."
+                    }
+                ],
+                "demandas_vinculadas": [],
+                "actividades": [
+                    {
+                        "id": 1,
+                        "adjuntos": [
+                            {
+                                "archivo": "http://web-runna-v2legajos.up.railway.app/media/TActividadAdjunto/archivo_1/modelo_entrevista_al_nna_3.txt"
+                            }
+                        ],
+                        "by_user": {
+                            "id": 43,
+                            "username": "UsuarioTecnico",
+                            "first_name": "",
+                            "last_name": "",
+                            "email": "",
+                            "fecha_nacimiento": null,
+                            "genero": "",
+                            "telefono": null,
+                            "is_staff": false,
+                            "is_active": true,
+                            "is_superuser": false,
+                            "groups": [
+                                {
+                                    "id": 3,
+                                    "name": "Técnico"
+                                }
+                            ],
+                            "user_permissions": [],
+                            "zonas": [
+                                {
+                                    "id": 11,
+                                    "director": false,
+                                    "jefe": false,
+                                    "legal": false,
+                                    "user": 43,
+                                    "zona": 3,
+                                    "localidad": 3
+                                }
+                            ],
+                            "zonas_ids": [
+                                3
+                            ],
+                            "all_permissions": [
+                                "add_tactividad",
+                                "change_tactividad",
+                                "delete_tactividad",
+                                "view_tactividad",
+                                "add_tcalificaciondemanda",
+                                "change_tcalificaciondemanda",
+                                "delete_tcalificaciondemanda",
+                                "view_tcalificaciondemanda",
+                                "add_tdemanda",
+                                "change_tdemanda",
+                                "delete_tdemanda",
+                                "view_tdemanda",
+                                "add_tdemandavinculada",
+                                "change_tdemandavinculada",
+                                "delete_tdemandavinculada",
+                                "view_tdemandavinculada",
+                                "view_tdemandazona",
+                                "add_tevaluacion",
+                                "change_tevaluacion",
+                                "delete_tevaluacion",
+                                "view_tevaluacion",
+                                "add_trespuesta",
+                                "change_trespuesta",
+                                "delete_trespuesta",
+                                "view_trespuesta"
+                            ]
+                        },
+                        "fecha_y_hora": "2025-11-18T17:53:30.699634Z",
+                        "fecha_y_hora_manual": "2025-11-18T17:53:01.224000Z",
+                        "descripcion": "PEPE",
+                        "tipo": {
+                            "id": 1,
+                            "modelos": [
+                                {
+                                    "archivo": null
+                                },
+                                {
+                                    "archivo": null
+                                },
+                                {
+                                    "archivo": null
+                                },
+                                {
+                                    "archivo": null
+                                }
+                            ],
+                            "nombre": "Entrevista al NNA",
+                            "remitir_a_jefe": false
+                        },
+                        "institucion": {
+                            "id": 2,
+                            "nombre": "Club Deportivo"
+                        },
+                        "demanda": 11
+                    }
+                ],
+                "respuestas": [],
+                "adjuntos": [
+                    {
+                        "archivo": "http://web-runna-v2legajos.up.railway.app/media/TDemandaAdjunto/archivo_45/CESES_PENAL_JUVENIL_17.11.2025.xlsx"
+                    }
+                ],
+                "codigos_demanda": [
+                    {
+                        "id": 41,
+                        "codigo": "234",
+                        "tipo_codigo": {
+                            "id": 1,
+                            "nombre": "SAC",
+                            "datatype": "STRING",
+                            "bloque_datos_remitente": null
+                        }
+                    }
+                ],
+                "localidad_usuario": "INFORMATICA",
+                "rol_usuario": [
+                    "Técnico"
+                ],
+                "nombre_usuario": "",
+                "apellido_usuario": "",
+                "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                "ultima_actualizacion": "2025-11-18T17:58:17.120954Z",
+                "fecha_ingreso_senaf": "2025-11-17",
+                "fecha_oficio_documento": "2025-11-17",
+                "descripcion": null,
+                "objetivo_de_demanda": "PROTECCION",
+                "estado_demanda": "EVALUACION",
+                "observaciones": "Observaciones",
+                "envio_de_respuesta": "NO_NECESARIO",
+                "tipo_medida_evaluado": null,
+                "medida_creada": false,
+                "etiqueta": {
+                    "id": 1,
+                    "nombre": "Audiencia",
+                    "remitir_a_usuario_registrador": false
+                },
+                "localizacion": {
+                    "id": 46,
+                    "deleted": false,
+                    "calle": "Calle",
+                    "tipo_calle": "CALLE",
+                    "piso_depto": null,
+                    "lote": null,
+                    "mza": 1,
+                    "casa_nro": 398,
+                    "referencia_geo": "En la esquina",
+                    "geolocalizacion": "prpr",
+                    "barrio": null,
+                    "localidad": {
+                        "id": 7,
+                        "nombre": "VILLA HUIDOBRO"
+                    },
+                    "cpc": null
+                },
+                "ambito_vulneracion": {
+                    "id": 2,
+                    "nombre": "1. b Familia extensa"
+                },
+                "bloque_datos_remitente": {
+                    "id": 9,
+                    "nombre": "FISCALIA"
+                },
+                "tipo_institucion": {
+                    "id": 77,
+                    "nombre": "FISC. INST. DISTRITO JUDICIAL 1 - TURNO 5 (TRIBUNALES II)",
+                    "bloque_datos_remitente": {
+                        "id": 9,
+                        "nombre": "FISCALIA"
+                    }
+                },
+                "institucion": {
+                    "id": 11,
+                    "nombre": "institucion",
+                    "tipo_institucion": 77
+                },
+                "motivo_ingreso": {
+                    "id": 2,
+                    "nombre": "VIOLENCIAS",
+                    "peso": 10
+                },
+                "tipo_oficio": null,
+                "submotivo_ingreso": {
+                    "id": 7,
+                    "nombre": "15. Abuso sexual",
+                    "peso": 10,
+                    "motivo": {
+                        "id": 2,
+                        "nombre": "VIOLENCIAS",
+                        "peso": 10
+                    }
+                },
+                "registrado_por_user": {
+                    "id": 43,
+                    "password": "pbkdf2_sha256$870000$G3goFgiCu90BIui8rHMJbe$WspmS+GLKYy6eFgdg/ztAYHkyOBq8A53iKidk4393LE=",
+                    "last_login": null,
+                    "is_superuser": false,
+                    "username": "UsuarioTecnico",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "",
+                    "is_staff": false,
+                    "is_active": true,
+                    "date_joined": "2025-11-18T03:15:48.923908Z",
+                    "fecha_nacimiento": null,
+                    "genero": "",
+                    "telefono": null,
+                    "groups": [
+                        {
+                            "id": 3,
+                            "name": "Técnico",
+                            "permissions": [
+                                129,
+                                130,
+                                131,
+                                132,
+                                45,
+                                46,
+                                47,
+                                48,
+                                121,
+                                122,
+                                123,
+                                124,
+                                145,
+                                146,
+                                147,
+                                148,
+                                156,
+                                289,
+                                290,
+                                291,
+                                292,
+                                221,
+                                222,
+                                223,
+                                224
+                            ]
+                        }
+                    ],
+                    "user_permissions": []
+                },
+                "registrado_por_user_zona": {
+                    "id": 3,
+                    "nombre": "FORTALECIMIENTO FAMILIAR"
+                },
+                "relacion_demanda": {
+                    "codigos_demanda": [
+                        {
+                            "id": 41,
+                            "codigo": "234",
+                            "tipo_codigo": 1,
+                            "demanda": 11
+                        }
+                    ],
+                    "demanda_zona": {
+                        "id": 49,
+                        "esta_activo": true,
+                        "recibido": true,
+                        "comentarios": "",
+                        "demanda": 11,
+                        "zona": 3,
+                        "user_responsable": 43,
+                        "enviado_por": 43,
+                        "recibido_por": null
+                    }
+                },
+                "personas": [
+                    {
+                        "localizacion": {
+                            "id": 41,
+                            "deleted": false,
+                            "calle": "ww",
+                            "tipo_calle": null,
+                            "piso_depto": null,
+                            "lote": null,
+                            "mza": null,
+                            "casa_nro": 2,
+                            "referencia_geo": "sdfd",
+                            "geolocalizacion": null,
+                            "barrio": null,
+                            "localidad": {
+                                "id": 1,
+                                "nombre": "CAPITAL"
+                            },
+                            "cpc": null
+                        },
+                        "educacion": {
+                            "id": 6,
+                            "deleted": false,
+                            "nivel_alcanzado": "PRIMARIO",
+                            "esta_escolarizado": true,
+                            "ultimo_cursado": "TERCERO_SECUNDARIO",
+                            "tipo_escuela": "PRIVADA",
+                            "comentarios_educativos": "234234",
+                            "institucion_educativa": {
+                                "id": 2,
+                                "nombre": "CALAMUCHITA EMBALSE Adultos - Secundario C.E.N.M.A. Nº 211 DR. RENE FAVALORO CAMINO A LA CRUZ LOS HOTELES"
+                            },
+                            "persona": {
+                                "id": 19,
+                                "deleted": false,
+                                "nombre": "Richard",
+                                "nombre_autopercibido": null,
+                                "apellido": "Wiggins",
+                                "fecha_nacimiento": "2014-05-11",
+                                "fecha_defuncion": null,
+                                "edad_aproximada": 10,
+                                "nacionalidad": "ARGENTINA",
+                                "dni": 47039885,
+                                "situacion_dni": "VALIDO",
+                                "genero": "FEMENINO",
+                                "observaciones": "NNyA de prueba 19",
+                                "adulto": false,
+                                "nnya": true,
+                                "telefono": 3217449
+                            }
+                        },
+                        "cobertura_medica": {
+                            "id": 7,
+                            "deleted": false,
+                            "obra_social": "PAMI",
+                            "intervencion": "OBRA_SOCIAL",
+                            "auh": true,
+                            "observaciones": "sdasd",
+                            "institucion_sanitaria": {
+                                "id": 3,
+                                "nombre": "Clínica Privada"
+                            },
+                            "persona": {
+                                "id": 19,
+                                "deleted": false,
+                                "nombre": "Richard",
+                                "nombre_autopercibido": null,
+                                "apellido": "Wiggins",
+                                "fecha_nacimiento": "2014-05-11",
+                                "fecha_defuncion": null,
+                                "edad_aproximada": 10,
+                                "nacionalidad": "ARGENTINA",
+                                "dni": 47039885,
+                                "situacion_dni": "VALIDO",
+                                "genero": "FEMENINO",
+                                "observaciones": "NNyA de prueba 19",
+                                "adulto": false,
+                                "nnya": true,
+                                "telefono": 3217449
+                            },
+                            "medico_cabecera": {
+                                "id": 8,
+                                "nombre": "234234",
+                                "mail": "pepe@gmail.com",
+                                "telefono": 234
+                            }
+                        },
+                        "persona_enfermedades": [
+                            {
+                                "id": 5,
+                                "oficio_adjunto": [],
+                                "certificado_adjunto": [],
+                                "deleted": false,
+                                "certificacion": "NO_TIENE",
+                                "beneficios_gestionados": null,
+                                "recibe_tratamiento": false,
+                                "informacion_tratamiento": "234234",
+                                "persona": {
+                                    "id": 19,
+                                    "deleted": false,
+                                    "nombre": "Richard",
+                                    "nombre_autopercibido": null,
+                                    "apellido": "Wiggins",
+                                    "fecha_nacimiento": "2014-05-11",
+                                    "fecha_defuncion": null,
+                                    "edad_aproximada": 10,
+                                    "nacionalidad": "ARGENTINA",
+                                    "dni": 47039885,
+                                    "situacion_dni": "VALIDO",
+                                    "genero": "FEMENINO",
+                                    "observaciones": "NNyA de prueba 19",
+                                    "adulto": false,
+                                    "nnya": true,
+                                    "telefono": 3217449
+                                },
+                                "situacion_salud": {
+                                    "id": 2,
+                                    "nombre": "Enfermedad Crónica"
+                                },
+                                "enfermedad": {
+                                    "id": 23,
+                                    "nombre": "234",
+                                    "situacion_salud_categoria": 2
+                                },
+                                "institucion_sanitaria_interviniente": {
+                                    "id": 2,
+                                    "nombre": "Centro de Salud N°1"
+                                },
+                                "medico_tratamiento": {
+                                    "id": 9,
+                                    "nombre": "asd",
+                                    "mail": "pepe@gmail.com",
+                                    "telefono": 234
+                                }
+                            }
+                        ],
+                        "demanda_persona": {
+                            "id": 9,
+                            "deleted": false,
+                            "conviviente": false,
+                            "legalmente_responsable": false,
+                            "ocupacion": null,
+                            "vinculo_demanda": "NNYA_SECUNDARIO",
+                            "vinculo_con_nnya_principal": null,
+                            "demanda": {
+                                "id": 11,
+                                "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                                "ultima_actualizacion": "2025-11-18T17:58:17.120954Z",
+                                "fecha_ingreso_senaf": "2025-11-17",
+                                "fecha_oficio_documento": "2025-11-17",
+                                "descripcion": null,
+                                "objetivo_de_demanda": "PROTECCION",
+                                "estado_demanda": "EVALUACION",
+                                "observaciones": "Observaciones",
+                                "envio_de_respuesta": "NO_NECESARIO",
+                                "tipo_medida_evaluado": null,
+                                "medida_creada": false,
+                                "etiqueta": 1,
+                                "localizacion": 46,
+                                "ambito_vulneracion": 2,
+                                "bloque_datos_remitente": 9,
+                                "tipo_institucion": 77,
+                                "institucion": 11,
+                                "motivo_ingreso": 2,
+                                "tipo_oficio": null,
+                                "submotivo_ingreso": 7,
+                                "registrado_por_user": 43,
+                                "registrado_por_user_zona": 3
+                            },
+                            "persona": {
+                                "id": 19,
+                                "deleted": false,
+                                "nombre": "Richard",
+                                "nombre_autopercibido": null,
+                                "apellido": "Wiggins",
+                                "fecha_nacimiento": "2014-05-11",
+                                "fecha_defuncion": null,
+                                "edad_aproximada": 10,
+                                "nacionalidad": "ARGENTINA",
+                                "dni": 47039885,
+                                "situacion_dni": "VALIDO",
+                                "genero": "FEMENINO",
+                                "observaciones": "NNyA de prueba 19",
+                                "adulto": false,
+                                "nnya": true,
+                                "telefono": 3217449
+                            }
+                        },
+                        "condiciones_vulnerabilidad": [],
+                        "persona": {
+                            "id": 19,
+                            "deleted": false,
+                            "nombre": "Richard",
+                            "nombre_autopercibido": null,
+                            "apellido": "Wiggins",
+                            "fecha_nacimiento": "2014-05-11",
+                            "fecha_defuncion": null,
+                            "edad_aproximada": 10,
+                            "nacionalidad": "ARGENTINA",
+                            "dni": 47039885,
+                            "situacion_dni": "VALIDO",
+                            "genero": "FEMENINO",
+                            "observaciones": "NNyA de prueba 19",
+                            "adulto": false,
+                            "nnya": true,
+                            "telefono": 3217449
+                        },
+                        "vulneraciones": []
+                    },
+                    {
+                        "localizacion": {
+                            "id": 46,
+                            "deleted": false,
+                            "calle": "Calle",
+                            "tipo_calle": "CALLE",
+                            "piso_depto": null,
+                            "lote": null,
+                            "mza": 1,
+                            "casa_nro": 398,
+                            "referencia_geo": "En la esquina",
+                            "geolocalizacion": "prpr",
+                            "barrio": null,
+                            "localidad": {
+                                "id": 7,
+                                "nombre": "VILLA HUIDOBRO"
+                            },
+                            "cpc": null
+                        },
+                        "educacion": {
+                            "id": 7,
+                            "deleted": false,
+                            "nivel_alcanzado": "PRIMARIO",
+                            "esta_escolarizado": true,
+                            "ultimo_cursado": "SEXTO",
+                            "tipo_escuela": "PUBLICA",
+                            "comentarios_educativos": "Comentarios",
+                            "institucion_educativa": {
+                                "id": 4,
+                                "nombre": "CALAMUCHITA LA CUMBRECITA Adultos - Primaria C.E.N.P.A. LA CUMBRECITA CALLE PUBLICA"
+                            },
+                            "persona": {
+                                "id": 35,
+                                "deleted": false,
+                                "nombre": "Juan",
+                                "nombre_autopercibido": null,
+                                "apellido": "Perez",
+                                "fecha_nacimiento": "2025-11-03",
+                                "fecha_defuncion": null,
+                                "edad_aproximada": 12,
+                                "nacionalidad": "ARGENTINA",
+                                "dni": 46037183,
+                                "situacion_dni": "VALIDO",
+                                "genero": "MASCULINO",
+                                "observaciones": null,
+                                "adulto": false,
+                                "nnya": true,
+                                "telefono": null
+                            }
+                        },
+                        "cobertura_medica": {
+                            "id": 8,
+                            "deleted": false,
+                            "obra_social": "PAMI",
+                            "intervencion": "OBRA_SOCIAL",
+                            "auh": true,
+                            "observaciones": "Observaciones",
+                            "institucion_sanitaria": {
+                                "id": 1,
+                                "nombre": "Hospital Regional"
+                            },
+                            "persona": {
+                                "id": 35,
+                                "deleted": false,
+                                "nombre": "Juan",
+                                "nombre_autopercibido": null,
+                                "apellido": "Perez",
+                                "fecha_nacimiento": "2025-11-03",
+                                "fecha_defuncion": null,
+                                "edad_aproximada": 12,
+                                "nacionalidad": "ARGENTINA",
+                                "dni": 46037183,
+                                "situacion_dni": "VALIDO",
+                                "genero": "MASCULINO",
+                                "observaciones": null,
+                                "adulto": false,
+                                "nnya": true,
+                                "telefono": null
+                            },
+                            "medico_cabecera": {
+                                "id": 10,
+                                "nombre": "Medico",
+                                "mail": "santiagocarranza@example.com",
+                                "telefono": 56756
+                            }
+                        },
+                        "persona_enfermedades": [],
+                        "demanda_persona": {
+                            "id": 8,
+                            "deleted": false,
+                            "conviviente": true,
+                            "legalmente_responsable": false,
+                            "ocupacion": null,
+                            "vinculo_demanda": "NNYA_PRINCIPAL",
+                            "vinculo_con_nnya_principal": null,
+                            "demanda": {
+                                "id": 11,
+                                "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                                "ultima_actualizacion": "2025-11-18T17:58:17.120954Z",
+                                "fecha_ingreso_senaf": "2025-11-17",
+                                "fecha_oficio_documento": "2025-11-17",
+                                "descripcion": null,
+                                "objetivo_de_demanda": "PROTECCION",
+                                "estado_demanda": "EVALUACION",
+                                "observaciones": "Observaciones",
+                                "envio_de_respuesta": "NO_NECESARIO",
+                                "tipo_medida_evaluado": null,
+                                "medida_creada": false,
+                                "etiqueta": 1,
+                                "localizacion": 46,
+                                "ambito_vulneracion": 2,
+                                "bloque_datos_remitente": 9,
+                                "tipo_institucion": 77,
+                                "institucion": 11,
+                                "motivo_ingreso": 2,
+                                "tipo_oficio": null,
+                                "submotivo_ingreso": 7,
+                                "registrado_por_user": 43,
+                                "registrado_por_user_zona": 3
+                            },
+                            "persona": {
+                                "id": 35,
+                                "deleted": false,
+                                "nombre": "Juan",
+                                "nombre_autopercibido": null,
+                                "apellido": "Perez",
+                                "fecha_nacimiento": "2025-11-03",
+                                "fecha_defuncion": null,
+                                "edad_aproximada": 12,
+                                "nacionalidad": "ARGENTINA",
+                                "dni": 46037183,
+                                "situacion_dni": "VALIDO",
+                                "genero": "MASCULINO",
+                                "observaciones": null,
+                                "adulto": false,
+                                "nnya": true,
+                                "telefono": null
+                            }
+                        },
+                        "condiciones_vulnerabilidad": [
+                            {
+                                "id": 14,
+                                "si_no": true,
+                                "persona": {
+                                    "id": 35,
+                                    "deleted": false,
+                                    "nombre": "Juan",
+                                    "nombre_autopercibido": null,
+                                    "apellido": "Perez",
+                                    "fecha_nacimiento": "2025-11-03",
+                                    "fecha_defuncion": null,
+                                    "edad_aproximada": 12,
+                                    "nacionalidad": "ARGENTINA",
+                                    "dni": 46037183,
+                                    "situacion_dni": "VALIDO",
+                                    "genero": "MASCULINO",
+                                    "observaciones": null,
+                                    "adulto": false,
+                                    "nnya": true,
+                                    "telefono": null
+                                },
+                                "condicion_vulnerabilidad": {
+                                    "id": 1,
+                                    "nombre": "El NNA tiene o aparenta discapacidad",
+                                    "descripcion": null,
+                                    "peso": 10,
+                                    "nnya": true,
+                                    "adulto": false
+                                },
+                                "demanda": {
+                                    "id": 11,
+                                    "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                                    "ultima_actualizacion": "2025-11-18T17:58:17.120954Z",
+                                    "fecha_ingreso_senaf": "2025-11-17",
+                                    "fecha_oficio_documento": "2025-11-17",
+                                    "descripcion": null,
+                                    "objetivo_de_demanda": "PROTECCION",
+                                    "estado_demanda": "EVALUACION",
+                                    "observaciones": "Observaciones",
+                                    "envio_de_respuesta": "NO_NECESARIO",
+                                    "tipo_medida_evaluado": null,
+                                    "medida_creada": false,
+                                    "etiqueta": 1,
+                                    "localizacion": 46,
+                                    "ambito_vulneracion": 2,
+                                    "bloque_datos_remitente": 9,
+                                    "tipo_institucion": 77,
+                                    "institucion": 11,
+                                    "motivo_ingreso": 2,
+                                    "tipo_oficio": null,
+                                    "submotivo_ingreso": 7,
+                                    "registrado_por_user": 43,
+                                    "registrado_por_user_zona": 3
+                                }
+                            },
+                            {
+                                "id": 15,
+                                "si_no": true,
+                                "persona": {
+                                    "id": 35,
+                                    "deleted": false,
+                                    "nombre": "Juan",
+                                    "nombre_autopercibido": null,
+                                    "apellido": "Perez",
+                                    "fecha_nacimiento": "2025-11-03",
+                                    "fecha_defuncion": null,
+                                    "edad_aproximada": 12,
+                                    "nacionalidad": "ARGENTINA",
+                                    "dni": 46037183,
+                                    "situacion_dni": "VALIDO",
+                                    "genero": "MASCULINO",
+                                    "observaciones": null,
+                                    "adulto": false,
+                                    "nnya": true,
+                                    "telefono": null
+                                },
+                                "condicion_vulnerabilidad": {
+                                    "id": 2,
+                                    "nombre": "Indocumentado/No inscripto",
+                                    "descripcion": null,
+                                    "peso": 8,
+                                    "nnya": true,
+                                    "adulto": false
+                                },
+                                "demanda": {
+                                    "id": 11,
+                                    "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                                    "ultima_actualizacion": "2025-11-18T17:58:17.120954Z",
+                                    "fecha_ingreso_senaf": "2025-11-17",
+                                    "fecha_oficio_documento": "2025-11-17",
+                                    "descripcion": null,
+                                    "objetivo_de_demanda": "PROTECCION",
+                                    "estado_demanda": "EVALUACION",
+                                    "observaciones": "Observaciones",
+                                    "envio_de_respuesta": "NO_NECESARIO",
+                                    "tipo_medida_evaluado": null,
+                                    "medida_creada": false,
+                                    "etiqueta": 1,
+                                    "localizacion": 46,
+                                    "ambito_vulneracion": 2,
+                                    "bloque_datos_remitente": 9,
+                                    "tipo_institucion": 77,
+                                    "institucion": 11,
+                                    "motivo_ingreso": 2,
+                                    "tipo_oficio": null,
+                                    "submotivo_ingreso": 7,
+                                    "registrado_por_user": 43,
+                                    "registrado_por_user_zona": 3
+                                }
+                            }
+                        ],
+                        "persona": {
+                            "id": 35,
+                            "deleted": false,
+                            "nombre": "Juan",
+                            "nombre_autopercibido": null,
+                            "apellido": "Perez",
+                            "fecha_nacimiento": "2025-11-03",
+                            "fecha_defuncion": null,
+                            "edad_aproximada": 12,
+                            "nacionalidad": "ARGENTINA",
+                            "dni": 46037183,
+                            "situacion_dni": "VALIDO",
+                            "genero": "MASCULINO",
+                            "observaciones": null,
+                            "adulto": false,
+                            "nnya": true,
+                            "telefono": null
+                        },
+                        "vulneraciones": [
+                            {
+                                "principal_demanda": false,
+                                "transcurre_actualidad": false,
+                                "deleted": false,
+                                "sumatoria_de_pesos": 80,
+                                "demanda": {
+                                    "id": 11,
+                                    "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                                    "ultima_actualizacion": "2025-11-18T17:58:17.120954Z",
+                                    "fecha_ingreso_senaf": "2025-11-17",
+                                    "fecha_oficio_documento": "2025-11-17",
+                                    "descripcion": null,
+                                    "objetivo_de_demanda": "PROTECCION",
+                                    "estado_demanda": "EVALUACION",
+                                    "observaciones": "Observaciones",
+                                    "envio_de_respuesta": "NO_NECESARIO",
+                                    "tipo_medida_evaluado": null,
+                                    "medida_creada": false,
+                                    "etiqueta": 1,
+                                    "localizacion": 46,
+                                    "ambito_vulneracion": 2,
+                                    "bloque_datos_remitente": 9,
+                                    "tipo_institucion": 77,
+                                    "institucion": 11,
+                                    "motivo_ingreso": 2,
+                                    "tipo_oficio": null,
+                                    "submotivo_ingreso": 7,
+                                    "registrado_por_user": 43,
+                                    "registrado_por_user_zona": 3
+                                },
+                                "nnya": {
+                                    "id": 35,
+                                    "deleted": false,
+                                    "nombre": "Juan",
+                                    "nombre_autopercibido": null,
+                                    "apellido": "Perez",
+                                    "fecha_nacimiento": "2025-11-03",
+                                    "fecha_defuncion": null,
+                                    "edad_aproximada": 12,
+                                    "nacionalidad": "ARGENTINA",
+                                    "dni": 46037183,
+                                    "situacion_dni": "VALIDO",
+                                    "genero": "MASCULINO",
+                                    "observaciones": null,
+                                    "adulto": false,
+                                    "nnya": true,
+                                    "telefono": null
+                                },
+                                "autor_dv": null,
+                                "categoria_motivo": {
+                                    "id": 2,
+                                    "nombre": "VIOLENCIAS",
+                                    "peso": 10
+                                },
+                                "categoria_submotivo": {
+                                    "id": 2,
+                                    "nombre": "11- (NO USAR) VIOLENCIA A TRAVES DE LAS TIC (SOLO RETROACTIVOS AL 12/12/2022)",
+                                    "peso": 10,
+                                    "motivo": 2
+                                },
+                                "gravedad_vulneracion": {
+                                    "id": 1,
+                                    "nombre": "Alta",
+                                    "peso": 25
+                                },
+                                "urgencia_vulneracion": {
+                                    "id": 1,
+                                    "nombre": "ALTA",
+                                    "peso": 35
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "demanda": 11
+        }
+    },
+    "indicadores_valoracion": [
+        {
+            "id": 1,
+            "nombre": "Progenitores y/o adultos responsables con condición de discapacidad/consumo/adicción/salud mental",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 2,
+            "nombre": "Sospecha de violencia sexual contra NNyA, previa denuncia ante los organismos judiciales correspondientes, si es que no se hubiere formulado con atenrioridad.\\n",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 3,
+            "nombre": "Evidencia física relacionada a la vulneración de la integridad personal",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 4,
+            "nombre": "Cronicidad del maltrato y lesiones graves en el NNyA",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 5,
+            "nombre": "Agresor/a del NNyA conviviente o con contacto",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 6,
+            "nombre": "Inexistencia de figuras adultas convivientes que garanticen protección de derechos al NNyA",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 7,
+            "nombre": "Inexistencia de redes familiares y comunitarias que aporten a la familia a garantizar el cuidado, ó con limitaciones graves en el cuidado personal que impiden al cuidador/a hacerse cargo del mismo/a, poniendo en riesgo la integridad psicofísica del niño",
+            "descripcion": "Indicador de valoración",
+            "peso": 8
+        },
+        {
+            "id": 8,
+            "nombre": "El NNA manifiesta posible vulneración de sus derechos",
+            "descripcion": "Indicador de valoración",
+            "peso": 8
+        },
+        {
+            "id": 9,
+            "nombre": "Negligencia en los cuidados",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 10,
+            "nombre": "Trabajo infantil o posible explotación sexual/laboral infantil/adolescente desprotegido",
+            "descripcion": "Indicador de valoración",
+            "peso": 8
+        },
+        {
+            "id": 11,
+            "nombre": "Existen antecedentes de intervenciones previas -recientes o actuales- propias y/o de otros equipos provinciales, locales de otras instituciones u otras jurisdicciones provinciales",
+            "descripcion": "Indicador de valoración",
+            "peso": 8
+        },
+        {
+            "id": 12,
+            "nombre": "No se cumplen las medidas cautelares que protegen a NNA víctimas o se amenaza con incumplir",
+            "descripcion": "Indicador de valoración",
+            "peso": 10
+        },
+        {
+            "id": 13,
+            "nombre": "Garantiza derechos",
+            "descripcion": "Indicador de valoración",
+            "peso": -30
+        },
+        {
+            "id": 14,
+            "nombre": "Existe denuncia",
+            "descripcion": "Indicador de valoración",
+            "peso": -5
+        }
+    ],
+    "valoraciones_seleccionadas": [
+        {
+            "indicador": 1,
+            "checked": false
+        },
+        {
+            "indicador": 2,
+            "checked": true
+        },
+        {
+            "indicador": 3,
+            "checked": true
+        },
+        {
+            "indicador": 4,
+            "checked": false
+        },
+        {
+            "indicador": 5,
+            "checked": false
+        },
+        {
+            "indicador": 6,
+            "checked": true
+        },
+        {
+            "indicador": 7,
+            "checked": false
+        },
+        {
+            "indicador": 8,
+            "checked": false
+        },
+        {
+            "indicador": 9,
+            "checked": false
+        },
+        {
+            "indicador": 10,
+            "checked": false
+        },
+        {
+            "indicador": 11,
+            "checked": false
+        },
+        {
+            "indicador": 12,
+            "checked": false
+        },
+        {
+            "indicador": 13,
+            "checked": false
+        },
+        {
+            "indicador": 14,
+            "checked": false
+        }
+    ],
+    "scores": [
+        {
+            "id": 19,
+            "ultima_actualizacion": "2025-11-18T18:01:39.397814Z",
+            "score": -17.0,
+            "score_condiciones_vulnerabilidad": 0.0,
+            "score_vulneracion": 0.0,
+            "score_valoracion": -17.0,
+            "nnya": {
+                "id": 19,
+                "deleted": false,
+                "nombre": "Richard",
+                "nombre_autopercibido": null,
+                "apellido": "Wiggins",
+                "fecha_nacimiento": "2014-05-11",
+                "fecha_defuncion": null,
+                "edad_aproximada": 10,
+                "nacionalidad": "ARGENTINA",
+                "dni": 47039885,
+                "situacion_dni": "VALIDO",
+                "genero": "FEMENINO",
+                "observaciones": "NNyA de prueba 19",
+                "adulto": false,
+                "nnya": true,
+                "telefono": 3217449
+            },
+            "nnya_id": 19,
+            "decision": "RECHAZAR CASO",
+            "reason": "El score del NNyA (-17.0), no supone un riesgo, por lo tanto la sugerencia es RECHAZAR CASO."
+        },
+        {
+            "id": 25,
+            "ultima_actualizacion": "2025-11-18T18:01:39.399027Z",
+            "score": 81.0,
+            "score_condiciones_vulnerabilidad": 18.0,
+            "score_vulneracion": 80.0,
+            "score_valoracion": -17.0,
+            "nnya": {
+                "id": 35,
+                "deleted": false,
+                "nombre": "Juan",
+                "nombre_autopercibido": null,
+                "apellido": "Perez",
+                "fecha_nacimiento": "2025-11-03",
+                "fecha_defuncion": null,
+                "edad_aproximada": 12,
+                "nacionalidad": "ARGENTINA",
+                "dni": 46037183,
+                "situacion_dni": "VALIDO",
+                "genero": "MASCULINO",
+                "observaciones": null,
+                "adulto": false,
+                "nnya": true,
+                "telefono": null
+            },
+            "nnya_id": 35,
+            "decision": "ADMITIR CASO",
+            "reason": "Dado el alto score del NNyA (81.0), la decision sugerida es ADMISION DE CASO."
+        }
+    ],
+    "evaluaciones": [
+        {
+            "id": 14,
+            "adjuntos": [
+                {
+                    "archivo": "http://web-runna-v2legajos.up.railway.app/media/TEvaluacionAdjunto/archivo_43/informe_valoracion_11_2025-11-18.pdf"
+                }
+            ],
+            "tecnico_solicitante": {
+                "id": 43,
+                "username": "UsuarioTecnico",
+                "first_name": "",
+                "last_name": "",
+                "email": "",
+                "fecha_nacimiento": null,
+                "genero": "",
+                "telefono": null,
+                "is_staff": false,
+                "is_active": true,
+                "is_superuser": false,
+                "groups": [
+                    {
+                        "id": 3,
+                        "name": "Técnico"
+                    }
+                ],
+                "user_permissions": [],
+                "zonas": [
+                    {
+                        "id": 11,
+                        "director": false,
+                        "jefe": false,
+                        "legal": false,
+                        "user": 43,
+                        "zona": 3,
+                        "localidad": 3
+                    }
+                ],
+                "zonas_ids": [
+                    3
+                ],
+                "all_permissions": [
+                    "add_tactividad",
+                    "change_tactividad",
+                    "delete_tactividad",
+                    "view_tactividad",
+                    "add_tcalificaciondemanda",
+                    "change_tcalificaciondemanda",
+                    "delete_tcalificaciondemanda",
+                    "view_tcalificaciondemanda",
+                    "add_tdemanda",
+                    "change_tdemanda",
+                    "delete_tdemanda",
+                    "view_tdemanda",
+                    "add_tdemandavinculada",
+                    "change_tdemandavinculada",
+                    "delete_tdemandavinculada",
+                    "view_tdemandavinculada",
+                    "view_tdemandazona",
+                    "add_tevaluacion",
+                    "change_tevaluacion",
+                    "delete_tevaluacion",
+                    "view_tevaluacion",
+                    "add_trespuesta",
+                    "change_trespuesta",
+                    "delete_trespuesta",
+                    "view_trespuesta"
+                ]
+            },
+            "director_decisor": {
+                "id": 44,
+                "username": "UsuarioDirector",
+                "first_name": "",
+                "last_name": "",
+                "email": "",
+                "fecha_nacimiento": null,
+                "genero": "",
+                "telefono": null,
+                "is_staff": false,
+                "is_active": true,
+                "is_superuser": false,
+                "groups": [
+                    {
+                        "id": 4,
+                        "name": "Director"
+                    }
+                ],
+                "user_permissions": [],
+                "zonas": [
+                    {
+                        "id": 12,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 1,
+                        "localidad": null
+                    },
+                    {
+                        "id": 13,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 2,
+                        "localidad": null
+                    },
+                    {
+                        "id": 14,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 3,
+                        "localidad": null
+                    },
+                    {
+                        "id": 15,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 4,
+                        "localidad": null
+                    },
+                    {
+                        "id": 16,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 5,
+                        "localidad": null
+                    },
+                    {
+                        "id": 17,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 6,
+                        "localidad": null
+                    },
+                    {
+                        "id": 18,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 7,
+                        "localidad": null
+                    },
+                    {
+                        "id": 19,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 8,
+                        "localidad": null
+                    },
+                    {
+                        "id": 20,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 9,
+                        "localidad": null
+                    },
+                    {
+                        "id": 21,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 10,
+                        "localidad": null
+                    },
+                    {
+                        "id": 22,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 11,
+                        "localidad": null
+                    },
+                    {
+                        "id": 23,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 12,
+                        "localidad": null
+                    },
+                    {
+                        "id": 24,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 13,
+                        "localidad": null
+                    },
+                    {
+                        "id": 25,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 14,
+                        "localidad": null
+                    },
+                    {
+                        "id": 26,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 15,
+                        "localidad": null
+                    },
+                    {
+                        "id": 27,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 16,
+                        "localidad": null
+                    },
+                    {
+                        "id": 28,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 17,
+                        "localidad": null
+                    },
+                    {
+                        "id": 29,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 18,
+                        "localidad": null
+                    },
+                    {
+                        "id": 30,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 19,
+                        "localidad": null
+                    },
+                    {
+                        "id": 31,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 20,
+                        "localidad": null
+                    },
+                    {
+                        "id": 32,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 21,
+                        "localidad": null
+                    },
+                    {
+                        "id": 33,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 22,
+                        "localidad": null
+                    },
+                    {
+                        "id": 34,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 23,
+                        "localidad": null
+                    },
+                    {
+                        "id": 35,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 24,
+                        "localidad": null
+                    },
+                    {
+                        "id": 36,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 25,
+                        "localidad": null
+                    },
+                    {
+                        "id": 37,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 26,
+                        "localidad": null
+                    },
+                    {
+                        "id": 38,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 27,
+                        "localidad": null
+                    },
+                    {
+                        "id": 39,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 28,
+                        "localidad": null
+                    },
+                    {
+                        "id": 40,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 29,
+                        "localidad": null
+                    },
+                    {
+                        "id": 41,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 30,
+                        "localidad": null
+                    },
+                    {
+                        "id": 42,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 31,
+                        "localidad": null
+                    },
+                    {
+                        "id": 43,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 32,
+                        "localidad": null
+                    },
+                    {
+                        "id": 44,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 33,
+                        "localidad": null
+                    },
+                    {
+                        "id": 45,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 34,
+                        "localidad": null
+                    },
+                    {
+                        "id": 46,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 35,
+                        "localidad": null
+                    },
+                    {
+                        "id": 47,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 36,
+                        "localidad": null
+                    },
+                    {
+                        "id": 48,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 37,
+                        "localidad": null
+                    },
+                    {
+                        "id": 49,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 38,
+                        "localidad": null
+                    },
+                    {
+                        "id": 50,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 39,
+                        "localidad": null
+                    },
+                    {
+                        "id": 51,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 40,
+                        "localidad": null
+                    },
+                    {
+                        "id": 52,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 41,
+                        "localidad": null
+                    },
+                    {
+                        "id": 53,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 42,
+                        "localidad": null
+                    },
+                    {
+                        "id": 54,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 43,
+                        "localidad": null
+                    },
+                    {
+                        "id": 55,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 44,
+                        "localidad": null
+                    },
+                    {
+                        "id": 56,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 45,
+                        "localidad": null
+                    },
+                    {
+                        "id": 57,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 46,
+                        "localidad": null
+                    },
+                    {
+                        "id": 58,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 47,
+                        "localidad": null
+                    },
+                    {
+                        "id": 59,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 48,
+                        "localidad": null
+                    },
+                    {
+                        "id": 60,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 49,
+                        "localidad": null
+                    },
+                    {
+                        "id": 61,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 50,
+                        "localidad": null
+                    },
+                    {
+                        "id": 62,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 51,
+                        "localidad": null
+                    },
+                    {
+                        "id": 63,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 52,
+                        "localidad": null
+                    },
+                    {
+                        "id": 64,
+                        "director": false,
+                        "jefe": false,
+                        "legal": true,
+                        "user": 44,
+                        "zona": 53,
+                        "localidad": null
+                    }
+                ],
+                "zonas_ids": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53
+                ],
+                "all_permissions": [
+                    "add_tactividad",
+                    "change_tactividad",
+                    "delete_tactividad",
+                    "view_tactividad",
+                    "add_tcalificaciondemanda",
+                    "change_tcalificaciondemanda",
+                    "delete_tcalificaciondemanda",
+                    "view_tcalificaciondemanda",
+                    "add_tdemanda",
+                    "change_tdemanda",
+                    "delete_tdemanda",
+                    "view_tdemanda",
+                    "add_tdemandavinculada",
+                    "change_tdemandavinculada",
+                    "delete_tdemandavinculada",
+                    "view_tdemandavinculada",
+                    "add_tdemandazona",
+                    "change_tdemandazona",
+                    "delete_tdemandazona",
+                    "view_tdemandazona",
+                    "add_tevaluacion",
+                    "change_tevaluacion",
+                    "delete_tevaluacion",
+                    "view_tevaluacion",
+                    "add_tlegajozona",
+                    "change_tlegajozona",
+                    "delete_tlegajozona",
+                    "view_tlegajozona",
+                    "view_tlegajozonahistorial",
+                    "view_tlocalcentrovida",
+                    "add_trespuesta",
+                    "change_trespuesta",
+                    "delete_trespuesta",
+                    "view_trespuesta"
+                ]
+            },
+            "evaluacion_personas": [
+                {
+                    "persona": {
+                        "id": 35,
+                        "deleted": false,
+                        "nombre": "Juan",
+                        "nombre_autopercibido": null,
+                        "apellido": "Perez",
+                        "fecha_nacimiento": "2025-11-03",
+                        "fecha_defuncion": null,
+                        "edad_aproximada": 12,
+                        "nacionalidad": "ARGENTINA",
+                        "dni": 46037183,
+                        "situacion_dni": "VALIDO",
+                        "genero": "MASCULINO",
+                        "observaciones": null,
+                        "adulto": false,
+                        "nnya": true,
+                        "telefono": null
+                    }
+                }
+            ],
+            "localidad_usuario": "INFORMATICA",
+            "nombre_usuario": "string",
+            "rol_usuario": "Técnico",
+            "tipo_medida_evaluado": "MPE",
+            "fecha_y_hora": "2025-11-18T18:16:31.513771Z",
+            "descripcion_de_la_situacion": "Descripcion",
+            "valoracion_profesional_final": "Blank",
+            "justificacion_tecnico": "Blank",
+            "justificacion_director": "Aprobado por coordinación.",
+            "solicitud_tecnico": "TOMAR MEDIDA",
+            "decision_director": "AUTORIZAR",
+            "is_lastest": true,
+            "demanda": 11,
+            "demanda_log": 54
+        }
+    ],
+    "demandas_vinculadas": [],
+    "actividades": [
+        {
+            "id": 1,
+            "adjuntos": [
+                {
+                    "archivo": "http://web-runna-v2legajos.up.railway.app/media/TActividadAdjunto/archivo_1/modelo_entrevista_al_nna_3.txt"
+                }
+            ],
+            "by_user": {
+                "id": 43,
+                "username": "UsuarioTecnico",
+                "first_name": "",
+                "last_name": "",
+                "email": "",
+                "fecha_nacimiento": null,
+                "genero": "",
+                "telefono": null,
+                "is_staff": false,
+                "is_active": true,
+                "is_superuser": false,
+                "groups": [
+                    {
+                        "id": 3,
+                        "name": "Técnico"
+                    }
+                ],
+                "user_permissions": [],
+                "zonas": [
+                    {
+                        "id": 11,
+                        "director": false,
+                        "jefe": false,
+                        "legal": false,
+                        "user": 43,
+                        "zona": 3,
+                        "localidad": 3
+                    }
+                ],
+                "zonas_ids": [
+                    3
+                ],
+                "all_permissions": [
+                    "add_tactividad",
+                    "change_tactividad",
+                    "delete_tactividad",
+                    "view_tactividad",
+                    "add_tcalificaciondemanda",
+                    "change_tcalificaciondemanda",
+                    "delete_tcalificaciondemanda",
+                    "view_tcalificaciondemanda",
+                    "add_tdemanda",
+                    "change_tdemanda",
+                    "delete_tdemanda",
+                    "view_tdemanda",
+                    "add_tdemandavinculada",
+                    "change_tdemandavinculada",
+                    "delete_tdemandavinculada",
+                    "view_tdemandavinculada",
+                    "view_tdemandazona",
+                    "add_tevaluacion",
+                    "change_tevaluacion",
+                    "delete_tevaluacion",
+                    "view_tevaluacion",
+                    "add_trespuesta",
+                    "change_trespuesta",
+                    "delete_trespuesta",
+                    "view_trespuesta"
+                ]
+            },
+            "fecha_y_hora": "2025-11-18T17:53:30.699634Z",
+            "fecha_y_hora_manual": "2025-11-18T17:53:01.224000Z",
+            "descripcion": "PEPE",
+            "tipo": {
+                "id": 1,
+                "modelos": [
+                    {
+                        "archivo": null
+                    },
+                    {
+                        "archivo": null
+                    },
+                    {
+                        "archivo": null
+                    },
+                    {
+                        "archivo": null
+                    }
+                ],
+                "nombre": "Entrevista al NNA",
+                "remitir_a_jefe": false
+            },
+            "institucion": {
+                "id": 2,
+                "nombre": "Club Deportivo"
+            },
+            "demanda": 11
+        }
+    ],
+    "respuestas": [],
+    "adjuntos": [
+        {
+            "archivo": "http://web-runna-v2legajos.up.railway.app/media/TDemandaAdjunto/archivo_45/CESES_PENAL_JUVENIL_17.11.2025.xlsx"
+        }
+    ],
+    "codigos_demanda": [
+        {
+            "id": 41,
+            "codigo": "234",
+            "tipo_codigo": {
+                "id": 1,
+                "nombre": "SAC",
+                "datatype": "STRING",
+                "bloque_datos_remitente": null
+            }
+        }
+    ],
+    "localidad_usuario": null,
+    "rol_usuario": "Técnico",
+    "nombre_usuario": "",
+    "apellido_usuario": "",
+    "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+    "ultima_actualizacion": "2025-11-18T18:16:31.520865Z",
+    "fecha_ingreso_senaf": "2025-11-17",
+    "fecha_oficio_documento": "2025-11-17",
+    "descripcion": null,
+    "objetivo_de_demanda": "PROTECCION",
+    "estado_demanda": "ADMITIDA",
+    "observaciones": "Observaciones",
+    "envio_de_respuesta": "NO_NECESARIO",
+    "tipo_medida_evaluado": "MPE",
+    "medida_creada": true,
+    "etiqueta": {
+        "id": 1,
+        "nombre": "Audiencia",
+        "remitir_a_usuario_registrador": false
+    },
+    "localizacion": {
+        "id": 46,
+        "deleted": false,
+        "calle": "Calle",
+        "tipo_calle": "CALLE",
+        "piso_depto": null,
+        "lote": null,
+        "mza": 1,
+        "casa_nro": 398,
+        "referencia_geo": "En la esquina",
+        "geolocalizacion": "prpr",
+        "barrio": null,
+        "localidad": {
+            "id": 7,
+            "nombre": "VILLA HUIDOBRO"
+        },
+        "cpc": null
+    },
+    "ambito_vulneracion": {
+        "id": 2,
+        "nombre": "1. b Familia extensa"
+    },
+    "bloque_datos_remitente": {
+        "id": 9,
+        "nombre": "FISCALIA"
+    },
+    "tipo_institucion": {
+        "id": 77,
+        "nombre": "FISC. INST. DISTRITO JUDICIAL 1 - TURNO 5 (TRIBUNALES II)",
+        "bloque_datos_remitente": {
+            "id": 9,
+            "nombre": "FISCALIA"
+        }
+    },
+    "institucion": {
+        "id": 11,
+        "nombre": "institucion",
+        "tipo_institucion": 77
+    },
+    "motivo_ingreso": {
+        "id": 2,
+        "nombre": "VIOLENCIAS",
+        "peso": 10
+    },
+    "tipo_oficio": null,
+    "submotivo_ingreso": {
+        "id": 7,
+        "nombre": "15. Abuso sexual",
+        "peso": 10,
+        "motivo": {
+            "id": 2,
+            "nombre": "VIOLENCIAS",
+            "peso": 10
+        }
+    },
+    "registrado_por_user": {
+        "id": 43,
+        "password": "pbkdf2_sha256$870000$G3goFgiCu90BIui8rHMJbe$WspmS+GLKYy6eFgdg/ztAYHkyOBq8A53iKidk4393LE=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "UsuarioTecnico",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2025-11-18T03:15:48.923908Z",
+        "fecha_nacimiento": null,
+        "genero": "",
+        "telefono": null,
+        "groups": [
+            {
+                "id": 3,
+                "name": "Técnico",
+                "permissions": [
+                    129,
+                    130,
+                    131,
+                    132,
+                    45,
+                    46,
+                    47,
+                    48,
+                    121,
+                    122,
+                    123,
+                    124,
+                    145,
+                    146,
+                    147,
+                    148,
+                    156,
+                    289,
+                    290,
+                    291,
+                    292,
+                    221,
+                    222,
+                    223,
+                    224
+                ]
+            }
+        ],
+        "user_permissions": []
+    },
+    "registrado_por_user_zona": {
+        "id": 3,
+        "nombre": "FORTALECIMIENTO FAMILIAR"
+    },
+    "relacion_demanda": {
+        "codigos_demanda": [
+            {
+                "id": 41,
+                "codigo": "234",
+                "tipo_codigo": 1,
+                "demanda": 11
+            }
+        ],
+        "demanda_zona": {
+            "id": 49,
+            "esta_activo": true,
+            "recibido": true,
+            "comentarios": "",
+            "demanda": 11,
+            "zona": 3,
+            "user_responsable": 43,
+            "enviado_por": 43,
+            "recibido_por": null
+        }
+    },
+    "personas": [
+        {
+            "localizacion": {
+                "id": 41,
+                "deleted": false,
+                "calle": "ww",
+                "tipo_calle": null,
+                "piso_depto": null,
+                "lote": null,
+                "mza": null,
+                "casa_nro": 2,
+                "referencia_geo": "sdfd",
+                "geolocalizacion": null,
+                "barrio": null,
+                "localidad": {
+                    "id": 1,
+                    "nombre": "CAPITAL"
+                },
+                "cpc": null
+            },
+            "educacion": {
+                "id": 6,
+                "deleted": false,
+                "nivel_alcanzado": "PRIMARIO",
+                "esta_escolarizado": true,
+                "ultimo_cursado": "TERCERO_SECUNDARIO",
+                "tipo_escuela": "PRIVADA",
+                "comentarios_educativos": "234234",
+                "institucion_educativa": {
+                    "id": 2,
+                    "nombre": "CALAMUCHITA EMBALSE Adultos - Secundario C.E.N.M.A. Nº 211 DR. RENE FAVALORO CAMINO A LA CRUZ LOS HOTELES"
+                },
+                "persona": {
+                    "id": 19,
+                    "deleted": false,
+                    "nombre": "Richard",
+                    "nombre_autopercibido": null,
+                    "apellido": "Wiggins",
+                    "fecha_nacimiento": "2014-05-11",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 10,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 47039885,
+                    "situacion_dni": "VALIDO",
+                    "genero": "FEMENINO",
+                    "observaciones": "NNyA de prueba 19",
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": 3217449
+                }
+            },
+            "cobertura_medica": {
+                "id": 7,
+                "deleted": false,
+                "obra_social": "PAMI",
+                "intervencion": "OBRA_SOCIAL",
+                "auh": true,
+                "observaciones": "sdasd",
+                "institucion_sanitaria": {
+                    "id": 3,
+                    "nombre": "Clínica Privada"
+                },
+                "persona": {
+                    "id": 19,
+                    "deleted": false,
+                    "nombre": "Richard",
+                    "nombre_autopercibido": null,
+                    "apellido": "Wiggins",
+                    "fecha_nacimiento": "2014-05-11",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 10,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 47039885,
+                    "situacion_dni": "VALIDO",
+                    "genero": "FEMENINO",
+                    "observaciones": "NNyA de prueba 19",
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": 3217449
+                },
+                "medico_cabecera": {
+                    "id": 8,
+                    "nombre": "234234",
+                    "mail": "pepe@gmail.com",
+                    "telefono": 234
+                }
+            },
+            "persona_enfermedades": [
+                {
+                    "id": 5,
+                    "oficio_adjunto": [],
+                    "certificado_adjunto": [],
+                    "deleted": false,
+                    "certificacion": "NO_TIENE",
+                    "beneficios_gestionados": null,
+                    "recibe_tratamiento": false,
+                    "informacion_tratamiento": "234234",
+                    "persona": {
+                        "id": 19,
+                        "deleted": false,
+                        "nombre": "Richard",
+                        "nombre_autopercibido": null,
+                        "apellido": "Wiggins",
+                        "fecha_nacimiento": "2014-05-11",
+                        "fecha_defuncion": null,
+                        "edad_aproximada": 10,
+                        "nacionalidad": "ARGENTINA",
+                        "dni": 47039885,
+                        "situacion_dni": "VALIDO",
+                        "genero": "FEMENINO",
+                        "observaciones": "NNyA de prueba 19",
+                        "adulto": false,
+                        "nnya": true,
+                        "telefono": 3217449
+                    },
+                    "situacion_salud": {
+                        "id": 2,
+                        "nombre": "Enfermedad Crónica"
+                    },
+                    "enfermedad": {
+                        "id": 23,
+                        "nombre": "234",
+                        "situacion_salud_categoria": 2
+                    },
+                    "institucion_sanitaria_interviniente": {
+                        "id": 2,
+                        "nombre": "Centro de Salud N°1"
+                    },
+                    "medico_tratamiento": {
+                        "id": 9,
+                        "nombre": "asd",
+                        "mail": "pepe@gmail.com",
+                        "telefono": 234
+                    }
+                }
+            ],
+            "demanda_persona": {
+                "id": 9,
+                "deleted": false,
+                "conviviente": false,
+                "legalmente_responsable": false,
+                "ocupacion": null,
+                "vinculo_demanda": "NNYA_SECUNDARIO",
+                "vinculo_con_nnya_principal": null,
+                "demanda": {
+                    "id": 11,
+                    "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                    "ultima_actualizacion": "2025-11-18T18:16:31.520865Z",
+                    "fecha_ingreso_senaf": "2025-11-17",
+                    "fecha_oficio_documento": "2025-11-17",
+                    "descripcion": null,
+                    "objetivo_de_demanda": "PROTECCION",
+                    "estado_demanda": "ADMITIDA",
+                    "observaciones": "Observaciones",
+                    "envio_de_respuesta": "NO_NECESARIO",
+                    "tipo_medida_evaluado": "MPE",
+                    "medida_creada": true,
+                    "etiqueta": 1,
+                    "localizacion": 46,
+                    "ambito_vulneracion": 2,
+                    "bloque_datos_remitente": 9,
+                    "tipo_institucion": 77,
+                    "institucion": 11,
+                    "motivo_ingreso": 2,
+                    "tipo_oficio": null,
+                    "submotivo_ingreso": 7,
+                    "registrado_por_user": 43,
+                    "registrado_por_user_zona": 3
+                },
+                "persona": {
+                    "id": 19,
+                    "deleted": false,
+                    "nombre": "Richard",
+                    "nombre_autopercibido": null,
+                    "apellido": "Wiggins",
+                    "fecha_nacimiento": "2014-05-11",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 10,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 47039885,
+                    "situacion_dni": "VALIDO",
+                    "genero": "FEMENINO",
+                    "observaciones": "NNyA de prueba 19",
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": 3217449
+                }
+            },
+            "condiciones_vulnerabilidad": [],
+            "persona": {
+                "id": 19,
+                "deleted": false,
+                "nombre": "Richard",
+                "nombre_autopercibido": null,
+                "apellido": "Wiggins",
+                "fecha_nacimiento": "2014-05-11",
+                "fecha_defuncion": null,
+                "edad_aproximada": 10,
+                "nacionalidad": "ARGENTINA",
+                "dni": 47039885,
+                "situacion_dni": "VALIDO",
+                "genero": "FEMENINO",
+                "observaciones": "NNyA de prueba 19",
+                "adulto": false,
+                "nnya": true,
+                "telefono": 3217449
+            },
+            "vulneraciones": []
+        },
+        {
+            "localizacion": {
+                "id": 46,
+                "deleted": false,
+                "calle": "Calle",
+                "tipo_calle": "CALLE",
+                "piso_depto": null,
+                "lote": null,
+                "mza": 1,
+                "casa_nro": 398,
+                "referencia_geo": "En la esquina",
+                "geolocalizacion": "prpr",
+                "barrio": null,
+                "localidad": {
+                    "id": 7,
+                    "nombre": "VILLA HUIDOBRO"
+                },
+                "cpc": null
+            },
+            "educacion": {
+                "id": 7,
+                "deleted": false,
+                "nivel_alcanzado": "PRIMARIO",
+                "esta_escolarizado": true,
+                "ultimo_cursado": "SEXTO",
+                "tipo_escuela": "PUBLICA",
+                "comentarios_educativos": "Comentarios",
+                "institucion_educativa": {
+                    "id": 4,
+                    "nombre": "CALAMUCHITA LA CUMBRECITA Adultos - Primaria C.E.N.P.A. LA CUMBRECITA CALLE PUBLICA"
+                },
+                "persona": {
+                    "id": 35,
+                    "deleted": false,
+                    "nombre": "Juan",
+                    "nombre_autopercibido": null,
+                    "apellido": "Perez",
+                    "fecha_nacimiento": "2025-11-03",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 12,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 46037183,
+                    "situacion_dni": "VALIDO",
+                    "genero": "MASCULINO",
+                    "observaciones": null,
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": null
+                }
+            },
+            "cobertura_medica": {
+                "id": 8,
+                "deleted": false,
+                "obra_social": "PAMI",
+                "intervencion": "OBRA_SOCIAL",
+                "auh": true,
+                "observaciones": "Observaciones",
+                "institucion_sanitaria": {
+                    "id": 1,
+                    "nombre": "Hospital Regional"
+                },
+                "persona": {
+                    "id": 35,
+                    "deleted": false,
+                    "nombre": "Juan",
+                    "nombre_autopercibido": null,
+                    "apellido": "Perez",
+                    "fecha_nacimiento": "2025-11-03",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 12,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 46037183,
+                    "situacion_dni": "VALIDO",
+                    "genero": "MASCULINO",
+                    "observaciones": null,
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": null
+                },
+                "medico_cabecera": {
+                    "id": 10,
+                    "nombre": "Medico",
+                    "mail": "santiagocarranza@example.com",
+                    "telefono": 56756
+                }
+            },
+            "persona_enfermedades": [],
+            "demanda_persona": {
+                "id": 8,
+                "deleted": false,
+                "conviviente": true,
+                "legalmente_responsable": false,
+                "ocupacion": null,
+                "vinculo_demanda": "NNYA_PRINCIPAL",
+                "vinculo_con_nnya_principal": null,
+                "demanda": {
+                    "id": 11,
+                    "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                    "ultima_actualizacion": "2025-11-18T18:16:31.520865Z",
+                    "fecha_ingreso_senaf": "2025-11-17",
+                    "fecha_oficio_documento": "2025-11-17",
+                    "descripcion": null,
+                    "objetivo_de_demanda": "PROTECCION",
+                    "estado_demanda": "ADMITIDA",
+                    "observaciones": "Observaciones",
+                    "envio_de_respuesta": "NO_NECESARIO",
+                    "tipo_medida_evaluado": "MPE",
+                    "medida_creada": true,
+                    "etiqueta": 1,
+                    "localizacion": 46,
+                    "ambito_vulneracion": 2,
+                    "bloque_datos_remitente": 9,
+                    "tipo_institucion": 77,
+                    "institucion": 11,
+                    "motivo_ingreso": 2,
+                    "tipo_oficio": null,
+                    "submotivo_ingreso": 7,
+                    "registrado_por_user": 43,
+                    "registrado_por_user_zona": 3
+                },
+                "persona": {
+                    "id": 35,
+                    "deleted": false,
+                    "nombre": "Juan",
+                    "nombre_autopercibido": null,
+                    "apellido": "Perez",
+                    "fecha_nacimiento": "2025-11-03",
+                    "fecha_defuncion": null,
+                    "edad_aproximada": 12,
+                    "nacionalidad": "ARGENTINA",
+                    "dni": 46037183,
+                    "situacion_dni": "VALIDO",
+                    "genero": "MASCULINO",
+                    "observaciones": null,
+                    "adulto": false,
+                    "nnya": true,
+                    "telefono": null
+                }
+            },
+            "condiciones_vulnerabilidad": [
+                {
+                    "id": 14,
+                    "si_no": true,
+                    "persona": {
+                        "id": 35,
+                        "deleted": false,
+                        "nombre": "Juan",
+                        "nombre_autopercibido": null,
+                        "apellido": "Perez",
+                        "fecha_nacimiento": "2025-11-03",
+                        "fecha_defuncion": null,
+                        "edad_aproximada": 12,
+                        "nacionalidad": "ARGENTINA",
+                        "dni": 46037183,
+                        "situacion_dni": "VALIDO",
+                        "genero": "MASCULINO",
+                        "observaciones": null,
+                        "adulto": false,
+                        "nnya": true,
+                        "telefono": null
+                    },
+                    "condicion_vulnerabilidad": {
+                        "id": 1,
+                        "nombre": "El NNA tiene o aparenta discapacidad",
+                        "descripcion": null,
+                        "peso": 10,
+                        "nnya": true,
+                        "adulto": false
+                    },
+                    "demanda": {
+                        "id": 11,
+                        "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                        "ultima_actualizacion": "2025-11-18T18:16:31.520865Z",
+                        "fecha_ingreso_senaf": "2025-11-17",
+                        "fecha_oficio_documento": "2025-11-17",
+                        "descripcion": null,
+                        "objetivo_de_demanda": "PROTECCION",
+                        "estado_demanda": "ADMITIDA",
+                        "observaciones": "Observaciones",
+                        "envio_de_respuesta": "NO_NECESARIO",
+                        "tipo_medida_evaluado": "MPE",
+                        "medida_creada": true,
+                        "etiqueta": 1,
+                        "localizacion": 46,
+                        "ambito_vulneracion": 2,
+                        "bloque_datos_remitente": 9,
+                        "tipo_institucion": 77,
+                        "institucion": 11,
+                        "motivo_ingreso": 2,
+                        "tipo_oficio": null,
+                        "submotivo_ingreso": 7,
+                        "registrado_por_user": 43,
+                        "registrado_por_user_zona": 3
+                    }
+                },
+                {
+                    "id": 15,
+                    "si_no": true,
+                    "persona": {
+                        "id": 35,
+                        "deleted": false,
+                        "nombre": "Juan",
+                        "nombre_autopercibido": null,
+                        "apellido": "Perez",
+                        "fecha_nacimiento": "2025-11-03",
+                        "fecha_defuncion": null,
+                        "edad_aproximada": 12,
+                        "nacionalidad": "ARGENTINA",
+                        "dni": 46037183,
+                        "situacion_dni": "VALIDO",
+                        "genero": "MASCULINO",
+                        "observaciones": null,
+                        "adulto": false,
+                        "nnya": true,
+                        "telefono": null
+                    },
+                    "condicion_vulnerabilidad": {
+                        "id": 2,
+                        "nombre": "Indocumentado/No inscripto",
+                        "descripcion": null,
+                        "peso": 8,
+                        "nnya": true,
+                        "adulto": false
+                    },
+                    "demanda": {
+                        "id": 11,
+                        "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                        "ultima_actualizacion": "2025-11-18T18:16:31.520865Z",
+                        "fecha_ingreso_senaf": "2025-11-17",
+                        "fecha_oficio_documento": "2025-11-17",
+                        "descripcion": null,
+                        "objetivo_de_demanda": "PROTECCION",
+                        "estado_demanda": "ADMITIDA",
+                        "observaciones": "Observaciones",
+                        "envio_de_respuesta": "NO_NECESARIO",
+                        "tipo_medida_evaluado": "MPE",
+                        "medida_creada": true,
+                        "etiqueta": 1,
+                        "localizacion": 46,
+                        "ambito_vulneracion": 2,
+                        "bloque_datos_remitente": 9,
+                        "tipo_institucion": 77,
+                        "institucion": 11,
+                        "motivo_ingreso": 2,
+                        "tipo_oficio": null,
+                        "submotivo_ingreso": 7,
+                        "registrado_por_user": 43,
+                        "registrado_por_user_zona": 3
+                    }
+                }
+            ],
+            "persona": {
+                "id": 35,
+                "deleted": false,
+                "nombre": "Juan",
+                "nombre_autopercibido": null,
+                "apellido": "Perez",
+                "fecha_nacimiento": "2025-11-03",
+                "fecha_defuncion": null,
+                "edad_aproximada": 12,
+                "nacionalidad": "ARGENTINA",
+                "dni": 46037183,
+                "situacion_dni": "VALIDO",
+                "genero": "MASCULINO",
+                "observaciones": null,
+                "adulto": false,
+                "nnya": true,
+                "telefono": null
+            },
+            "vulneraciones": [
+                {
+                    "principal_demanda": false,
+                    "transcurre_actualidad": false,
+                    "deleted": false,
+                    "sumatoria_de_pesos": 80,
+                    "demanda": {
+                        "id": 11,
+                        "fecha_creacion": "2025-11-18T17:40:58.610621Z",
+                        "ultima_actualizacion": "2025-11-18T18:16:31.520865Z",
+                        "fecha_ingreso_senaf": "2025-11-17",
+                        "fecha_oficio_documento": "2025-11-17",
+                        "descripcion": null,
+                        "objetivo_de_demanda": "PROTECCION",
+                        "estado_demanda": "ADMITIDA",
+                        "observaciones": "Observaciones",
+                        "envio_de_respuesta": "NO_NECESARIO",
+                        "tipo_medida_evaluado": "MPE",
+                        "medida_creada": true,
+                        "etiqueta": 1,
+                        "localizacion": 46,
+                        "ambito_vulneracion": 2,
+                        "bloque_datos_remitente": 9,
+                        "tipo_institucion": 77,
+                        "institucion": 11,
+                        "motivo_ingreso": 2,
+                        "tipo_oficio": null,
+                        "submotivo_ingreso": 7,
+                        "registrado_por_user": 43,
+                        "registrado_por_user_zona": 3
+                    },
+                    "nnya": {
+                        "id": 35,
+                        "deleted": false,
+                        "nombre": "Juan",
+                        "nombre_autopercibido": null,
+                        "apellido": "Perez",
+                        "fecha_nacimiento": "2025-11-03",
+                        "fecha_defuncion": null,
+                        "edad_aproximada": 12,
+                        "nacionalidad": "ARGENTINA",
+                        "dni": 46037183,
+                        "situacion_dni": "VALIDO",
+                        "genero": "MASCULINO",
+                        "observaciones": null,
+                        "adulto": false,
+                        "nnya": true,
+                        "telefono": null
+                    },
+                    "autor_dv": null,
+                    "categoria_motivo": {
+                        "id": 2,
+                        "nombre": "VIOLENCIAS",
+                        "peso": 10
+                    },
+                    "categoria_submotivo": {
+                        "id": 2,
+                        "nombre": "11- (NO USAR) VIOLENCIA A TRAVES DE LAS TIC (SOLO RETROACTIVOS AL 12/12/2022)",
+                        "peso": 10,
+                        "motivo": 2
+                    },
+                    "gravedad_vulneracion": {
+                        "id": 1,
+                        "nombre": "Alta",
+                        "peso": 25
+                    },
+                    "urgencia_vulneracion": {
+                        "id": 1,
+                        "nombre": "ALTA",
+                        "peso": 35
+                    }
+                }
+            ]
+        }
+    ]
+}

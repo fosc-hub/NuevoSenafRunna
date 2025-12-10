@@ -38,9 +38,9 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({ op
         // Download template logic
     }
 
-    const handleAdjuntarJuridico = () => {
+    const handleAdjuntarInforme = () => {
         // Trigger file input
-        document.getElementById("adjuntar-juridico-input")?.click()
+        document.getElementById("adjuntar-informe-input")?.click()
     }
 
     const handleEnviar = () => {
@@ -64,7 +64,7 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({ op
                 pb: 1,
                 borderBottom: '1px solid #e0e0e0'
             }}>
-                Formulario de Informe mensual (MPI)
+                Formulario de Informe mensual
                 <IconButton
                     onClick={onClose}
                     sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
@@ -116,7 +116,7 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({ op
                         fullWidth
                         variant="contained"
                         startIcon={<AttachFileIcon />}
-                        onClick={handleAdjuntarJuridico}
+                        onClick={handleAdjuntarInforme}
                         sx={{
                             backgroundColor: '#36d6d0',
                             color: 'white',
@@ -128,9 +128,9 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({ op
                             '&:hover': { backgroundColor: '#2cc2bc' }
                         }}
                     >
-                        Adjuntar informe Jurídico
+                        Adjuntar informe mensual
                         <input
-                            id="adjuntar-juridico-input"
+                            id="adjuntar-informe-input"
                             type="file"
                             hidden
                             onChange={handleFileChange}

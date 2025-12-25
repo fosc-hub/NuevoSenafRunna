@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { FormControl, InputLabel, Select, MenuItem, FormHelperText, Chip, Box } from '@mui/material'
 import { actividadService } from '../../services/actividadService'
 import type { TTipoActividad } from '../../types/actividades'
+import { getActorColor } from '../../types/actividades'
 
 interface TipoActividadSelectProps {
   value: number
@@ -66,6 +67,21 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                 <span style={{ flex: 1 }}>{tipo.nombre}</span>
                 {tipo.requiere_evidencia && <span>📎</span>}
+
+                {/* V3.0: Actor chip - shows team responsible */}
+                <Chip
+                  label={tipo.actor_display}
+                  size="small"
+                  sx={{
+                    fontSize: '0.65rem',
+                    height: '18px',
+                    backgroundColor: getActorColor(tipo.actor),
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+
+                {/* Etapa chip */}
                 <Chip
                   label={tipo.etapa_medida_aplicable_display}
                   size="small"

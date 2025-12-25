@@ -95,6 +95,15 @@ export interface TTipoActividad {
 
   /** Creation timestamp (readonly) */
   fecha_creacion: string
+
+  /**
+   * V3.0: Actor responsible for this activity type
+   * Restored from V2.2 to simplify team-based filtering and assignment
+   */
+  actor: 'EQUIPO_TECNICO' | 'EQUIPO_LEGAL' | 'EQUIPOS_RESIDENCIALES' | 'ADULTOS_INSTITUCION'
+
+  /** V3.0: Display name for actor (readonly) */
+  actor_display: string
 }
 
 // Attachment
@@ -256,6 +265,15 @@ export interface TActividadPlanTrabajo {
   // Comments
   /** List of comments (readonly, optional) */
   comentarios?: TComentarioActividad[]
+
+  /**
+   * V3.0: Actor responsible for this activity (readonly)
+   * Inherited from tipo_actividad.actor, can change if activity is transferred
+   */
+  actor: 'EQUIPO_TECNICO' | 'EQUIPO_LEGAL' | 'EQUIPOS_RESIDENCIALES' | 'ADULTOS_INSTITUCION'
+
+  /** V3.0: Display name for actor (readonly) */
+  actor_display: string
 }
 
 // API Request/Response types
@@ -299,6 +317,8 @@ export interface ActividadFilters {
   es_borrador?: boolean
   ordering?: string
   search?: string
+  /** V3.0: Filter by actor (team responsible) */
+  actor?: string
 }
 
 export interface ActividadListResponse {
@@ -480,4 +500,63 @@ export interface HistorialFilters {
   fecha_hasta?: string
   usuario?: number
   ordering?: string
+}
+
+// ============================================================================
+// V3.0: Actor Types and Utilities
+// ============================================================================
+
+/**
+ * Actor enum - Team responsible for activities
+ * V3.0: Restored from V2.2 for team-based filtering and organization
+ */
+export type ActorEnum =
+  | 'EQUIPO_TECNICO'
+  | 'EQUIPO_LEGAL'
+  | 'EQUIPOS_RESIDENCIALES'
+  | 'ADULTOS_INSTITUCION'
+
+/**
+ * Actor display labels
+ * Maps actor enum values to human-readable Spanish labels
+ */
+export const ACTOR_LABELS: Record<ActorEnum, string> = {
+  EQUIPO_TECNICO: 'Equipo técnico',
+  EQUIPO_LEGAL: 'Equipo de Legales',
+  EQUIPOS_RESIDENCIALES: 'Equipos residenciales',
+  ADULTOS_INSTITUCION: 'Adultos responsables/Institución'
+}
+
+/**
+ * Actor color mapping for consistent UI representation
+ * Returns Material-UI compatible color hex codes
+ *
+ * @param actor - The actor enum value
+ * @returns Hex color code for the actor
+ */
+export const getActorColor = (actor: ActorEnum): string => {
+  const colors: Record<ActorEnum, string> = {
+    'EQUIPO_TECNICO': '#1976d2',      // blue - technical team
+    'EQUIPO_LEGAL': '#7b1fa2',        // purple - legal team
+    'EQUIPOS_RESIDENCIALES': '#388e3c', // green - residential teams
+    'ADULTOS_INSTITUCION': '#f57c00'  // orange - adults/institutions
+  }
+  return colors[actor] || '#757575' // gray fallback
+}
+
+/**
+ * Actor icon mapping for UI elements
+ * Returns Material-UI icon names
+ *
+ * @param actor - The actor enum value
+ * @returns Icon name string
+ */
+export const getActorIcon = (actor: ActorEnum): string => {
+  const icons: Record<ActorEnum, string> = {
+    'EQUIPO_TECNICO': 'GroupWork',
+    'EQUIPO_LEGAL': 'Gavel',
+    'EQUIPOS_RESIDENCIALES': 'Home',
+    'ADULTOS_INSTITUCION': 'Business'
+  }
+  return icons[actor] || 'Group'
 }

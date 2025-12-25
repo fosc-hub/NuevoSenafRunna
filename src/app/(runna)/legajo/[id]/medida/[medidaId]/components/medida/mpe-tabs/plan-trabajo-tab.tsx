@@ -39,6 +39,7 @@ import { DeadlineIndicator } from "../DeadlineIndicator"
 import { QuickFilterChips } from "../QuickFilterChips"
 import { actividadService } from "../../../services/actividadService"
 import type { TActividadPlanTrabajo, ActividadFilters } from "../../../types/actividades"
+import { getActorColor } from "../../../types/actividades"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import TimelineIcon from "@mui/icons-material/Timeline"
 
@@ -219,6 +220,9 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                         Tipo / Subactividad
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
+                                        Equipo
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
                                         Responsables
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
@@ -238,11 +242,11 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} align="center">Cargando...</TableCell>
+                                        <TableCell colSpan={7} align="center">Cargando...</TableCell>
                                     </TableRow>
                                 ) : !filteredActividades || filteredActividades.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} align="center">
+                                        <TableCell colSpan={7} align="center">
                                             <Box sx={{ py: 8, textAlign: 'center' }}>
                                                 <Typography variant="h6" color="text.secondary" gutterBottom>
                                                     No hay actividades en el plan de trabajo
@@ -333,6 +337,21 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                                                     </Box>
                                                 </Box>
                                             </TableCell>
+
+                                            {/* V3.0: Actor column - shows team responsible */}
+                                            <TableCell>
+                                                <Chip
+                                                    label={actividad.actor_display}
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: getActorColor(actividad.actor),
+                                                        color: 'white',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 500
+                                                    }}
+                                                />
+                                            </TableCell>
+
                                             <TableCell>
                                                 <ResponsablesAvatarGroup
                                                     responsablePrincipal={actividad.responsable_principal_info}

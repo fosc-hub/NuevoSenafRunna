@@ -22,6 +22,7 @@ import TimelineIcon from '@mui/icons-material/Timeline'
 import HistoryIcon from '@mui/icons-material/History'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import type { TActividadPlanTrabajo } from '../../types/actividades'
+import { getActorColor } from '../../types/actividades'
 
 // Import custom hooks
 import { useActividadPermissions } from '../../hooks/useActividadPermissions'
@@ -114,11 +115,25 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6" fontWeight={600}>
-              {actividad.nombre}
+              {actividad.subactividad}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {actividad.tipo_actividad_info?.nombre || 'Actividad'}
-            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
+              {/* V3.0: Actor chip - shows team responsible */}
+              <Chip
+                label={actividad.actor_display}
+                size="small"
+                sx={{
+                  backgroundColor: getActorColor(actividad.actor),
+                  color: 'white',
+                  fontSize: '0.7rem',
+                  height: '20px',
+                  fontWeight: 500
+                }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {actividad.tipo_actividad_info?.nombre || 'Actividad'}
+              </Typography>
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Chip

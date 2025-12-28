@@ -308,7 +308,6 @@ export const AgregarInformeJuridicoModal: React.FC<AgregarInformeJuridicoModalPr
                         </Box>
                     </Box>
                 </Box>
-            </Box>
         </BaseDialog>
     )
 } 

@@ -9,6 +9,7 @@ import {
   Avatar,
   Stack,
   Divider,
+  Box,
 } from "@mui/material"
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"

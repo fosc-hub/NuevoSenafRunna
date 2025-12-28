@@ -3,10 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import {
-  Modal,
   Box,
-  Tab,
-  Tabs,
   Typography,
   Button,
   FormControl,
@@ -16,20 +13,18 @@ import {
   TextField,
   Autocomplete,
   Chip,
-  Paper,
-  Divider,
   CircularProgress,
-  IconButton,
-  Tooltip,
   FormHelperText,
 } from "@mui/material"
+import TabPanel from "@/components/shared/TabPanel"
+import BaseModal from "@/components/shared/BaseModal"
 import {
   History as HistoryIcon,
   Send as SendIcon,
-  Close as CloseIcon,
   Assignment as AssignmentIcon,
 } from "@mui/icons-material"
-import { get, create } from "@/app/api/apiService"
+import { create } from "@/app/api/apiService"
+import { useConditionalData } from "@/hooks/useApiQuery"
 import { toast } from "react-toastify"
 
 // Function to get the current user's ID
@@ -72,23 +67,33 @@ interface DemandaZona {
 
 const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId }) => {
   const [value, setValue] = useState(0)
-  const [zonas, setZonas] = useState<Zona[]>([])
   const [selectedZona, setSelectedZona] = useState<number | null>(null)
-  const [demandaZonas, setDemandaZonas] = useState<DemandaZona[]>([])
-  const [users, setUsers] = useState<User[]>([])
   const [comentarios, setComentarios] = useState("")
-  const [auditHistory, setAuditHistory] = useState<
+  const [objetivo, setObjetivo] = useState<string>("peticion_informe")
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Fetch main data using TanStack Query (only when modal is open)
+  const { data: mainData, isLoading: isDataLoading } = useConditionalData<{
+    zonas: Zona[]
+    demanda_zonas: DemandaZona[]
+    users: User[]
+  }>(`gestion-demanda-zona/${demandaId}/`, open && !!demandaId)
+
+  // Fetch audit history using TanStack Query (only when modal is open)
+  const { data: auditHistory = [] } = useConditionalData<
     Array<{
       id: number
       descripcion: string
       action: string
       timestamp: string
     }>
-  >([])
-  const [objetivo, setObjetivo] = useState<string>("peticion_informe")
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDataLoading, setIsDataLoading] = useState(false)
+  >(`auditoria-demanda-zona/${demandaId}`, open && !!demandaId)
+
+  // Extract data from response
+  const zonas = mainData?.zonas || []
+  const demandaZonas = mainData?.demanda_zonas || []
+  const users = mainData?.users || []
 
   // Obtener la última demanda zona activa
   const lastActiveDemandaZona = useMemo(() => {
@@ -112,53 +117,6 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       setObjetivo("peticion_informe")
     }
   }, [lastActiveDemandaZona])
-
-  useEffect(() => {
-    if (open && demandaId) {
-      fetchData()
-      fetchAuditHistory()
-    }
-  }, [open, demandaId])
-
-  useEffect(() => {
-    if (value === 1 && demandaId) {
-      fetchAuditHistory()
-    }
-  }, [value, demandaId])
-
-  const fetchData = async () => {
-    if (!demandaId) return
-
-    setIsDataLoading(true)
-    try {
-      const response = await get<{
-        zonas: Zona[]
-        demanda_zonas: DemandaZona[]
-        users: User[]
-      }>(`gestion-demanda-zona/${demandaId}/`)
-
-      setZonas(response.zonas)
-      setDemandaZonas(response.demanda_zonas)
-      setUsers(response.users)
-    } catch (error) {
-      console.error("Error fetching data:", error)
-      toast.error("Error al cargar los datos")
-    } finally {
-      setIsDataLoading(false)
-    }
-  }
-
-  const fetchAuditHistory = async () => {
-    if (!demandaId) return
-
-    try {
-      const historyData = await get<any[]>(`auditoria-demanda-zona/${demandaId}`)
-      setAuditHistory(historyData)
-    } catch (error) {
-      console.error("Error fetching audit history:", error)
-      toast.error("Error al cargar el historial")
-    }
-  }
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue)
@@ -240,88 +198,52 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   }
 
   return (
-    <Modal
+    <BaseModal
       open={open}
       onClose={onClose}
-      aria-labelledby="asignar-modal-title"
-      aria-describedby="asignar-modal-description"
-    >
-      <Paper
-        elevation={5}
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "90%",
-          maxWidth: 700,
-          minHeight: 500,
-          maxHeight: "90vh",
-          bgcolor: "background.paper",
-          p: 3,
-          borderRadius: 2,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        {/* Header with close button */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Typography
-            id="asignar-modal-title"
-            variant="h5"
-            component="h2"
-            sx={{
-              color: "primary.main",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <AssignmentIcon /> Derivar Demanda {demandaId}
-          </Typography>
-          <Tooltip title="Cerrar">
-            <IconButton onClick={onClose} size="small" aria-label="cerrar" disabled={isLoading}>
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        <Divider sx={{ mb: 2 }} />
-
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
-          <Tabs
-            value={value}
-            onChange={handleChange}
-            aria-label="asignar tabs"
-            sx={{
-              "& .MuiTab-root": {
-                fontSize: "0.9rem",
-                fontWeight: 500,
-                textTransform: "none",
-                minHeight: 48,
+      title={`Derivar Demanda ${demandaId}`}
+      titleIcon={<AssignmentIcon />}
+      tabs={[
+        { label: "Asignar", icon: <SendIcon fontSize="small" /> },
+        { label: "Historia", icon: <HistoryIcon fontSize="small" /> },
+      ]}
+      activeTab={value}
+      onTabChange={handleChange}
+      loading={isDataLoading}
+      loadingMessage="Cargando datos..."
+      maxWidth={700}
+      actions={
+        value === 0
+          ? [
+              {
+                label: "Asignar",
+                onClick: handleAsignar,
+                variant: "contained",
+                color: "primary",
+                disabled: isLoading || !selectedZona,
+                loading: isLoading,
+                startIcon: <SendIcon />,
               },
-            }}
-          >
-            <Tab icon={<SendIcon fontSize="small" />} iconPosition="start" label="Asignar" {...a11yProps(0)} />
-            <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label="Historia" {...a11yProps(1)} />
-          </Tabs>
-        </Box>
-
-        {/* Content area with scrolling */}
-        <Box sx={{ flex: 1, overflow: "auto", mb: 2 }}>
-          {/* Loading indicator */}
-          {isDataLoading && (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-              <CircularProgress size={40} />
-            </Box>
-          )}
-
-          {!isDataLoading && (
-            <>
-              <TabPanel value={value} index={0}>
+              {
+                label: "Cerrar",
+                onClick: onClose,
+                variant: "outlined",
+                disabled: isLoading,
+              },
+            ]
+          : [
+              {
+                label: "Cerrar",
+                onClick: onClose,
+                variant: "outlined",
+                disabled: isLoading,
+              },
+            ]
+      }
+    >
+      {!isDataLoading && (
+        <>
+              <TabPanel value={value} index={0} idPrefix="simple-tabpanel" wrapInBox={false}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                   <Typography variant="subtitle1" color="primary" fontWeight={500} sx={{ mb: 1 }}>
                     Información de derivación
@@ -432,7 +354,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
                 </Box>
               </TabPanel>
 
-              <TabPanel value={value} index={1}>
+              <TabPanel value={value} index={1} idPrefix="simple-tabpanel" wrapInBox={false}>
                 <Typography variant="subtitle1" color="primary" fontWeight={500} sx={{ mb: 2 }}>
                   Historial de derivaciones para esta demanda
                 </Typography>
@@ -493,71 +415,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
               </TabPanel>
             </>
           )}
-        </Box>
-
-        {/* Footer with actions */}
-        <Box
-          sx={{
-            mt: "auto",
-            pt: 2,
-            display: "flex",
-            justifyContent: "space-between",
-            borderTop: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          {value === 0 && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleAsignar}
-              disabled={isLoading || !selectedZona}
-              startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-              sx={{ fontWeight: 500 }}
-            >
-              {isLoading ? "Asignando..." : "Asignar"}
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            sx={{ ml: value === 1 ? 0 : "auto", fontWeight: 500 }}
-            disabled={isLoading}
-          >
-            Cerrar
-          </Button>
-        </Box>
-      </Paper>
-    </Modal>
-  )
-}
-
-function a11yProps(index: number) {
-  return {
-    id: `simple-tab-${index}`,
-    "aria-controls": `simple-tabpanel-${index}`,
-  }
-}
-
-interface TabPanelProps {
-  children?: React.ReactNode
-  index: number
-  value: number
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && children}
-    </div>
+    </BaseModal>
   )
 }
 

@@ -3,7 +3,6 @@
 import type React from "react"
 import {
   Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -11,15 +10,14 @@ import {
   TableHead,
   TableRow,
   Chip,
-  Box,
   Tooltip,
   IconButton,
 } from "@mui/material"
-import DescriptionIcon from "@mui/icons-material/Description"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import DownloadIcon from "@mui/icons-material/Download"
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface OficiosSectionProps {
   legajoData: LegajoDetailResponse
@@ -55,51 +53,22 @@ export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData }) =>
 
   if (oficios.length === 0) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <DescriptionIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Oficios
-          </Typography>
-        </Box>
+      <SectionCard title="Oficios">
         <Typography variant="body1" color="text.secondary">
           No hay oficios registrados.
         </Typography>
-      </Paper>
+      </SectionCard>
     )
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
+    <SectionCard
+      title="Oficios"
+      chips={[{
+        label: `${oficios.length} total${oficios.length !== 1 ? "es" : ""}`,
+        color: "primary"
+      }]}
     >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <DescriptionIcon sx={{ mr: 1, color: "primary.main" }} />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Oficios
-        </Typography>
-        <Chip
-          label={`${oficios.length} total${oficios.length !== 1 ? "es" : ""}`}
-          color="primary"
-          size="small"
-          sx={{ ml: 2 }}
-        />
-      </Box>
 
       {/* Tabla de oficios */}
       <TableContainer>
@@ -162,6 +131,6 @@ export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData }) =>
           </TableBody>
         </Table>
       </TableContainer>
-    </Paper>
+    </SectionCard>
   )
 }

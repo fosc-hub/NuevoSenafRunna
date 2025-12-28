@@ -5,7 +5,6 @@ import {
   Typography,
   Paper,
   Chip,
-  Box,
   Grid,
   Avatar,
   Stack,
@@ -20,6 +19,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import SendIcon from "@mui/icons-material/Send"
 import HomeWorkIcon from "@mui/icons-material/HomeWork"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface AsignacionesSectionProps {
   legajoData: LegajoDetailResponse
@@ -66,55 +66,23 @@ export const AsignacionesSection: React.FC<AsignacionesSectionProps> = ({ legajo
 
   if (asignaciones.length === 0) {
     return (
-      <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <AssignmentIndIcon sx={{ mr: 1, color: "text.secondary" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Asignaciones Activas
-          </Typography>
-        </Box>
+      <SectionCard title="Asignaciones Activas">
         <Typography variant="body1" color="text.secondary">
           No hay asignaciones activas registradas.
         </Typography>
-      </Paper>
+      </SectionCard>
     )
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-        border: "1px solid",
-        borderColor: "divider",
-      }}
+    <SectionCard
+      title="Asignaciones Activas"
+      chips={[{
+        label: `${asignaciones.length} activa${asignaciones.length !== 1 ? "s" : ""}`,
+        color: "primary",
+        variant: "outlined"
+      }]}
     >
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <AssignmentIndIcon sx={{ mr: 1, color: "text.secondary" }} />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Asignaciones Activas
-        </Typography>
-        <Chip
-          label={`${asignaciones.length} activa${asignaciones.length !== 1 ? "s" : ""}`}
-          color="primary"
-          size="small"
-          variant="outlined"
-          sx={{ ml: 2 }}
-        />
-      </Box>
 
       <Grid container spacing={3}>
         {asignaciones.map((asignacion) => (
@@ -332,6 +300,6 @@ export const AsignacionesSection: React.FC<AsignacionesSectionProps> = ({ legajo
           </Grid>
         ))}
       </Grid>
-    </Paper>
+    </SectionCard>
   )
 }

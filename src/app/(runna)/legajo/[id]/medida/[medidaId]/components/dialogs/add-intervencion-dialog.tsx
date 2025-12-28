@@ -2,8 +2,10 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography } from "@mui/material"
+import { Button, TextField, Box, Typography } from "@mui/material"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
+import AddIcon from "@mui/icons-material/Add"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 export interface NewIntervencion {
   descripcion: string
@@ -43,56 +45,58 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Agregar nueva intervención</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 2 }}>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="descripcion"
-            name="descripcion"
-            label="Descripción"
-            type="text"
-            fullWidth
-            multiline
-            rows={4}
-            variant="outlined"
-            value={intervencion.descripcion}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
+    <BaseDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      title="Agregar nueva intervención"
+      titleIcon={<AddIcon />}
+      showCloseButton
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: onClose,
+          variant: "text"
+        },
+        {
+          label: "Guardar",
+          onClick: handleSave,
+          variant: "contained",
+          color: "primary",
+          disabled: !intervencion.descripcion
+        }
+      ]}
+    >
+      <Box sx={{ mt: 2 }}>
+        <TextField
+          autoFocus
+          margin="dense"
+          id="descripcion"
+          name="descripcion"
+          label="Descripción"
+          type="text"
+          fullWidth
+          multiline
+          rows={4}
+          variant="outlined"
+          value={intervencion.descripcion}
+          onChange={handleInputChange}
+          sx={{ mb: 2 }}
+        />
 
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Button component="label" startIcon={<AttachFileIcon />} sx={{ textTransform: "none" }}>
-              Adjuntar archivo
-              <input type="file" hidden onChange={handleFileChange} />
-            </Button>
-            {fileName && (
-              <Typography variant="body2" sx={{ ml: 2 }}>
-                {fileName}
-              </Typography>
-            )}
-          </Box>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Button component="label" startIcon={<AttachFileIcon />} sx={{ textTransform: "none" }}>
+            Adjuntar archivo
+            <input type="file" hidden onChange={handleFileChange} />
+          </Button>
+          {fileName && (
+            <Typography variant="body2" sx={{ ml: 2 }}>
+              {fileName}
+            </Typography>
+          )}
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="inherit">
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSave}
-          color="primary"
-          variant="contained"
-          disabled={!intervencion.descripcion}
-          sx={{
-            borderRadius: 8,
-            textTransform: "none",
-          }}
-        >
-          Guardar
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </BaseDialog>
   )
 }

@@ -1,19 +1,6 @@
 import ExcelExportService from "./excel-export-service"
-
-/**
- * Format text with underscores for display
- */
-export const formatUnderscoreText = (text: any): string => {
-  if (!text || typeof text !== "string" || text === "N/A") {
-    return "N/A"
-  }
-
-  return text
-    .split("_")
-    .join(" ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
+import { formatUnderscoreText } from "@/utils/stringUtils"
+import { getCurrentDateISO } from "@/utils/dateUtils"
 
 /**
  * Export demandas data to Excel
@@ -49,7 +36,7 @@ export const exportDemandasToExcel = (rows: any[]) => {
   const formattedData = ExcelExportService.formatDataForExport(rows, fieldMappings, formatters)
 
   // Export to Excel
-  const currentDate = new Date().toISOString().split("T")[0]
+  const currentDate = getCurrentDateISO()
   return ExcelExportService.exportToExcel(formattedData, {
     fileName: `Demandas_${currentDate}`,
     sheetName: "Demandas",

@@ -267,17 +267,17 @@ export const enviarIntervencion = async (
   try {
     console.log(`Enviando intervención: medida ${medidaId}, intervención ${intervencionId}`)
 
-    // Import axiosInstance at the top of the file if not already imported
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call - Uses PATCH with no body
-    const response = await axiosInstance.patch<EnviarIntervencionResponse>(
-      `medidas/${medidaId}/intervenciones/${intervencionId}/enviar/`
+    // Uses create() with empty object for POST to custom action endpoint
+    const response = await create<EnviarIntervencionResponse>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/enviar/`,
+      {},
+      true,
+      'Intervención enviada exitosamente'
     )
 
-    console.log("Intervención enviada successfully:", response.data)
+    console.log("Intervención enviada successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(
       `Error enviando intervención: medida ${medidaId}, intervención ${intervencionId}`,
@@ -308,17 +308,17 @@ export const aprobarIntervencion = async (
   try {
     console.log(`Aprobando intervención: medida ${medidaId}, intervención ${intervencionId}`)
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call - Uses POST with no body
-    const response = await axiosInstance.post<AprobarIntervencionResponse>(
-      `medidas/${medidaId}/intervenciones/${intervencionId}/aprobar/`
+    // Uses create() with empty object for POST to custom action endpoint
+    const response = await create<AprobarIntervencionResponse>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/aprobar/`,
+      {},
+      true,
+      'Intervención aprobada exitosamente'
     )
 
-    console.log("Intervención aprobada successfully:", response.data)
+    console.log("Intervención aprobada successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(
       `Error aprobando intervención: medida ${medidaId}, intervención ${intervencionId}`,
@@ -354,18 +354,17 @@ export const rechazarIntervencion = async (
       data
     )
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call - Uses POST with observaciones_jz
-    const response = await axiosInstance.post<RechazarIntervencionResponse>(
+    // Uses create() for POST to custom action endpoint with data
+    const response = await create<RechazarIntervencionResponse>(
       `medidas/${medidaId}/intervenciones/${intervencionId}/rechazar/`,
-      data
+      data,
+      true,
+      'Intervención rechazada'
     )
 
-    console.log("Intervención rechazada successfully:", response.data)
+    console.log("Intervención rechazada successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(
       `Error rechazando intervención: medida ${medidaId}, intervención ${intervencionId}`,
@@ -410,23 +409,17 @@ export const uploadAdjunto = async (
     formData.append("archivo", file)
     formData.append("tipo", tipo)
 
-    // Import axiosInstance to use the configured base URL
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call using axiosInstance which includes the base URL
-    const response = await axiosInstance.post<AdjuntoIntervencion>(
+    // apiService.create() supports FormData automatically
+    const response = await create<AdjuntoIntervencion>(
       `medidas/${medidaId}/intervenciones/${intervencionId}/adjuntos/`,
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      true,
+      'Adjunto subido exitosamente'
     )
 
-    console.log("Adjunto uploaded successfully:", response.data)
+    console.log("Adjunto uploaded successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(
       `Error uploading adjunto: medida ${medidaId}, intervención ${intervencionId}`,

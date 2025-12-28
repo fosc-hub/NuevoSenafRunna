@@ -5,7 +5,6 @@ import { Grid, TextField, FormControl, Autocomplete, Paper, FormControlLabel, Ch
 import { Controller, type Control } from "react-hook-form"
 import { School as SchoolIcon } from "@mui/icons-material"
 import FormSection from "../form-section"
-import RequiredLabel from "../required-label"
 import type { DropdownData, FormData } from "../../types/formTypes"
 
 interface EducationTabProps {
@@ -46,7 +45,8 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label={<RequiredLabel label="Institución Educativa" />}
+                      label="Institución Educativa"
+                      required
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -68,7 +68,8 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
-                  label={<RequiredLabel label="Nueva Institución Educativa" />}
+                  label="Nueva Institución Educativa"
+                  required
                   fullWidth
                   multiline
                   rows={2}
@@ -102,7 +103,8 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label={<RequiredLabel label="Nivel Alcanzado" />}
+                      label="Nivel Alcanzado"
+                      required
                       error={!!error}
                       helperText={error?.message}
                       size="small"
@@ -191,7 +193,8 @@ const EducationTab: React.FC<EducationTabProps> = ({ index, control, dropdownDat
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label={<RequiredLabel label="Tipo de Escuela" />}
+                      label="Tipo de Escuela"
+                      required
                       error={!!error}
                       helperText={error?.message}
                       size="small"

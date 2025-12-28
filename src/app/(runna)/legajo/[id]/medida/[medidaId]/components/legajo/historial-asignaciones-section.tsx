@@ -3,7 +3,6 @@
 import type React from "react"
 import {
   Typography,
-  Paper,
   Box,
   Chip,
   Grid,
@@ -21,13 +20,13 @@ import {
   TimelineDot,
   TimelineOppositeContent,
 } from "@mui/lab"
-import HistoryIcon from "@mui/icons-material/History"
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline"
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import PendingIcon from "@mui/icons-material/Pending"
 import CancelIcon from "@mui/icons-material/Cancel"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface HistorialAsignacionesSectionProps {
   legajoData: LegajoDetailResponse
@@ -112,21 +111,7 @@ export const HistorialAsignacionesSection: React.FC<HistorialAsignacionesSection
 
   if (historialAsignaciones.length === 0) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <HistoryIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Historial de Asignaciones
-          </Typography>
-        </Box>
+      <SectionCard title="Historial de Asignaciones">
         <Box
           sx={{
             textAlign: "center",
@@ -140,27 +125,18 @@ export const HistorialAsignacionesSection: React.FC<HistorialAsignacionesSection
             No hay historial de asignaciones para este legajo.
           </Typography>
         </Box>
-      </Paper>
+      </SectionCard>
     )
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <HistoryIcon sx={{ mr: 1, color: "primary.main" }} />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Historial de Asignaciones
-        </Typography>
-        <Chip label={`${totalAsignaciones} total${totalAsignaciones !== 1 ? "es" : ""}`} color="primary" size="small" sx={{ ml: 2 }} />
+    <SectionCard
+      title="Historial de Asignaciones"
+      chips={[{
+        label: `${totalAsignaciones} total${totalAsignaciones !== 1 ? "es" : ""}`,
+        color: "primary"
+      }]}
+      headerActions={
         <Tooltip
           title={
             <Box sx={{ p: 1 }}>
@@ -181,12 +157,12 @@ export const HistorialAsignacionesSection: React.FC<HistorialAsignacionesSection
           arrow
           placement="right"
         >
-          <IconButton size="small" sx={{ ml: 1 }}>
+          <IconButton size="small">
             <HelpOutlineIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-      </Box>
-
+      }
+    >
       {/* Statistics cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
@@ -385,6 +361,6 @@ export const HistorialAsignacionesSection: React.FC<HistorialAsignacionesSection
           finalizadas.
         </Typography>
       </Box>
-    </Paper>
+    </SectionCard>
   )
 }

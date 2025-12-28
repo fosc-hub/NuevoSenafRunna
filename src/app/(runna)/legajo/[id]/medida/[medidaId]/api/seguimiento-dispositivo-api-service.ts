@@ -1,8 +1,11 @@
 /**
  * API Service for SEGUIMIENTO EN DISPOSITIVO module
  * Handles both MPE and MPJ seguimiento data
+ *
+ * REFACTORED: Now uses centralized apiService for security and consistency
  */
 
+import { get, create, put, remove } from '@/app/api/apiService'
 import type {
   SeguimientoDispositivoMPE,
   SeguimientoDispositivoMPJ,
@@ -19,301 +22,188 @@ import type {
   SeguimientoResponse
 } from '../types/seguimiento-dispositivo'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api'
-
 class SeguimientoDispositivoApiService {
 
   /**
    * Get seguimiento data for a specific medida
    */
   async getSeguimiento(medidaId: number, tipoMedida: 'MPE' | 'MPJ'): Promise<SeguimientoResponse> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch seguimiento data: ${response.statusText}`)
-    }
-
-    return response.json()
+    return get<SeguimientoResponse>(`medidas/${medidaId}/seguimiento/`)
   }
 
   /**
    * Create seguimiento data for a medida
    */
   async createSeguimiento(data: CreateSeguimientoRequest): Promise<SeguimientoResponse> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${data.medida_id}/seguimiento/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to create seguimiento: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<SeguimientoResponse>(
+      `medidas/${data.medida_id}/seguimiento/`,
+      data,
+      true,
+      'Seguimiento creado exitosamente'
+    )
   }
 
   /**
    * Update seguimiento data
    */
   async updateSeguimiento(medidaId: number, data: UpdateSeguimientoRequest): Promise<SeguimientoResponse> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/${data.id}/`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data.data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to update seguimiento: ${response.statusText}`)
-    }
-
-    return response.json()
+    return put<SeguimientoResponse>(
+      `medidas/${medidaId}/seguimiento`,
+      data.id,
+      data.data,
+      true,
+      'Seguimiento actualizado exitosamente'
+    )
   }
 
   /**
    * MPE - Add situación en residencia
    */
   async addSituacionResidencia(medidaId: number, data: SituacionResidenciaMPE): Promise<SituacionResidenciaMPE> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/situaciones-residencia/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to add situación residencia: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<SituacionResidenciaMPE>(
+      `medidas/${medidaId}/seguimiento/situaciones-residencia/`,
+      data,
+      true,
+      'Situación de residencia agregada'
+    )
   }
 
   /**
    * MPJ - Add situación en instituto
    */
   async addSituacionInstituto(medidaId: number, data: SituacionInstitutoMPJ): Promise<SituacionInstitutoMPJ> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/situaciones-instituto/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to add situación instituto: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<SituacionInstitutoMPJ>(
+      `medidas/${medidaId}/seguimiento/situaciones-instituto/`,
+      data,
+      true,
+      'Situación de instituto agregada'
+    )
   }
 
   /**
    * Update información educativa
    */
   async updateInformacionEducativa(medidaId: number, data: InformacionEducativa): Promise<InformacionEducativa> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/informacion-educativa/`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to update información educativa: ${response.statusText}`)
-    }
-
-    return response.json()
+    return put<InformacionEducativa>(
+      `medidas/${medidaId}/seguimiento/informacion-educativa`,
+      medidaId,
+      data,
+      true,
+      'Información educativa actualizada'
+    )
   }
 
   /**
    * Update información de salud
    */
   async updateInformacionSalud(medidaId: number, data: InformacionSalud): Promise<InformacionSalud> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/informacion-salud/`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to update información salud: ${response.statusText}`)
-    }
-
-    return response.json()
+    return put<InformacionSalud>(
+      `medidas/${medidaId}/seguimiento/informacion-salud`,
+      medidaId,
+      data,
+      true,
+      'Información de salud actualizada'
+    )
   }
 
   /**
    * Add taller recreativo
    */
   async addTaller(medidaId: number, data: TallerRecreativo): Promise<TallerRecreativo> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/talleres/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to add taller: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<TallerRecreativo>(
+      `medidas/${medidaId}/seguimiento/talleres/`,
+      data,
+      true,
+      'Taller agregado exitosamente'
+    )
   }
 
   /**
    * Update taller recreativo
    */
   async updateTaller(medidaId: number, tallerId: number, data: TallerRecreativo): Promise<TallerRecreativo> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/talleres/${tallerId}/`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to update taller: ${response.statusText}`)
-    }
-
-    return response.json()
+    return put<TallerRecreativo>(
+      `medidas/${medidaId}/seguimiento/talleres`,
+      tallerId,
+      data,
+      true,
+      'Taller actualizado exitosamente'
+    )
   }
 
   /**
    * Delete taller recreativo
    */
   async deleteTaller(medidaId: number, tallerId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/talleres/${tallerId}/`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to delete taller: ${response.statusText}`)
-    }
+    return remove(`medidas/${medidaId}/seguimiento/talleres`, tallerId)
   }
 
   /**
    * Add cambio de lugar de resguardo
    */
   async addCambioResguardo(medidaId: number, data: Omit<CambioLugarResguardo, 'id'>): Promise<CambioLugarResguardo> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/cambios-resguardo/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to add cambio resguardo: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<CambioLugarResguardo>(
+      `medidas/${medidaId}/seguimiento/cambios-resguardo/`,
+      data,
+      true,
+      'Cambio de resguardo registrado'
+    )
   }
 
   /**
    * Add nota de seguimiento
    */
   async addNotaSeguimiento(medidaId: number, data: Omit<NotaSeguimiento, 'id'>): Promise<NotaSeguimiento> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/notas/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to add nota seguimiento: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<NotaSeguimiento>(
+      `medidas/${medidaId}/seguimiento/notas/`,
+      data,
+      true,
+      'Nota de seguimiento agregada'
+    )
   }
 
   /**
    * MPE - Add situación crítica
    */
   async addSituacionCritica(medidaId: number, data: Omit<SituacionCritica, 'id'>): Promise<SituacionCritica> {
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/situaciones-criticas/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to add situación crítica: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<SituacionCritica>(
+      `medidas/${medidaId}/seguimiento/situaciones-criticas/`,
+      data,
+      true,
+      'Situación crítica registrada'
+    )
   }
 
   /**
    * Upload adjunto for cambio resguardo
+   * Note: apiService.create() supports FormData automatically
    */
   async uploadAdjuntoCambioResguardo(medidaId: number, cambioId: number, file: File): Promise<{ url: string }> {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/cambios-resguardo/${cambioId}/adjunto/`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload adjunto: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<{ url: string }>(
+      `medidas/${medidaId}/seguimiento/cambios-resguardo/${cambioId}/adjunto/`,
+      formData,
+      true,
+      'Archivo adjuntado exitosamente'
+    )
   }
 
   /**
    * Upload adjunto for nota seguimiento
+   * Note: apiService.create() supports FormData automatically
    */
   async uploadAdjuntoNota(medidaId: number, notaId: number, file: File): Promise<{ url: string }> {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch(`${API_BASE_URL}/medidas/${medidaId}/seguimiento/notas/${notaId}/adjunto/`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload adjunto: ${response.statusText}`)
-    }
-
-    return response.json()
+    return create<{ url: string }>(
+      `medidas/${medidaId}/seguimiento/notas/${notaId}/adjunto/`,
+      formData,
+      true,
+      'Archivo adjuntado exitosamente'
+    )
   }
 }
 

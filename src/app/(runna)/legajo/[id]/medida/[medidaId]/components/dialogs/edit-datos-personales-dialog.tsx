@@ -3,18 +3,14 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Grid,
   MenuItem,
   Box,
-  Alert,
-  CircularProgress,
 } from "@mui/material"
+import EditIcon from "@mui/icons-material/Edit"
+import BaseDialog from "@/components/shared/BaseDialog"
 import type { PersonaDetailData } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface EditDatosPersonalesDialogProps {
@@ -75,16 +71,33 @@ export const EditDatosPersonalesDialog: React.FC<EditDatosPersonalesDialogProps>
   if (!persona) return null
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Editar Datos Personales</DialogTitle>
-      <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
+    <BaseDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      title="Editar Datos Personales"
+      titleIcon={<EditIcon />}
+      error={error}
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: onClose,
+          variant: "text",
+          disabled: isSaving
+        },
+        {
+          label: isSaving ? "Guardando..." : "Guardar",
+          onClick: handleSubmit,
+          variant: "contained",
+          color: "primary",
+          disabled: isSaving,
+          loading: isSaving
+        }
+      ]}
+    >
+      <Box sx={{ mt: 2 }}>
+        <Grid container spacing={2}>
             {/* Nombre */}
             <Grid item xs={12} sm={6}>
               <TextField
@@ -217,15 +230,6 @@ export const EditDatosPersonalesDialog: React.FC<EditDatosPersonalesDialogProps>
             </Grid>
           </Grid>
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={isSaving}>
-          Cancelar
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : null}>
-          {isSaving ? "Guardando..." : "Guardar"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   )
 }

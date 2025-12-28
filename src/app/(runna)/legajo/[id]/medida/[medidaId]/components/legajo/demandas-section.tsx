@@ -13,7 +13,6 @@ import {
   Divider,
   Stack,
 } from "@mui/material"
-import AssessmentIcon from "@mui/icons-material/Assessment"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import LabelIcon from "@mui/icons-material/Label"
 import GavelIcon from "@mui/icons-material/Gavel"
@@ -21,6 +20,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn"
 import DescriptionIcon from "@mui/icons-material/Description"
 import LinkIcon from "@mui/icons-material/Link"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface DemandasSectionProps {
   legajoData: LegajoDetailResponse
@@ -32,47 +32,18 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
 
   if (!demandas) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <AssessmentIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Demandas Relacionadas
-          </Typography>
-        </Box>
+      <SectionCard title="Demandas Relacionadas">
         <Typography variant="body1" color="text.secondary">
           No hay información de demandas disponible.
         </Typography>
-      </Paper>
+      </SectionCard>
     )
   }
 
   const resumen = demandas.resumen
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <AssessmentIcon sx={{ mr: 1, color: "primary.main" }} />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Demandas Relacionadas
-        </Typography>
-      </Box>
+    <SectionCard title="Demandas Relacionadas">
 
       {/* Resumen */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -370,6 +341,6 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
             ))}
         </Box>
       )}
-    </Paper>
+    </SectionCard>
   )
 }

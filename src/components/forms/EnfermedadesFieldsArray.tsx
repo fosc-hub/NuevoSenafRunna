@@ -13,13 +13,10 @@ import {
 import { Box, Typography, Grid, Button, IconButton, TextField, FormControl, Autocomplete } from "@mui/material"
 import DeleteIcon from "@mui/icons-material/Delete"
 import AddIcon from "@mui/icons-material/Add"
-import CloudUploadIcon from "@mui/icons-material/CloudUpload"
-import AttachFileIcon from "@mui/icons-material/AttachFile"
-import OpenInNewIcon from "@mui/icons-material/OpenInNew"
-import { useState, useRef, useCallback } from "react"
+import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
 
-// Componente separado para la carga de archivos
-const FileUploadSection = ({
+// Wrapper component that integrates shared FileUploadSection with react-hook-form
+const FileUploadField = ({
   name,
   control,
   readOnly,
@@ -32,264 +29,76 @@ const FileUploadSection = ({
   getFileName: (filePath: string) => string
   openFile: (filePath: string) => void
 }) => {
-  const [isDragging, setIsDragging] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const dropAreaRef = useRef<HTMLDivElement>(null)
-
   const { field } = useController({ name, control })
   const { value, onChange } = field
-  const { error } = control.getFieldState(name)
 
-  const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!isDragging) {
-        setIsDragging(true)
-      }
-    },
-    [isDragging],
-  )
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    // Only set isDragging to false if we're leaving the drop area (not a child element)
-    if (dropAreaRef.current && !dropAreaRef.current.contains(e.relatedTarget as Node)) {
-      setIsDragging(false)
-    }
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(false)
-
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        // Keep existing server files and add new files
-        const newUploadedFiles = Array.from(e.dataTransfer.files)
-
-        // If value is an array with server files (objects with archivo property)
-        if (Array.isArray(value) && value.some((file) => typeof file === "object" && "archivo" in file)) {
-          // Extract server files
-          const serverFiles = value.filter((file) => typeof file === "object" && "archivo" in file)
-          // Set value to include both server files and new files
-          onChange([...serverFiles, ...newUploadedFiles])
-        } else {
-          onChange(newUploadedFiles)
-        }
-      }
-    },
-    [onChange, value],
-  )
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
-        // Keep existing server files and add new files
-        const newUploadedFiles = Array.from(e.target.files)
-
-        // If value is an array with server files (objects with archivo property)
-        if (Array.isArray(value) && value.some((file) => typeof file === "object" && "archivo" in file)) {
-          // Extract server files
-          const serverFiles = value.filter((file) => typeof file === "object" && "archivo" in file)
-          // Set value to include both server files and new files
-          onChange([...serverFiles, ...newUploadedFiles])
-        } else {
-          onChange(newUploadedFiles)
-        }
-      }
-    },
-    [onChange, value],
-  )
-
-  const removeFile = useCallback(
-    (index: number) => {
-      if (Array.isArray(value)) {
-        const newFiles = [...value]
-        // Find the index of the first non-server file
-        const serverFilesCount = newFiles.filter((file) => typeof file === "object" && "archivo" in file).length
-        // Remove the file at the adjusted index (considering server files)
-        newFiles.splice(serverFilesCount + index, 1)
-        onChange(newFiles)
-      }
-    },
-    [onChange, value],
-  )
-
-  // Extract server files (files with 'archivo' property)
+  // Extract server files (files with 'archivo' property) and new files (File objects)
   const serverFiles = Array.isArray(value) ? value.filter((file) => typeof file === "object" && "archivo" in file) : []
+  const newFiles = Array.isArray(value) ? value.filter((file) => file instanceof File) : []
 
-  // Extract new files (not server files)
-  const newFiles = Array.isArray(value) ? value.filter((file) => !(typeof file === "object" && "archivo" in file)) : []
+  // Convert to FileItem[] for display
+  const displayFiles: FileItem[] = [
+    // Server files
+    ...serverFiles.map((file: any, idx: number) => ({
+      id: `server_${idx}`,
+      nombre: getFileName(file.archivo),
+      tipo: 'application/octet-stream',
+      url: `https://web-runna-v2legajos.up.railway.app${file.archivo}`,
+      tamano: 0,
+    })),
+    // New files
+    ...newFiles.map((file: File, idx: number) => ({
+      id: `new_${idx}`,
+      nombre: file.name,
+      tipo: file.type,
+      tamano: file.size,
+    }))
+  ]
+
+  const handleFileUpload = (file: File) => {
+    // Keep existing server files and add new file
+    onChange([...serverFiles, ...newFiles, file])
+  }
+
+  const handleFileDownload = (file: FileItem) => {
+    if (file.url) {
+      openFile(file.url.replace('https://web-runna-v2legajos.up.railway.app', ''))
+    }
+  }
+
+  const handleFileDelete = (fileId: number | string) => {
+    const id = fileId.toString()
+
+    if (id.startsWith('server_')) {
+      // Remove server file
+      const index = Number.parseInt(id.replace('server_', ''))
+      const updatedServerFiles = serverFiles.filter((_, idx) => idx !== index)
+      onChange([...updatedServerFiles, ...newFiles])
+    } else if (id.startsWith('new_')) {
+      // Remove new file
+      const index = Number.parseInt(id.replace('new_', ''))
+      const updatedNewFiles = newFiles.filter((_, idx) => idx !== index)
+      onChange([...serverFiles, ...updatedNewFiles])
+    }
+  }
 
   return (
     <Box>
       <Typography variant="body2" gutterBottom>
         Certificado Adjunto
       </Typography>
-
-      <Grid container spacing={2} justifyContent="center">
-        {/* Upload area for new files */}
-        <Grid item xs={12} md={6}>
-          <Box
-            ref={dropAreaRef}
-            onDragEnter={handleDragEnter}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            sx={{
-              border: "2px dashed",
-              borderColor: isDragging ? "primary.main" : "#ccc",
-              borderRadius: "4px",
-              p: 2,
-              height: "100%",
-              minHeight: "150px",
-              textAlign: "center",
-              cursor: "pointer",
-              backgroundColor: isDragging ? "rgba(25, 118, 210, 0.04)" : "transparent",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                borderColor: "primary.light",
-                backgroundColor: "rgba(25, 118, 210, 0.04)",
-              },
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-            }}
-          >
-            <input
-              name={name}
-              ref={fileInputRef}
-              type="file"
-              multiple
-              hidden
-              disabled={readOnly}
-              onChange={handleFileChange}
-            />
-
-            {/* Display new files being uploaded */}
-            {newFiles.length > 0 ? (
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-                {newFiles.map((file: File, idx: number) => (
-                  <Box
-                    key={idx}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      py: 0.5,
-                      "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
-                      <AttachFileIcon sx={{ mr: 1, color: "text.secondary", flexShrink: 0 }} fontSize="small" />
-                      <Typography variant="body2" noWrap title={file.name}>
-                        {file.name}
-                      </Typography>
-                    </Box>
-                    {!readOnly && (
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          removeFile(idx)
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </Box>
-                ))}
-              </Box>
-            ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <CloudUploadIcon color="action" sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="body2" gutterBottom>
-                  Arrastra y suelta archivos aquí
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  o haz clic para seleccionar archivos
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Grid>
-
-        {/* Existing files section */}
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{
-              border: "1px solid #eee",
-              borderRadius: "4px",
-              p: 1,
-              height: "100%",
-              minHeight: "150px",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Typography variant="subtitle2" gutterBottom>
-              Archivos existentes:
-            </Typography>
-            <Box
-              sx={{
-                flexGrow: 1,
-                overflow: "auto",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {serverFiles.length > 0 ? (
-                serverFiles.map((file: any, idx: number) => (
-                  <Box
-                    key={idx}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      py: 0.5,
-                      "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", flexGrow: 1 }}>
-                      <AttachFileIcon sx={{ mr: 1, color: "text.secondary", flexShrink: 0 }} fontSize="small" />
-                      <Typography variant="body2" noWrap title={getFileName(file.archivo)}>
-                        {getFileName(file.archivo)}
-                      </Typography>
-                    </Box>
-                    <IconButton size="small" color="primary" onClick={() => openFile(file.archivo)}>
-                      <OpenInNewIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ))
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 2 }}>
-                  No hay archivos existentes
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        </Grid>
-      </Grid>
-
-      {error && (
-        <Typography variant="caption" color="error">
-          {error.message}
-        </Typography>
-      )}
+      <FileUploadSection
+        files={displayFiles}
+        onUpload={handleFileUpload}
+        onDownload={handleFileDownload}
+        onDelete={handleFileDelete}
+        title=""
+        multiple={true}
+        emptyMessage="No hay archivos adjuntos. Arrastra archivos o haz clic para seleccionar."
+        dragDropMessage="Arrastra y suelta archivos aquí"
+        uploadButtonLabel="Seleccionar archivos"
+        disabled={readOnly}
+      />
     </Box>
   )
 }
@@ -500,7 +309,7 @@ const EnfermedadesFieldArray: React.FC<EnfermedadesFieldArrayProps> = ({
 
             {/* Certificado Adjunto */}
             <Grid item xs={12}>
-              <FileUploadSection
+              <FileUploadField
                 name={`ninosAdolescentes.${nestIndex}.persona_enfermedades.${enfIndex}.certificado_adjunto`}
                 control={control}
                 readOnly={readOnly}

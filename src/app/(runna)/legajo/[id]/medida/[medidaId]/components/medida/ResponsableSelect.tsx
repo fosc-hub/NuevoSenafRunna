@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import {
   FormControl,
   InputLabel,
@@ -11,7 +11,7 @@ import {
   FormHelperText,
   OutlinedInput
 } from '@mui/material'
-import { get } from '@/app/api/apiService'
+import { useCatalogData } from '@/hooks/useApiQuery'
 
 interface User {
   id: number
@@ -42,31 +42,18 @@ export const ResponsableSelect: React.FC<ResponsableSelectProps> = ({
   disabled,
   sx
 }) => {
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(false)
+  // Fetch users using TanStack Query
+  const { data: rawUsers = [], isLoading: loading } = useCatalogData<User[]>('users/?is_active=true')
 
-  useEffect(() => {
-    loadUsers()
-  }, [])
-
-  const loadUsers = async () => {
-    setLoading(true)
-    try {
-      const data = await get<User[]>('users/?is_active=true')
-      // Add full_name property by combining first_name and last_name
-      const usersWithFullName = data.map(user => ({
-        ...user,
-        full_name: user.first_name || user.last_name
-          ? `${user.first_name} ${user.last_name}`.trim()
-          : user.username
-      }))
-      setUsers(usersWithFullName)
-    } catch (error) {
-      console.error('Error loading users:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Transform users to add full_name property
+  const users = useMemo(() => {
+    return rawUsers.map(user => ({
+      ...user,
+      full_name: user.first_name || user.last_name
+        ? `${user.first_name} ${user.last_name}`.trim()
+        : user.username
+    }))
+  }, [rawUsers])
 
   return (
     <FormControl fullWidth error={error} disabled={disabled} sx={sx}>

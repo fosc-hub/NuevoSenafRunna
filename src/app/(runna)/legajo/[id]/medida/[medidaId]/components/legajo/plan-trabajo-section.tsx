@@ -3,7 +3,6 @@
 import type React from "react"
 import {
   Typography,
-  Paper,
   Box,
   Chip,
   Grid,
@@ -27,6 +26,7 @@ import PendingIcon from "@mui/icons-material/Pending"
 import PlayCircleIcon from "@mui/icons-material/PlayCircle"
 import ErrorIcon from "@mui/icons-material/Error"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface PlanTrabajoSectionProps {
   legajoData: LegajoDetailResponse
@@ -99,21 +99,7 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({ legajoDa
   // Check if plan_trabajo exists
   if (!planTrabajo) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <AssignmentIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Plan de Trabajo
-          </Typography>
-        </Box>
+      <SectionCard title="Plan de Trabajo">
         <Box
           sx={{
             textAlign: "center",
@@ -127,7 +113,7 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({ legajoDa
             No hay plan de trabajo asignado para este legajo.
           </Typography>
         </Box>
-      </Paper>
+      </SectionCard>
     )
   }
 
@@ -142,56 +128,42 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({ legajoDa
   const porcentajeCompletado = totalActividades > 0 ? Math.round((completadas / totalActividades) * 100) : 0
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
+    <SectionCard
+      title="Plan de Trabajo"
+      chips={[{
+        label: `${porcentajeCompletado}% completado`,
+        color: porcentajeCompletado === 100 ? "success" : "primary"
+      }]}
+      headerActions={
+        <Tooltip
+          title={
+            <Box sx={{ p: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                Estados de actividades:
+              </Typography>
+              <Typography variant="caption" display="block">
+                ✅ Completada: Actividad finalizada
+              </Typography>
+              <Typography variant="caption" display="block">
+                ▶️ En Progreso: Actividad en curso
+              </Typography>
+              <Typography variant="caption" display="block">
+                ⏳ Pendiente: Actividad sin iniciar
+              </Typography>
+              <Typography variant="caption" display="block">
+                ❌ Vencida: Actividad pasada la fecha límite
+              </Typography>
+            </Box>
+          }
+          arrow
+          placement="right"
+        >
+          <IconButton size="small">
+            <HelpOutlineIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      }
     >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <AssignmentIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Plan de Trabajo
-          </Typography>
-          <Tooltip
-            title={
-              <Box sx={{ p: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Estados de actividades:
-                </Typography>
-                <Typography variant="caption" display="block">
-                  ✅ Completada: Actividad finalizada
-                </Typography>
-                <Typography variant="caption" display="block">
-                  ▶️ En Progreso: Actividad en curso
-                </Typography>
-                <Typography variant="caption" display="block">
-                  ⏳ Pendiente: Actividad sin iniciar
-                </Typography>
-                <Typography variant="caption" display="block">
-                  ❌ Vencida: Actividad pasada la fecha límite
-                </Typography>
-              </Box>
-            }
-            arrow
-            placement="right"
-          >
-            <IconButton size="small" sx={{ ml: 1 }}>
-              <HelpOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        <Chip
-          label={`${porcentajeCompletado}% completado`}
-          color={porcentajeCompletado === 100 ? "success" : "primary"}
-          size="small"
-        />
-      </Box>
 
       {/* Plan details */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -406,6 +378,6 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({ legajoDa
           Las actividades vencidas requieren atención inmediata.
         </Typography>
       </Box>
-    </Paper>
+    </SectionCard>
   )
 }

@@ -13,9 +13,6 @@ import {
   CircularProgress,
   Alert,
   IconButton,
-  Dialog,
-  DialogContent,
-  DialogActions,
   Paper,
   InputAdornment,
   Chip,
@@ -33,10 +30,12 @@ import HomeIcon from "@mui/icons-material/Home"
 import CloseIcon from "@mui/icons-material/Close"
 import SearchIcon from "@mui/icons-material/Search"
 import LinkIcon from "@mui/icons-material/Link"
-import { create, get } from "@/app/api/apiService"
+import { create } from "@/app/api/apiService"
+import { useCatalogData } from "@/hooks/useApiQuery"
 import { debounce } from "lodash"
 import { ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 interface SearchResult {
   demanda_ids: number[]
@@ -103,27 +102,9 @@ export default function SearchModal({
   const [searchError, setSearchError] = useState<string | null>(null)
   const [activeSearchFields, setActiveSearchFields] = useState<string[]>([])
 
-  // Localidades state
-  const [localidades, setLocalidades] = useState<Localidad[]>([])
-  const [loadingLocalidades, setLoadingLocalidades] = useState(false)
+  // Fetch localidades using TanStack Query
+  const { data: localidades = [], isLoading: loadingLocalidades } = useCatalogData<Localidad[]>("localidad/")
   const [selectedLocalidad, setSelectedLocalidad] = useState<Localidad | null>(null)
-
-  // Fetch localidades
-  useEffect(() => {
-    const fetchLocalidades = async () => {
-      setLoadingLocalidades(true)
-      try {
-        const data = await get<Localidad[]>("localidad/")
-        setLocalidades(data)
-      } catch (error) {
-        console.error("Error fetching localidades:", error)
-      } finally {
-        setLoadingLocalidades(false)
-      }
-    }
-
-    fetchLocalidades()
-  }, [])
 
   // Reset state when modal closes (only for modal mode)
   useEffect(() => {
@@ -726,63 +707,35 @@ export default function SearchModal({
     </>
   )
 
-  // If it's a modal, wrap the content in a Dialog
+  // If it's a modal, wrap the content in BaseDialog
   if (isModal) {
     return (
-      <Dialog
+      <BaseDialog
         open={open}
         onClose={onClose}
         fullWidth
         maxWidth="md"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-            overflow: "hidden",
+        title={title}
+        titleIcon={<SearchIcon />}
+        showCloseButton
+        contentSx={{ px: 3, pt: 0, pb: 3 }}
+        actions={[
+          {
+            label: 'Limpiar Filtros',
+            onClick: handleClearAllFields,
+            variant: 'text',
+            color: 'inherit',
+            disabled: activeSearchFields.length === 0
           },
-        }}
-        TransitionComponent={Fade}
-        TransitionProps={{ timeout: 300 }}
+          {
+            label: 'Cerrar',
+            onClick: onClose,
+            variant: 'outlined'
+          }
+        ]}
       >
-        <Box sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        <DialogContent sx={{ px: 3, pt: 0, pb: 3 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 3,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              color: theme.palette.text.primary,
-            }}
-          >
-            <SearchIcon fontSize="small" />
-            {title}
-          </Typography>
-
-          {searchContent}
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            justifyContent: "space-between",
-          }}
-        >
-          <Button onClick={handleClearAllFields} color="inherit" disabled={activeSearchFields.length === 0}>
-            Limpiar Filtros
-          </Button>
-          <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
-            Cerrar
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {searchContent}
+      </BaseDialog>
     )
   }
 

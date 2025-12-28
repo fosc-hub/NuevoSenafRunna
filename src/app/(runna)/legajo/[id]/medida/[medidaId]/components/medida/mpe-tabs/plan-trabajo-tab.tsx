@@ -23,11 +23,12 @@ import {
     Grid,
     Tooltip
 } from "@mui/material"
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
 import CancelIcon from "@mui/icons-material/Cancel"
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"
+import { useApiQuery } from "@/hooks/useApiQuery"
 import { PlanAccionModal } from "../plan-accion-modal"
 import { ActividadDetailModal } from "../ActividadDetailModal"
 import { EditActividadModal } from "../EditActividadModal"
@@ -50,11 +51,13 @@ interface PlanTrabajoTabProps {
 }
 
 export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, planTrabajoId, filterEtapa }) => {
-    const [actividades, setActividades] = useState<TActividadPlanTrabajo[]>([])
-    const [loading, setLoading] = useState(false)
+    // Pagination and filter state
     const [page, setPage] = useState(0)
     const [rowsPerPage, setRowsPerPage] = useState(10)
-    const [totalCount, setTotalCount] = useState(0)
+    const [filters, setFilters] = useState<ActividadFilters>({
+        estado: '',
+        search: ''
+    })
 
     // Modals
     const [planAccionModalOpen, setPlanAccionModalOpen] = useState(false)
@@ -64,44 +67,37 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
     const [asignarModalOpen, setAsignarModalOpen] = useState(false)
     const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
 
-    // Filters
-    const [filters, setFilters] = useState<ActividadFilters>({
-        estado: '',
-        search: ''
-    })
-
-    useEffect(() => {
-        loadActividades()
-    }, [page, rowsPerPage, filters, planTrabajoId])
-
-    const loadActividades = async () => {
-        setLoading(true)
-        try {
-            const response = await actividadService.list(planTrabajoId, {
+    // Fetch actividades using TanStack Query
+    const { data: response, isLoading: loading } = useApiQuery<any>(
+        `actividades-plan/${planTrabajoId}`,
+        {
+            ...filters,
+            ordering: '-fecha_creacion'
+        },
+        {
+            queryFn: () => actividadService.list(planTrabajoId, {
                 ...filters,
                 ordering: '-fecha_creacion'
-            })
-
-            console.log('API Response:', response)
-
-            // Handle both paginated response and direct array response
-            if (Array.isArray(response)) {
-                // Direct array response
-                setActividades(response)
-                setTotalCount(response.length)
-            } else {
-                // Paginated response
-                setActividades(response.results || [])
-                setTotalCount(response.count || 0)
-            }
-        } catch (error) {
-            console.error('Error loading activities:', error)
-            setActividades([]) // Ensure actividades is always an array
-            setTotalCount(0)
-        } finally {
-            setLoading(false)
+            }),
         }
-    }
+    )
+
+    // Parse response (handles both paginated and array responses)
+    const { actividades, totalCount } = useMemo(() => {
+        if (!response) {
+            return { actividades: [], totalCount: 0 }
+        }
+
+        // Handle both paginated response and direct array response
+        if (Array.isArray(response)) {
+            return { actividades: response, totalCount: response.length }
+        }
+
+        return {
+            actividades: response.results || [],
+            totalCount: response.count || 0
+        }
+    }, [response])
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage)

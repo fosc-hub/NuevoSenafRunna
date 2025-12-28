@@ -3,7 +3,6 @@
 import type React from "react"
 import {
   Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -16,10 +15,10 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from "@mui/material"
-import HistoryIcon from "@mui/icons-material/History"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface HistorialCambiosSectionProps {
   legajoData: LegajoDetailResponse
@@ -62,21 +61,7 @@ export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = (
   // Check if user has permission to view historial
   if (!puedeVerHistorial) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <HistoryIcon sx={{ mr: 1, color: "warning.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Historial de Cambios
-          </Typography>
-        </Box>
+      <SectionCard title="Historial de Cambios">
         <Box
           sx={{
             textAlign: "center",
@@ -92,61 +77,31 @@ export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = (
             Contacta con el administrador si necesitas acceso a esta información.
           </Typography>
         </Box>
-      </Paper>
+      </SectionCard>
     )
   }
 
   if (historial.length === 0) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <HistoryIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Historial de Cambios (Auditoría)
-          </Typography>
-        </Box>
+      <SectionCard title="Historial de Cambios (Auditoría)">
         <Typography variant="body1" color="text.secondary">
           No hay cambios registrados en el historial.
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
           Nota: El historial requiere `include_history=true` en la llamada al API.
         </Typography>
-      </Paper>
+      </SectionCard>
     )
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
+    <SectionCard
+      title="Historial de Cambios (Auditoría)"
+      chips={[{
+        label: `${historial.length} cambio${historial.length !== 1 ? "s" : ""}`,
+        color: "primary"
+      }]}
     >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <HistoryIcon sx={{ mr: 1, color: "primary.main" }} />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Historial de Cambios (Auditoría)
-        </Typography>
-        <Chip
-          label={`${historial.length} cambio${historial.length !== 1 ? "s" : ""}`}
-          color="primary"
-          size="small"
-          sx={{ ml: 2 }}
-        />
-      </Box>
-
       {/* Info */}
       <Box sx={{ mb: 3, p: 2, bgcolor: "info.light", borderRadius: 1 }}>
         <Typography variant="caption" color="text.secondary">
@@ -233,6 +188,6 @@ export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = (
           </TableBody>
         </Table>
       </TableContainer>
-    </Paper>
+    </SectionCard>
   )
 }

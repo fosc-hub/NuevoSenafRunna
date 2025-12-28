@@ -3,6 +3,7 @@
  */
 
 import type { InformacionEducativa, InformacionSalud } from '../types/seguimiento-dispositivo'
+import { getCurrentDateISO } from "@/utils/dateUtils"
 
 /**
  * Full detail demanda response type (partial, only what we need)
@@ -107,7 +108,7 @@ export function mapEducacionFromDemanda(demandaData: DemandaFullDetail, personaI
     rendimiento: educacion.esta_escolarizado ? 'Escolarizado' : 'No escolarizado',
     asistencia: educacion.tipo_escuela || '', // Using tipo_escuela as asistencia
     observaciones: educacion.comentarios_educativos || '',
-    fecha_actualizacion: new Date().toISOString().split('T')[0]
+    fecha_actualizacion: getCurrentDateISO()
   }
 }
 
@@ -150,7 +151,7 @@ export function mapSaludFromDemanda(demandaData: DemandaFullDetail, personaId?: 
     discapacidad: '', // Will be filled by enhanced version
     cud: false, // Will be filled by enhanced version
     observaciones: cobertura.observaciones || '',
-    fecha_actualizacion: new Date().toISOString().split('T')[0]
+    fecha_actualizacion: getCurrentDateISO()
   }
 }
 

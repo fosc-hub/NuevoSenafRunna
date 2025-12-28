@@ -1,19 +1,8 @@
 "use client"
 
 import React, { useState } from 'react'
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Alert,
-  IconButton,
-  Typography,
-  Box
-} from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
+import { TextField, Typography, Box } from '@mui/material'
+import BaseDialog from '@/components/shared/BaseDialog'
 import { actividadService } from '../../services/actividadService'
 
 interface CancelActividadModalProps {
@@ -24,6 +13,14 @@ interface CancelActividadModalProps {
   onSuccess?: () => void
 }
 
+/**
+ * Modal for canceling an activity
+ *
+ * REFACTORED: Now uses BaseDialog shared component
+ * Previous implementation: ~130 lines
+ * Current implementation: ~60 lines
+ * Savings: ~70 lines of duplicate dialog boilerplate
+ */
 export const CancelActividadModal: React.FC<CancelActividadModalProps> = ({
   open,
   onClose,
@@ -63,79 +60,53 @@ export const CancelActividadModal: React.FC<CancelActividadModalProps> = ({
   }
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      title="Cancelar Actividad"
+      centerTitle
+      error={error}
+      loading={loading}
+      loadingMessage="Cancelando actividad..."
+      warning="Esta acción no se puede deshacer. La actividad quedará marcada como CANCELADA."
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleClose,
+          variant: "outlined",
+          disabled: loading,
+        },
+        {
+          label: "Confirmar Cancelación",
+          onClick: handleCancel,
+          variant: "contained",
+          color: "error",
+          disabled: loading || !motivo.trim(),
+          loading: loading,
+        },
+      ]}
     >
-      <DialogTitle sx={{
-        textAlign: 'center',
-        fontWeight: 600,
-        fontSize: '1.25rem',
-        position: 'relative',
-        pb: 1,
-        borderBottom: '1px solid #e0e0e0'
-      }}>
-        Cancelar Actividad
-        <IconButton
-          onClick={handleClose}
-          sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Actividad:
+        </Typography>
+        <Typography variant="body1" fontWeight={500}>
+          {actividadNombre}
+        </Typography>
+      </Box>
 
-      <DialogContent sx={{ px: 4, py: 3 }}>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Actividad:
-          </Typography>
-          <Typography variant="body1" fontWeight={500}>
-            {actividadNombre}
-          </Typography>
-        </Box>
-
-        <TextField
-          fullWidth
-          multiline
-          rows={4}
-          label="Motivo de Cancelación"
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-          placeholder="Explique las razones por las cuales se cancela esta actividad..."
-          error={!!error && !motivo.trim()}
-          helperText="Campo requerido"
-          required
-        />
-
-        <Alert severity="warning" sx={{ mt: 2 }}>
-          Esta acción no se puede deshacer. La actividad quedará marcada como CANCELADA.
-        </Alert>
-      </DialogContent>
-
-      <DialogActions sx={{ px: 4, pb: 3, pt: 2, gap: 1 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          disabled={loading}
-          fullWidth
-        >
-          Volver
-        </Button>
-        <Button
-          onClick={handleCancel}
-          variant="contained"
-          color="error"
-          disabled={loading}
-          fullWidth
-        >
-          {loading ? 'Cancelando...' : 'Confirmar Cancelación'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <TextField
+        fullWidth
+        multiline
+        rows={4}
+        label="Motivo de Cancelación"
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        placeholder="Explique las razones por las cuales se cancela esta actividad..."
+        error={!!error && !motivo.trim()}
+        helperText="Campo requerido"
+        required
+      />
+    </BaseDialog>
   )
 }

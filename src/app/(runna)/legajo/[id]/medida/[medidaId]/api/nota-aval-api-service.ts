@@ -221,28 +221,17 @@ export const uploadAdjuntoNotaAval = async (
     const formData = new FormData()
     formData.append("archivo", file)
 
-    // Make API call using fetch directly (apiService may not support FormData)
-    // Get the base URL from environment or config
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api'
-    const url = `${baseURL}/medidas/${medidaId}/nota-aval/adjuntos/`
+    // REFACTORED: apiService.create() DOES support FormData
+    const response = await create<AdjuntoNotaAval>(
+      `medidas/${medidaId}/nota-aval/adjuntos/`,
+      formData,
+      true,
+      'Archivo adjuntado exitosamente'
+    )
 
-    const response = await fetch(url, {
-      method: "POST",
-      body: formData,
-      credentials: 'include', // Include cookies for authentication
-      // Don't set Content-Type header - browser will set it with boundary
-    })
+    console.log("Adjunto uploaded successfully:", response)
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
-
-    console.log("Adjunto uploaded successfully:", data)
-
-    return data
+    return response
   } catch (error: any) {
     console.error(`Error uploading adjunto: medida ${medidaId}`, error)
     console.error("Error details:", {
@@ -310,21 +299,8 @@ export const deleteAdjuntoNotaAval = async (
   try {
     console.log(`Deleting adjunto nota de aval: medida ${medidaId}, adjunto ${adjuntoId}`)
 
-    // Make API call using custom endpoint structure
-    // The remove() function expects endpoint and id separately, but here we need custom path
-    // We'll use fetch directly for more control
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api'
-    const url = `${baseURL}/medidas/${medidaId}/nota-aval/adjuntos/${adjuntoId}/`
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      credentials: 'include', // Include cookies for authentication
-    })
-
-    if (!response.ok && response.status !== 204) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
-    }
+    // REFACTORED: Use apiService.remove() which handles authentication automatically
+    await remove(`medidas/${medidaId}/nota-aval/adjuntos`, adjuntoId)
 
     console.log("Adjunto nota de aval deleted successfully")
   } catch (error: any) {

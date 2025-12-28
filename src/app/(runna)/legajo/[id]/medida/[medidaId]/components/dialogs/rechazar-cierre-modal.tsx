@@ -22,24 +22,20 @@
 
 import React, { useState } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
-  IconButton,
   Box,
   Typography,
   Alert,
-  CircularProgress,
   Paper,
   Divider,
 } from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
 import WarningIcon from "@mui/icons-material/Warning"
+import CancelIcon from "@mui/icons-material/Cancel"
 import { rechazarCierre } from "../../api/informe-cierre-api-service"
 import type { InformeCierre } from "../../types/informe-cierre-api"
+import BaseDialog from "@/components/shared/BaseDialog"
+import { formatDateLocaleAR } from "@/utils/dateUtils"
 
 // ============================================================================
 // PROPS
@@ -128,94 +124,84 @@ export const RechazarCierreModal: React.FC<RechazarCierreModalProps> = ({
 
   // ========== Render ==========
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        Rechazar Informe de Cierre
-        <IconButton
-          onClick={handleClose}
-          disabled={isSubmitting}
-          sx={{ position: "absolute", right: 8, top: 8 }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      title="Rechazar Informe de Cierre"
+      titleIcon={<CancelIcon />}
+      showCloseButton={!isSubmitting}
+      error={error}
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleClose,
+          variant: "text",
+          disabled: isSubmitting
+        },
+        {
+          label: isSubmitting ? "Rechazando..." : "Rechazar Informe",
+          onClick: handleSubmit,
+          variant: "contained",
+          color: "error",
+          disabled: !canSubmit,
+          loading: isSubmitting
+        }
+      ]}
+    >
+      {/* Warning Alert */}
+      <Alert severity="warning" icon={<WarningIcon />} sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Consecuencias del rechazo:
+        </Typography>
+        <ul style={{ margin: 0, paddingLeft: 20 }}>
+          <li>La medida volverá a Estado 3 (Pendiente de informe de cierre)</li>
+          <li>El Equipo Técnico será notificado para realizar correcciones</li>
+          <li>El informe actual se marcará como rechazado</li>
+        </ul>
+      </Alert>
 
-      <DialogContent dividers>
-        {/* Warning Alert */}
-        <Alert severity="warning" icon={<WarningIcon />} sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Consecuencias del rechazo:
+      {/* Current Informe Context */}
+      {informe && (
+        <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
+          <Typography variant="subtitle2" color="primary" gutterBottom>
+            Informe Actual (Para Referencia)
           </Typography>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            <li>La medida volverá a Estado 3 (Pendiente de informe de cierre)</li>
-            <li>El Equipo Técnico será notificado para realizar correcciones</li>
-            <li>El informe actual se marcará como rechazado</li>
-          </ul>
-        </Alert>
+          <Divider sx={{ my: 1 }} />
 
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
+          <Typography variant="caption" color="text.secondary" display="block">
+            Elaborado por: {informe.elaborado_por_detalle.nombre_completo}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            Fecha: {formatDateLocaleAR(informe.fecha_registro)}
+          </Typography>
 
-        {/* Current Informe Context */}
-        {informe && (
-          <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
-            <Typography variant="subtitle2" color="primary" gutterBottom>
-              Informe Actual (Para Referencia)
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            {informe.observaciones}
+          </Typography>
+
+          {informe.adjuntos.length > 0 && (
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+              Adjuntos: {informe.adjuntos.length} archivo(s)
             </Typography>
-            <Divider sx={{ my: 1 }} />
+          )}
+        </Paper>
+      )}
 
-            <Typography variant="caption" color="text.secondary" display="block">
-              Elaborado por: {informe.elaborado_por_detalle.nombre_completo}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-              Fecha: {new Date(informe.fecha_registro).toLocaleDateString("es-AR")}
-            </Typography>
-
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              {informe.observaciones}
-            </Typography>
-
-            {informe.adjuntos.length > 0 && (
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                Adjuntos: {informe.adjuntos.length} archivo(s)
-              </Typography>
-            )}
-          </Paper>
-        )}
-
-        {/* Observaciones de Rechazo */}
-        <TextField
-          label="Observaciones de Rechazo *"
-          multiline
-          rows={5}
-          fullWidth
-          value={observaciones}
-          onChange={(e) => setObservaciones(e.target.value)}
-          placeholder="Especifique qué aspectos deben corregirse o mejorarse en el informe..."
-          helperText="Explique detalladamente las razones del rechazo y qué correcciones debe realizar el Equipo Técnico"
-          error={error !== null && observaciones.trim().length === 0}
-          disabled={isSubmitting}
-        />
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose} disabled={isSubmitting}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          color="error"
-          disabled={!canSubmit}
-          startIcon={isSubmitting && <CircularProgress size={20} />}
-        >
-          {isSubmitting ? "Rechazando..." : "Rechazar Informe"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      {/* Observaciones de Rechazo */}
+      <TextField
+        label="Observaciones de Rechazo *"
+        multiline
+        rows={5}
+        fullWidth
+        value={observaciones}
+        onChange={(e) => setObservaciones(e.target.value)}
+        placeholder="Especifique qué aspectos deben corregirse o mejorarse en el informe..."
+        helperText="Explique detalladamente las razones del rechazo y qué correcciones debe realizar el Equipo Técnico"
+        error={error !== null && observaciones.trim().length === 0}
+        disabled={isSubmitting}
+      />
+    </BaseDialog>
   )
 }

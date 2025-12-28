@@ -45,6 +45,7 @@ import type {
   CreateInformeJuridicoRequest,
   MedioNotificacion,
 } from "../../types/informe-juridico-api"
+import { getCurrentDateISO } from "@/utils/dateUtils"
 
 // ============================================================================
 // INTERFACES
@@ -67,7 +68,7 @@ interface InformeJuridicoDialogProps {
 const getInitialFormData = (): CreateInformeJuridicoRequest => ({
   observaciones: "",
   instituciones_notificadas: "",
-  fecha_notificaciones: new Date().toISOString().split("T")[0], // Today in YYYY-MM-DD
+  fecha_notificaciones: getCurrentDateISO(), // Today in YYYY-MM-DD
   medio_notificacion: "EMAIL",
   destinatarios: "",
 })
@@ -298,7 +299,7 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
                 helperText={formErrors.fecha_notificaciones}
                 InputProps={{
                   inputProps: {
-                    max: new Date().toISOString().split("T")[0], // Max today
+                    max: getCurrentDateISO(), // Max today
                   },
                 }}
               />

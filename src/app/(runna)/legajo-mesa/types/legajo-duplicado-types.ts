@@ -3,6 +3,23 @@
  * Based on LEG-01 User Story requirements
  */
 
+import {
+  DUPLICATE_THRESHOLDS,
+  NIVEL_MINIMO_CREACION_FORZADA,
+  MIN_CARACTERES_JUSTIFICACION,
+  DUPLICATE_SEARCH_DEBOUNCE_MS,
+  ALERT_COLORS,
+} from "@/utils/constants/duplicateDetection"
+
+// Re-export for backward compatibility
+export {
+  DUPLICATE_THRESHOLDS,
+  NIVEL_MINIMO_CREACION_FORZADA,
+  MIN_CARACTERES_JUSTIFICACION,
+  DUPLICATE_SEARCH_DEBOUNCE_MS,
+  ALERT_COLORS,
+}
+
 // ============================================
 // Alert Levels
 // ============================================
@@ -355,39 +372,6 @@ export interface NnyaDuplicateFormData {
 }
 
 // ============================================
-// Constants
+// Constants - Imported from centralized location
 // ============================================
-
-/**
- * Thresholds de scoring según LEG-01
- */
-export const DUPLICATE_THRESHOLDS = {
-  CRITICA: 1.0,
-  ALTA: 0.75,
-  MEDIA: 0.50,
-  SIN_ALERTA: 0.0,
-} as const
-
-/**
- * Nivel mínimo de usuario requerido para forzar creación
- */
-export const NIVEL_MINIMO_CREACION_FORZADA = 3
-
-/**
- * Caracteres mínimos para justificación
- */
-export const MIN_CARACTERES_JUSTIFICACION = 20
-
-/**
- * Debounce time para búsqueda de duplicados (ms)
- */
-export const DUPLICATE_SEARCH_DEBOUNCE_MS = 500
-
-/**
- * Colores según nivel de alerta
- */
-export const ALERT_COLORS = {
-  CRITICA: "#f44336", // red
-  ALTA: "#ff9800", // orange
-  MEDIA: "#ffc107", // yellow
-} as const
+// See top of file for imports and re-exports

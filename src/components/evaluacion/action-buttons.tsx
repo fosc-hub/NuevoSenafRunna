@@ -17,7 +17,7 @@ import {
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import { Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
-import axiosInstance from '@/app/api/utils/axiosInstance';
+import { create, put } from "@/app/api/apiService"
 import { useUser } from "@/utils/auth/userZustand"
 import { fetchUsuarios } from "@/app/(runna)/legajo-mesa/api/legajo-asignacion-api-service"
 import type { Usuario } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
@@ -291,13 +291,9 @@ export default function ActionButtons({
 
         console.log("Sending FormData with", newFilesToUpload.length, "files")
 
-        // Send as multipart/form-data
-        const response = await axiosInstance.post("/evaluaciones/", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        console.log("API Response:", response.data)
+        // Send as multipart/form-data - apiService.create() supports FormData
+        const response = await create<any>("evaluaciones/", formData, false)
+        console.log("API Response:", response)
 
         toast.success("Solicitud de tomar medida enviada exitosamente", {
           position: "top-center",
@@ -337,13 +333,9 @@ export default function ActionButtons({
 
         console.log("Sending FormData with", newFilesToUpload.length, "files")
 
-        // Send as multipart/form-data
-        const response = await axiosInstance.post("/evaluaciones/", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        console.log("API Response:", response.data)
+        // Send as multipart/form-data - apiService.create() supports FormData
+        const response = await create<any>("evaluaciones/", formData, false)
+        console.log("API Response:", response)
 
         toast.success("Solicitud de archivar enviada exitosamente", {
           position: "top-center",
@@ -380,35 +372,29 @@ export default function ActionButtons({
 
         if (action === "autorizar") {
           // LEG-02: Autorizar admisión y crear legajos automáticamente
-          const response = await axiosInstance.put(
-            `/evaluaciones/${demandaId}/autorizar/?autorizar=true`,
+          const response = await put<any>(
+            `evaluaciones/${demandaId}/autorizar/?autorizar=true`,
+            demandaId,
             formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
+            false
           )
-          console.log("API Response:", response.data)
+          console.log("API Response:", response)
 
           // Show success message
-          const nnyaCount = response.data.evaluacion_personas?.length || 0
+          const nnyaCount = response.evaluacion_personas?.length || 0
           toast.success(`Admisión autorizada para ${nnyaCount} NNyA`, {
             position: "top-center",
             autoClose: 3000,
           })
         } else {
           // No autorizar - no crea legajos
-          const response = await axiosInstance.put(
-            `/evaluaciones/${demandaId}/autorizar/?autorizar=false`,
+          const response = await put<any>(
+            `evaluaciones/${demandaId}/autorizar/?autorizar=false`,
+            demandaId,
             formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
+            false
           )
-          console.log("API Response:", response.data)
+          console.log("API Response:", response)
 
           toast.success("Solicitud no autorizar enviada exitosamente", {
             position: "top-center",

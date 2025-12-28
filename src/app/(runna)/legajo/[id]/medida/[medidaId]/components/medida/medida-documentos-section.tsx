@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import {
   Typography,
   Paper,
@@ -26,6 +26,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import DownloadIcon from "@mui/icons-material/Download"
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile"
 import InfoIcon from "@mui/icons-material/Info"
+import { useApiQuery } from "@/hooks/useApiQuery"
 import { extractDemandaIdFromMedida } from "@/app/(runna)/legajo-mesa/utils/extract-demanda-from-observaciones"
 import { fetchDemandaFullDetail } from "@/app/(runna)/legajo-mesa/api/demanda-api-service"
 import { processDemandaAdjuntos } from "@/app/(runna)/legajo-mesa/utils/demanda-adjuntos-processor"
@@ -37,50 +38,34 @@ interface MedidaDocumentosSectionProps {
 }
 
 export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = ({ medidaApiData }) => {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [demandaId, setDemandaId] = useState<number | null>(null)
-  const [oficios, setOficios] = useState<ProcessedOficio[]>([])
-  const [documentos, setDocumentos] = useState<ProcessedDocumento[]>([])
   const [activeTab, setActiveTab] = useState(0)
 
-  useEffect(() => {
-    const loadDemandaDocumentos = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+  // Extract demanda ID from medida data
+  const demandaId = useMemo(() => extractDemandaIdFromMedida(medidaApiData), [medidaApiData])
 
-        // Extract demanda ID from observaciones
-        const extractedDemandaId = extractDemandaIdFromMedida(medidaApiData)
-
-        if (!extractedDemandaId) {
-          setError("No se encontró información de demanda asociada a esta medida")
-          setIsLoading(false)
-          return
-        }
-
-        setDemandaId(extractedDemandaId)
-
-        // Fetch demanda full details
-        const demandaDetail = await fetchDemandaFullDetail(extractedDemandaId)
-
-        // Process adjuntos
-        const { oficios: processedOficios, documentos: processedDocumentos } = processDemandaAdjuntos([
-          demandaDetail,
-        ])
-
-        setOficios(processedOficios)
-        setDocumentos(processedDocumentos)
-      } catch (err) {
-        console.error("Error loading demanda documentos:", err)
-        setError("Error al cargar los documentos de la demanda")
-      } finally {
-        setIsLoading(false)
-      }
+  // Fetch demanda full details using TanStack Query
+  const { data: demandaDetail, isLoading, error: queryError } = useApiQuery<any>(
+    `demanda/${demandaId}/full-detail`,
+    undefined,
+    {
+      queryFn: () => fetchDemandaFullDetail(demandaId!),
+      enabled: !!demandaId,
     }
+  )
 
-    loadDemandaDocumentos()
-  }, [medidaApiData])
+  // Process adjuntos from demanda detail
+  const { oficios, documentos } = useMemo(() => {
+    if (!demandaDetail) {
+      return { oficios: [], documentos: [] }
+    }
+    return processDemandaAdjuntos([demandaDetail])
+  }, [demandaDetail])
+
+  const error = !demandaId
+    ? "No se encontró información de demanda asociada a esta medida"
+    : queryError
+    ? "Error al cargar los documentos de la demanda"
+    : null
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue)

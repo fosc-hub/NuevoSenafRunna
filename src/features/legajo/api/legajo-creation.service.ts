@@ -123,26 +123,26 @@ export const autorizarAdmisionYCrearLegajos = async (
   try {
     console.log(`Authorizing admision for demanda ${demandaId}:`, data)
 
-    // Import axiosInstance for direct call with correct endpoint format
-    const axiosInstance = (await import('@/app/api/utils/axiosInstance')).default
-
-    // Call API with correct endpoint format: /evaluaciones/{id}/autorizar/?autorizar=true
-    const response = await axiosInstance.put<AutorizarAdmisionResponse>(
-      `/evaluaciones/${demandaId}/autorizar/?autorizar=true`,
+    // REFACTORED: Use apiService.put() instead of axiosInstance
+    const response = await put<AutorizarAdmisionResponse>(
+      `evaluaciones/${demandaId}/autorizar/?autorizar=true`,
+      demandaId,
       {
         decision: data.decision || 'AUTORIZAR_ADMISION',
         justificacion_director: data.justificacion_director || 'Autorizado por Director',
         ...data
-      }
+      },
+      false // Don't show toast - we handle toasts manually below
     )
 
-    console.log('Admision authorized successfully:', response.data)
+    console.log('Admision authorized successfully:', response)
 
     // Check if response has legajos_creados field (expected structure)
     // or if it's just an evaluation response (actual structure)
-    if (response.data.legajos_creados !== undefined) {
+    // Note: apiService.put() returns data directly, not wrapped in response.data
+    if (response.legajos_creados !== undefined) {
       // Expected response structure with legajos
-      const { total_creados, total_existentes } = response.data
+      const { total_creados, total_existentes } = response
       const successMsg = total_existentes > 0
         ? `${total_creados} legajo(s) creado(s), ${total_existentes} vinculado(s) a legajos existentes`
         : `${total_creados} legajo(s) creado(s) exitosamente`
@@ -158,7 +158,7 @@ export const autorizarAdmisionYCrearLegajos = async (
       })
 
       // Show individual legajo creation toasts
-      response.data.legajos_creados.forEach((legajo: any) => {
+      response.legajos_creados.forEach((legajo: any) => {
         toast.info(`Legajo ${legajo.numero} creado para ${legajo.nnya.nombre} ${legajo.nnya.apellido}`, {
           position: 'top-right',
           autoClose: 3000,
@@ -171,7 +171,7 @@ export const autorizarAdmisionYCrearLegajos = async (
       })
     } else {
       // Actual response structure - just evaluation object
-      const nnyaCount = response.data.evaluacion_personas?.length || 0
+      const nnyaCount = response.evaluacion_personas?.length || 0
       const successMsg = `Admisión autorizada para ${nnyaCount} NNyA`
 
       toast.success(successMsg, {
@@ -185,7 +185,7 @@ export const autorizarAdmisionYCrearLegajos = async (
       })
     }
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(`Error authorizing admision for demanda ${demandaId}:`, error)
     console.error('Error details:', {

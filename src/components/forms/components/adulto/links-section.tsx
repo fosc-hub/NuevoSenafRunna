@@ -5,7 +5,6 @@ import { Grid, FormControl, Autocomplete, TextField } from "@mui/material"
 import { Controller, type Control } from "react-hook-form"
 import { Link as LinkIcon } from "@mui/icons-material"
 import FormSection from "../form-section"
-import RequiredLabel from "../required-label"
 import type { DropdownData, FormData } from "../../types/formTypes"
 
 interface LinksSectionProps {
@@ -35,7 +34,8 @@ const LinksSection: React.FC<LinksSectionProps> = ({ index, control, dropdownDat
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label={<RequiredLabel label="Vinculación" />}
+                      label="Vinculación"
+                      required
                       error={!!error}
                       helperText={error?.message}
                       size="small"

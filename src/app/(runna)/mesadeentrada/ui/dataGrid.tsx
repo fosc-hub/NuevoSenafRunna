@@ -28,6 +28,7 @@ import {
 } from "@mui/x-data-grid"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, FilterList } from "@mui/icons-material"
+import { getCurrentDateISO } from "@/utils/dateUtils"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
@@ -1044,7 +1045,7 @@ const DemandaTableContent: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Demandas")
 
     // Generate Excel file and trigger download
-    const currentDate = new Date().toISOString().split("T")[0]
+    const currentDate = getCurrentDateISO()
     XLSX.writeFile(workbook, `Demandas_${currentDate}.xlsx`)
 
     // Show success message

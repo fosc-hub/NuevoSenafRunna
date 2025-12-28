@@ -2,21 +2,17 @@
 
 import type React from "react"
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Box,
     Typography,
     TextField,
-    Button,
-    IconButton
+    Button
 } from "@mui/material"
 import { useState } from "react"
-import CloseIcon from "@mui/icons-material/Close"
 import DownloadIcon from "@mui/icons-material/Download"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import SendIcon from "@mui/icons-material/Send"
+import DescriptionIcon from "@mui/icons-material/Description"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 interface CompletarInformeModalProps {
     open: boolean
@@ -49,112 +45,98 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({ op
     }
 
     return (
-        <Dialog
+        <BaseDialog
             open={open}
             onClose={onClose}
             maxWidth="sm"
             fullWidth
-            PaperProps={{ sx: { borderRadius: 3, maxHeight: '90vh' } }}
+            title="Formulario de Informe mensual"
+            titleIcon={<DescriptionIcon />}
+            centerTitle
+            showCloseButton
+            contentSx={{ px: 4, py: 3 }}
         >
-            <DialogTitle sx={{
-                textAlign: 'center',
-                fontWeight: 600,
-                fontSize: '1.5rem',
-                position: 'relative',
-                pb: 1,
-                borderBottom: '1px solid #e0e0e0'
-            }}>
-                Formulario de Informe mensual
-                <IconButton
-                    onClick={onClose}
-                    sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography align="center" variant="body2" sx={{ mt: 1, mb: 2, color: 'grey.700' }}>
+                    Fecha del informe*
+                </Typography>
+                <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleDescargarPlantilla}
+                    sx={{
+                        backgroundColor: '#36d6d0',
+                        color: 'white',
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        mb: 2,
+                        textTransform: 'none',
+                        fontSize: '1rem',
+                        '&:hover': { backgroundColor: '#2cc2bc' }
+                    }}
                 >
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ px: 4, py: 3 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Typography align="center" variant="body2" sx={{ mt: 1, mb: 2, color: 'grey.700' }}>
-                        Fecha del informe*
-                    </Typography>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        startIcon={<DownloadIcon />}
-                        onClick={handleDescargarPlantilla}
-                        sx={{
-                            backgroundColor: '#36d6d0',
-                            color: 'white',
-                            fontWeight: 600,
-                            borderRadius: 2,
-                            mb: 2,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            '&:hover': { backgroundColor: '#2cc2bc' }
-                        }}
-                    >
-                        Descargar plantilla
-                    </Button>
-                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                        Contenido del informe*
-                    </Typography>
-                    <TextField
-                        multiline
-                        minRows={4}
-                        fullWidth
-                        value={contenido}
-                        onChange={(e) => setContenido(e.target.value)}
-                        placeholder="Escriba el contenido detallado del informe aquí..."
-                        variant="outlined"
-                        sx={{
-                            backgroundColor: 'white',
-                            borderRadius: 2,
-                            mb: 2
-                        }}
+                    Descargar plantilla
+                </Button>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                    Contenido del informe*
+                </Typography>
+                <TextField
+                    multiline
+                    minRows={4}
+                    fullWidth
+                    value={contenido}
+                    onChange={(e) => setContenido(e.target.value)}
+                    placeholder="Escriba el contenido detallado del informe aquí..."
+                    variant="outlined"
+                    sx={{
+                        backgroundColor: 'white',
+                        borderRadius: 2,
+                        mb: 2
+                    }}
+                />
+                <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<AttachFileIcon />}
+                    onClick={handleAdjuntarInforme}
+                    sx={{
+                        backgroundColor: '#36d6d0',
+                        color: 'white',
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        mb: 2,
+                        textTransform: 'none',
+                        fontSize: '1rem',
+                        '&:hover': { backgroundColor: '#2cc2bc' }
+                    }}
+                >
+                    Adjuntar informe mensual
+                    <input
+                        id="adjuntar-informe-input"
+                        type="file"
+                        hidden
+                        onChange={handleFileChange}
                     />
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        startIcon={<AttachFileIcon />}
-                        onClick={handleAdjuntarInforme}
-                        sx={{
-                            backgroundColor: '#36d6d0',
-                            color: 'white',
-                            fontWeight: 600,
-                            borderRadius: 2,
-                            mb: 2,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            '&:hover': { backgroundColor: '#2cc2bc' }
-                        }}
-                    >
-                        Adjuntar informe mensual
-                        <input
-                            id="adjuntar-informe-input"
-                            type="file"
-                            hidden
-                            onChange={handleFileChange}
-                        />
-                    </Button>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        startIcon={<SendIcon />}
-                        onClick={handleEnviar}
-                        sx={{
-                            backgroundColor: '#4f3ff0',
-                            color: 'white',
-                            fontWeight: 600,
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            '&:hover': { backgroundColor: '#3a2cc2' }
-                        }}
-                    >
-                        Enviar informe
-                    </Button>
-                </Box>
-            </DialogContent>
-        </Dialog>
+                </Button>
+                <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<SendIcon />}
+                    onClick={handleEnviar}
+                    sx={{
+                        backgroundColor: '#4f3ff0',
+                        color: 'white',
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '1rem',
+                        '&:hover': { backgroundColor: '#3a2cc2' }
+                    }}
+                >
+                    Enviar informe
+                </Button>
+            </Box>
+        </BaseDialog>
     )
 } 

@@ -28,6 +28,7 @@ import { RatificacionJudicialSection } from "./[medidaId]/components/medida/rati
 import { UnifiedWorkflowTab } from "./[medidaId]/components/medida/unified-workflow-tab"
 import { useUser } from "@/utils/auth/userZustand"
 import { useMedidaDetail } from "./[medidaId]/hooks/useMedidaDetail"
+import { formatDateLocaleAR } from "@/utils/dateUtils"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
@@ -81,7 +82,7 @@ const convertMedidaToMedidaData = (
       nombre: legajo.persona ? `${legajo.persona.apellido} ${legajo.persona.nombre}` : "N/A",
       dni: legajo.persona?.dni ? String(legajo.persona.dni) : "N/A",
     },
-    fecha_apertura: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+    fecha_apertura: formatDateLocaleAR(medida.fecha_apertura),
     ubicacion: "", // TODO: Get from legajo location data
     direccion: "",
     juzgado: medida.juzgado?.nombre || undefined,
@@ -95,13 +96,13 @@ const convertMedidaToMedidaData = (
     articulacion: "",
     etapas: {
       apertura: {
-        fecha: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+        fecha: formatDateLocaleAR(medida.fecha_apertura),
         estado: estadoActual,
         equipo: "",
       },
       historial_seguimiento: [],
       cierre: {
-        fecha: medida.fecha_cierre ? new Date(medida.fecha_cierre).toLocaleDateString("es-AR") : "",
+        fecha: medida.fecha_cierre ? formatDateLocaleAR(medida.fecha_cierre) : "",
         estado: medida.estado_vigencia === "CERRADA" ? "Cerrado" : "",
         equipo: "",
       },
@@ -121,7 +122,7 @@ const convertMedidaToMedidaData = (
     return {
       ...baseData,
       tipo: "MPE" as const,
-      fecha: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+      fecha: formatDateLocaleAR(medida.fecha_apertura),
       fecha_creacion_raw: fechaCreacionRaw, // Keep as ISO string for accurate calculations
       fecha_resguardo: "",
       lugar_resguardo: "",
@@ -151,7 +152,7 @@ const convertMedidaToMedidaData = (
         plan_evaluacion: [],
         evaluacion_familiar: {
           estado: "En curso",
-          fecha_inicio: new Date(medida.fecha_apertura).toLocaleDateString("es-AR"),
+          fecha_inicio: formatDateLocaleAR(medida.fecha_apertura),
           fecha_finalizacion: "",
           equipo_evaluador: "",
           observaciones: "",

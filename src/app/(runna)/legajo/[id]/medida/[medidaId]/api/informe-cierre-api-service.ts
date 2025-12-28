@@ -207,22 +207,16 @@ export const uploadAdjuntoInformeCierre = async (
       formData.append("descripcion", descripcion)
     }
 
-    // Import axiosInstance to use Django backend API
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call using axiosInstance (goes to Django backend)
-    const response = await axiosInstance.post<InformeCierreAdjunto>(
+    // apiService.create() supports FormData automatically
+    const response = await create<InformeCierreAdjunto>(
       `medidas/${medidaId}/informe-cierre/adjuntos/`,
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      true,
+      'Adjunto subido exitosamente'
     )
 
-    console.log("Adjunto uploaded successfully:", response.data)
-    return response.data
+    console.log("Adjunto uploaded successfully:", response)
+    return response
   } catch (error: any) {
     console.error("Error uploading adjunto:", error)
     console.error("Error details:", {

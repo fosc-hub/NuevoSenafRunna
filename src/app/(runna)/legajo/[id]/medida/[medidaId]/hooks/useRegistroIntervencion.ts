@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
+import { getCurrentDateISO } from "@/utils/dateUtils"
 import {
   createIntervencion,
   updateIntervencion,
@@ -97,7 +98,7 @@ export const useRegistroIntervencion = ({
   // ----------------------------------------------------------------------------
   const [formData, setFormData] = useState<IntervencionFormData>({
     medida: medidaId,
-    fecha_intervencion: new Date().toISOString().split("T")[0], // Hoy por defecto
+    fecha_intervencion: getCurrentDateISO(), // Hoy por defecto
     tipo_dispositivo_id: null,
     subtipo_dispositivo: "",
     tipo_cese: null,
@@ -729,7 +730,7 @@ export const useRegistroIntervencion = ({
   const resetForm = () => {
     setFormData({
       medida: medidaId,
-      fecha_intervencion: new Date().toISOString().split("T")[0],
+      fecha_intervencion: getCurrentDateISO(),
       tipo_dispositivo_id: null,
       motivo_id: undefined,
       sub_motivo_id: null,

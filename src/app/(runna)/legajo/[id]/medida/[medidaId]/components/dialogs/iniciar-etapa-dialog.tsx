@@ -9,18 +9,15 @@
 
 import React, { useState } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   TextField,
   Typography,
   Box,
   Alert,
 } from "@mui/material"
+import PlayArrowIcon from "@mui/icons-material/PlayArrow"
 import type { TipoEtapa } from "../../types/estado-etapa"
 import { getEtapaTipoLabel } from "../../api/etapa-api-service"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 interface IniciarEtapaDialogProps {
   open: boolean
@@ -53,52 +50,48 @@ export default function IniciarEtapaDialog({
   }
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
-      disableEscapeKeyDown={isLoading}
+      title={`Iniciar Etapa de ${etapaLabel}`}
+      titleIcon={<PlayArrowIcon />}
+      showCloseButton={!isLoading}
+      info={`Se creará una nueva etapa de ${etapaLabel} para esta medida. La etapa comenzará en su estado inicial.`}
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleClose,
+          variant: "text",
+          disabled: isLoading
+        },
+        {
+          label: isLoading ? "Iniciando..." : `Iniciar Etapa de ${etapaLabel}`,
+          onClick: handleConfirm,
+          variant: "contained",
+          color: "primary",
+          disabled: isLoading,
+          loading: isLoading
+        }
+      ]}
     >
-      <DialogTitle>Iniciar Etapa de {etapaLabel}</DialogTitle>
-
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <Alert severity="info">
-            Se creará una nueva etapa de <strong>{etapaLabel}</strong> para esta medida.
-            La etapa comenzará en su estado inicial.
-          </Alert>
-
-          <TextField
-            label="Observaciones (opcional)"
-            multiline
-            rows={4}
-            value={observaciones}
-            onChange={(e) => setObservaciones(e.target.value)}
-            placeholder={`Ingrese observaciones iniciales para la etapa de ${etapaLabel}...`}
-            disabled={isLoading}
-            fullWidth
-          />
-
-          <Typography variant="caption" color="text.secondary">
-            Puede agregar observaciones sobre el inicio de esta etapa. Este campo es opcional.
-          </Typography>
-        </Box>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose} disabled={isLoading}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleConfirm}
-          variant="contained"
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+        <TextField
+          label="Observaciones (opcional)"
+          multiline
+          rows={4}
+          value={observaciones}
+          onChange={(e) => setObservaciones(e.target.value)}
+          placeholder={`Ingrese observaciones iniciales para la etapa de ${etapaLabel}...`}
           disabled={isLoading}
-          color="primary"
-        >
-          {isLoading ? "Iniciando..." : `Iniciar Etapa de ${etapaLabel}`}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          fullWidth
+        />
+
+        <Typography variant="caption" color="text.secondary">
+          Puede agregar observaciones sobre el inicio de esta etapa. Este campo es opcional.
+        </Typography>
+      </Box>
+    </BaseDialog>
   )
 }

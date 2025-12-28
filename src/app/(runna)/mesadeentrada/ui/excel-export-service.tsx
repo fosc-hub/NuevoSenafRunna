@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx"
+import { getCurrentDateISO } from "@/utils/dateUtils"
 
 interface ExportOptions {
   fileName?: string
@@ -22,7 +23,7 @@ export const ExcelExportService = {
     }
 
     const {
-      fileName = `Export_${new Date().toISOString().split("T")[0]}`,
+      fileName = `Export_${getCurrentDateISO()}`,
       sheetName = "Sheet1",
       includeHeaders = true,
     } = options

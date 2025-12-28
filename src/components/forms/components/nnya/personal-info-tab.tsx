@@ -23,7 +23,6 @@ import {
 } from "@mui/icons-material"
 import { parseDateSafely, formatDateSafely } from "../../utils/dateUtils"
 import FormSection from "../form-section"
-import RequiredLabel from "../required-label"
 import LocalizacionFields from "../../LocalizacionFields"
 import type { DropdownData, FormData } from "../../types/formTypes"
 
@@ -49,7 +48,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
-                  label={<RequiredLabel label="Nombre" />}
+                  label="Nombre"
+                  required
                   fullWidth
                   error={!!error}
                   helperText={error?.message}
@@ -68,7 +68,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
-                  label={<RequiredLabel label="Apellido" />}
+                  label="Apellido"
+                  required
                   fullWidth
                   error={!!error}
                   helperText={error?.message}
@@ -116,7 +117,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Situación DNI" />}
+                        label="Situación DNI"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -148,7 +150,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Género" />}
+                        label="Género"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -180,7 +183,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Nacionalidad" />}
+                        label="Nacionalidad"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -380,7 +384,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Vínculo con la Demanda" />}
+                        label="Vínculo con la Demanda"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"

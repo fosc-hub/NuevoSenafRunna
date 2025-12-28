@@ -3,7 +3,6 @@
 import type React from "react"
 import {
   Typography,
-  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -21,6 +20,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import DescriptionIcon from "@mui/icons-material/Description"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import { useRouter } from "next/navigation"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface MedidaHistorial {
   medida?: string
@@ -46,15 +46,7 @@ export const HistorialMedidasSection: React.FC<HistorialMedidasProps> = ({ legaj
   const router = useRouter()
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
+    <SectionCard title="Historial de Medidas">
       {/* MPI Section */}
       <MedidaAccordion
         title="MPI"
@@ -86,7 +78,7 @@ export const HistorialMedidasSection: React.FC<HistorialMedidasProps> = ({ legaj
         count={historialMedidas.MPJ.length}
         legajoId={legajoId}
       />
-    </Paper>
+    </SectionCard>
   )
 }
 

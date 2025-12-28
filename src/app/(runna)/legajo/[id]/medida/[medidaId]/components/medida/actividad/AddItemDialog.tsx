@@ -2,17 +2,10 @@
 
 import React, { useState } from 'react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Box,
   Typography,
   TextField,
-  Alert,
-  CircularProgress,
-  Paper,
   List,
   ListItemButton,
   ListItemIcon,
@@ -23,6 +16,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import BaseDialog from '@/components/shared/BaseDialog'
 import { AttachmentUpload } from '../AttachmentUpload'
 
 interface AddItemDialogProps {
@@ -120,33 +114,68 @@ export const AddItemDialog: React.FC<AddItemDialogProps> = ({
     }
   }
 
+  const getDialogIcon = () => {
+    switch (mode) {
+      case 'comentario':
+        return <ChatBubbleOutlineIcon />
+      case 'adjunto':
+        return <AttachFileIcon />
+      case 'both':
+        return <AddCircleOutlineIcon />
+      default:
+        return <AddCircleOutlineIcon />
+    }
+  }
+
+  const getActions = () => {
+    const actions = [
+      {
+        label: "Cancelar",
+        onClick: handleClose,
+        variant: "text" as const,
+        disabled: submitting
+      }
+    ]
+
+    if (mode !== 'menu') {
+      actions.push({
+        label: submitting ? 'Guardando...' : 'Guardar',
+        onClick: handleSubmit,
+        variant: "contained" as const,
+        color: "primary" as const,
+        disabled: submitting,
+        loading: submitting
+      })
+    }
+
+    return actions
+  }
+
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      title={getDialogTitle()}
+      titleIcon={getDialogIcon()}
+      error={error}
+      actions={getActions()}
       PaperProps={{
         sx: { minHeight: mode === 'menu' ? 'auto' : '500px' }
       }}
     >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {mode !== 'menu' && (
-            <Button
-              size="small"
-              startIcon={<ArrowBackIcon />}
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Volver
-            </Button>
-          )}
-          {getDialogTitle()}
+      {mode !== 'menu' && (
+        <Box sx={{ mb: 2 }}>
+          <Button
+            size="small"
+            startIcon={<ArrowBackIcon />}
+            onClick={handleBack}
+          >
+            Volver
+          </Button>
         </Box>
-      </DialogTitle>
-
-      <DialogContent>
+      )}
         {mode === 'menu' && (
           <List sx={{ pt: 0 }}>
             <ListItemButton
@@ -262,29 +291,6 @@ export const AddItemDialog: React.FC<AddItemDialogProps> = ({
             />
           </Box>
         )}
-
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-      </DialogContent>
-
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} disabled={submitting}>
-          Cancelar
-        </Button>
-        {mode !== 'menu' && (
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={20} /> : null}
-          >
-            {submitting ? 'Guardando...' : 'Guardar'}
-          </Button>
-        )}
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   )
 }

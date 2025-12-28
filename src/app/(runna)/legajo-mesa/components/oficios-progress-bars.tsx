@@ -14,6 +14,7 @@ import {
   getSemaforoColor,
   calculateSemaforo,
 } from "../config/legajo-theme"
+import { formatDateLocaleAR } from "@/utils/dateUtils"
 
 /**
  * Component to display oficios with progress bars showing time to vencimiento
@@ -77,7 +78,7 @@ export const OficiosProgressBars: React.FC<{ oficios: OficioConSemaforo[] }> = (
         }
 
         const tooltipText = oficio.fecha_vencimiento
-          ? `${oficio.tipo}: ${diasRestantes} días ${diasRestantes >= 0 ? "restantes" : "vencidos"} (${new Date(oficio.fecha_vencimiento).toLocaleDateString("es-AR")})`
+          ? `${oficio.tipo}: ${diasRestantes} días ${diasRestantes >= 0 ? "restantes" : "vencidos"} (${formatDateLocaleAR(oficio.fecha_vencimiento)})`
           : `${oficio.tipo}: Sin fecha de vencimiento`
 
         return (

@@ -28,6 +28,7 @@ import { toast } from "react-toastify"
 import { get, create, update } from "@/app/api/apiService"
 import SearchModal from "@/components/searchModal/searchModal"
 import { useUser } from "@/utils/auth/userZustand"
+import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
 import CrearVinculoLegajoDialog from "./dialogs/CrearVinculoLegajoDialog"
 import DesvincularVinculoDialog from "./dialogs/DesvincularVinculoDialog"
@@ -446,7 +447,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                     secondary={
                       <Typography variant="body2" color="text.secondary">
                         Estado: {demanda.estado_demanda} | Fecha: {" "}
-                        {new Date(demanda.fecha_ingreso_senaf).toLocaleDateString()}
+                        {formatDateLocaleAR(demanda.fecha_ingreso_senaf)}
                       </Typography>
                     }
                   />
@@ -628,11 +629,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
                         <Typography variant="caption" color="text.secondary">
                           Fecha:{" "}
                           <strong>
-                            {new Date(vinculo.creado_en).toLocaleDateString("es-AR", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })}
+                            {formatDateLocaleAR(vinculo.creado_en)}
                           </strong>
                         </Typography>
                       </Box>

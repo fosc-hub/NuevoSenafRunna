@@ -3,11 +3,6 @@
 import type React from "react"
 import { useState } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   TextField,
   Box,
   FormControl,
@@ -16,6 +11,8 @@ import {
   MenuItem,
   type SelectChangeEvent,
 } from "@mui/material"
+import AssignmentIcon from "@mui/icons-material/Assignment"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 export interface NewTask {
   tarea: string
@@ -56,69 +53,71 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? "Editar tarea" : "Añadir nueva tarea"}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 2 }}>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="tarea"
-            name="tarea"
-            label="Tarea"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={task.tarea}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            id="objetivo"
-            name="objetivo"
-            label="Objetivo"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={task.objetivo}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth variant="outlined" margin="dense">
-            <InputLabel id="plazo-label">Plazo</InputLabel>
-            <Select
-              labelId="plazo-label"
-              id="plazo"
-              name="plazo"
-              value={task.plazo}
-              onChange={handleSelectChange}
-              label="Plazo"
-            >
-              <MenuItem value="1 semana">1 semana</MenuItem>
-              <MenuItem value="2 semanas">2 semanas</MenuItem>
-              <MenuItem value="1 mes">1 mes</MenuItem>
-              <MenuItem value="3 meses">3 meses</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="inherit">
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSave}
-          color="primary"
-          variant="contained"
-          sx={{
-            borderRadius: 8,
-            textTransform: "none",
-          }}
-        >
-          {isEditing ? "Actualizar" : "Guardar"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <BaseDialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      title={isEditing ? "Editar tarea" : "Añadir nueva tarea"}
+      titleIcon={<AssignmentIcon />}
+      showCloseButton
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: onClose,
+          variant: "text"
+        },
+        {
+          label: isEditing ? "Actualizar" : "Guardar",
+          onClick: handleSave,
+          variant: "contained",
+          color: "primary"
+        }
+      ]}
+    >
+      <Box sx={{ mt: 2 }}>
+        <TextField
+          autoFocus
+          margin="dense"
+          id="tarea"
+          name="tarea"
+          label="Tarea"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={task.tarea}
+          onChange={handleInputChange}
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          margin="dense"
+          id="objetivo"
+          name="objetivo"
+          label="Objetivo"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={task.objetivo}
+          onChange={handleInputChange}
+          sx={{ mb: 2 }}
+        />
+        <FormControl fullWidth variant="outlined" margin="dense">
+          <InputLabel id="plazo-label">Plazo</InputLabel>
+          <Select
+            labelId="plazo-label"
+            id="plazo"
+            name="plazo"
+            value={task.plazo}
+            onChange={handleSelectChange}
+            label="Plazo"
+          >
+            <MenuItem value="1 semana">1 semana</MenuItem>
+            <MenuItem value="2 semanas">2 semanas</MenuItem>
+            <MenuItem value="1 mes">1 mes</MenuItem>
+            <MenuItem value="3 meses">3 meses</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+    </BaseDialog>
   )
 }

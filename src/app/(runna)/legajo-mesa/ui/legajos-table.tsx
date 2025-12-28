@@ -28,6 +28,7 @@ import {
 import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRounded, Info } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
+import { useQueryClient } from "@tanstack/react-query"
 import AsignarLegajoModal from "../components/asignar-legajo-modal"
 import { fetchLegajos, updateLegajoPrioridad } from "../api/legajos-api-service"
 import type { LegajoApiResponse, PaginatedLegajosResponse } from "../types/legajo-api"
@@ -47,6 +48,7 @@ import LegajoSearchBar from "../components/search/LegajoSearchBar"
 import ActiveFiltersBar from "../components/search/ActiveFiltersBar"
 import { useFilterOptions } from "../hooks/useFilterOptions"
 import { getPriorityColor } from "../config/legajo-theme"
+import { useApiQuery } from "@/hooks/useApiQuery"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
@@ -111,18 +113,16 @@ const LegajoTable: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const permissions = useUserPermissions()
   const filterOptions = useFilterOptions()
+  const queryClient = useQueryClient()
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
   })
   const [sortModel, setSortModel] = useState<GridSortModel>([])
-  const [totalCount, setTotalCount] = useState(0)
   const [selectedLegajoId, setSelectedLegajoId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
   const [selectedLegajoIdForAssignment, setSelectedLegajoIdForAssignment] = useState<number | null>(null)
-  const [legajosData, setLegajosData] = useState<PaginatedLegajosResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
   // Initialize filters from sessionStorage or default values
@@ -160,107 +160,108 @@ const LegajoTable: React.FC = () => {
     }
   }, [apiFilters])
 
-  useEffect(() => {
-    loadLegajos()
+  // Build query params using useMemo - API uses 1-based pagination
+  const queryParams = useMemo(() => {
+    const params: any = {
+      page: paginationModel.page + 1, // Convert from 0-based to 1-based
+      page_size: paginationModel.pageSize,
+    }
+
+    // Add all filters if they exist
+    if (apiFilters.zona !== null) {
+      params.zona = apiFilters.zona
+    }
+    if (apiFilters.urgencia !== null) {
+      params.urgencia = apiFilters.urgencia
+    }
+    if (apiFilters.search !== null && apiFilters.search.trim() !== "") {
+      params.search = apiFilters.search
+    }
+    if (apiFilters.tiene_medidas_activas !== null) {
+      params.tiene_medidas_activas = apiFilters.tiene_medidas_activas
+    }
+    if (apiFilters.tiene_oficios !== null) {
+      params.tiene_oficios = apiFilters.tiene_oficios
+    }
+    if (apiFilters.tiene_plan_trabajo !== null) {
+      params.tiene_plan_trabajo = apiFilters.tiene_plan_trabajo
+    }
+    if (apiFilters.tiene_alertas !== null) {
+      params.tiene_alertas = apiFilters.tiene_alertas
+    }
+    if (apiFilters.tiene_demanda_pi !== null) {
+      params.tiene_demanda_pi = apiFilters.tiene_demanda_pi
+    }
+
+    // Add numeric filters
+    if (apiFilters.id__gt !== undefined && apiFilters.id__gt !== null) {
+      params.id__gt = apiFilters.id__gt
+    }
+    if (apiFilters.id__lt !== undefined && apiFilters.id__lt !== null) {
+      params.id__lt = apiFilters.id__lt
+    }
+    if (apiFilters.id__gte !== undefined && apiFilters.id__gte !== null) {
+      params.id__gte = apiFilters.id__gte
+    }
+    if (apiFilters.id__lte !== undefined && apiFilters.id__lte !== null) {
+      params.id__lte = apiFilters.id__lte
+    }
+
+    // Add date filters
+    if (apiFilters.fecha_apertura__gte) {
+      params.fecha_apertura__gte = apiFilters.fecha_apertura__gte
+    }
+    if (apiFilters.fecha_apertura__lte) {
+      params.fecha_apertura__lte = apiFilters.fecha_apertura__lte
+    }
+    if (apiFilters.fecha_apertura__ultimos_dias !== undefined && apiFilters.fecha_apertura__ultimos_dias !== null) {
+      params.fecha_apertura__ultimos_dias = apiFilters.fecha_apertura__ultimos_dias
+    }
+
+    // Add responsable filters
+    if (apiFilters.jefe_zonal !== undefined && apiFilters.jefe_zonal !== null) {
+      params.jefe_zonal = apiFilters.jefe_zonal
+    }
+    if (apiFilters.director !== undefined && apiFilters.director !== null) {
+      params.director = apiFilters.director
+    }
+    if (apiFilters.equipo_trabajo !== undefined && apiFilters.equipo_trabajo !== null) {
+      params.equipo_trabajo = apiFilters.equipo_trabajo
+    }
+    if (apiFilters.equipo_centro_vida !== undefined && apiFilters.equipo_centro_vida !== null) {
+      params.equipo_centro_vida = apiFilters.equipo_centro_vida
+    }
+
+    // Add sorting (multi-column support)
+    if (sortModel.length > 0) {
+      // Convert GridSortModel to Django ordering format
+      // Multiple columns: "field1,-field2,field3"
+      const ordering = sortModel
+        .map((sort) => {
+          const prefix = sort.sort === "desc" ? "-" : ""
+          return `${prefix}${sort.field}`
+        })
+        .join(",")
+      params.ordering = ordering
+    }
+
+    return params
   }, [paginationModel.page, paginationModel.pageSize, apiFilters, sortModel])
 
-  const loadLegajos = async () => {
-    try {
-      setIsLoading(true)
-
-      // Build query params - API uses 1-based pagination
-      const queryParams: any = {
-        page: paginationModel.page + 1, // Convert from 0-based to 1-based
-        page_size: paginationModel.pageSize,
-      }
-
-      // Add all filters if they exist
-      if (apiFilters.zona !== null) {
-        queryParams.zona = apiFilters.zona
-      }
-      if (apiFilters.urgencia !== null) {
-        queryParams.urgencia = apiFilters.urgencia
-      }
-      if (apiFilters.search !== null && apiFilters.search.trim() !== "") {
-        queryParams.search = apiFilters.search
-      }
-      if (apiFilters.tiene_medidas_activas !== null) {
-        queryParams.tiene_medidas_activas = apiFilters.tiene_medidas_activas
-      }
-      if (apiFilters.tiene_oficios !== null) {
-        queryParams.tiene_oficios = apiFilters.tiene_oficios
-      }
-      if (apiFilters.tiene_plan_trabajo !== null) {
-        queryParams.tiene_plan_trabajo = apiFilters.tiene_plan_trabajo
-      }
-      if (apiFilters.tiene_alertas !== null) {
-        queryParams.tiene_alertas = apiFilters.tiene_alertas
-      }
-      if (apiFilters.tiene_demanda_pi !== null) {
-        queryParams.tiene_demanda_pi = apiFilters.tiene_demanda_pi
-      }
-
-      // Add numeric filters
-      if (apiFilters.id__gt !== undefined && apiFilters.id__gt !== null) {
-        queryParams.id__gt = apiFilters.id__gt
-      }
-      if (apiFilters.id__lt !== undefined && apiFilters.id__lt !== null) {
-        queryParams.id__lt = apiFilters.id__lt
-      }
-      if (apiFilters.id__gte !== undefined && apiFilters.id__gte !== null) {
-        queryParams.id__gte = apiFilters.id__gte
-      }
-      if (apiFilters.id__lte !== undefined && apiFilters.id__lte !== null) {
-        queryParams.id__lte = apiFilters.id__lte
-      }
-
-      // Add date filters
-      if (apiFilters.fecha_apertura__gte) {
-        queryParams.fecha_apertura__gte = apiFilters.fecha_apertura__gte
-      }
-      if (apiFilters.fecha_apertura__lte) {
-        queryParams.fecha_apertura__lte = apiFilters.fecha_apertura__lte
-      }
-      if (apiFilters.fecha_apertura__ultimos_dias !== undefined && apiFilters.fecha_apertura__ultimos_dias !== null) {
-        queryParams.fecha_apertura__ultimos_dias = apiFilters.fecha_apertura__ultimos_dias
-      }
-
-      // Add responsable filters
-      if (apiFilters.jefe_zonal !== undefined && apiFilters.jefe_zonal !== null) {
-        queryParams.jefe_zonal = apiFilters.jefe_zonal
-      }
-      if (apiFilters.director !== undefined && apiFilters.director !== null) {
-        queryParams.director = apiFilters.director
-      }
-      if (apiFilters.equipo_trabajo !== undefined && apiFilters.equipo_trabajo !== null) {
-        queryParams.equipo_trabajo = apiFilters.equipo_trabajo
-      }
-      if (apiFilters.equipo_centro_vida !== undefined && apiFilters.equipo_centro_vida !== null) {
-        queryParams.equipo_centro_vida = apiFilters.equipo_centro_vida
-      }
-
-      // Add sorting (multi-column support)
-      if (sortModel.length > 0) {
-        // Convert GridSortModel to Django ordering format
-        // Multiple columns: "field1,-field2,field3"
-        const ordering = sortModel
-          .map((sort) => {
-            const prefix = sort.sort === "desc" ? "-" : ""
-            return `${prefix}${sort.field}`
-          })
-          .join(",")
-        queryParams.ordering = ordering
-      }
-
-      const response = await fetchLegajos(queryParams)
-      setTotalCount(response.count)
-      setLegajosData(response)
-    } catch (error) {
-      console.error("Error al obtener los legajos:", error)
-      toast.error("Error al cargar los legajos")
-    } finally {
-      setIsLoading(false)
+  // Fetch legajos using TanStack Query
+  const { data: legajosData, isLoading, refetch } = useApiQuery<PaginatedLegajosResponse>(
+    "legajos/",
+    queryParams,
+    {
+      queryFn: () => fetchLegajos(queryParams),
     }
+  )
+
+  const totalCount = legajosData?.count || 0
+
+  // Wrapper function for backward compatibility with existing callbacks
+  const loadLegajos = () => {
+    refetch()
   }
 
   const handleFilterChange = (newFilters: typeof apiFilters) => {
@@ -339,18 +340,24 @@ const LegajoTable: React.FC = () => {
         ? urgenciaToPrioridadMap[updatedLegajo.urgencia]
         : newValue as "ALTA" | "MEDIA" | "BAJA"
 
-      // Update the local state to reflect the changes from API response
-      if (legajosData) {
-        const updatedResults = legajosData.results.map((legajo) =>
-          legajo.id === legajoId
-            ? { ...legajo, prioridad: prioridadFromResponse, urgencia: updatedLegajo.urgencia }
-            : legajo,
-        )
-        setLegajosData({
-          ...legajosData,
-          results: updatedResults,
-        })
-      }
+      // Update the TanStack Query cache with optimistic update
+      queryClient.setQueryData<PaginatedLegajosResponse>(
+        ["legajos/", queryParams],
+        (oldData) => {
+          if (!oldData) return oldData
+
+          const updatedResults = oldData.results.map((legajo) =>
+            legajo.id === legajoId
+              ? { ...legajo, prioridad: prioridadFromResponse, urgencia: updatedLegajo.urgencia }
+              : legajo,
+          )
+
+          return {
+            ...oldData,
+            results: updatedResults,
+          }
+        }
+      )
 
       toast.success("Prioridad actualizada con éxito")
     } catch (error) {

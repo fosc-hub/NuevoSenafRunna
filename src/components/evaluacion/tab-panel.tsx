@@ -1,19 +1,12 @@
-import type React from "react"
-import { Box } from "@mui/material"
+/**
+ * TabPanel component for evaluacion module
+ *
+ * DEPRECATED: This file now re-exports from the shared TabPanel component.
+ * Import from "@/components/shared/TabPanel" instead.
+ *
+ * This file maintained for backward compatibility.
+ */
 
-interface TabPanelProps {
-  children?: React.ReactNode
-  index: number
-  value: number
-}
+import TabPanel from "@/components/shared/TabPanel"
 
-export default function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props
-
-  return (
-    <div role="tabpanel" hidden={value !== index} id={`tabpanel-${index}`} aria-labelledby={`tab-${index}`} {...other}>
-      {value === index && <Box>{children}</Box>}
-    </div>
-  )
-}
-
+export default TabPanel

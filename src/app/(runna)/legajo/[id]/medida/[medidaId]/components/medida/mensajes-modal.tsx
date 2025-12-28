@@ -3,22 +3,18 @@
 import type React from "react"
 import { useState } from "react"
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Box,
     Typography,
     Button,
     Avatar,
     Paper,
     Rating,
-    TextField,
-    IconButton
+    TextField
 } from "@mui/material"
 import PersonIcon from "@mui/icons-material/Person"
-import CloseIcon from "@mui/icons-material/Close"
 import AddIcon from "@mui/icons-material/Add"
+import MessageIcon from "@mui/icons-material/Message"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 interface Message {
     id: number
@@ -87,165 +83,144 @@ export const MensajesModal: React.FC<MensajesModalProps> = ({
     }
 
     return (
-        <Dialog
+        <BaseDialog
             open={open}
             onClose={onClose}
             maxWidth="sm"
             fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: 3,
-                    maxHeight: '80vh'
+            title={title}
+            titleIcon={<MessageIcon />}
+            showCloseButton
+            contentSx={{ px: 3, py: 2 }}
+            actions={[
+                {
+                    label: 'Cerrar',
+                    onClick: onClose,
+                    variant: 'outlined'
                 }
-            }}
+            ]}
         >
-            <DialogTitle sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                pb: 1
-            }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {title}
-                </Typography>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
+            {/* Add Message Button */}
+            <Box sx={{ mb: 3 }}>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={() => setShowAddMessage(true)}
+                    sx={{
+                        textTransform: "none",
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1
+                    }}
+                >
+                    Agregar mensaje
+                </Button>
+            </Box>
 
-            <DialogContent sx={{ px: 3, py: 2 }}>
-                {/* Add Message Button */}
-                <Box sx={{ mb: 3 }}>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<AddIcon />}
-                        onClick={() => setShowAddMessage(true)}
+            {/* Add Message Form */}
+            {showAddMessage && (
+                <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'grey.50' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                        Nuevo mensaje
+                    </Typography>
+
+                    <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                            Calificación:
+                        </Typography>
+                        <Rating
+                            value={newRating}
+                            onChange={(event, newValue) => setNewRating(newValue)}
+                            size="small"
+                        />
+                    </Box>
+
+                    <TextField
+                        label="Mensaje"
+                        multiline
+                        rows={3}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        fullWidth
+                        sx={{ mb: 2 }}
+                    />
+
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="outlined"
+                            onClick={handleCancel}
+                            sx={{ textTransform: "none", borderRadius: 2 }}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleAddMessage}
+                            disabled={!newMessage.trim()}
+                            sx={{ textTransform: "none", borderRadius: 2 }}
+                        >
+                            Agregar
+                        </Button>
+                    </Box>
+                </Paper>
+            )}
+
+            {/* Messages List */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {messages.map((message) => (
+                    <Paper
+                        key={message.id}
+                        elevation={1}
                         sx={{
-                            textTransform: "none",
+                            p: 2,
                             borderRadius: 2,
-                            fontWeight: 600,
-                            px: 3,
-                            py: 1
+                            backgroundColor: 'white'
                         }}
                     >
-                        Agregar mensaje
-                    </Button>
-                </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                            <Avatar sx={{
+                                width: 32,
+                                height: 32,
+                                backgroundColor: 'primary.main',
+                                fontSize: '0.875rem'
+                            }}>
+                                <PersonIcon fontSize="small" />
+                            </Avatar>
 
-                {/* Add Message Form */}
-                {showAddMessage && (
-                    <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'grey.50' }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                            Nuevo mensaje
-                        </Typography>
-
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                Calificación:
-                            </Typography>
-                            <Rating
-                                value={newRating}
-                                onChange={(event, newValue) => setNewRating(newValue)}
-                                size="small"
-                            />
-                        </Box>
-
-                        <TextField
-                            label="Mensaje"
-                            multiline
-                            rows={3}
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                        />
-
-                        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                            <Button
-                                variant="outlined"
-                                onClick={handleCancel}
-                                sx={{ textTransform: "none", borderRadius: 2 }}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                variant="contained"
-                                onClick={handleAddMessage}
-                                disabled={!newMessage.trim()}
-                                sx={{ textTransform: "none", borderRadius: 2 }}
-                            >
-                                Agregar
-                            </Button>
-                        </Box>
-                    </Paper>
-                )}
-
-                {/* Messages List */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {messages.map((message) => (
-                        <Paper
-                            key={message.id}
-                            elevation={1}
-                            sx={{
-                                p: 2,
-                                borderRadius: 2,
-                                backgroundColor: 'white'
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                                <Avatar sx={{
-                                    width: 32,
-                                    height: 32,
-                                    backgroundColor: 'primary.main',
-                                    fontSize: '0.875rem'
-                                }}>
-                                    <PersonIcon fontSize="small" />
-                                </Avatar>
-
-                                <Box sx={{ flex: 1 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {message.userName}
+                            <Box sx={{ flex: 1 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                        {message.userName}
+                                    </Typography>
+                                    <Box sx={{ textAlign: 'right' }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                            Overall
                                         </Typography>
-                                        <Box sx={{ textAlign: 'right' }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                                Overall
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                {message.rating}
                                             </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                                                    {message.rating}
-                                                </Typography>
-                                                <Rating
-                                                    value={message.rating}
-                                                    readOnly
-                                                    size="small"
-                                                    max={1}
-                                                    sx={{ color: 'primary.main' }}
-                                                />
-                                            </Box>
+                                            <Rating
+                                                value={message.rating}
+                                                readOnly
+                                                size="small"
+                                                max={1}
+                                                sx={{ color: 'primary.main' }}
+                                            />
                                         </Box>
                                     </Box>
-
-                                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                                        {message.text}
-                                    </Typography>
                                 </Box>
-                            </Box>
-                        </Paper>
-                    ))}
-                </Box>
-            </DialogContent>
 
-            <DialogActions sx={{ px: 3, py: 2 }}>
-                <Button
-                    onClick={onClose}
-                    variant="outlined"
-                    sx={{ textTransform: "none", borderRadius: 2 }}
-                >
-                    Cerrar
-                </Button>
-            </DialogActions>
-        </Dialog>
+                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                                    {message.text}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Paper>
+                ))}
+            </Box>
+        </BaseDialog>
     )
 } 

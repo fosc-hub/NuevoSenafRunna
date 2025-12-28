@@ -20,6 +20,7 @@ import { ResponsableSelect } from './ResponsableSelect'
 import { AttachmentUpload } from './AttachmentUpload'
 import { actividadService } from '../../services/actividadService'
 import type { CreateActividadRequest } from '../../types/actividades'
+import { getCurrentDateISO } from '@/utils/dateUtils'
 
 // Schema for final submission (all validations required)
 const actividadSchemaFinal = z.object({
@@ -127,7 +128,7 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
         ...data,
         plan_trabajo: planTrabajoId,
         origen: 'MANUAL',
-        fecha_planificacion: data.fecha_planificacion?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+        fecha_planificacion: data.fecha_planificacion?.toISOString().split('T')[0] || getCurrentDateISO(),
         subactividad: data.subactividad || '',
         responsable_principal: data.responsable_principal || 0,
         es_borrador: isDraft,

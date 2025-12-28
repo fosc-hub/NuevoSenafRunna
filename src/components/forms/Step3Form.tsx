@@ -18,6 +18,7 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, ChildCare as ChildIcon } from "@mui/icons-material"
 import type { DropdownData, FormData, NnyaData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
+import { get } from "@/app/api/apiService"
 import VinculacionNotification from "./VinculacionNotificacion"
 import NNYACard from "./components/nnya/nnya-card"
 import { useDuplicateDetection } from "./hooks/useDuplicateDetection"
@@ -87,8 +88,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
 
     // Fetch legajo details
     try {
-      const response = await fetch(`/api/legajos/${legajoId}/`)
-      const legajoData = await response.json()
+      const legajoData = await get<any>(`legajos/${legajoId}/`)
 
       const newVinculo = {
         legajo: legajoId,

@@ -18,6 +18,7 @@ import { Add as AddIcon, Delete as DeleteIcon, Person as PersonIcon } from "@mui
 import type { DropdownData, FormData, AdultoData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
+import { get } from "@/app/api/apiService"
 import AdultoCard from "./components/adulto/adulto-card"
 
 interface Step2FormProps {
@@ -71,8 +72,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ control, dropdownData, readOnly =
 
     // Fetch legajo details
     try {
-      const response = await fetch(`/api/legajos/${legajoId}/`)
-      const legajoData = await response.json()
+      const legajoData = await get<any>(`legajos/${legajoId}/`)
 
       const newVinculo = {
         legajo: legajoId,

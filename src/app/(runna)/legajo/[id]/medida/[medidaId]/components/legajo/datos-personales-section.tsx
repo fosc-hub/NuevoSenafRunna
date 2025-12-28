@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
-import { Typography, Paper, Grid, Divider, Chip, Box, IconButton, Tooltip } from "@mui/material"
+import { Typography, Grid, Divider, Chip, IconButton, Tooltip } from "@mui/material"
 import EditIcon from "@mui/icons-material/Edit"
-import PersonIcon from "@mui/icons-material/Person"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface DatosPersonalesSectionProps {
   legajoData: LegajoDetailResponse
@@ -63,31 +63,18 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
-      {/* Header with Edit button */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <PersonIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Datos Personales
-          </Typography>
-        </Box>
-        {puedeEditar && onEdit && (
+    <SectionCard
+      title="Datos Personales"
+      headerActions={
+        puedeEditar && onEdit ? (
           <Tooltip title={`Editar datos personales${isAdmin ? ' (Admin)' : ''}`}>
             <IconButton color="primary" onClick={onEdit} size="small">
               <EditIcon />
             </IconButton>
           </Tooltip>
-        )}
-      </Box>
+        ) : undefined
+      }
+    >
 
       <Grid container spacing={3}>
         {/* Información Personal */}
@@ -359,6 +346,6 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
           </Grid>
         </Grid>
       </Grid>
-    </Paper>
+    </SectionCard>
   )
 }

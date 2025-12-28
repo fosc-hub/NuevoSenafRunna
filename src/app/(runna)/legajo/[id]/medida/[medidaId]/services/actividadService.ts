@@ -1,8 +1,8 @@
 // API Service Layer for PLTM-01 Activity Management & PLTM-02 Actions
 // Backend API: stories/RUNNA API (9).yaml
 
-import { get, patch } from '@/app/api/apiService'
-import axiosInstance from '@/app/api/utils/axiosInstance'
+import { get, create, patch, remove } from '@/app/api/apiService'
+import axiosInstance from '@/app/api/utils/axiosInstance' // Only for cancel() - non-standard DELETE with payload
 import type {
   TActividadPlanTrabajo,
   TTipoActividad,
@@ -72,8 +72,7 @@ export const actividadService = {
       })
     }
 
-    const response = await axiosInstance.post<TActividadPlanTrabajo>('actividades/', formData)
-    return response.data
+    return create<TActividadPlanTrabajo>('actividades/', formData, true, 'Actividad creada exitosamente')
   },
 
   // Update activity
@@ -82,6 +81,8 @@ export const actividadService = {
   },
 
   // Cancel activity (soft delete)
+  // NOTE: Uses axiosInstance because DELETE with data payload is non-standard REST
+  // apiService.remove() doesn't support data payloads - backend pattern requires it
   async cancel(id: number, motivo: string): Promise<void> {
     await axiosInstance.delete(`actividades/${id}/`, { data: { motivo_cancelacion: motivo } })
   },
@@ -99,8 +100,7 @@ export const actividadService = {
       formData.append('descripcion', data.descripcion)
     }
 
-    const response = await axiosInstance.post<TAdjuntoActividad>(`actividades/${actividadId}/adjuntos/`, formData)
-    return response.data
+    return create<TAdjuntoActividad>(`actividades/${actividadId}/adjuntos/`, formData, true, 'Adjunto agregado exitosamente')
   },
 
   // Get activity types catalog
@@ -116,8 +116,7 @@ export const actividadService = {
 
   // Auto-mark overdue activities (admin only)
   async marcarVencidas(): Promise<{ count: number }> {
-    const response = await axiosInstance.post<{ count: number }>('actividades/marcar-vencidas/', {})
-    return response.data
+    return create<{ count: number }>('actividades/marcar-vencidas/', {}, true, 'Actividades vencidas marcadas')
   },
 
   // ============================================================================
@@ -142,8 +141,7 @@ export const actividadService = {
    * @returns Updated activity
    */
   async cambiarEstado(id: number, data: CambiarEstadoRequest): Promise<TActividadPlanTrabajo> {
-    const response = await axiosInstance.post<TActividadPlanTrabajo>(`actividades/${id}/cambiar-estado/`, data)
-    return response.data
+    return create<TActividadPlanTrabajo>(`actividades/${id}/cambiar-estado/`, data, true, 'Estado de actividad actualizado')
   },
 
   /**
@@ -158,8 +156,7 @@ export const actividadService = {
    * @returns Created comment with mention and notification info
    */
   async agregarComentario(id: number, texto: string): Promise<TComentarioActividad> {
-    const response = await axiosInstance.post<TComentarioActividad>(`actividades/${id}/comentarios/`, { texto })
-    return response.data
+    return create<TComentarioActividad>(`actividades/${id}/comentarios/`, { texto }, true, 'Comentario agregado')
   },
 
   /**
@@ -199,8 +196,7 @@ export const actividadService = {
    * @returns Updated activity in EN_PROGRESO state
    */
   async reabrir(id: number, data: ReabrirRequest): Promise<TActividadPlanTrabajo> {
-    const response = await axiosInstance.post<TActividadPlanTrabajo>(`actividades/${id}/reabrir/`, data)
-    return response.data
+    return create<TActividadPlanTrabajo>(`actividades/${id}/reabrir/`, data, true, 'Actividad reabierta')
   },
 
   /**
@@ -230,8 +226,7 @@ export const actividadService = {
    * @returns Created transfer record
    */
   async transferir(id: number, data: TransferirRequest): Promise<TTransferenciaActividad> {
-    const response = await axiosInstance.post<TTransferenciaActividad>(`actividades/${id}/transferir/`, data)
-    return response.data
+    return create<TTransferenciaActividad>(`actividades/${id}/transferir/`, data, true, 'Actividad transferida')
   },
 
   /**
@@ -248,7 +243,6 @@ export const actividadService = {
    * @returns Updated activity with new visado state
    */
   async visar(id: number, data: VisarRequest): Promise<TActividadPlanTrabajo> {
-    const response = await axiosInstance.post<TActividadPlanTrabajo>(`actividades/${id}/visar/`, data)
-    return response.data
+    return create<TActividadPlanTrabajo>(`actividades/${id}/visar/`, data, true, data.aprobado ? 'Visado aprobado' : 'Visado con observaciones')
   }
 }

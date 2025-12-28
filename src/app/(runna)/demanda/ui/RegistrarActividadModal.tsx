@@ -27,7 +27,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
 import { AttachFile, Download, CloudUpload } from "@mui/icons-material"
-import { create, get } from "@/app/api/apiService"
+import { create } from "@/app/api/apiService"
+import { formatDateLocaleAR } from "@/utils/dateUtils"
+import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
+import { useCatalogData, useApiQuery } from "@/hooks/useApiQuery"
 // Types defined locally since @/types/actividad doesn't exist
 
 // Update the Actividad type to match the new API response structure
@@ -79,16 +82,23 @@ interface RegistrarActividadFormProps {
 }
 
 export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProps) {
-  const [actividades, setActividades] = useState<ActividadResponse[]>([])
-  const [actividadTipos, setActividadTipos] = useState<ActividadTipo[]>([])
-  const [instituciones, setInstituciones] = useState<{ id: number; nombre: string }[]>([])
+  // Fetch catalog data using TanStack Query
+  const { data: actividadTipos = [] } = useCatalogData<ActividadTipo[]>("actividad-tipo/")
+
+  const { data: actividades = [] } = useApiQuery<ActividadResponse[]>(
+    "actividad/",
+    { demanda: demandaId }
+  )
+
+  const { data: institucionesResponse } = useCatalogData<{ instituciones_actividad: { id: number; nombre: string }[] }>(
+    "actividad-dropdown/"
+  )
+  const instituciones = institucionesResponse?.instituciones_actividad || []
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const dropAreaRef = useRef<HTMLDivElement>(null)
 
   const {
     control,
@@ -110,88 +120,22 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   const selectedTipo = watch("tipo")
   const selectedTipoNombre = actividadTipos.find((tipo) => tipo.id === selectedTipo)?.nombre || ""
 
-  useEffect(() => {
-    fetchActividadTipos()
-    fetchActividades()
-    fetchInstituciones()
-  }, [])
+  // Convert File[] to FileItem[] for display in FileUploadSection
+  const displayFiles: FileItem[] = selectedFiles.map((file, index) => ({
+    id: index,
+    nombre: file.name,
+    tipo: file.type,
+    tamano: file.size,
+  }))
 
-  const fetchActividadTipos = async () => {
-    try {
-      const data = await get<ActividadTipo[]>("actividad-tipo/")
-      setActividadTipos(data)
-    } catch (err) {
-      console.error("Error fetching activity types:", err)
-      setError("Error al cargar los tipos de actividad")
-    }
+  // Handle file upload from FileUploadSection
+  const handleFileUpload = (file: File) => {
+    setSelectedFiles((prev) => [...prev, file])
   }
 
-  const fetchActividades = async () => {
-    try {
-      // Get activities with the new response format
-      const actividadesData = await get<ActividadResponse[]>(`actividad/?demanda=${demandaId}`)
-      setActividades(actividadesData)
-    } catch (err) {
-      console.error("Error fetching activities:", err)
-      setError("Error al cargar las actividades")
-    }
-  }
-
-  const fetchInstituciones = async () => {
-    try {
-      const data = await get<{ instituciones_actividad: { id: number; nombre: string }[] }>("actividad-dropdown/")
-      setInstituciones(data.instituciones_actividad)
-    } catch (err) {
-      console.error("Error fetching instituciones:", err)
-      setError("Error al cargar las instituciones")
-    }
-  }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setSelectedFiles((prev) => [...prev, ...Array.from(event.target.files!)])
-    }
-  }
-
-  const handleFileDrop = (files: FileList) => {
-    setSelectedFiles((prev) => [...prev, ...Array.from(files)])
-  }
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!isDragging) {
-      setIsDragging(true)
-    }
-  }
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    // Only set isDragging to false if we're leaving the drop area (not a child element)
-    if (dropAreaRef.current && !dropAreaRef.current.contains(e.relatedTarget as Node)) {
-      setIsDragging(false)
-    }
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileDrop(e.dataTransfer.files)
-    }
-  }
-
-  const removeFile = (index: number) => {
+  // Handle file deletion from FileUploadSection
+  const handleFileDelete = (fileId: number | string) => {
+    const index = typeof fileId === 'number' ? fileId : Number.parseInt(fileId as string)
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
@@ -207,7 +151,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
 
     const templateContent =
       `Modelo de ${selectedTipoNombre}\n\n` +
-      `Fecha: ${new Date().toLocaleDateString()}\n` +
+      `Fecha: ${formatDateLocaleAR(new Date())}\n` +
       `Tipo de Actividad: ${selectedTipoNombre}\n` +
       `Instrucciones:\n` +
       `1. ...\n` +
@@ -340,86 +284,17 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
           )}
         />
 
-        <Box sx={{ mt: 2 }}>
-          <input
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-            ref={fileInputRef}
-            accept="*/*"
-          />
-
-          <Paper
-            ref={dropAreaRef}
-            onDragEnter={handleDragEnter}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            sx={{
-              p: 3,
-              border: "2px dashed",
-              borderColor: isDragging ? "primary.main" : "divider",
-              borderRadius: 2,
-              backgroundColor: isDragging ? "rgba(25, 118, 210, 0.04)" : "background.paper",
-              textAlign: "center",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                borderColor: "primary.light",
-                backgroundColor: "rgba(25, 118, 210, 0.04)",
-              },
-            }}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <CloudUpload sx={{ fontSize: 40, color: "primary.main", mb: 1 }} />
-            <Typography variant="h6" gutterBottom>
-              Arrastra y suelta archivos aquí
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              o haz clic para seleccionar archivos
-            </Typography>
-          </Paper>
-        </Box>
-
-        {selectedFiles.length > 0 && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {selectedFiles.length} archivo(s) seleccionado(s):
-            </Typography>
-            <Paper variant="outlined" sx={{ p: 2 }}>
-              {selectedFiles.map((file, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    py: 0.5,
-                    "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
-                    <AttachFile sx={{ mr: 1, color: "text.secondary", flexShrink: 0 }} />
-                    <Typography variant="body2" noWrap title={file.name}>
-                      {file.name}
-                    </Typography>
-                  </Box>
-                  <Button
-                    size="small"
-                    color="error"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      removeFile(index)
-                    }}
-                  >
-                    Eliminar
-                  </Button>
-                </Box>
-              ))}
-            </Paper>
-          </Box>
-        )}
+        {/* File upload section */}
+        <FileUploadSection
+          files={displayFiles}
+          onUpload={handleFileUpload}
+          onDelete={handleFileDelete}
+          title="Archivos Adjuntos"
+          multiple={true}
+          emptyMessage="No hay archivos seleccionados. Arrastra archivos o haz clic para seleccionar."
+          dragDropMessage="Arrastra y suelta archivos aquí"
+          uploadButtonLabel="Seleccionar archivos"
+        />
 
         <Button type="submit" variant="contained" disabled={isLoading} sx={{ mt: 2 }}>
           Registrar Actividad

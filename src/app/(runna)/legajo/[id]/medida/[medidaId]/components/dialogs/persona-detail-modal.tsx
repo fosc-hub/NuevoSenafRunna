@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import {
   Dialog,
   DialogContent,
@@ -44,7 +44,7 @@ import {
   MedicalServices as MedicalIcon,
   LocalHospital as LocalHospitalIcon,
 } from "@mui/icons-material"
-import { get } from "@/app/api/apiService"
+import { useConditionalData } from "@/hooks/useApiQuery"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface PersonaDetailModalProps {
@@ -156,8 +156,6 @@ export default function PersonaDetailModal({
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"))
   const [activeTab, setActiveTab] = useState(0)
-  const [personaCompleta, setPersonaCompleta] = useState<Record<string, unknown> | null>(null)
-  const [loadingPersona, setLoadingPersona] = useState(false)
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue)
@@ -171,93 +169,85 @@ export default function PersonaDetailModal({
   const demandas = legajoData?.demandas_relacionadas
   const permisos = legajoData?.permisos_usuario
 
-  // Fetch complete persona data including education, health, vulnerability from demanda
-  useEffect(() => {
-    const fetchPersonaCompleta = async () => {
-      if (!open || !persona?.id) return
-
-      setLoadingPersona(true)
-      try {
-        // Get the first demanda ID from demandas_relacionadas
-        const demandas = legajoData?.demandas_relacionadas?.resultados || []
-
-        if (demandas.length === 0) {
-          console.log("No demandas relacionadas found")
-          setPersonaCompleta(null)
-          setLoadingPersona(false)
-          return
-        }
-
-        // Get demanda ID (support multiple formats)
-        let demandaId: number | null = null
-        const firstDemanda = demandas[0]
-
-        if (firstDemanda?.demanda?.demanda_id) {
-          demandaId = firstDemanda.demanda.demanda_id
-        } else if (firstDemanda?.demanda_id) {
-          demandaId = firstDemanda.demanda_id
-        } else if (firstDemanda?.id) {
-          demandaId = firstDemanda.id
-        }
-
-        if (!demandaId) {
-          console.log("Could not extract demanda ID")
-          setPersonaCompleta(null)
-          setLoadingPersona(false)
-          return
-        }
-
-        console.log(`Fetching full-detail for demanda ${demandaId}`)
-
-        // Fetch demanda full-detail which includes personas with education, health, vulnerability
-        const response = await get<Record<string, unknown>>(`registro-demanda-form/${demandaId}/full-detail/`)
-
-        console.log("Full-detail response:", response)
-        console.log("Response has root localizacion?", response?.localizacion)
-
-        // Find the persona in the personas array
-        const personas = response?.personas || []
-        console.log("Personas array length:", personas.length)
-        if (personas.length > 0) {
-          console.log("First persona structure:", personas[0])
-          console.log("First persona has localizacion?", personas[0]?.localizacion)
-        }
-
-        const personaEnDemanda = personas.find((p: Record<string, unknown>) => (p.persona as Record<string, unknown>)?.id === persona.id)
-
-        if (personaEnDemanda) {
-          console.log("Found persona in demanda:", personaEnDemanda)
-          console.log("PersonaEnDemanda.localizacion:", personaEnDemanda.localizacion)
-
-          // If persona doesn't have localizacion, try fallbacks
-          if (!personaEnDemanda.localizacion) {
-            // Try root localizacion from response
-            if (response?.localizacion) {
-              console.log("Using root localizacion from response")
-              personaEnDemanda.localizacion = response.localizacion
-            }
-            // Try legajo localizacion_actual as last resort
-            else if (legajoData?.localizacion_actual?.localizacion) {
-              console.log("Using legajoData.localizacion_actual.localizacion")
-              personaEnDemanda.localizacion = legajoData.localizacion_actual.localizacion
-            }
-          }
-
-          setPersonaCompleta(personaEnDemanda)
-        } else {
-          console.log("Persona not found in demanda personas array")
-          setPersonaCompleta(null)
-        }
-      } catch (error) {
-        console.error("Error fetching persona completa:", error)
-        setPersonaCompleta(null)
-      } finally {
-        setLoadingPersona(false)
-      }
+  // Extract demanda ID from legajoData
+  const demandaId = useMemo(() => {
+    const demandas = legajoData?.demandas_relacionadas?.resultados || []
+    if (demandas.length === 0) {
+      console.log("No demandas relacionadas found")
+      return null
     }
 
-    fetchPersonaCompleta()
-  }, [open, persona?.id, legajoData])
+    const firstDemanda = demandas[0]
+    let extractedId: number | null = null
+
+    if (firstDemanda?.demanda?.demanda_id) {
+      extractedId = firstDemanda.demanda.demanda_id
+    } else if (firstDemanda?.demanda_id) {
+      extractedId = firstDemanda.demanda_id
+    } else if (firstDemanda?.id) {
+      extractedId = firstDemanda.id
+    }
+
+    if (!extractedId) {
+      console.log("Could not extract demanda ID")
+    } else {
+      console.log(`Extracted demanda ID: ${extractedId}`)
+    }
+
+    return extractedId
+  }, [legajoData])
+
+  // Fetch demanda full-detail using TanStack Query (only when modal is open)
+  const { data: demandaDetail, isLoading: loadingPersona } = useConditionalData<Record<string, unknown>>(
+    `registro-demanda-form/${demandaId}/full-detail/`,
+    open && !!demandaId && !!persona?.id
+  )
+
+  // Extract and process personaCompleta from demanda response
+  const personaCompleta = useMemo(() => {
+    if (!demandaDetail || !persona?.id) {
+      return null
+    }
+
+    console.log("Full-detail response:", demandaDetail)
+    console.log("Response has root localizacion?", demandaDetail?.localizacion)
+
+    // Find the persona in the personas array
+    const personas = demandaDetail?.personas || []
+    console.log("Personas array length:", personas.length)
+    if (personas.length > 0) {
+      console.log("First persona structure:", personas[0])
+      console.log("First persona has localizacion?", personas[0]?.localizacion)
+    }
+
+    const personaEnDemanda = personas.find(
+      (p: Record<string, unknown>) => (p.persona as Record<string, unknown>)?.id === persona.id
+    )
+
+    if (personaEnDemanda) {
+      console.log("Found persona in demanda:", personaEnDemanda)
+      console.log("PersonaEnDemanda.localizacion:", personaEnDemanda.localizacion)
+
+      // If persona doesn't have localizacion, try fallbacks
+      if (!personaEnDemanda.localizacion) {
+        // Try root localizacion from response
+        if (demandaDetail?.localizacion) {
+          console.log("Using root localizacion from response")
+          personaEnDemanda.localizacion = demandaDetail.localizacion
+        }
+        // Try legajo localizacion_actual as last resort
+        else if (legajoData?.localizacion_actual?.localizacion) {
+          console.log("Using legajoData.localizacion_actual.localizacion")
+          personaEnDemanda.localizacion = legajoData.localizacion_actual.localizacion
+        }
+      }
+
+      return personaEnDemanda
+    } else {
+      console.log("Persona not found in demanda personas array")
+      return null
+    }
+  }, [demandaDetail, persona?.id, legajoData])
 
   // Calculate edad
   const edad =

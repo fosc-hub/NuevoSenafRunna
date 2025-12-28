@@ -3,19 +3,25 @@
  * Based on LEG-01 User Story requirements
  */
 
-/**
- * Thresholds de scoring según LEG-01
- * - CRITICA (1.0): DNI exacto → Alerta roja
- * - ALTA (0.75): Nombre+Apellido+Fecha exactos o muy similares → Alerta naranja
- * - MEDIA (0.50): Similaridad moderada → Alerta amarilla
- * - SIN_ALERTA (< 0.50): No mostrar alerta
- */
-export const DUPLICATE_THRESHOLDS = {
-  CRITICA: 1.0,
-  ALTA: 0.75,
-  MEDIA: 0.50,
-  SIN_ALERTA: 0.0,
-} as const
+// Import and re-export common constants from centralized location
+import {
+  DUPLICATE_THRESHOLDS,
+  NIVEL_MINIMO_CREACION_FORZADA,
+  MIN_CARACTERES_JUSTIFICACION,
+  DUPLICATE_SEARCH_DEBOUNCE_MS,
+  ALERT_COLORS,
+  ALERT_MESSAGES,
+  ERROR_MESSAGES as CENTRALIZED_ERROR_MESSAGES,
+} from "@/utils/constants/duplicateDetection"
+
+export {
+  DUPLICATE_THRESHOLDS,
+  NIVEL_MINIMO_CREACION_FORZADA,
+  MIN_CARACTERES_JUSTIFICACION,
+  DUPLICATE_SEARCH_DEBOUNCE_MS,
+  ALERT_COLORS,
+  ALERT_MESSAGES,
+}
 
 /**
  * Pesos para cálculo de scoring de coincidencia (suma = 1.0)
@@ -64,36 +70,9 @@ export const LEVENSHTEIN_THRESHOLDS = {
 export const FECHA_NACIMIENTO_MAX_DIAS_DIFF = 365
 
 /**
- * Nivel mínimo de usuario requerido para forzar creación de legajo
- * (a pesar de encontrar duplicado)
- */
-export const NIVEL_MINIMO_CREACION_FORZADA = 3
-
-/**
- * Caracteres mínimos requeridos en justificación para creación forzada
- */
-export const MIN_CARACTERES_JUSTIFICACION = 20
-
-/**
- * Debounce time para búsqueda de duplicados en ms
- * - DNI: No debounce (búsqueda inmediata al completar 8 dígitos)
- * - Nombre/Apellido: 500ms de debounce
- */
-export const DUPLICATE_SEARCH_DEBOUNCE_MS = 500
-
-/**
  * DNI mínimo válido (8 dígitos)
  */
 export const DNI_MIN_LENGTH = 8
-
-/**
- * Colores según nivel de alerta (Material-UI colors)
- */
-export const ALERT_COLORS = {
-  CRITICA: "#f44336", // red[500]
-  ALTA: "#ff9800",    // orange[500]
-  MEDIA: "#ffc107",   // yellow[700]
-} as const
 
 /**
  * Iconos según nivel de alerta
@@ -102,27 +81,6 @@ export const ALERT_ICONS = {
   CRITICA: "error",
   ALTA: "warning",
   MEDIA: "info",
-} as const
-
-/**
- * Mensajes de alerta según nivel
- */
-export const ALERT_MESSAGES = {
-  CRITICA: {
-    title: "⚠️ LEGAJO EXISTENTE DETECTADO",
-    subtitle: "DNI coincide exactamente con un legajo activo",
-    recommendation: "Se recomienda vincular la demanda al legajo existente",
-  },
-  ALTA: {
-    title: "⚠️ POSIBLE LEGAJO EXISTENTE",
-    subtitle: "Alta coincidencia en datos del NNyA",
-    recommendation: "Revise cuidadosamente antes de crear nuevo legajo",
-  },
-  MEDIA: {
-    title: "ℹ️ SIMILITUD DETECTADA",
-    subtitle: "Datos similares encontrados en el sistema",
-    recommendation: "Verifique los datos antes de continuar",
-  },
 } as const
 
 /**

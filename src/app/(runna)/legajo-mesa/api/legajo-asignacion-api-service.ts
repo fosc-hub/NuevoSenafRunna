@@ -3,8 +3,7 @@
  * Integración con endpoints /api/legajo/{id}/* del backend
  */
 
-import { get } from "@/app/api/apiService"
-import axiosInstance from "@/app/api/utils/axiosInstance"
+import { get, create, patch } from "@/app/api/apiService"
 import type {
   DerivacionLegajoRequest,
   AsignacionLegajoRequest,
@@ -25,8 +24,7 @@ export const derivarLegajo = async (
   legajoId: number,
   data: DerivacionLegajoRequest
 ): Promise<AsignacionResponse> => {
-  const response = await axiosInstance.post<AsignacionResponse>(`legajo/${legajoId}/derivar/`, data)
-  return response.data
+  return create<AsignacionResponse>(`legajo/${legajoId}/derivar/`, data, true, 'Legajo derivado exitosamente')
 }
 
 /**
@@ -37,8 +35,7 @@ export const asignarLegajo = async (
   legajoId: number,
   data: AsignacionLegajoRequest
 ): Promise<AsignacionResponse> => {
-  const response = await axiosInstance.post<AsignacionResponse>(`legajo/${legajoId}/asignar/`, data)
-  return response.data
+  return create<AsignacionResponse>(`legajo/${legajoId}/asignar/`, data, true, 'Responsable asignado exitosamente')
 }
 
 /**
@@ -49,8 +46,7 @@ export const reasignarLegajo = async (
   legajoId: number,
   data: ReasignacionLegajoRequest
 ): Promise<AsignacionResponse> => {
-  const response = await axiosInstance.patch<AsignacionResponse>(`legajo/${legajoId}/reasignar/`, data)
-  return response.data
+  return patch<AsignacionResponse>(`legajo/${legajoId}/reasignar`, legajoId, data, true, 'Responsable reasignado exitosamente')
 }
 
 /**
@@ -61,8 +57,7 @@ export const rederivarLegajo = async (
   legajoId: number,
   data: RederivacionLegajoRequest
 ): Promise<AsignacionResponse> => {
-  const response = await axiosInstance.post<AsignacionResponse>(`legajo/${legajoId}/rederivar/`, data)
-  return response.data
+  return create<AsignacionResponse>(`legajo/${legajoId}/rederivar/`, data, true, 'Legajo re-derivado exitosamente')
 }
 
 /**

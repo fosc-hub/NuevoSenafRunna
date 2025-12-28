@@ -7,6 +7,11 @@
  * - Size formatting
  */
 
+import { formatFileSize, getFileExtension as getExtension } from "@/utils/fileUtils"
+
+// Re-export for backward compatibility
+export { formatFileSize, getExtension as getFileExtension }
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -88,38 +93,9 @@ export const validateFiles = (files: File[]): FileValidationResult => {
 }
 
 // ============================================================================
-// FORMATTING UTILITIES
+// FORMATTING UTILITIES - Imported from centralized location
 // ============================================================================
-
-/**
- * Format file size in human-readable format
- *
- * @param bytes File size in bytes
- * @returns Formatted string (e.g., "1.5 MB", "500 KB")
- */
-export const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-
-  if (bytes < 1024 * 1024) {
-    const kb = (bytes / 1024).toFixed(2)
-    return `${kb} KB`
-  }
-
-  const mb = (bytes / 1024 / 1024).toFixed(2)
-  return `${mb} MB`
-}
-
-/**
- * Get file extension from filename
- *
- * @param filename File name
- * @returns Extension in lowercase or empty string
- */
-export const getFileExtension = (filename: string): string => {
-  return filename.split(".").pop()?.toLowerCase() || ""
-}
+// See top of file for imports and re-exports
 
 /**
  * Check if file extension is allowed

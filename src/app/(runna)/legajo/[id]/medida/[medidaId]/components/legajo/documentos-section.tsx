@@ -3,7 +3,6 @@
 import type React from "react"
 import {
   Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -21,6 +20,7 @@ import DownloadIcon from "@mui/icons-material/Download"
 import AddIcon from "@mui/icons-material/Add"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface DocumentosSectionProps {
   legajoData: LegajoDetailResponse
@@ -66,30 +66,15 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <FolderIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Documentos Adjuntos
-          </Typography>
-          {documentos.length > 0 && (
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-              ({documentos.length} documento{documentos.length !== 1 ? "s" : ""})
-            </Typography>
-          )}
-        </Box>
-
-        {puedeAgregarDocumentos && (
+    <SectionCard
+      title="Documentos Adjuntos"
+      additionalInfo={
+        documentos.length > 0
+          ? [`${documentos.length} documento${documentos.length !== 1 ? "s" : ""}`]
+          : []
+      }
+      headerActions={
+        puedeAgregarDocumentos ? (
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -99,8 +84,9 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData
           >
             Agregar documento
           </Button>
-        )}
-      </Box>
+        ) : undefined
+      }
+    >
 
       {documentos.length === 0 ? (
         <Box
@@ -207,6 +193,6 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData
           </Typography>
         </Box>
       )}
-    </Paper>
+    </SectionCard>
   )
 }

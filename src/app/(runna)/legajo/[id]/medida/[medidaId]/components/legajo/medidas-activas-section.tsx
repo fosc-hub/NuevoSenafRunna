@@ -1,10 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
 import {
   Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -19,13 +17,14 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material"
-import SecurityIcon from "@mui/icons-material/Security"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import AddIcon from "@mui/icons-material/Add"
 import { useRouter } from "next/navigation"
+import { useApiQuery } from "@/hooks/useApiQuery"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { getMedidasByLegajo } from "@/app/(runna)/legajo-mesa/api/medidas-api-service"
 import type { MedidaBasicResponse } from "@/app/(runna)/legajo-mesa/types/medida-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface MedidasActivasSectionProps {
   legajoData: LegajoDetailResponse
@@ -41,9 +40,18 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
   refreshTrigger = 0,
 }) => {
   const router = useRouter()
-  const [medidas, setMedidas] = useState<MedidaBasicResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+
+  // Fetch medidas using TanStack Query
+  const { data: medidas = [], isLoading, error: queryError } = useApiQuery<MedidaBasicResponse[]>(
+    `legajo/${legajoData.legajo.id}/medidas`,
+    { estado_vigencia: "VIGENTE", _refresh: refreshTrigger },
+    {
+      queryFn: () => getMedidasByLegajo(legajoData.legajo.id, { estado_vigencia: "VIGENTE" }),
+      enabled: !!legajoData.legajo.id,
+    }
+  )
+
+  const error = queryError ? String(queryError) : null
 
   console.log("MedidasActivasSection render - State:", {
     medidasCount: medidas.length,
@@ -51,40 +59,6 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
     error,
     legajoId: legajoData.legajo.id
   })
-
-  // Cargar medidas al montar el componente y cuando refreshTrigger cambie
-  useEffect(() => {
-    const loadMedidas = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        console.log(`Fetching medidas for legajo ${legajoData.legajo.id}`)
-
-        // Obtener solo medidas vigentes - API returns array directly
-        const response = await getMedidasByLegajo(legajoData.legajo.id, {
-          estado_vigencia: "VIGENTE",
-        })
-
-        console.log("Medidas fetched (direct array):", response)
-        console.log("Number of medidas:", response?.length || 0)
-
-        setMedidas(response || [])
-        console.log("State updated, medidas set to:", response || [])
-      } catch (err: any) {
-        console.error("Error loading medidas:", err)
-        setError(err?.message || "Error al cargar las medidas")
-        setMedidas([]) // Ensure medidas is always an array
-      } finally {
-        setIsLoading(false)
-        console.log("Loading finished, isLoading set to false")
-      }
-    }
-
-    if (legajoData.legajo.id) {
-      loadMedidas()
-    }
-  }, [legajoData.legajo.id, refreshTrigger])
 
   const formatFecha = (fecha: string) => {
     try {
@@ -128,140 +102,81 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
+      <SectionCard
+        title="Registro de medidas tomadas"
+        headerActions={
+          showAddButton && onAddMedida ? (
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={onAddMedida} size="small">
+              Tomar Medida
+            </Button>
+          ) : undefined
+        }
       >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Registro de medidas tomadas
-          </Typography>
-        </Box>
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
           <CircularProgress size={40} />
           <Typography variant="body2" sx={{ ml: 2 }}>
             Cargando medidas...
           </Typography>
         </Box>
-      </Paper>
+      </SectionCard>
     )
   }
 
   // Error state
   if (error) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Registro de medidas tomadas
-            </Typography>
-          </Box>
-          {showAddButton && onAddMedida && (
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={onAddMedida}
-              size="small"
-            >
+      <SectionCard
+        title="Registro de medidas tomadas"
+        headerActions={
+          showAddButton && onAddMedida ? (
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={onAddMedida} size="small">
               Tomar Medida
             </Button>
-          )}
-        </Box>
+          ) : undefined
+        }
+      >
         <Alert severity="error">
           Error al cargar las medidas: {error}
         </Alert>
-      </Paper>
+      </SectionCard>
     )
   }
 
   // Empty state
   if (!medidas || medidas.length === 0) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Registro de medidas tomadas
-            </Typography>
-          </Box>
-          {showAddButton && onAddMedida && (
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={onAddMedida}
-              size="small"
-            >
+      <SectionCard
+        title="Registro de medidas tomadas"
+        headerActions={
+          showAddButton && onAddMedida ? (
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={onAddMedida} size="small">
               Tomar Medida
             </Button>
-          )}
-        </Box>
+          ) : undefined
+        }
+      >
         <Typography variant="body1" color="text.secondary">
           No hay Registro de medidas tomadas registradas.
         </Typography>
-      </Paper>
+      </SectionCard>
     )
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Registro de medidas tomadas
-          </Typography>
-          <Chip
-            label={`${medidas.length} activa${medidas.length !== 1 ? "s" : ""}`}
-            color="primary"
-            size="small"
-            sx={{ ml: 2 }}
-          />
-        </Box>
-        {showAddButton && onAddMedida && (
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={onAddMedida}
-            size="small"
-          >
+    <SectionCard
+      title="Registro de medidas tomadas"
+      chips={[{
+        label: `${medidas.length} activa${medidas.length !== 1 ? "s" : ""}`,
+        color: "primary"
+      }]}
+      headerActions={
+        showAddButton && onAddMedida ? (
+          <Button variant="outlined" startIcon={<AddIcon />} onClick={onAddMedida} size="small">
             Tomar Medida
           </Button>
-        )}
-      </Box>
-
+        ) : undefined
+      }
+    >
       <TableContainer>
         <Table size="small">
           <TableHead>
@@ -356,6 +271,6 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
           </TableBody>
         </Table>
       </TableContainer>
-    </Paper>
+    </SectionCard>
   )
 }

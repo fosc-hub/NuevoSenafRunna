@@ -12,12 +12,6 @@ interface LocalizacionFieldsProps {
   readOnly?: boolean
 }
 
-// Helper function to add a red asterisk to labels
-const RequiredLabel = ({ label }: { label: string }) => (
-  <React.Fragment>
-    {label} <span style={{ color: "#d32f2f" }}>*</span>
-  </React.Fragment>
-)
 
 const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix, dropdownData, readOnly = false }) => {
   const selectedLocalidad = useWatch({
@@ -41,7 +35,8 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label={<RequiredLabel label="Calle" />}
+                label="Calle"
+                required
                 fullWidth
                 error={!!error}
                 helperText={error?.message}
@@ -91,7 +86,8 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label={<RequiredLabel label="Altura" />}
+                label="Altura"
+                required
                 fullWidth
                 type="number"
                 error={!!error}
@@ -165,7 +161,8 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label={<RequiredLabel label="Referencia Geográfica" />}
+                label="Referencia Geográfica"
+                required
                 fullWidth
                 multiline
                 rows={2}
@@ -213,7 +210,8 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label={<RequiredLabel label="Localidad" />}
+                      label="Localidad"
+                      required
                       error={!!error}
                       helperText={error?.message}
                       size="small"

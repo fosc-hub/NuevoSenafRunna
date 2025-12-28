@@ -3,12 +3,13 @@ import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import EvaluacionTabs from "@/components/evaluacion/evaluacion-tabs"
 import { Box, CircularProgress, Alert } from "@mui/material"
-import axiosInstance from "@/app/api/utils/axiosInstance"
+import { get } from "@/app/api/apiService"
+import { getCurrentDateISO } from "@/utils/dateUtils"
 
 // Función para obtener los datos de la demanda
+// REFACTORED: Use apiService.get() instead of axiosInstance
 const fetchDemandaData = async (id: string) => {
-  const response = await axiosInstance.get(`/registro-demanda-form/${id}/full-detail/`)
-  return response.data
+  return await get<any>(`registro-demanda-form/${id}/full-detail/`)
 }
 
 // Modificar la función transformApiData para manejar correctamente los datos JSON
@@ -16,7 +17,7 @@ const transformApiData = (apiData: any) => {
   // Extraer información general
   const informacionGeneral = {
     Localidad: apiData.latest_evaluacion?.localidad_usuario || apiData.localidad_usuario || "",
-    Fecha: apiData.fecha_ingreso_senaf || new Date().toISOString().split("T")[0],
+    Fecha: apiData.fecha_ingreso_senaf || getCurrentDateISO(),
     CargoFuncion: apiData.latest_evaluacion?.rol_usuario || (Array.isArray(apiData.rol_usuario) ? apiData.rol_usuario.join(", ") : (apiData.rol_usuario || "")),
     NombreApellido: apiData.latest_evaluacion?.nombre_usuario || apiData.nombre_usuario || "",
     NumerosDemanda: apiData.id ? `${apiData.id}` : "",

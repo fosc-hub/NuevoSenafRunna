@@ -8,7 +8,7 @@
  * - Envío de informe completo (transición Estado 4 → Estado 5)
  */
 
-import { get, create, remove } from "@/app/api/apiService"
+import { get, create, update, remove } from "@/app/api/apiService"
 import type {
   CreateInformeJuridicoRequest,
   InformeJuridicoResponse,
@@ -199,18 +199,15 @@ export const updateInformeJuridico = async (
   try {
     console.log(`Updating informe jurídico: medida ${medidaId}, informe ${informeJuridicoId}`, data)
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call - Uses PATCH
-    const response = await axiosInstance.patch<InformeJuridicoResponse>(
-      `medidas/${medidaId}/informe-juridico/${informeJuridicoId}/`,
-      data
+    // Uses update() which sends PATCH request
+    const response = await update<InformeJuridicoResponse>(
+      `medidas/${medidaId}/informe-juridico/${informeJuridicoId}`,
+      data as Partial<InformeJuridicoResponse>
     )
 
-    console.log("Informe jurídico updated successfully:", response.data)
+    console.log("Informe jurídico updated successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(
       `Error updating informe jurídico: medida ${medidaId}, informe ${informeJuridicoId}`,
@@ -254,17 +251,17 @@ export const enviarInformeJuridico = async (
   try {
     console.log(`Enviando informe jurídico for medida ${medidaId}`)
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call - Uses POST with no body
-    const response = await axiosInstance.post<EnviarInformeJuridicoResponse>(
-      `medidas/${medidaId}/informe-juridico/enviar/`
+    // Uses create() with empty object for POST to custom action endpoint
+    const response = await create<EnviarInformeJuridicoResponse>(
+      `medidas/${medidaId}/informe-juridico/enviar/`,
+      {},
+      true,
+      'Informe jurídico enviado exitosamente'
     )
 
-    console.log("Informe jurídico enviado successfully:", response.data)
+    console.log("Informe jurídico enviado successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(`Error enviando informe jurídico for medida ${medidaId}:`, error)
     console.error("Error details:", {
@@ -328,23 +325,17 @@ export const uploadAdjuntoInformeJuridico = async (
       formData.append("descripcion", descripcion)
     }
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call using axiosInstance
-    const response = await axiosInstance.post<AdjuntoInformeJuridico>(
+    // apiService.create() supports FormData automatically
+    const response = await create<AdjuntoInformeJuridico>(
       `medidas/${medidaId}/informe-juridico/adjuntos/`,
       formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      true,
+      'Adjunto subido exitosamente'
     )
 
-    console.log("Adjunto uploaded successfully:", response.data)
+    console.log("Adjunto uploaded successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(`Error uploading adjunto: medida ${medidaId}`, error)
     console.error("Error details:", {
@@ -425,13 +416,8 @@ export const deleteAdjuntoInformeJuridico = async (
       `Deleting adjunto informe jurídico: medida ${medidaId}, adjunto ${adjuntoId}`
     )
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call using axiosInstance
-    await axiosInstance.delete(
-      `medidas/${medidaId}/informe-juridico/adjuntos/${adjuntoId}/`
-    )
+    // Uses remove() for DELETE request
+    await remove(`medidas/${medidaId}/informe-juridico/adjuntos`, adjuntoId)
 
     console.log("Adjunto informe jurídico deleted successfully")
   } catch (error: any) {

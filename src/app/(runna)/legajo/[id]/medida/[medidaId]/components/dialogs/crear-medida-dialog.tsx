@@ -3,23 +3,20 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Grid,
   MenuItem,
   Box,
-  Alert,
   CircularProgress,
   Typography,
   Divider,
 } from "@mui/material"
+import AddIcon from "@mui/icons-material/Add"
+import BaseDialog from "@/components/shared/BaseDialog"
 import { createMedida } from "@/app/(runna)/legajo-mesa/api/medidas-api-service"
 import type { CreateMedidaRequest, TipoMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
-import { get } from "@/app/api/apiService"
+import { useConditionalData } from "@/hooks/useApiQuery"
 
 interface UrgenciaVulneracion {
   id: number
@@ -59,36 +56,18 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // State for dropdown data
-  const [juzgados, setJuzgados] = useState<Juzgado[]>([])
-  const [urgencias, setUrgencias] = useState<UrgenciaVulneracion[]>([])
-  const [isLoadingData, setIsLoadingData] = useState(false)
+  // Fetch dropdown data using TanStack Query (only when dialog is open)
+  const { data: juzgados = [], isLoading: isLoadingJuzgados } = useConditionalData<Juzgado[]>(
+    "juzgados/",
+    open
+  )
 
-  // Fetch juzgados and urgencias when dialog opens
-  useEffect(() => {
-    if (open) {
-      loadDropdownData()
-    }
-  }, [open])
+  const { data: urgencias = [], isLoading: isLoadingUrgencias } = useConditionalData<UrgenciaVulneracion[]>(
+    "urgencia-vulneracion/",
+    open
+  )
 
-  const loadDropdownData = async () => {
-    try {
-      setIsLoadingData(true)
-
-      // Fetch juzgados (active ones only)
-      const juzgadosData = await get<Juzgado[]>("juzgados/")
-      setJuzgados(juzgadosData)
-
-      // Fetch urgencias ordered by peso
-      const urgenciasData = await get<UrgenciaVulneracion[]>("urgencia-vulneracion/")
-      setUrgencias(urgenciasData)
-    } catch (err) {
-      console.error("Error loading dropdown data:", err)
-      // Not setting error here as this is not critical for form submission
-    } finally {
-      setIsLoadingData(false)
-    }
-  }
+  const isLoadingData = isLoadingJuzgados || isLoadingUrgencias
 
   const handleChange = (field: keyof CreateMedidaRequest) => (
     event: React.ChangeEvent<HTMLInputElement>
@@ -188,30 +167,46 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Registro de Medidas</DialogTitle>
-      <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      title="Registro de Medidas"
+      titleIcon={<AddIcon />}
+      error={error}
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleClose,
+          variant: "text",
+          disabled: isCreating
+        },
+        {
+          label: isCreating ? "Creando..." : "Crear Medida",
+          onClick: handleSubmit,
+          variant: "contained",
+          color: "primary",
+          disabled: isCreating,
+          loading: isCreating
+        }
+      ]}
+    >
+      {isLoadingData && (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 2 }}>
+          <CircularProgress size={24} sx={{ mr: 2 }} />
+          <Typography variant="body2" color="text.secondary">
+            Cargando datos...
+          </Typography>
+        </Box>
+      )}
 
-        {isLoadingData && (
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 2 }}>
-            <CircularProgress size={24} sx={{ mr: 2 }} />
-            <Typography variant="body2" color="text.secondary">
-              Cargando datos...
-            </Typography>
-          </Box>
-        )}
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
+        Complete los datos para registrar una nueva medida de protección para este legajo.
+      </Typography>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-          Complete los datos para registrar una nueva medida de protección para este legajo.
-        </Typography>
-
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
+      <Box sx={{ mt: 2 }}>
+        <Grid container spacing={2}>
             {/* Tipo de Medida */}
             <Grid item xs={12}>
               <TextField
@@ -293,20 +288,6 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
             </Grid>
           </Grid>
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={isCreating}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={isCreating}
-          startIcon={isCreating ? <CircularProgress size={20} /> : null}
-        >
-          {isCreating ? "Creando..." : "Crear Medida"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   )
 }

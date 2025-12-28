@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import {
   Modal,
   Box,
@@ -36,17 +36,12 @@ import {
   CompareArrows as DerivacionIcon,
 } from "@mui/icons-material"
 import { toast } from "react-toastify"
+import { useCatalogData, useConditionalData } from "@/hooks/useApiQuery"
 import {
   derivarLegajo,
   asignarLegajo,
   reasignarLegajo,
   rederivarLegajo,
-  fetchHistorialAsignaciones,
-  fetchZonas,
-  fetchLocalesCentroVida,
-  fetchUsuarios,
-  fetchUsersZonas,
-  fetchLegajoParaAsignacion,
 } from "../api/legajo-asignacion-api-service"
 import type {
   TipoResponsabilidad,
@@ -73,16 +68,35 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   // Tab control
   const [tabValue, setTabValue] = useState(0)
 
-  // Data cargada
-  const [zonas, setZonas] = useState<Zona[]>([])
-  const [usuarios, setUsuarios] = useState<Usuario[]>([])
-  const [localesCentroVida, setLocalesCentroVida] = useState<LocalCentroVida[]>([])
-  const [historial, setHistorial] = useState<HistorialAsignacion[]>([])
-  const [userZonas, setUserZonas] = useState<Array<{ user: number; zona: number }>>([])
-  const [legajoData, setLegajoData] = useState<any>(null)
+  // Fetch data using TanStack Query - React Query will parallelize these automatically
+  const { data: zonas = [], isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
 
-  // Loading states
-  const [isLoading, setIsLoading] = useState(false)
+  const { data: usuarios = [], isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("usuarios/")
+
+  const { data: localesCentroVida = [], isLoading: isLoadingLocales } = useCatalogData<LocalCentroVida[]>(
+    "locales-centro-vida/"
+  )
+
+  const { data: userZonas = [], isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
+    "users-zonas/"
+  )
+
+  const { data: historial = [], isLoading: isLoadingHistorial } = useConditionalData<HistorialAsignacion[]>(
+    `legajo/${legajoId}/historial-asignaciones/`,
+    open && !!legajoId
+  )
+
+  const { data: legajoData, isLoading: isLoadingLegajo } = useConditionalData<any>(
+    `legajo/${legajoId}/`,
+    open && !!legajoId
+  )
+
+  // Combine loading states
+  const isLoading =
+    isLoadingZonas || isLoadingUsuarios || isLoadingLocales ||
+    isLoadingUserZonas || isLoadingHistorial || isLoadingLegajo
+
+  // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // ===== TAB 1: DERIVAR A ZONA =====
@@ -100,95 +114,15 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   const [selectedLocalCentroVida, setSelectedLocalCentroVida] = useState<number | null>(null)
   const [comentariosAsignacion, setComentariosAsignacion] = useState("")
 
-  // Estado actual de derivaciones y asignaciones
-  const [derivacionesActuales, setDerivacionesActuales] = useState<AsignacionActual[]>([])
-  const [asignacionesActuales, setAsignacionesActuales] = useState<AsignacionActual[]>([])
-
-  // Cargar datos iniciales y limpiar estado al cambiar legajo
-  useEffect(() => {
-    if (open && legajoId) {
-      // Limpiar estado anterior
-      setHistorial([])
-      setDerivacionesActuales([])
-      setAsignacionesActuales([])
-      setSelectedZonaDerivacion(null)
-      setSelectedZonaAsignacion(null)
-      setSelectedUsuario(null)
-      setSelectedLocalCentroVida(null)
-      setComentariosDerivacion("")
-      setComentariosAsignacion("")
-
-      // Cargar datos nuevos
-      loadData()
-    }
-  }, [open, legajoId])
-
-  const loadData = async () => {
-    if (!legajoId) return
-
-    setIsLoading(true)
-    try {
-      const [zonasData, usuariosData, localesData, userZonasData, historialData, legajoInfo] = await Promise.all([
-        fetchZonas(),
-        fetchUsuarios(),
-        fetchLocalesCentroVida(),
-        fetchUsersZonas(),
-        fetchHistorialAsignaciones(legajoId),
-        fetchLegajoParaAsignacion(legajoId), // Cargar info del legajo
-      ])
-
-      setZonas(zonasData)
-      setUsuarios(usuariosData)
-      setLocalesCentroVida(localesData)
-      setUserZonas(userZonasData)
-      setHistorial(historialData)
-      setLegajoData(legajoInfo)
-
-      // Extraer derivaciones y asignaciones actuales del historial
-      const derivacionesActivas = extractDerivacionesActuales(historialData)
-      const asignacionesActivas = extractAsignacionesActuales(historialData)
-      setDerivacionesActuales(derivacionesActivas)
-      setAsignacionesActuales(asignacionesActivas)
-    } catch (error) {
-      console.error("Error loading data:", error)
-      toast.error("Error al cargar los datos")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const loadHistorial = async () => {
-    if (!legajoId) return
-
-    try {
-      const historialData = await fetchHistorialAsignaciones(legajoId)
-      setHistorial(historialData)
-
-      // Actualizar derivaciones y asignaciones actuales
-      const derivacionesActivas = extractDerivacionesActuales(historialData)
-      const asignacionesActivas = extractAsignacionesActuales(historialData)
-      setDerivacionesActuales(derivacionesActivas)
-      setAsignacionesActuales(asignacionesActivas)
-    } catch (error) {
-      console.error("Error loading historial:", error)
-      toast.error("Error al cargar el historial")
-    }
-  }
-
-  /**
-   * Extrae las derivaciones actuales del historial (para Tab 1 - Derivar)
-   * Una derivación asigna el legajo a una ZONA (con o sin usuario específico)
-   * NOTA: Para re-derivar necesitamos saber si existe CUALQUIER asignación activa del tipo,
-   * independientemente de si tiene usuario asignado o no.
-   */
-  const extractDerivacionesActuales = (historialData: HistorialAsignacion[]): AsignacionActual[] => {
+  // Extract current derivaciones from historial (for Tab 1 - Derivar)
+  const derivacionesActuales = useMemo(() => {
     const derivacionesPorTipo: Record<TipoResponsabilidad, HistorialAsignacion | null> = {
       TRABAJO: null,
       CENTRO_VIDA: null,
       JUDICIAL: null,
     }
 
-    const sortedHistorial = [...historialData].sort(
+    const sortedHistorial = [...historial].sort(
       (a, b) => new Date(b.fecha_accion).getTime() - new Date(a.fecha_accion).getTime()
     )
 
@@ -211,11 +145,11 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       }
     }
 
-    const derivacionesActuales: AsignacionActual[] = []
+    const result: AsignacionActual[] = []
 
     for (const [tipo, record] of Object.entries(derivacionesPorTipo) as [TipoResponsabilidad, HistorialAsignacion | null][]) {
       if (record) {
-        derivacionesActuales.push({
+        result.push({
           tipo_responsabilidad: tipo,
           zona: {
             id: record.zona,
@@ -236,21 +170,18 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       }
     }
 
-    return derivacionesActuales
-  }
+    return result
+  }, [historial])
 
-  /**
-   * Extrae las asignaciones activas actuales del historial (para Tab 2 - Asignar)
-   * Una asignación asigna un USUARIO RESPONSABLE específico
-   */
-  const extractAsignacionesActuales = (historialData: HistorialAsignacion[]): AsignacionActual[] => {
+  // Extract current asignaciones from historial (for Tab 2 - Asignar)
+  const asignacionesActuales = useMemo(() => {
     const asignacionesPorTipo: Record<TipoResponsabilidad, HistorialAsignacion | null> = {
       TRABAJO: null,
       CENTRO_VIDA: null,
       JUDICIAL: null,
     }
 
-    const sortedHistorial = [...historialData].sort(
+    const sortedHistorial = [...historial].sort(
       (a, b) => new Date(b.fecha_accion).getTime() - new Date(a.fecha_accion).getTime()
     )
 
@@ -272,11 +203,11 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       }
     }
 
-    const asignacionesActuales: AsignacionActual[] = []
+    const result: AsignacionActual[] = []
 
     for (const [tipo, record] of Object.entries(asignacionesPorTipo) as [TipoResponsabilidad, HistorialAsignacion | null][]) {
       if (record) {
-        asignacionesActuales.push({
+        result.push({
           tipo_responsabilidad: tipo,
           zona: {
             id: record.zona,
@@ -297,8 +228,8 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       }
     }
 
-    return asignacionesActuales
-  }
+    return result
+  }, [historial])
 
   // Filtrar usuarios por zona seleccionada
   const usuariosFiltrados = useMemo(() => {

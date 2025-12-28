@@ -20,8 +20,9 @@ import {
 } from "@mui/material"
 import { DataGrid } from "@mui/x-data-grid"
 import MessageIcon from "@mui/icons-material/Message"
-import { get, create } from "@/app/api/apiService"
-import { CloudUpload } from "@mui/icons-material"
+import { create } from "@/app/api/apiService"
+import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
+import { useApiQuery, useCatalogData } from "@/hooks/useApiQuery"
 
 // URL base para los archivos
 const BASE_URL = "https://web-runna-v2legajos.up.railway.app"
@@ -58,12 +59,17 @@ interface EnviarRespuestaFormProps {
 }
 
 export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
-  const [respuestas, setRespuestas] = useState<Respuesta[]>([])
+  // Fetch data using TanStack Query
+  const { data: respuestas = [], isLoading: isLoadingRespuestas } = useApiQuery<Respuesta[]>(
+    "respuesta/",
+    { demanda: demandaId }
+  )
+
+  const { data: etiquetas = [] } = useCatalogData<RespuestaEtiqueta[]>("respuesta-etiqueta/")
+
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [etiquetas, setEtiquetas] = useState<RespuestaEtiqueta[]>([])
   const [selectedEtiqueta, setSelectedEtiqueta] = useState<RespuestaEtiqueta | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [filterSubject, setFilterSubject] = useState("")
   const [filterEtiqueta, setFilterEtiqueta] = useState<number | null>(null)
 
@@ -73,37 +79,6 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     message: "",
     severity: "success",
   })
-
-  const [isDragging, setIsDragging] = useState(false)
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!isDragging) setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSelectedFiles(Array.from(e.dataTransfer.files))
-      e.dataTransfer.clearData()
-    }
-  }
 
   const {
     control,
@@ -120,40 +95,23 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     },
   })
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setSelectedFiles(Array.from(event.target.files))
-      // Reset the input value so the same file can be selected again if removed
-      event.target.value = ""
-    }
+  // Convert File[] to FileItem[] for display in FileUploadSection
+  const displayFiles: FileItem[] = selectedFiles.map((file, index) => ({
+    id: index,
+    nombre: file.name,
+    tipo: file.type,
+    tamano: file.size,
+  }))
+
+  // Handle file upload from FileUploadSection
+  const handleFileUpload = (file: File) => {
+    setSelectedFiles((prev) => [...prev, file])
   }
 
-  useEffect(() => {
-    fetchRespuestas()
-    fetchEtiquetas()
-  }, [])
-
-  const fetchRespuestas = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await get<Respuesta[]>(`respuesta/?demanda=${demandaId}`)
-      setRespuestas(data)
-    } catch (err) {
-      console.error("Error fetching respuestas:", err)
-      setError("Error al cargar las respuestas")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchEtiquetas = async () => {
-    try {
-      const data = await get<RespuestaEtiqueta[]>("respuesta-etiqueta/")
-      setEtiquetas(data)
-    } catch (err) {
-      console.error("Error fetching etiquetas:", err)
-    }
+  // Handle file deletion from FileUploadSection
+  const handleFileDelete = (fileId: number | string) => {
+    const index = typeof fileId === 'number' ? fileId : Number.parseInt(fileId as string)
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const onSubmit = async (data: RespuestaFormData) => {
@@ -292,63 +250,17 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           />
         </Box>
 
-        {/* File upload section with drag and drop */}
-        <Box sx={{ mb: 2 }}>
-          <input type="file" multiple onChange={handleFileChange} style={{ display: "none" }} ref={fileInputRef} />
-
-          <Paper
-            sx={{
-              p: 3,
-              border: "2px dashed",
-              borderColor: isDragging ? "primary.main" : "divider",
-              borderRadius: 2,
-              backgroundColor: isDragging ? "rgba(25, 118, 210, 0.04)" : "background.paper",
-              textAlign: "center",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                borderColor: "primary.light",
-                backgroundColor: "rgba(25, 118, 210, 0.04)",
-              },
-              mb: 2,
-            }}
-            onDragEnter={handleDragEnter}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <CloudUpload sx={{ fontSize: 40, color: "primary.main", mb: 1 }} />
-            <Typography variant="h6" gutterBottom>
-              Arrastra y suelta archivos aquí
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              o haz clic para seleccionar archivos
-            </Typography>
-          </Paper>
-
-          {selectedFiles.length > 0 && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" gutterBottom>
-                {selectedFiles.length} archivo(s) seleccionado(s):
-              </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {selectedFiles.map((file, index) => (
-                  <Chip
-                    key={index}
-                    label={file.name}
-                    onDelete={() => {
-                      const newFiles = [...selectedFiles]
-                      newFiles.splice(index, 1)
-                      setSelectedFiles(newFiles)
-                    }}
-                    size="small"
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-        </Box>
+        {/* File upload section */}
+        <FileUploadSection
+          files={displayFiles}
+          onUpload={handleFileUpload}
+          onDelete={handleFileDelete}
+          title="Archivos Adjuntos"
+          multiple={true}
+          emptyMessage="No hay archivos seleccionados. Arrastra archivos o haz clic para seleccionar."
+          dragDropMessage="Arrastra y suelta archivos aquí"
+          uploadButtonLabel="Seleccionar archivos"
+        />
 
         <Button type="submit" variant="contained" startIcon={<MessageIcon />} disabled={isLoading} sx={{ mt: 2 }}>
           Enviar Respuesta

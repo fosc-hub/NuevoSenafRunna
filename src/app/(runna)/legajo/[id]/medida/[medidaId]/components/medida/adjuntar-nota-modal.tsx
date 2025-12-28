@@ -44,6 +44,7 @@ import InfoIcon from "@mui/icons-material/Info"
 import SaveIcon from "@mui/icons-material/Save"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import DescriptionIcon from "@mui/icons-material/Description"
+import { FileUploadSection, type FileItem } from "../shared/file-upload-section"
 
 interface AdjuntarNotaModalProps {
     open: boolean
@@ -76,7 +77,6 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
     const [fecha, setFecha] = useState<string>("")
     const [observaciones, setObservaciones] = useState<string>("")
     const [archivosAdjuntos, setArchivosAdjuntos] = useState<ArchivoAdjunto[]>([])
-    const [dragOver, setDragOver] = useState(false)
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const [modeloDescargado, setModeloDescargado] = useState(false)
     const [expandedSection, setExpandedSection] = useState<string | null>('instrucciones')
@@ -85,6 +85,63 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
 
     const tiposArchivosPermitidos = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
     const tamañoMaximo = 5 * 1024 * 1024 // 5MB
+
+    // Convert ArchivoAdjunto[] to FileItem[] for display in FileUploadSection
+    const displayFiles: FileItem[] = archivosAdjuntos
+        .filter(a => a.estado === 'completado')
+        .map((archivo) => ({
+            id: archivo.id,
+            nombre: archivo.nombre,
+            tipo: archivo.tipo,
+            tamano: archivo.tamaño,
+            fecha_subida: archivo.fechaSubida.toISOString(),
+        }))
+
+    // Handle file upload from FileUploadSection
+    const handleFileUpload = (file: File) => {
+        const extension = '.' + file.name.split('.').pop()?.toLowerCase()
+        if (!tiposArchivosPermitidos.includes(extension)) {
+            return
+        }
+
+        if (file.size > tamañoMaximo) {
+            return
+        }
+
+        const nuevoArchivo: ArchivoAdjunto = {
+            id: Math.random().toString(36).substr(2, 9),
+            nombre: file.name,
+            tipo: file.type,
+            tamaño: file.size,
+            fechaSubida: new Date(),
+            estado: 'subiendo',
+            progreso: 0
+        }
+
+        setArchivosAdjuntos(prev => [...prev, nuevoArchivo])
+
+        // Simular subida con progreso
+        const interval = setInterval(() => {
+            setArchivosAdjuntos(prev => prev.map(archivo => {
+                if (archivo.id === nuevoArchivo.id) {
+                    const nuevoProgreso = Math.min(archivo.progreso + 10, 100)
+                    return {
+                        ...archivo,
+                        progreso: nuevoProgreso,
+                        estado: nuevoProgreso === 100 ? 'completado' : 'subiendo'
+                    }
+                }
+                return archivo
+            }))
+        }, 200)
+
+        setTimeout(() => clearInterval(interval), 2000)
+    }
+
+    // Handle file deletion from FileUploadSection
+    const handleFileDeleteSection = (fileId: number | string) => {
+        setArchivosAdjuntos(prev => prev.filter(a => a.id !== fileId))
+    }
 
     const validateForm = () => {
         const errors: Record<string, string> = {}
@@ -106,85 +163,6 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
         }
 
         return errors
-    }
-
-    const handleFileUpload = async (files: FileList) => {
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i]
-
-            // Validar tipo de archivo
-            const extension = '.' + file.name.split('.').pop()?.toLowerCase()
-            if (!tiposArchivosPermitidos.includes(extension)) {
-                continue
-            }
-
-            // Validar tamaño
-            if (file.size > tamañoMaximo) {
-                continue
-            }
-
-            const nuevoArchivo: ArchivoAdjunto = {
-                id: Math.random().toString(36).substr(2, 9),
-                nombre: file.name,
-                tipo: file.type,
-                tamaño: file.size,
-                fechaSubida: new Date(),
-                estado: 'subiendo',
-                progreso: 0
-            }
-
-            setArchivosAdjuntos(prev => [...prev, nuevoArchivo])
-
-            // Simular subida con progreso
-            const interval = setInterval(() => {
-                setArchivosAdjuntos(prev => prev.map(archivo => {
-                    if (archivo.id === nuevoArchivo.id) {
-                        const nuevoProgreso = Math.min(archivo.progreso + 10, 100)
-                        return {
-                            ...archivo,
-                            progreso: nuevoProgreso,
-                            estado: nuevoProgreso === 100 ? 'completado' : 'subiendo'
-                        }
-                    }
-                    return archivo
-                }))
-            }, 200)
-
-            setTimeout(() => clearInterval(interval), 2000)
-        }
-    }
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault()
-        setDragOver(false)
-        const files = e.dataTransfer.files
-        if (files.length > 0) {
-            handleFileUpload(files)
-        }
-    }
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault()
-        setDragOver(true)
-    }
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault()
-        setDragOver(false)
-    }
-
-    const handleFileSelect = () => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.multiple = true
-        input.accept = tiposArchivosPermitidos.join(',')
-        input.onchange = (e) => {
-            const files = (e.target as HTMLInputElement).files
-            if (files) {
-                handleFileUpload(files)
-            }
-        }
-        input.click()
     }
 
     const handleDescargarModelo = () => {
@@ -379,127 +357,20 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
                             </Typography>
                         </Alert>
 
-                        {/* Upload Area */}
-                        <Paper
-                            onDrop={handleDrop}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onClick={handleFileSelect}
-                            sx={{
-                                border: dragOver ? '2px dashed #2196f3' : '2px dashed #ccc',
-                                borderRadius: 2,
-                                p: 4,
-                                textAlign: 'center',
-                                cursor: 'pointer',
-                                backgroundColor: dragOver ? 'rgba(33, 150, 243, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-                                transition: 'all 0.2s ease',
-                                mb: 3,
-                                '&:hover': {
-                                    backgroundColor: 'rgba(33, 150, 243, 0.05)',
-                                    borderColor: '#2196f3'
-                                }
-                            }}
-                        >
-                            <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                                {dragOver ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                o{" "}
-                                <Button variant="text" sx={{ textTransform: "none", fontWeight: 600, p: 0 }}>
-                                    selecciona archivos
-                                </Button>
-                            </Typography>
-                            <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
-                                {tiposArchivosPermitidos.map(tipo => (
-                                    <Chip
-                                        key={tipo}
-                                        label={tipo.toUpperCase()}
-                                        size="small"
-                                        color="primary"
-                                        variant="outlined"
-                                    />
-                                ))}
-                            </Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                Máximo 5MB por archivo
-                            </Typography>
-                        </Paper>
-
-                        {/* Uploaded Files */}
-                        {archivosAdjuntos.length > 0 && (
-                            <Card elevation={1} sx={{ p: 2 }}>
-                                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                                    Archivos adjuntos ({archivosAdjuntos.length})
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                    {archivosAdjuntos.map((archivo) => (
-                                        <Paper
-                                            key={archivo.id}
-                                            elevation={1}
-                                            sx={{
-                                                p: 2,
-                                                backgroundColor: archivo.estado === 'completado'
-                                                    ? 'rgba(76, 175, 80, 0.05)'
-                                                    : archivo.estado === 'error'
-                                                        ? 'rgba(244, 67, 54, 0.05)'
-                                                        : 'rgba(33, 150, 243, 0.05)',
-                                                border: `1px solid ${archivo.estado === 'completado'
-                                                        ? 'rgba(76, 175, 80, 0.2)'
-                                                        : archivo.estado === 'error'
-                                                            ? 'rgba(244, 67, 54, 0.2)'
-                                                            : 'rgba(33, 150, 243, 0.2)'
-                                                    }`
-                                            }}
-                                        >
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                                                    <AttachFileIcon
-                                                        sx={{
-                                                            color: archivo.estado === 'completado'
-                                                                ? 'success.main'
-                                                                : archivo.estado === 'error'
-                                                                    ? 'error.main'
-                                                                    : 'primary.main',
-                                                            mr: 2
-                                                        }}
-                                                    />
-                                                    <Box sx={{ flex: 1 }}>
-                                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                            {archivo.nombre}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {formatFileSize(archivo.tamaño)} • {archivo.estado === 'subiendo' ? 'Subiendo...' : archivo.estado === 'completado' ? 'Completado' : 'Error'}
-                                                        </Typography>
-                                                        {archivo.estado === 'subiendo' && (
-                                                            <LinearProgress
-                                                                variant="determinate"
-                                                                value={archivo.progreso}
-                                                                sx={{ mt: 0.5 }}
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                </Box>
-                                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    {archivo.estado === 'completado' && (
-                                                        <IconButton size="small" color="primary">
-                                                            <VisibilityIcon fontSize="small" />
-                                                        </IconButton>
-                                                    )}
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => removeArchivo(archivo.id)}
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Box>
-                                            </Box>
-                                        </Paper>
-                                    ))}
-                                </Box>
-                            </Card>
-                        )}
+                        {/* File Upload Section */}
+                        <FileUploadSection
+                            files={displayFiles}
+                            onUpload={handleFileUpload}
+                            onDelete={handleFileDeleteSection}
+                            title="Documentos"
+                            multiple={true}
+                            allowedTypes={tiposArchivosPermitidos.join(',')}
+                            maxSizeInMB={5}
+                            emptyMessage="No hay archivos adjuntos. Arrastra archivos o haz clic para seleccionar."
+                            dragDropMessage="Arrastra archivos aquí"
+                            uploadButtonLabel="Seleccionar archivos"
+                            isUploading={archivosAdjuntos.some(a => a.estado === 'subiendo')}
+                        />
 
                         {validationErrors.archivos && (
                             <Alert severity="error" sx={{ mt: 2 }}>

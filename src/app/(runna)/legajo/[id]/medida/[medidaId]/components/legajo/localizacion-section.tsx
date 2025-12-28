@@ -1,170 +1,126 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo } from "react"
 import type React from "react"
-import { Typography, Paper, Grid, Chip, Box, CircularProgress, Alert } from "@mui/material"
-import LocationOnIcon from "@mui/icons-material/LocationOn"
+import { Typography, Grid, Chip, Box, CircularProgress, Alert } from "@mui/material"
 import HomeIcon from "@mui/icons-material/Home"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
-import { get } from "@/app/api/apiService"
+import { useApiQuery } from "@/hooks/useApiQuery"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface LocalizacionSectionProps {
   legajoData: LegajoDetailResponse
 }
 
 export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajoData }) => {
-  const [localizacion, setLocalizacion] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Extract demanda ID from legajoData
+  const demandaId = useMemo(() => {
+    const demandas = legajoData?.demandas_relacionadas?.resultados || []
+    if (demandas.length === 0) {
+      console.log("LocalizacionSection - No demandas relacionadas found")
+      return null
+    }
 
-  useEffect(() => {
-    const fetchLocalizacion = async () => {
-      setLoading(true)
-      setError(null)
+    const firstDemanda = demandas[0]
+    let extractedId: number | null = null
 
-      try {
-        // Get demanda ID from demandas_relacionadas
-        const demandas = legajoData?.demandas_relacionadas?.resultados || []
+    if (firstDemanda?.demanda?.demanda_id) {
+      extractedId = firstDemanda.demanda.demanda_id
+    } else if (firstDemanda?.demanda_id) {
+      extractedId = firstDemanda.demanda_id
+    } else if (firstDemanda?.id) {
+      extractedId = firstDemanda.id
+    }
 
-        if (demandas.length === 0) {
-          console.log("LocalizacionSection - No demandas relacionadas found")
-          // Fallback to legajo localizacion_actual
-          if (legajoData?.localizacion_actual?.localizacion) {
-            setLocalizacion(legajoData.localizacion_actual.localizacion)
-          } else {
-            setLocalizacion(null)
-          }
-          setLoading(false)
-          return
-        }
+    if (!extractedId) {
+      console.log("LocalizacionSection - Could not extract demanda ID")
+    } else {
+      console.log(`LocalizacionSection - Extracted demanda ID: ${extractedId}`)
+    }
 
-        // Extract demanda ID
-        let demandaId: number | null = null
-        const firstDemanda = demandas[0]
+    return extractedId
+  }, [legajoData])
 
-        if (firstDemanda?.demanda?.demanda_id) {
-          demandaId = firstDemanda.demanda.demanda_id
-        } else if (firstDemanda?.demanda_id) {
-          demandaId = firstDemanda.demanda_id
-        } else if (firstDemanda?.id) {
-          demandaId = firstDemanda.id
-        }
+  // Fetch demanda full-detail using TanStack Query
+  const { data: demandaDetail, isLoading: loading, error: queryError } = useApiQuery<any>(
+    `registro-demanda-form/${demandaId}/full-detail/`,
+    undefined,
+    {
+      enabled: !!demandaId,
+    }
+  )
 
-        if (!demandaId) {
-          console.log("LocalizacionSection - Could not extract demanda ID")
-          // Fallback to legajo localizacion_actual
-          if (legajoData?.localizacion_actual?.localizacion) {
-            setLocalizacion(legajoData.localizacion_actual.localizacion)
-          } else {
-            setLocalizacion(null)
-          }
-          setLoading(false)
-          return
-        }
+  // Extract localizacion from response with fallbacks
+  const localizacion = useMemo(() => {
+    // If no demanda ID or no response, try fallback
+    if (!demandaId || !demandaDetail) {
+      if (legajoData?.localizacion_actual?.localizacion) {
+        console.log("LocalizacionSection - Using fallback legajo localizacion_actual")
+        return legajoData.localizacion_actual.localizacion
+      }
+      return null
+    }
 
-        console.log(`LocalizacionSection - Fetching full-detail for demanda ${demandaId}`)
+    console.log("LocalizacionSection - Full-detail response:", demandaDetail)
 
-        // Fetch full-detail
-        const response = await get<any>(`registro-demanda-form/${demandaId}/full-detail/`)
+    let foundLocalizacion = null
 
-        console.log("LocalizacionSection - Full-detail response:", response)
-
-        // Try to get localizacion from different sources
-        let foundLocalizacion = null
-
-        // 1. Try from personas array (matching persona ID)
-        if (response?.personas && legajoData?.persona?.id) {
-          const persona = response.personas.find((p: any) => p.persona?.id === legajoData.persona.id)
-          if (persona?.localizacion) {
-            console.log("LocalizacionSection - Using localizacion from persona in personas array")
-            foundLocalizacion = persona.localizacion
-          }
-        }
-
-        // 2. Try from first persona if exists
-        if (!foundLocalizacion && response?.personas?.[0]?.localizacion) {
-          console.log("LocalizacionSection - Using localizacion from first persona")
-          foundLocalizacion = response.personas[0].localizacion
-        }
-
-        // 3. Try root localizacion
-        if (!foundLocalizacion && response?.localizacion) {
-          console.log("LocalizacionSection - Using root localizacion from response")
-          foundLocalizacion = response.localizacion
-        }
-
-        // 4. Fallback to legajo localizacion_actual
-        if (!foundLocalizacion && legajoData?.localizacion_actual?.localizacion) {
-          console.log("LocalizacionSection - Using fallback legajoData.localizacion_actual.localizacion")
-          foundLocalizacion = legajoData.localizacion_actual.localizacion
-        }
-
-        console.log("LocalizacionSection - Final localizacion:", foundLocalizacion)
-        setLocalizacion(foundLocalizacion)
-      } catch (err) {
-        console.error("LocalizacionSection - Error fetching localizacion:", err)
-        setError("Error al cargar la información de localización")
-        // Try fallback
-        if (legajoData?.localizacion_actual?.localizacion) {
-          setLocalizacion(legajoData.localizacion_actual.localizacion)
-        }
-      } finally {
-        setLoading(false)
+    // 1. Try from personas array (matching persona ID)
+    if (demandaDetail?.personas && legajoData?.persona?.id) {
+      const persona = demandaDetail.personas.find((p: any) => p.persona?.id === legajoData.persona.id)
+      if (persona?.localizacion) {
+        console.log("LocalizacionSection - Using localizacion from persona in personas array")
+        foundLocalizacion = persona.localizacion
       }
     }
 
-    fetchLocalizacion()
-  }, [legajoData])
+    // 2. Try from first persona if exists
+    if (!foundLocalizacion && demandaDetail?.personas?.[0]?.localizacion) {
+      console.log("LocalizacionSection - Using localizacion from first persona")
+      foundLocalizacion = demandaDetail.personas[0].localizacion
+    }
+
+    // 3. Try root localizacion
+    if (!foundLocalizacion && demandaDetail?.localizacion) {
+      console.log("LocalizacionSection - Using root localizacion from response")
+      foundLocalizacion = demandaDetail.localizacion
+    }
+
+    // 4. Fallback to legajo localizacion_actual
+    if (!foundLocalizacion && legajoData?.localizacion_actual?.localizacion) {
+      console.log("LocalizacionSection - Using fallback legajoData.localizacion_actual.localizacion")
+      foundLocalizacion = legajoData.localizacion_actual.localizacion
+    }
+
+    console.log("LocalizacionSection - Final localizacion:", foundLocalizacion)
+    return foundLocalizacion
+  }, [demandaDetail, demandaId, legajoData])
+
+  const error = queryError ? "Error al cargar la información de localización" : null
 
   if (loading) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 200,
-        }}
-      >
-        <CircularProgress />
-      </Paper>
+      <SectionCard title="Localización Actual">
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
+          <CircularProgress />
+        </Box>
+      </SectionCard>
     )
   }
 
   if (error) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
+      <SectionCard title="Localización Actual">
         <Alert severity="error">{error}</Alert>
-      </Paper>
+      </SectionCard>
     )
   }
 
   if (!localizacion) {
     return (
-      <Paper
-        elevation={2}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
+      <SectionCard title="Localización Actual">
         <Alert severity="info">No hay información de localización registrada.</Alert>
-      </Paper>
+      </SectionCard>
     )
   }
 
@@ -182,26 +138,8 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
   }
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-      }}
-    >
+    <SectionCard title="Localización Actual">
       <Grid container spacing={3}>
-        {/* Header */}
-        <Grid item xs={12}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <LocationOnIcon sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Localización Actual
-            </Typography>
-          </Box>
-        </Grid>
-
         {/* Dirección completa */}
         <Grid item xs={12}>
           <Box
@@ -388,6 +326,6 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
           </Grid>
         </Grid>
       </Grid>
-    </Paper>
+    </SectionCard>
   )
 }

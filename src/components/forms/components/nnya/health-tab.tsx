@@ -14,7 +14,6 @@ import {
 import { Controller, type Control, type UseFormSetValue } from "react-hook-form"
 import { MedicalServices as MedicalIcon, Coronavirus as VirusIcon } from "@mui/icons-material"
 import FormSection from "../form-section"
-import RequiredLabel from "../required-label"
 import EnfermedadesFieldArray from "../../EnfermedadesFieldsArray"
 import type { DropdownData, FormData } from "../../types/formTypes"
 
@@ -53,7 +52,8 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Institución Sanitaria" />}
+                        label="Institución Sanitaria"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -82,7 +82,8 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Obra Social" />}
+                        label="Obra Social"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -111,7 +112,8 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={<RequiredLabel label="Intervención" />}
+                        label="Intervención"
+                        required
                         error={!!error}
                         helperText={error?.message}
                         size="small"
@@ -177,7 +179,8 @@ const HealthTab: React.FC<HealthTabProps> = ({ index, control, dropdownData, rea
                     render={({ field, fieldState }) => (
                       <TextField
                         {...field}
-                        label={<RequiredLabel label="Nombre del Médico" />}
+                        label="Nombre del Médico"
+                        required
                         fullWidth
                         error={!!fieldState.error}
                         helperText={fieldState.error?.message}

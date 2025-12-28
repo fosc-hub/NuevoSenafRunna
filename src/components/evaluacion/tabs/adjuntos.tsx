@@ -24,6 +24,7 @@ import {
   Visibility as VisibilityIcon,
   Description as DescriptionIcon,
 } from "@mui/icons-material"
+import { formatDateTimeLocaleAR } from "@/utils/dateUtils"
 
 // Modificar la interfaz Adjunto para que coincida con la estructura de datos real
 interface Adjunto {
@@ -81,8 +82,7 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
   const formatDate = (dateString: string): string => {
     if (!dateString) return ""
     try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString() + " " + date.toLocaleTimeString()
+      return formatDateTimeLocaleAR(dateString)
     } catch (e) {
       return dateString
     }

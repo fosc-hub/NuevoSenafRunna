@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
     Typography,
-    Paper,
     Box,
     Button,
     Chip,
@@ -21,9 +20,11 @@ import AttachFileIcon from "@mui/icons-material/AttachFile"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import EditIcon from "@mui/icons-material/Edit"
 import VisibilityIcon from "@mui/icons-material/Visibility"
+import { useApiQuery } from "@/hooks/useApiQuery"
 import { getIntervencionesByMedida } from "../../api/intervenciones-api-service"
 import { IntervencionActions } from "../medida/intervencion-actions"
 import type { IntervencionResponse } from "../../types/intervencion-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface IntervencionesSectionProps {
     medidaId: number
@@ -39,38 +40,26 @@ export const IntervencionesSection: React.FC<IntervencionesSectionProps> = ({
     // ============================================================================
     // STATE
     // ============================================================================
-    const [intervenciones, setIntervenciones] = useState<IntervencionResponse[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
     const [expandedId, setExpandedId] = useState<number | null>(null)
 
-    // ============================================================================
-    // EFFECTS
-    // ============================================================================
-    useEffect(() => {
-        loadIntervenciones()
-    }, [medidaId])
+    // Fetch intervenciones using TanStack Query
+    const { data: intervenciones = [], isLoading, error: queryError, refetch } = useApiQuery<IntervencionResponse[]>(
+        `intervenciones/medida/${medidaId}`,
+        { ordering: '-fecha_creacion' },
+        {
+            queryFn: () => getIntervencionesByMedida(medidaId, { ordering: '-fecha_creacion' }),
+        }
+    )
+
+    const error = queryError ? String(queryError) : null
+
+    const loadIntervenciones = () => {
+        refetch()
+    }
 
     // ============================================================================
     // HANDLERS
     // ============================================================================
-    const loadIntervenciones = async () => {
-        setIsLoading(true)
-        setError(null)
-
-        try {
-            const data = await getIntervencionesByMedida(medidaId, {
-                ordering: '-fecha_creacion' // Most recent first
-            })
-            setIntervenciones(data)
-        } catch (err: any) {
-            console.error("Error loading intervenciones:", err)
-            setError(err?.response?.data?.detail || "Error al cargar las intervenciones")
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
     const handleExpandClick = (id: number) => {
         setExpandedId(expandedId === id ? null : id)
     }
@@ -80,17 +69,17 @@ export const IntervencionesSection: React.FC<IntervencionesSectionProps> = ({
     // ============================================================================
     if (isLoading) {
         return (
-            <Paper elevation={2} sx={{ width: "100%", mb: 4, p: 3, borderRadius: 2 }}>
+            <SectionCard title="Intervenciones">
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
                     <CircularProgress />
                 </Box>
-            </Paper>
+            </SectionCard>
         )
     }
 
     if (error) {
         return (
-            <Paper elevation={2} sx={{ width: "100%", mb: 4, p: 3, borderRadius: 2 }}>
+            <SectionCard title="Intervenciones">
                 <Alert severity="error" onClose={() => setError(null)}>
                     {error}
                 </Alert>
@@ -103,16 +92,18 @@ export const IntervencionesSection: React.FC<IntervencionesSectionProps> = ({
                         Reintentar
                     </Button>
                 </Box>
-            </Paper>
+            </SectionCard>
         )
     }
 
     return (
-        <Paper elevation={2} sx={{ width: "100%", mb: 4, p: 3, borderRadius: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Intervenciones ({intervenciones.length})
-                </Typography>
+        <SectionCard
+            title="Intervenciones"
+            chips={[{
+                label: `${intervenciones.length}`,
+                color: "primary"
+            }]}
+            headerActions={
                 <Button
                     variant="contained"
                     color="primary"
@@ -122,8 +113,8 @@ export const IntervencionesSection: React.FC<IntervencionesSectionProps> = ({
                 >
                     Nueva Intervención
                 </Button>
-            </Box>
-
+            }
+        >
             {intervenciones.length === 0 ? (
                 <Alert severity="info">
                     No hay intervenciones registradas aún.
@@ -298,6 +289,6 @@ export const IntervencionesSection: React.FC<IntervencionesSectionProps> = ({
                     ))}
                 </Box>
             )}
-        </Paper>
+        </SectionCard>
     )
 }

@@ -2,25 +2,17 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
   TextField,
   Typography,
-  IconButton,
-  Alert,
   Chip,
-  CircularProgress,
   useTheme,
   alpha,
   Divider,
 } from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
 import LinkOffIcon from "@mui/icons-material/LinkOff"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"
+import BaseDialog from "@/components/shared/BaseDialog"
 import { MIN_CARACTERES_JUSTIFICACION_VINCULO } from "@/app/(runna)/legajo-mesa/types/vinculo-types"
 import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
 
@@ -147,173 +139,176 @@ export default function DesvincularVinculoDialog({
   }
 
   return (
-    <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <LinkOffIcon color="error" />
-            <Typography variant="h6">Desvincular Legajo</Typography>
-          </Box>
-          <IconButton aria-label="cerrar" onClick={handleCancel} size="small" disabled={loading}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent dividers>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {/* Error Alert */}
-          {error && (
-            <Alert severity="error" onClose={clearError}>
-              {error}
-            </Alert>
-          )}
-
-          {/* Warning Alert */}
-          <Alert severity="warning" icon={<WarningAmberIcon />}>
+    <BaseDialog
+      open={open}
+      onClose={handleCancel}
+      title="Desvincular Legajo"
+      titleIcon={<LinkOffIcon color="error" />}
+      error={error}
+      loading={loading}
+      loadingMessage="Desvinculando..."
+      maxWidth="sm"
+      fullWidth
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleCancel,
+          disabled: loading,
+          color: "inherit",
+        },
+        {
+          label: loading ? "Desvinculando..." : "Desvincular",
+          onClick: handleSubmit,
+          variant: "contained",
+          color: "error",
+          disabled: loading,
+          startIcon: <LinkOffIcon />,
+          loading: loading,
+        },
+      ]}
+    >
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {/* Warning Alert */}
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.warning.light, 0.1),
+            border: `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+            display: "flex",
+            gap: 1.5,
+          }}
+        >
+          <WarningAmberIcon color="warning" />
+          <Box>
             <Typography variant="body2" fontWeight={500}>
               ¿Está seguro que desea desvincular este legajo?
             </Typography>
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Esta acción no se puede deshacer. El vínculo quedará inactivo pero se preservará
-              en el historial con fines de auditoría.
+              Esta acción no se puede deshacer. El vínculo quedará inactivo pero se preservará en
+              el historial con fines de auditoría.
             </Typography>
-          </Alert>
+          </Box>
+        </Box>
 
-          {/* Vinculo Details */}
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: alpha(theme.palette.background.paper, 0.5),
-              border: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Typography variant="subtitle2" gutterBottom color="text.secondary">
-              Detalles del Vínculo
-            </Typography>
-            <Divider sx={{ my: 1 }} />
+        {/* Vinculo Details */}
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.background.paper, 0.5),
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Typography variant="subtitle2" gutterBottom color="text.secondary">
+            Detalles del Vínculo
+          </Typography>
+          <Divider sx={{ my: 1 }} />
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 2 }}>
-              {/* Tipo Vínculo */}
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Tipo de Vínculo
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <Chip
-                    label={vinculo.tipo_vinculo.nombre}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                </Box>
-              </Box>
-
-              {/* Destino */}
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Vinculado a
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {formatDestinoInfo(vinculo)}
-                </Typography>
-              </Box>
-
-              {/* Justificación Original */}
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Justificación Original
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    mt: 0.5,
-                    fontStyle: "italic",
-                    color: "text.secondary",
-                    maxHeight: "100px",
-                    overflowY: "auto",
-                  }}
-                >
-                  &ldquo;{vinculo.justificacion}&rdquo;
-                </Typography>
-              </Box>
-
-              {/* Creado por */}
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Creado por
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {vinculo.creado_por_username}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(vinculo.creado_en).toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 2 }}>
+            {/* Tipo Vínculo */}
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Tipo de Vínculo
+              </Typography>
+              <Box sx={{ mt: 0.5 }}>
+                <Chip
+                  label={vinculo.tipo_vinculo.nombre}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
               </Box>
             </Box>
-          </Box>
 
-          {/* Justificación del Desvínculo */}
-          <Box>
-            <TextField
-              fullWidth
-              required
-              multiline
-              rows={4}
-              label="Justificación para Desvincular"
-              placeholder={`Explique detalladamente el motivo del desvínculo (mínimo ${MIN_CARACTERES_JUSTIFICACION_VINCULO} caracteres)...`}
-              value={justificacion}
-              onChange={(e) => {
-                setJustificacion(e.target.value)
-                setValidationError(null)
-              }}
-              error={Boolean(validationError)}
-              helperText={validationError}
-              disabled={loading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: alpha(theme.palette.background.paper, 0.5),
-                },
-              }}
-            />
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-              <Typography
-                variant="caption"
-                color={isJustificacionValid ? "success.main" : "text.secondary"}
-              >
-                {justificacion.length} / {MIN_CARACTERES_JUSTIFICACION_VINCULO} caracteres
+            {/* Destino */}
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Vinculado a
               </Typography>
-              {!isJustificacionValid && caracteresFaltantes > 0 && (
-                <Typography variant="caption" color="warning.main">
-                  Faltan {caracteresFaltantes} caracteres
-                </Typography>
-              )}
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {formatDestinoInfo(vinculo)}
+              </Typography>
+            </Box>
+
+            {/* Justificación Original */}
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Justificación Original
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  mt: 0.5,
+                  fontStyle: "italic",
+                  color: "text.secondary",
+                  maxHeight: "100px",
+                  overflowY: "auto",
+                }}
+              >
+                &ldquo;{vinculo.justificacion}&rdquo;
+              </Typography>
+            </Box>
+
+            {/* Creado por */}
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Creado por
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {vinculo.creado_por_username}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {new Date(vinculo.creado_en).toLocaleDateString("es-AR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Typography>
             </Box>
           </Box>
         </Box>
-      </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleCancel} disabled={loading} color="inherit">
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          color="error"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : <LinkOffIcon />}
-        >
-          {loading ? "Desvinculando..." : "Desvincular"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        {/* Justificación del Desvínculo */}
+        <Box>
+          <TextField
+            fullWidth
+            required
+            multiline
+            rows={4}
+            label="Justificación para Desvincular"
+            placeholder={`Explique detalladamente el motivo del desvínculo (mínimo ${MIN_CARACTERES_JUSTIFICACION_VINCULO} caracteres)...`}
+            value={justificacion}
+            onChange={(e) => {
+              setJustificacion(e.target.value)
+              setValidationError(null)
+            }}
+            error={Boolean(validationError)}
+            helperText={validationError}
+            disabled={loading}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                bgcolor: alpha(theme.palette.background.paper, 0.5),
+              },
+            }}
+          />
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+            <Typography
+              variant="caption"
+              color={isJustificacionValid ? "success.main" : "text.secondary"}
+            >
+              {justificacion.length} / {MIN_CARACTERES_JUSTIFICACION_VINCULO} caracteres
+            </Typography>
+            {!isJustificacionValid && caracteresFaltantes > 0 && (
+              <Typography variant="caption" color="warning.main">
+                Faltan {caracteresFaltantes} caracteres
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </Box>
+    </BaseDialog>
   )
 }

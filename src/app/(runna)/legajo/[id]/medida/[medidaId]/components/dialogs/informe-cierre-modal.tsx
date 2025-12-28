@@ -24,17 +24,11 @@
 
 import React, { useState } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   IconButton,
   Box,
   Typography,
-  Alert,
-  CircularProgress,
   List,
   ListItem,
   ListItemText,
@@ -46,10 +40,11 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import DeleteIcon from "@mui/icons-material/Delete"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import AssignmentIcon from "@mui/icons-material/Assignment"
+import BaseDialog from "@/components/shared/BaseDialog"
 import {
   createInformeCierre,
   uploadAdjuntoInformeCierre,
@@ -208,157 +203,142 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
 
   // ========== Render ==========
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        Registrar Informe de Cierre
-        <IconButton
-          onClick={handleClose}
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      title="Registrar Informe de Cierre"
+      titleIcon={<AssignmentIcon />}
+      showCloseButton={!isSubmitting}
+      error={error}
+      info="Complete la fundamentación del cierre de esta medida MPI. Describa los objetivos alcanzados, la situación estabilizada del NNyA y su familia, y las razones para el cierre de la intervención."
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleClose,
+          variant: "text",
+          disabled: isSubmitting
+        },
+        {
+          label: isSubmitting ? "Enviando..." : "Enviar Informe",
+          onClick: handleSubmit,
+          variant: "contained",
+          color: "primary",
+          disabled: !canSubmit,
+          loading: isSubmitting
+        }
+      ]}
+    >
+      {/* Tipo de Cese Selector */}
+      <FormControl
+        fullWidth
+        required
+        error={tipoCese === "" && !isSubmitting}
+        sx={{ mb: 3 }}
+      >
+        <InputLabel id="tipo-cese-label">Tipo de Cese *</InputLabel>
+        <Select
+          labelId="tipo-cese-label"
+          id="tipo-cese-select"
+          value={tipoCese}
+          label="Tipo de Cese *"
+          onChange={(e) => setTipoCese(e.target.value as TipoCeseMPI)}
           disabled={isSubmitting}
-          sx={{ position: "absolute", right: 8, top: 8 }}
         >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent dividers>
-        {/* Instructions */}
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Complete la fundamentación del cierre de esta medida MPI. Describa los
-          objetivos alcanzados, la situación estabilizada del NNyA y su familia, y
-          las razones para el cierre de la intervención.
-        </Alert>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Tipo de Cese Selector */}
-        <FormControl
-          fullWidth
-          required
-          error={tipoCese === "" && !isSubmitting}
-          sx={{ mb: 3 }}
-        >
-          <InputLabel id="tipo-cese-label">Tipo de Cese *</InputLabel>
-          <Select
-            labelId="tipo-cese-label"
-            id="tipo-cese-select"
-            value={tipoCese}
-            label="Tipo de Cese *"
-            onChange={(e) => setTipoCese(e.target.value as TipoCeseMPI)}
-            disabled={isSubmitting}
-          >
-            <MenuItem value="">
-              <em>Seleccione un tipo de cese</em>
+          <MenuItem value="">
+            <em>Seleccione un tipo de cese</em>
+          </MenuItem>
+          {(Object.entries(TipoCeseMPILabels) as [TipoCeseMPI, string][]).map(([key, label]) => (
+            <MenuItem key={key} value={key}>
+              {label}
             </MenuItem>
-            {(Object.entries(TipoCeseMPILabels) as [TipoCeseMPI, string][]).map(([key, label]) => (
-              <MenuItem key={key} value={key}>
-                {label}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>
-            Seleccione el tipo de cese que corresponde a esta medida
-          </FormHelperText>
-        </FormControl>
+          ))}
+        </Select>
+        <FormHelperText>
+          Seleccione el tipo de cese que corresponde a esta medida
+        </FormHelperText>
+      </FormControl>
 
-        {/* Observaciones Field */}
-        <TextField
-          label="Observaciones *"
-          multiline
-          rows={6}
-          fullWidth
-          value={observaciones}
-          onChange={(e) => setObservaciones(e.target.value)}
-          placeholder="Describa los objetivos alcanzados, la situación actual del NNyA y familia, y las razones para el cierre de la intervención..."
-          helperText={
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
-              <span>
-                {observaciones.length} / 20 caracteres mínimo
-              </span>
-              {isObservacionesValid && (
-                <Chip
-                  icon={<CheckCircleIcon />}
-                  label="Válido"
-                  color="success"
-                  size="small"
-                />
-              )}
-            </Box>
-          }
-          error={observaciones.length > 0 && !isObservacionesValid}
-          disabled={isSubmitting}
-          sx={{ mb: 3 }}
-        />
+      {/* Observaciones Field */}
+      <TextField
+        label="Observaciones *"
+        multiline
+        rows={6}
+        fullWidth
+        value={observaciones}
+        onChange={(e) => setObservaciones(e.target.value)}
+        placeholder="Describa los objetivos alcanzados, la situación actual del NNyA y familia, y las razones para el cierre de la intervención..."
+        helperText={
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+            <span>
+              {observaciones.length} / 20 caracteres mínimo
+            </span>
+            {isObservacionesValid && (
+              <Chip
+                icon={<CheckCircleIcon />}
+                label="Válido"
+                color="success"
+                size="small"
+              />
+            )}
+          </Box>
+        }
+        error={observaciones.length > 0 && !isObservacionesValid}
+        disabled={isSubmitting}
+        sx={{ mb: 3 }}
+      />
 
-        {/* File Upload Section */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Adjuntos (Opcional)
-          </Typography>
+      {/* File Upload Section */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Adjuntos (Opcional)
+        </Typography>
 
-          <Button
-            variant="outlined"
-            component="label"
-            startIcon={<AttachFileIcon />}
-            disabled={isSubmitting}
-            sx={{ mb: 1 }}
-          >
-            Seleccionar Archivos
-            <input
-              type="file"
-              hidden
-              multiple
-              accept={getAcceptAttribute()}
-              onChange={handleFileChange}
-            />
-          </Button>
-
-          <Typography variant="caption" display="block" color="text.secondary">
-            Formatos permitidos: PDF, DOC, DOCX, JPG, PNG (máx. 10 MB cada uno)
-          </Typography>
-        </Box>
-
-        {/* File List */}
-        {archivos.length > 0 && (
-          <List dense sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
-            {archivos.map((archivo, index) => (
-              <ListItem key={index}>
-                <ListItemText
-                  primary={archivo.name}
-                  secondary={formatFileSize(archivo.size)}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    onClick={() => handleRemoveFile(index)}
-                    disabled={isSubmitting}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose} disabled={isSubmitting}>
-          Cancelar
-        </Button>
         <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={!canSubmit}
-          startIcon={isSubmitting && <CircularProgress size={20} />}
+          variant="outlined"
+          component="label"
+          startIcon={<AttachFileIcon />}
+          disabled={isSubmitting}
+          sx={{ mb: 1 }}
         >
-          {isSubmitting ? "Enviando..." : "Enviar Informe"}
+          Seleccionar Archivos
+          <input
+            type="file"
+            hidden
+            multiple
+            accept={getAcceptAttribute()}
+            onChange={handleFileChange}
+          />
         </Button>
-      </DialogActions>
-    </Dialog>
+
+        <Typography variant="caption" display="block" color="text.secondary">
+          Formatos permitidos: PDF, DOC, DOCX, JPG, PNG (máx. 10 MB cada uno)
+        </Typography>
+      </Box>
+
+      {/* File List */}
+      {archivos.length > 0 && (
+        <List dense sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
+          {archivos.map((archivo, index) => (
+            <ListItem key={index}>
+              <ListItemText
+                primary={archivo.name}
+                secondary={formatFileSize(archivo.size)}
+              />
+              <ListItemSecondaryAction>
+                <IconButton
+                  edge="end"
+                  onClick={() => handleRemoveFile(index)}
+                  disabled={isSubmitting}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      )}
+    </BaseDialog>
   )
 }

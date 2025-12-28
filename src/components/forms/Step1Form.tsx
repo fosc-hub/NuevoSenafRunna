@@ -6,6 +6,7 @@ import { type Control, Controller, useFieldArray, useController } from "react-ho
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { useQuery } from "@tanstack/react-query"
 import { parseDateSafely, formatDateSafely } from "./utils/dateUtils"
+import { get } from "@/app/api/apiService"
 import {
   TextField,
   Grid,
@@ -43,12 +44,6 @@ const TIPOS_MEDIDA_MOCK = [
   { key: "MPJ", value: "Medida Penal Juvenil" },
 ]
 
-// Helper function to add a red asterisk to labels
-const RequiredLabel = ({ label }: { label: string }) => (
-  <React.Fragment>
-    {label} <span style={{ color: "#d32f2f" }}>*</span>
-  </React.Fragment>
-)
 
 // Componente para la sección de archivos adjuntos
 const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; readOnly?: boolean }) => {
@@ -370,8 +365,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
 
     // Fetch legajo details to get medidas_activas
     try {
-      const response = await fetch(`/api/legajos/${legajoId}/`)
-      const legajoData = await response.json()
+      const legajoData = await get<any>(`legajos/${legajoId}/`)
 
       // Create new vinculo with legajo info pre-filled
       const newVinculo = {
@@ -548,7 +542,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <DatePicker
-                    label={<RequiredLabel label="Fecha de oficio/documento" />}
+                    label="Fecha de oficio/documento"
                     disabled={readOnly}
                     value={parseDateSafely(field.value)}
                     onChange={(date) => field.onChange(formatDateSafely(date))}
@@ -558,6 +552,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                         error: !!error,
                         helperText: error?.message,
                         size: "medium",
+                        required: true,
                       },
                     }}
                   />
@@ -571,7 +566,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <DatePicker
-                    label={<RequiredLabel label="Fecha de ingreso SENAF" />}
+                    label="Fecha de ingreso SENAF"
                     disabled={readOnly}
                     value={parseDateSafely(field.value)}
                     onChange={(date) => field.onChange(formatDateSafely(date))}
@@ -581,6 +576,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                         error: !!error,
                         helperText: error?.message,
                         size: "medium",
+                        required: true,
                       },
                     }}
                   />
@@ -665,7 +661,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label={<RequiredLabel label="Tipo de Organismo" />}
+                          label="Tipo de Organismo"
+                          required
                           error={!!error}
                           helperText={error?.message}
                           size="medium"
@@ -698,7 +695,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label={<RequiredLabel label="Organismo" />}
+                            label="Organismo"
+                            required
                             error={!!error}
                             helperText={error?.message}
                             size="medium"
@@ -719,7 +717,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={<RequiredLabel label="Nombre de la Institución" />}
+                    label="Nombre de la Institución"
+                    required
                     fullWidth
                     error={!!error}
                     helperText={error?.message}
@@ -838,7 +837,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label={<RequiredLabel label="Ámbito de Vulneración" />}
+                          label="Ámbito de Vulneración"
+                          required
                           error={!!error}
                           helperText={error?.message}
                           size="medium"
@@ -867,7 +867,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label={<RequiredLabel label="Objetivo de demanda" />}
+                          label="Objetivo de demanda"
+                          required
                           error={!!error}
                           helperText={error?.message}
                           size="medium"
@@ -899,7 +900,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label={<RequiredLabel label="Tipo de Oficio" />}
+                              label="Tipo de Oficio"
+                              required
                               error={!!error}
                               helperText={error?.message}
                               size="medium"
@@ -929,7 +931,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label={<RequiredLabel label="Tipo de medida" />}
+                              label="Tipo de medida"
+                              required
                               error={!!error}
                               helperText={error?.message}
                               size="medium"
@@ -1032,7 +1035,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label={<RequiredLabel label="Zona a la cual se le asignará la demanda" />}
+                          label="Zona a la cual se le asignará la demanda"
+                          required
                           error={!!error}
                           helperText={error?.message}
                           size="medium"

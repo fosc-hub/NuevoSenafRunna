@@ -1,10 +1,10 @@
 "use client"
 
 import type React from "react"
-import { Typography, Paper, Grid, Box, Chip, Divider } from "@mui/material"
-import GroupIcon from "@mui/icons-material/Group"
+import { Typography, Grid, Box, Chip, Divider, Paper } from "@mui/material"
 import PersonIcon from "@mui/icons-material/Person"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { SectionCard } from "../medida/shared/section-card"
 
 interface ResponsablesSectionProps {
   legajoData: LegajoDetailResponse
@@ -15,27 +15,11 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
 
   if (!responsables || Object.keys(responsables).length === 0) {
     return (
-      <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          mb: 4,
-          p: 3,
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <GroupIcon sx={{ mr: 1, color: "text.secondary" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Responsables
-          </Typography>
-        </Box>
+      <SectionCard title="Responsables">
         <Typography variant="body1" color="text.secondary">
           No hay responsables asignados.
         </Typography>
-      </Paper>
+      </SectionCard>
     )
   }
 
@@ -47,31 +31,14 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
   const responsablesEntries = Object.entries(responsables)
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        width: "100%",
-        mb: 4,
-        p: 3,
-        borderRadius: 2,
-        border: "1px solid",
-        borderColor: "divider",
-      }}
+    <SectionCard
+      title="Responsables"
+      chips={[{
+        label: `${responsablesEntries.length} tipo${responsablesEntries.length !== 1 ? "s" : ""}`,
+        color: "primary",
+        variant: "outlined"
+      }]}
     >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <GroupIcon sx={{ mr: 1, color: "text.secondary" }} />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Responsables
-        </Typography>
-        <Chip
-          label={`${responsablesEntries.length} tipo${responsablesEntries.length !== 1 ? "s" : ""}`}
-          color="primary"
-          size="small"
-          variant="outlined"
-          sx={{ ml: 2 }}
-        />
-      </Box>
 
       <Grid container spacing={3}>
         {responsablesEntries.map(([key, responsable], index) => {
@@ -190,6 +157,6 @@ export const ResponsablesSection: React.FC<ResponsablesSectionProps> = ({ legajo
           Los responsables tienen distintos niveles de acceso y permisos sobre este legajo según su tipo de responsabilidad.
         </Typography>
       </Box>
-    </Paper>
+    </SectionCard>
   )
 }

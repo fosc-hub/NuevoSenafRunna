@@ -1,25 +1,15 @@
-import type React from "react"
-import { Box } from "@mui/material"
+/**
+ * TabPanel component for forms module
+ *
+ * DEPRECATED: This file now re-exports from the shared TabPanel component.
+ * Import from "@/components/shared/TabPanel" instead.
+ *
+ * This file maintained for backward compatibility.
+ *
+ * Note: This version originally had paddingTop="16px".
+ * When migrating, pass paddingTop={16} prop to the shared TabPanel.
+ */
 
-interface TabPanelProps {
-  children?: React.ReactNode
-  index: number
-  value: number
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-      {...other}
-      style={{ paddingTop: "16px" }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  )
-}
+import TabPanel from "@/components/shared/TabPanel"
 
 export default TabPanel

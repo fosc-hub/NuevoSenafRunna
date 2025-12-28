@@ -2,23 +2,17 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
   TextField,
   MenuItem,
   Typography,
-  IconButton,
   Alert,
   CircularProgress,
   useTheme,
   alpha,
 } from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
 import LinkIcon from "@mui/icons-material/Link"
+import BaseDialog from "@/components/shared/BaseDialog"
 import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
 import {
   MIN_CARACTERES_JUSTIFICACION_VINCULO,
@@ -199,35 +193,36 @@ export default function CrearVinculoLegajoDialog({
   const isJustificacionValid = justificacion.length >= MIN_CARACTERES_JUSTIFICACION_VINCULO
 
   return (
-    <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <LinkIcon color="primary" />
-            <Typography variant="h6">Crear Vínculo de Legajo</Typography>
-          </Box>
-          <IconButton
-            aria-label="cerrar"
-            onClick={handleCancel}
-            size="small"
-            disabled={loading}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent dividers>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {/* Error Alert */}
-          {error && (
-            <Alert severity="error" onClose={clearError}>
-              {error}
-            </Alert>
-          )}
-
-          {/* Workflow Type Selector */}
-          <TextField
+    <BaseDialog
+      open={open}
+      onClose={handleCancel}
+      title="Crear Vínculo de Legajo"
+      titleIcon={<LinkIcon color="primary" />}
+      error={error}
+      loading={loading}
+      loadingMessage="Creando..."
+      maxWidth="sm"
+      fullWidth
+      actions={[
+        {
+          label: "Cancelar",
+          onClick: handleCancel,
+          disabled: loading,
+          color: "inherit",
+        },
+        {
+          label: loading ? "Creando..." : "Crear Vínculo",
+          onClick: handleSubmit,
+          variant: "contained",
+          disabled: loading,
+          startIcon: <LinkIcon />,
+          loading: loading,
+        },
+      ]}
+    >
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {/* Workflow Type Selector */}
+        <TextField
             select
             fullWidth
             required
@@ -420,21 +415,6 @@ export default function CrearVinculoLegajoDialog({
             </Box>
           </Box>
         </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleCancel} disabled={loading} color="inherit">
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : <LinkIcon />}
-        >
-          {loading ? "Creando..." : "Crear Vínculo"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   )
 }

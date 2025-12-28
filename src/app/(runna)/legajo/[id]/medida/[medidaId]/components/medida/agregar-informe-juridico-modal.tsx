@@ -2,10 +2,6 @@
 
 import type React from "react"
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Box,
     Typography,
     TextField,
@@ -16,14 +12,14 @@ import {
     MenuItem,
     Select,
     InputLabel,
-    FormControl,
-    Divider
+    FormControl
 } from "@mui/material"
 import { useState } from "react"
-import CloseIcon from "@mui/icons-material/Close"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import AddIcon from "@mui/icons-material/Add"
 import GroupIcon from "@mui/icons-material/Group"
+import DescriptionIcon from "@mui/icons-material/Description"
+import BaseDialog from "@/components/shared/BaseDialog"
 
 interface AgregarInformeJuridicoModalProps {
     open: boolean
@@ -64,31 +60,31 @@ export const AgregarInformeJuridicoModal: React.FC<AgregarInformeJuridicoModalPr
     }
 
     return (
-        <Dialog
+        <BaseDialog
             open={open}
             onClose={onClose}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: { borderRadius: 3, maxHeight: '95vh' } }}
+            title="Agregar informe jurídico"
+            titleIcon={<DescriptionIcon />}
+            centerTitle
+            showCloseButton
+            contentSx={{ px: 4, py: 3, overflowY: 'auto' }}
+            actions={[
+                {
+                    label: 'Guardar',
+                    onClick: handleGuardar,
+                    variant: 'contained',
+                    color: 'primary'
+                },
+                {
+                    label: 'Cancelar',
+                    onClick: onClose,
+                    variant: 'outlined'
+                }
+            ]}
         >
-            <DialogTitle sx={{
-                textAlign: 'center',
-                fontWeight: 600,
-                fontSize: '1.5rem',
-                position: 'relative',
-                pb: 1,
-                borderBottom: '1px solid #e0e0e0'
-            }}>
-                Agregar informe jurídico
-                <IconButton
-                    onClick={onClose}
-                    sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
-                >
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ px: 4, py: 3, overflowY: 'auto' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {/* Fecha de apertura */}
                     <Box>
                         <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
@@ -312,28 +308,7 @@ export const AgregarInformeJuridicoModal: React.FC<AgregarInformeJuridicoModalPr
                         </Box>
                     </Box>
                 </Box>
-            </DialogContent>
-            <DialogActions sx={{ px: 4, pb: 3, pt: 2, flexDirection: 'column', gap: 2 }}>
-                <Button
-                    onClick={handleGuardar}
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    size="large"
-                    sx={{ textTransform: "none", borderRadius: 2, py: 1.5, fontWeight: 600, backgroundColor: '#4f3ff0', '&:hover': { backgroundColor: '#3a2cc2' } }}
-                >
-                    Guardar
-                </Button>
-                <Button
-                    onClick={onClose}
-                    variant="contained"
-                    fullWidth
-                    size="large"
-                    sx={{ textTransform: "none", borderRadius: 2, py: 1.5, fontWeight: 600, backgroundColor: '#ece9fd', color: '#4f3ff0', '&:hover': { backgroundColor: '#d1c9f6' } }}
-                >
-                    cancelar
-                </Button>
-            </DialogActions>
-        </Dialog>
+            </Box>
+        </BaseDialog>
     )
 } 

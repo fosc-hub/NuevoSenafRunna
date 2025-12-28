@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { FormControl, InputLabel, Select, MenuItem, FormHelperText, Chip, Box } from '@mui/material'
-import { actividadService } from '../../services/actividadService'
+import { useCatalogData } from '@/hooks/useApiQuery'
 import type { TTipoActividad } from '../../types/actividades'
 import { getActorColor } from '../../types/actividades'
 
@@ -25,24 +25,19 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
   helperText,
   disabled
 }) => {
-  const [tipos, setTipos] = useState<TTipoActividad[]>([])
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    loadTipos()
-  }, [actor])
-
-  const loadTipos = async () => {
-    setLoading(true)
-    try {
-      const data = await actividadService.getTipos(actor)
-      setTipos(data)
-    } catch (error) {
-      console.error('Error loading activity types:', error)
-    } finally {
-      setLoading(false)
+  // Fetch activity types using TanStack Query
+  const { data: allTipos = [], isLoading: loading } = useCatalogData<TTipoActividad[]>(
+    'actividad-tipos/',
+    {
+      queryFn: () => import('../../services/actividadService').then(m => m.actividadService.getTipos(actor)),
     }
-  }
+  )
+
+  // Filter by actor if provided
+  const tipos = useMemo(() => {
+    if (!actor) return allTipos
+    return allTipos.filter(tipo => tipo.actor === actor)
+  }, [allTipos, actor])
 
   // Filter activity types by etapa if filterEtapa is provided (for MPJ)
   const filteredTipos = filterEtapa

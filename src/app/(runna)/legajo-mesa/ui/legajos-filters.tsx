@@ -21,9 +21,9 @@ import {
 } from "@mui/material"
 import FilterList from "@mui/icons-material/FilterList"
 import { Check, AlertCircle, FileText, Clock, Shield, Filter } from "lucide-react"
-import { get } from "@/app/api/apiService"
 import AdvancedFiltersPanel from "../components/filters/AdvancedFiltersPanel"
 import { useFilterOptions } from "../hooks/useFilterOptions"
+import { useCatalogData } from "@/hooks/useApiQuery"
 
 // Interfaz para los filtros de legajos
 export interface LegajoFiltersState {
@@ -73,7 +73,10 @@ interface Zona {
 const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [advancedAnchorEl, setAdvancedAnchorEl] = useState<null | HTMLElement>(null)
-  const [zonas, setZonas] = useState<Zona[]>([])
+
+  // Fetch zonas using TanStack Query
+  const { data: zonas = [] } = useCatalogData<Zona[]>("zona/")
+
   const filterOptions = useFilterOptions()
   const [filterState, setFilterState] = useState<LegajoFiltersState>({
     zona: null,
@@ -104,21 +107,6 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
     pt_vencidas: null,
     etapa_medida: null,
   })
-
-  // Fetch zonas on component mount
-  useEffect(() => {
-    const fetchZonas = async () => {
-      try {
-        const response = await get<Zona[]>("zona/")
-        setZonas(Array.isArray(response) ? response : [])
-      } catch (error) {
-        console.error("Error fetching zonas:", error)
-        setZonas([])
-      }
-    }
-
-    fetchZonas()
-  }, [])
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)

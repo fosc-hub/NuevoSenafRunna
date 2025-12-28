@@ -1,22 +1,15 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import {
-  Modal,
   Box,
-  Tab,
-  Tabs,
   Typography,
   Button,
   FormControl,
   TextField,
   Autocomplete,
-  Paper,
-  Divider,
   CircularProgress,
-  IconButton,
-  Tooltip,
   List,
   ListItem,
   ListItemText,
@@ -25,19 +18,15 @@ import {
   FormHelperText,
 } from "@mui/material"
 import {
-  Close as CloseIcon,
   Send as SendIcon,
   History as HistoryIcon,
   AssignmentInd as AssignmentIcon,
   CompareArrows as TransferIcon,
 } from "@mui/icons-material"
 import { toast } from "react-toastify"
+import BaseModal from "@/components/shared/BaseModal"
 import { actividadService } from "../../services/actividadService"
-import {
-  fetchUsuarios,
-  fetchZonas,
-  fetchUsersZonas,
-} from "@/app/(runna)/legajo-mesa/api/legajo-asignacion-api-service"
+import { useCatalogData, useConditionalData } from "@/hooks/useApiQuery"
 import type { TActividadPlanTrabajo, THistorialActividad } from "../../types/actividades"
 import type { Usuario, Zona } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
 
@@ -57,98 +46,67 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   // Tab control
   const [tabValue, setTabValue] = useState(0)
 
-  // Data loaded
-  const [actividad, setActividad] = useState<TActividadPlanTrabajo | null>(null)
-  const [usuarios, setUsuarios] = useState<Usuario[]>([])
-  const [zonas, setZonas] = useState<Zona[]>([])
-  const [userZonas, setUserZonas] = useState<Array<{ user: number; zona: number }>>([])
-  const [historial, setHistorial] = useState<THistorialActividad[]>([])
+  // Fetch data using TanStack Query - React Query will parallelize these automatically
+  const { data: actividad, isLoading: isLoadingActividad } = useConditionalData<TActividadPlanTrabajo>(
+    `actividades/${actividadId}`,
+    open && !!actividadId,
+    undefined,
+    {
+      queryFn: () => actividadService.get(actividadId!),
+    }
+  )
 
-  // Loading states
-  const [isLoading, setIsLoading] = useState(false)
+  const { data: usuarios = [], isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>(
+    "usuarios/"
+  )
+
+  const { data: zonas = [], isLoading: isLoadingZonas } = useCatalogData<Zona[]>(
+    "zonas/"
+  )
+
+  const { data: userZonas = [], isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
+    "users-zonas/"
+  )
+
+  const { data: historialData, isLoading: isLoadingHistorial } = useConditionalData<THistorialActividad[]>(
+    `actividades/${actividadId}/historial`,
+    open && !!actividadId,
+    undefined,
+    {
+      queryFn: () => actividadService.getHistorial(actividadId!),
+    }
+  )
+
+  // Filter historial for relevant actions
+  const historial = useMemo(() => {
+    if (!historialData) return []
+    return historialData.filter(
+      (h) =>
+        h.tipo_accion === "ASIGNACION" ||
+        h.tipo_accion === "TRANSFERENCIA" ||
+        h.tipo_accion === "MODIFICACION"
+    )
+  }, [historialData])
+
+  // Combine loading states
+  const isLoading = isLoadingActividad || isLoadingUsuarios || isLoadingZonas || isLoadingUserZonas || isLoadingHistorial
+
+  // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // ===== TAB 1: ASIGNAR RESPONSABLE =====
-  const [selectedResponsablePrincipal, setSelectedResponsablePrincipal] = useState<number | null>(null)
-  const [selectedResponsablesSecundarios, setSelectedResponsablesSecundarios] = useState<number[]>([])
+  const [selectedResponsablePrincipal, setSelectedResponsablePrincipal] = useState<number | null>(
+    actividad?.responsable_principal || null
+  )
+  const [selectedResponsablesSecundarios, setSelectedResponsablesSecundarios] = useState<number[]>(
+    actividad?.responsables_secundarios?.map((r) => r.id) || []
+  )
   const [comentariosAsignacion, setComentariosAsignacion] = useState("")
 
   // ===== TAB 2: TRANSFERIR ENTRE EQUIPOS =====
   const [selectedEquipoDestino, setSelectedEquipoDestino] = useState<number | null>(null)
   const [selectedResponsableNuevo, setSelectedResponsableNuevo] = useState<number | null>(null)
   const [comentariosTransferencia, setComentariosTransferencia] = useState("")
-
-  // Load data when modal opens or actividadId changes
-  useEffect(() => {
-    if (open && actividadId) {
-      // Clear previous state
-      setActividad(null)
-      setHistorial([])
-      setSelectedResponsablePrincipal(null)
-      setSelectedResponsablesSecundarios([])
-      setSelectedEquipoDestino(null)
-      setSelectedResponsableNuevo(null)
-      setComentariosAsignacion("")
-      setComentariosTransferencia("")
-      setTabValue(0)
-
-      // Load data
-      loadData()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, actividadId])
-
-  const loadData = async () => {
-    if (!actividadId) return
-
-    setIsLoading(true)
-    try {
-      const [actividadData, usuariosData, zonasData, userZonasData] = await Promise.all([
-        actividadService.get(actividadId),
-        fetchUsuarios(),
-        fetchZonas(),
-        fetchUsersZonas(),
-      ])
-
-      setActividad(actividadData)
-      setUsuarios(usuariosData)
-      setZonas(zonasData)
-      setUserZonas(userZonasData)
-
-      // Set current values in form
-      setSelectedResponsablePrincipal(actividadData.responsable_principal || null)
-      setSelectedResponsablesSecundarios(
-        actividadData.responsables_secundarios?.map((r) => r.id) || []
-      )
-
-      // Load history for Tab 3
-      await loadHistorial()
-    } catch (error) {
-      console.error("Error loading data:", error)
-      toast.error("Error al cargar los datos")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const loadHistorial = async () => {
-    if (!actividadId) return
-
-    try {
-      const historialData = await actividadService.getHistorial(actividadId)
-      // Filter for assignment and transfer actions
-      const filtered = historialData.filter(
-        (h) =>
-          h.tipo_accion === "ASIGNACION" ||
-          h.tipo_accion === "TRANSFERENCIA" ||
-          h.tipo_accion === "MODIFICACION"
-      )
-      setHistorial(filtered)
-    } catch (error) {
-      console.error("Error loading historial:", error)
-      toast.error("Error al cargar el historial")
-    }
-  }
 
   // Filter users by selected zone for transfer tab
   const usuariosFiltrados = useMemo(() => {
@@ -183,7 +141,6 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
 
       toast.success("Responsables actualizados exitosamente")
       setComentariosAsignacion("")
-      await loadData()
       onSuccess?.()
     } catch (error) {
       console.error("Error asignando responsables:", error)
@@ -223,7 +180,6 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
       setComentariosTransferencia("")
       setSelectedEquipoDestino(null)
       setSelectedResponsableNuevo(null)
-      await loadData()
       onSuccess?.()
     } catch (error) {
       console.error("Error transfiriendo actividad:", error)
@@ -266,67 +222,76 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   }
 
   return (
-    <Modal open={open} onClose={onClose} aria-labelledby="asignar-actividad-modal">
-      <Paper
-        elevation={5}
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "90%",
-          maxWidth: 800,
-          minHeight: 500,
-          maxHeight: "90vh",
-          bgcolor: "background.paper",
-          p: 3,
-          borderRadius: 2,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        {/* Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Typography
-            variant="h5"
-            component="h2"
-            sx={{
-              color: "primary.main",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <AssignmentIcon /> Asignar Actividad #{actividadId}
-          </Typography>
-          <Tooltip title="Cerrar">
-            <IconButton onClick={onClose} size="small" disabled={isSubmitting}>
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        <Divider sx={{ mb: 2 }} />
-
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="asignar actividad tabs">
-            <Tab icon={<AssignmentIcon fontSize="small" />} iconPosition="start" label="Asignar Responsable" />
-            <Tab icon={<TransferIcon fontSize="small" />} iconPosition="start" label="Transferir Equipo" />
-            <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label="Historial" />
-          </Tabs>
-        </Box>
-
-        {/* Content */}
-        <Box sx={{ flex: 1, overflow: "auto", mb: 2 }}>
-          {isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-              <CircularProgress size={40} />
-            </Box>
-          ) : (
-            <>
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      title={`Asignar Actividad #${actividadId}`}
+      titleIcon={<AssignmentIcon />}
+      tabs={[
+        { label: "Asignar Responsable", icon: <AssignmentIcon fontSize="small" /> },
+        { label: "Transferir Equipo", icon: <TransferIcon fontSize="small" /> },
+        { label: "Historial", icon: <HistoryIcon fontSize="small" /> },
+      ]}
+      activeTab={tabValue}
+      onTabChange={handleTabChange}
+      loading={isLoading}
+      loadingMessage="Cargando actividad..."
+      maxWidth={800}
+      actions={
+        tabValue === 0
+          ? [
+              {
+                label: "Actualizar Asignación",
+                onClick: handleAsignarResponsable,
+                variant: "contained",
+                color: "primary",
+                disabled:
+                  isSubmitting ||
+                  (!selectedResponsablePrincipal && selectedResponsablesSecundarios.length === 0),
+                loading: isSubmitting,
+                startIcon: <SendIcon />,
+              },
+              {
+                label: "Cerrar",
+                onClick: onClose,
+                variant: "outlined",
+                disabled: isSubmitting,
+              },
+            ]
+          : tabValue === 1
+            ? [
+                {
+                  label: "Transferir",
+                  onClick: handleTransferir,
+                  variant: "contained",
+                  color: "primary",
+                  disabled:
+                    isSubmitting ||
+                    !selectedEquipoDestino ||
+                    !comentariosTransferencia ||
+                    comentariosTransferencia.trim().length < 15,
+                  loading: isSubmitting,
+                  startIcon: <SendIcon />,
+                },
+                {
+                  label: "Cerrar",
+                  onClick: onClose,
+                  variant: "outlined",
+                  disabled: isSubmitting,
+                },
+              ]
+            : [
+                {
+                  label: "Cerrar",
+                  onClick: onClose,
+                  variant: "outlined",
+                  disabled: isSubmitting,
+                },
+              ]
+      }
+    >
+      {!isLoading && (
+        <>
               {/* TAB 1: ASIGNAR RESPONSABLE */}
               {tabValue === 0 && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -664,57 +629,7 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
               )}
             </>
           )}
-        </Box>
-
-        {/* Footer */}
-        <Box
-          sx={{
-            mt: "auto",
-            pt: 2,
-            display: "flex",
-            justifyContent: "space-between",
-            borderTop: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          {tabValue === 0 && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleAsignarResponsable}
-              disabled={
-                isSubmitting ||
-                (!selectedResponsablePrincipal && selectedResponsablesSecundarios.length === 0)
-              }
-              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-            >
-              {isSubmitting ? "Procesando..." : "Actualizar Asignación"}
-            </Button>
-          )}
-
-          {tabValue === 1 && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleTransferir}
-              disabled={
-                isSubmitting ||
-                !selectedEquipoDestino ||
-                !comentariosTransferencia ||
-                comentariosTransferencia.trim().length < 15
-              }
-              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-            >
-              {isSubmitting ? "Procesando..." : "Transferir"}
-            </Button>
-          )}
-
-          <Button variant="outlined" onClick={onClose} disabled={isSubmitting} sx={{ ml: "auto" }}>
-            Cerrar
-          </Button>
-        </Box>
-      </Paper>
-    </Modal>
+    </BaseModal>
   )
 }
 

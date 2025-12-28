@@ -297,7 +297,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
             </Tabs>
           </Box>
 
-          <TabPanel value={activeTab} index={0}>
+          <TabPanel value={activeTab} index={0} paddingTop={16}>
             <PersonalInfoTab
               index={index}
               control={control}
@@ -307,7 +307,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
             />
           </TabPanel>
 
-          <TabPanel value={activeTab} index={1}>
+          <TabPanel value={activeTab} index={1} paddingTop={16}>
             <EducationTab
               index={index}
               control={control}
@@ -317,7 +317,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
             />
           </TabPanel>
 
-          <TabPanel value={activeTab} index={2}>
+          <TabPanel value={activeTab} index={2} paddingTop={16}>
             <HealthTab
               index={index}
               control={control}
@@ -328,7 +328,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
             />
           </TabPanel>
 
-          <TabPanel value={activeTab} index={3}>
+          <TabPanel value={activeTab} index={3} paddingTop={16}>
             <VulnerabilityTab
               index={index}
               control={control}

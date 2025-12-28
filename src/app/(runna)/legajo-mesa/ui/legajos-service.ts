@@ -1,20 +1,7 @@
 import ExcelExportService from "../../mesadeentrada/ui/excel-export-service"
 import type { IndicadoresLegajo, OficioConSemaforo } from "../types/legajo-api"
-
-/**
- * Format text with underscores for display
- */
-export const formatUnderscoreText = (text: any): string => {
-  if (!text || typeof text !== "string" || text === "N/A") {
-    return "N/A"
-  }
-
-  return text
-    .split("_")
-    .join(" ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
+import { formatUnderscoreText } from "@/utils/stringUtils"
+import { getCurrentDateISO } from "@/utils/dateUtils"
 
 /**
  * Format oficios with semaphore status for Excel
@@ -208,7 +195,7 @@ export const exportLegajosToExcel = (rows: any[], filterMetadata?: { filters: an
   const dataWithMetadata = [...metadataRows, ...formattedData]
 
   // Export to Excel
-  const currentDate = new Date().toISOString().split("T")[0]
+  const currentDate = getCurrentDateISO()
   return ExcelExportService.exportToExcel(dataWithMetadata, {
     fileName: `Legajos_${currentDate}`,
     sheetName: "Legajos",

@@ -3,22 +3,18 @@
 import React, { useState, useEffect } from 'react'
 import {
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   TextField,
   Alert,
-  CircularProgress,
   Box,
   Typography,
   Chip
 } from '@mui/material'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
+import BaseDialog from '@/components/shared/BaseDialog'
 import type { TActividadPlanTrabajo } from '../../../types/actividades'
 
 interface TransferirDialogProps {
@@ -127,114 +123,109 @@ export const TransferirDialog: React.FC<TransferirDialogProps> = ({
         Transferir Actividad
       </Button>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Transferir Actividad a Otro Equipo</DialogTitle>
-
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            {/* Information Alert */}
-            <Alert severity="info">
-              Esta operación transferirá la actividad a otro equipo. El equipo destino asumirá la responsabilidad de su ejecución.
-            </Alert>
-
-            {/* Current Team Display */}
-            <Box>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Equipo Actual:
-              </Typography>
-              <Chip
-                label={actividad.equipo_responsable_display || 'Sin equipo asignado'}
-                color="primary"
-                variant="outlined"
-              />
-            </Box>
-
-            {/* Destination Team Selection */}
-            <FormControl fullWidth required>
-              <InputLabel>Equipo Destino</InputLabel>
-              <Select
-                value={equipoDestino}
-                onChange={(e) => setEquipoDestino(e.target.value as number)}
-                label="Equipo Destino"
-              >
-                {EQUIPOS_DISPONIBLES.map((equipo) => (
-                  <MenuItem key={equipo.id} value={equipo.id}>
-                    {equipo.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Optional New Responsable Selection */}
-            <FormControl fullWidth>
-              <InputLabel>Nuevo Responsable (Opcional)</InputLabel>
-              <Select
-                value={responsableNuevo}
-                onChange={(e) => setResponsableNuevo(e.target.value as number)}
-                label="Nuevo Responsable (Opcional)"
-              >
-                <MenuItem value="">
-                  <em>Sin cambio - mantener responsable actual</em>
-                </MenuItem>
-                {USUARIOS_DISPONIBLES.map((usuario) => (
-                  <MenuItem key={usuario.id} value={usuario.id}>
-                    {usuario.nombre_completo}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Motivo Input (required, min 15 chars) */}
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Motivo de la Transferencia (Obligatorio)"
-              placeholder="Indique el motivo de la transferencia (mínimo 15 caracteres)"
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              required
-              error={motivo.length > 0 && motivo.trim().length < 15}
-              helperText={
-                motivo.length > 0 && motivo.trim().length < 15
-                  ? `Mínimo 15 caracteres (actual: ${motivo.trim().length})`
-                  : 'Explique claramente el motivo de la transferencia'
-              }
+      <BaseDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        title="Transferir Actividad a Otro Equipo"
+        titleIcon={<SwapHorizIcon />}
+        info="Esta operación transferirá la actividad a otro equipo. El equipo destino asumirá la responsabilidad de su ejecución."
+        error={error}
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: handleCloseDialog,
+            variant: "text",
+            disabled: submitting
+          },
+          {
+            label: submitting ? 'Transfiriendo...' : 'Confirmar Transferencia',
+            onClick: handleSubmit,
+            variant: "contained",
+            color: "warning",
+            disabled: submitting || !equipoDestino || !motivo.trim(),
+            startIcon: <SwapHorizIcon />,
+            loading: submitting
+          }
+        ]}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+          {/* Current Team Display */}
+          <Box>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Equipo Actual:
+            </Typography>
+            <Chip
+              label={actividad.equipo_responsable_display || 'Sin equipo asignado'}
+              color="primary"
+              variant="outlined"
             />
-
-            {/* Warnings */}
-            {equipoDestino && (
-              <Alert severity="warning">
-                <Typography variant="body2">
-                  <strong>Atención:</strong> Al confirmar, esta actividad será transferida al equipo seleccionado y se creará un registro en el historial de transferencias.
-                </Typography>
-              </Alert>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <Alert severity="error" onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            )}
           </Box>
-        </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleCloseDialog} disabled={submitting}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            color="warning"
-            disabled={submitting || !equipoDestino || !motivo.trim()}
-            startIcon={submitting ? <CircularProgress size={20} /> : <SwapHorizIcon />}
-          >
-            {submitting ? 'Transfiriendo...' : 'Confirmar Transferencia'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          {/* Destination Team Selection */}
+          <FormControl fullWidth required>
+            <InputLabel>Equipo Destino</InputLabel>
+            <Select
+              value={equipoDestino}
+              onChange={(e) => setEquipoDestino(e.target.value as number)}
+              label="Equipo Destino"
+            >
+              {EQUIPOS_DISPONIBLES.map((equipo) => (
+                <MenuItem key={equipo.id} value={equipo.id}>
+                  {equipo.nombre}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Optional New Responsable Selection */}
+          <FormControl fullWidth>
+            <InputLabel>Nuevo Responsable (Opcional)</InputLabel>
+            <Select
+              value={responsableNuevo}
+              onChange={(e) => setResponsableNuevo(e.target.value as number)}
+              label="Nuevo Responsable (Opcional)"
+            >
+              <MenuItem value="">
+                <em>Sin cambio - mantener responsable actual</em>
+              </MenuItem>
+              {USUARIOS_DISPONIBLES.map((usuario) => (
+                <MenuItem key={usuario.id} value={usuario.id}>
+                  {usuario.nombre_completo}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Motivo Input (required, min 15 chars) */}
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Motivo de la Transferencia (Obligatorio)"
+            placeholder="Indique el motivo de la transferencia (mínimo 15 caracteres)"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            required
+            error={motivo.length > 0 && motivo.trim().length < 15}
+            helperText={
+              motivo.length > 0 && motivo.trim().length < 15
+                ? `Mínimo 15 caracteres (actual: ${motivo.trim().length})`
+                : 'Explique claramente el motivo de la transferencia'
+            }
+          />
+
+          {/* Warnings */}
+          {equipoDestino && (
+            <Alert severity="warning">
+              <Typography variant="body2">
+                <strong>Atención:</strong> Al confirmar, esta actividad será transferida al equipo seleccionado y se creará un registro en el historial de transferencias.
+              </Typography>
+            </Alert>
+          )}
+        </Box>
+      </BaseDialog>
     </>
   )
 }

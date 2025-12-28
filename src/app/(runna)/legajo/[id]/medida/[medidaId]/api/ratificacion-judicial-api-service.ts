@@ -10,7 +10,7 @@
  * - GET  /api/medidas/{medida_pk}/ratificacion/historial/ → Historial completo
  */
 
-import { get } from "@/app/api/apiService"
+import { get, create } from "@/app/api/apiService"
 import type {
   RatificacionJudicial,
   CreateRatificacionJudicialRequest,
@@ -88,23 +88,18 @@ export async function createRatificacion(
     // Build FormData (multipart/form-data)
     const formData = buildRatificacionFormData(data)
 
-    // Import axiosInstance
-    const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
-
-    // Make API call using axiosInstance
-    const response = await axiosInstance.post<RatificacionJudicial>(
+    // REFACTORED: Use apiService.create() instead of axiosInstance
+    // apiService.create() automatically handles FormData and multipart/form-data
+    const response = await create<RatificacionJudicial>(
       `medidas/${medidaId}/ratificacion/`,
       formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      true,
+      'Ratificación judicial registrada exitosamente'
     )
 
-    console.log("Ratificación created successfully:", response.data)
+    console.log("Ratificación created successfully:", response)
 
-    return response.data
+    return response
   } catch (error: any) {
     console.error(`Error creating ratificación for medida ${medidaId}:`, error)
     console.error("Error details:", {
@@ -143,10 +138,13 @@ export async function updateRatificacion(
     // Build FormData (multipart/form-data)
     const formData = buildUpdateRatificacionFormData(data)
 
-    // Import axiosInstance
+    // NOTE: Uses axiosInstance directly - Non-standard REST pattern exception
+    // Endpoint: PATCH /api/medidas/{medida_id}/ratificacion/ (no additional ID)
+    // Backend operates on the singleton "active" ratificacion per medida (only one activo=true)
+    // apiService.update() would append /{id}/ creating /medidas/{id}/ratificacion/{id}/ which is incorrect
+    // This is similar to actividadService.cancel() - non-standard pattern requiring direct axios call
     const axiosInstance = (await import("@/app/api/utils/axiosInstance")).default
 
-    // Make API call using axiosInstance
     const response = await axiosInstance.patch<RatificacionJudicial>(
       `medidas/${medidaId}/ratificacion/`,
       formData,

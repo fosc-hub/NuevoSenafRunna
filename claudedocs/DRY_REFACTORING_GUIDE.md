@@ -122,16 +122,14 @@ const { data = [], isLoading, error } = useApiQuery<Data[]>(
 - **Pattern:** Multi-action dialogs with form state to BaseDialog
 - **Complexity:** Multiple actions, validation, error handling
 
-#### 🔴 **P7: useFormSubmission Hook** ✅ COMPLETE
-- **Impact:** 3 pilot forms migrated, ~45 lines saved + hook infrastructure
+#### 🔴 **P7: useFormSubmission Hook** ✅ COMPLETE (WAVE 1-3)
+- **Impact:** 7 forms migrated, ~155+ lines saved + hook infrastructure
 - **Pattern:** Consolidated form submission with loading/error/toast handling
 - **Location:** `src/hooks/useFormSubmission.ts`, `src/hooks/useSequentialSubmission.ts`
 
 **Created Hooks:**
 - `useFormSubmission<TData, TResponse>` - Main hook for form submissions
 - `useSequentialSubmission` - Multi-step form submissions
-- `useSimpleSubmission` - Lightweight variant
-- `useDialogSubmission` - Dialog-specific with auto success toast
 
 **useFormSubmission Migration Pattern:**
 
@@ -171,12 +169,24 @@ const { submit, isLoading, error, close } = useFormSubmission({
 })
 ```
 
-**Pilot Migrations Completed:**
-1. `CancelActividadModal.tsx` - Simple async submission
-2. `EditActividadModal.tsx` - React Hook Form integration
-3. `TransferirDialog.tsx` - Multi-field validation
+**Migrations Completed (7 total):**
 
-**Remaining Migrations:** 30+ forms identified for future migration
+| Wave | File | Lines Saved | Pattern |
+|------|------|-------------|---------|
+| 1 | `CancelActividadModal.tsx` | ~15 | Simple async |
+| 1 | `EditActividadModal.tsx` | ~15 | React Hook Form |
+| 1 | `TransferirDialog.tsx` | ~15 | Multi-field validation |
+| 2 | `RechazarCierreModal.tsx` | ~42 | Simple rejection form |
+| 2 | `InformeCierreModal.tsx` | ~45 | Multi-step (create + upload) |
+| 2 | `AsignarActividadModal.tsx` | ~13 | Dual handlers (2 tabs) |
+| 3 | `AddItemDialog.tsx` | ~2 | Multi-mode form |
+
+**Skipped (Already use hooks or different patterns):**
+- `AddTaskDialog.tsx` - Uses callback pattern, no async
+- `DesvincularVinculoDialog.tsx` - Uses custom `useVinculos` hook
+- `EnviarRespuestaModal.tsx` - React Hook Form + Snackbar pattern
+
+**Remaining Migrations:** ~20+ forms identified for future migration
 
 ---
 

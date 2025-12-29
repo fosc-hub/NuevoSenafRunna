@@ -4,7 +4,6 @@ import type React from "react"
 import { useState, useMemo } from "react"
 import {
   Typography,
-  Paper,
   Box,
   CircularProgress,
   Alert,
@@ -21,7 +20,6 @@ import {
   Chip,
 } from "@mui/material"
 import FolderIcon from "@mui/icons-material/Folder"
-import DescriptionIcon from "@mui/icons-material/Description"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import DownloadIcon from "@mui/icons-material/Download"
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile"
@@ -30,6 +28,7 @@ import { useApiQuery } from "@/hooks/useApiQuery"
 import { extractDemandaIdFromMedida } from "@/app/(runna)/legajo-mesa/utils/extract-demanda-from-observaciones"
 import { fetchDemandaFullDetail } from "@/app/(runna)/legajo-mesa/api/demanda-api-service"
 import { processDemandaAdjuntos } from "@/app/(runna)/legajo-mesa/utils/demanda-adjuntos-processor"
+import { SectionCard } from "./shared/section-card"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 import type { ProcessedOficio, ProcessedDocumento } from "@/app/(runna)/legajo-mesa/utils/demanda-adjuntos-processor"
 
@@ -95,14 +94,21 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
     document.body.removeChild(link)
   }
 
+  // Loading state
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
-        <CircularProgress />
-      </Box>
+      <SectionCard
+        title={`Documentos de Demanda ${demandaId || ''}`}
+        chips={[{ label: "Cargando...", color: "info" }]}
+      >
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
+          <CircularProgress />
+        </Box>
+      </SectionCard>
     )
   }
 
+  // Error state
   if (error) {
     return (
       <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
@@ -113,37 +119,32 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
 
   const totalArchivos = oficios.length + documentos.length
 
+  // Empty state
   if (totalArchivos === 0) {
     return (
-      <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+      <SectionCard
+        title={`Documentos de Demanda ${demandaId}`}
+        chips={[{ label: "0 archivos", color: "secondary" }]}
+      >
         <Box sx={{ textAlign: "center", py: 4 }}>
           <FolderIcon sx={{ fontSize: 64, color: "grey.300", mb: 2 }} />
           <Typography variant="body1" color="text.secondary">
             No hay documentos adjuntos en la demanda {demandaId}
           </Typography>
         </Box>
-      </Paper>
+      </SectionCard>
     )
   }
 
+  // Main content
   return (
-    <Paper elevation={2} sx={{ borderRadius: 2 }}>
-      {/* Header */}
-      <Box sx={{ p: 3, pb: 0 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <FolderIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Documentos de Demanda {demandaId}
-          </Typography>
-          <Chip label={`${totalArchivos} archivo${totalArchivos !== 1 ? "s" : ""}`} color="primary" size="small" sx={{ ml: 2 }} />
-        </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Documentos adjuntos de la demanda que originó esta medida
-        </Typography>
-      </Box>
-
+    <SectionCard
+      title={`Documentos de Demanda ${demandaId}`}
+      chips={[{ label: `${totalArchivos} archivo${totalArchivos !== 1 ? "s" : ""}`, color: "primary" }]}
+      additionalInfo={["Documentos adjuntos de la demanda que originó esta medida"]}
+    >
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3 }}>
+      <Box sx={{ borderBottom: 1, borderColor: "divider", mx: -3, px: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange}>
           <Tab label={`Oficios (${oficios.length})`} />
           <Tab label={`Evaluaciones (${documentos.length})`} />
@@ -151,7 +152,7 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
       </Box>
 
       {/* Tab Content */}
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ pt: 3 }}>
         {/* Oficios Tab */}
         {activeTab === 0 && (
           <>
@@ -321,6 +322,6 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
           </>
         )}
       </Box>
-    </Paper>
+    </SectionCard>
   )
 }

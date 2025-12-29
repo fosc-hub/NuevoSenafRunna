@@ -22,7 +22,6 @@ import React, { useState } from "react"
 import {
   Box,
   Typography,
-  Paper,
   Button,
   Card,
   CardContent,
@@ -34,6 +33,7 @@ import {
   Skeleton,
   Collapse,
   IconButton,
+  CircularProgress,
 } from "@mui/material"
 import {
   Timeline,
@@ -59,6 +59,7 @@ import { useNotaAval } from "../../hooks/useNotaAval"
 import { NotaAvalDialog } from "../dialogs/nota-aval-dialog"
 import { AdjuntosNotaAval } from "../nota-aval/adjuntos-nota-aval"
 import { extractUserName } from "../../types/nota-aval-api"
+import { SectionCard } from "./shared/section-card"
 import type { EstadoEtapa } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
 // ============================================================================
@@ -159,32 +160,20 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
   // HANDLERS
   // ============================================================================
 
-  /**
-   * Handle dialog open
-   */
   const handleOpenDialog = () => {
     setDialogOpen(true)
   }
 
-  /**
-   * Handle dialog close
-   */
   const handleCloseDialog = () => {
     setDialogOpen(false)
   }
 
-  /**
-   * Handle nota de aval created successfully
-   */
   const handleNotaAvalCreated = () => {
     refetchNotasAval()
     onNotaAvalCreated?.()
     setDialogOpen(false)
   }
 
-  /**
-   * Toggle item expansion
-   */
   const toggleItemExpansion = (notaId: number) => {
     setExpandedItems((prev) => {
       const newSet = new Set(prev)
@@ -203,11 +192,14 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
 
   if (isLoadingNotasAval) {
     return (
-      <Paper sx={{ p: 3 }}>
-        <Skeleton variant="rectangular" height={100} />
-        <Skeleton variant="text" sx={{ mt: 2 }} />
-        <Skeleton variant="text" />
-      </Paper>
+      <SectionCard
+        title="Aprobación por el Director de Zona"
+        chips={[{ label: "Cargando...", color: "info" }]}
+      >
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
+      </SectionCard>
     )
   }
 
@@ -227,28 +219,22 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
   // MAIN RENDER
   // ============================================================================
 
-  return (
-    <Box>
-      {/* HEADER */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Aprobación por el Director de Zona
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Revisión y decisión del Director sobre la intervención cargada
-          </Typography>
-        </Box>
+  // Determine status chip
+  const statusChip = hasNotasAval
+    ? mostRecentNotaAval?.fue_aprobado
+      ? { label: "Aprobado", color: "success" as const }
+      : { label: "Observado", color: "warning" as const }
+    : isPendingNotaAval(estadoActual)
+    ? { label: "Pendiente", color: "warning" as const }
+    : { label: "Sin aval", color: "secondary" as const }
 
-        {/* EMIT BUTTON */}
-        {shouldShowEmitButton && (
+  return (
+    <SectionCard
+      title="Aprobación por el Director de Zona"
+      chips={[statusChip]}
+      additionalInfo={["Revisión y decisión del Director sobre la intervención cargada"]}
+      headerActions={
+        shouldShowEmitButton ? (
           <Button
             variant="contained"
             color="primary"
@@ -258,9 +244,9 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
           >
             Emitir Aprobación
           </Button>
-        )}
-      </Box>
-
+        ) : undefined
+      }
+    >
       {/* ESTADO INFO */}
       {isPendingNotaAval(estadoActual) && !shouldShowEmitButton && (
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -270,7 +256,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
 
       {/* NO NOTAS MESSAGE */}
       {!hasNotasAval ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>
+        <Box sx={{ textAlign: "center", py: 4 }}>
           <DescriptionIcon sx={{ fontSize: 60, color: "text.disabled", mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
             Sin Aprobación de Superior
@@ -288,7 +274,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
               Emitir Aprobación
             </Button>
           )}
-        </Paper>
+        </Box>
       ) : (
         <Box>
           {/* TIMELINE OF NOTAS */}
@@ -422,6 +408,6 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
         medidaNumero={medidaNumero}
         onSuccess={handleNotaAvalCreated}
       />
-    </Box>
+    </SectionCard>
   )
 }

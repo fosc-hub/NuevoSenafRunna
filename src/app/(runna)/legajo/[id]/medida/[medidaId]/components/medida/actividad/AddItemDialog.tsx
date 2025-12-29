@@ -17,6 +17,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import BaseDialog from '@/components/shared/BaseDialog'
+import { useFormSubmission } from '@/hooks'
 import { AttachmentUpload } from '../AttachmentUpload'
 
 interface AddItemDialogProps {
@@ -41,59 +42,57 @@ export const AddItemDialog: React.FC<AddItemDialogProps> = ({
   const [files, setFiles] = useState<File[]>([])
   const [tipos, setTipos] = useState<string[]>([])
   const [descripciones, setDescripciones] = useState<string[]>([])
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const handleClose = () => {
+  const resetForm = () => {
     setMode('menu')
     setComentarioTexto('')
     setFiles([])
     setTipos([])
     setDescripciones([])
-    setError(null)
+  }
+
+  const { submit, isLoading: submitting, error, clearError } = useFormSubmission({
+    onSubmit: async () => {
+      if (mode === 'comentario') {
+        await onAddComentario(comentarioTexto)
+      } else if (mode === 'adjunto') {
+        await onAddAdjunto(files, tipos, descripciones)
+      } else if (mode === 'both') {
+        await onAddBoth(comentarioTexto, files, tipos, descripciones)
+      }
+    },
+    validate: () => {
+      if (mode === 'comentario' && !comentarioTexto.trim()) {
+        return 'El comentario no puede estar vacío'
+      }
+      if (mode === 'adjunto' && files.length === 0) {
+        return 'Debes seleccionar al menos un archivo'
+      }
+      if (mode === 'both' && !comentarioTexto.trim() && files.length === 0) {
+        return 'Debes agregar un comentario y/o archivos'
+      }
+      return undefined
+    },
+    showSuccessToast: false,
+    showErrorToast: false, // BaseDialog handles error display
+    onSuccess: () => {
+      resetForm()
+      onClose()
+    },
+    onReset: resetForm,
+  })
+
+  const handleClose = () => {
+    resetForm()
     onClose()
   }
 
   const handleBack = () => {
     setMode('menu')
-    setError(null)
+    clearError()
   }
 
-  const handleSubmit = async () => {
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      if (mode === 'comentario') {
-        if (!comentarioTexto.trim()) {
-          setError('El comentario no puede estar vacío')
-          setSubmitting(false)
-          return
-        }
-        await onAddComentario(comentarioTexto)
-      } else if (mode === 'adjunto') {
-        if (files.length === 0) {
-          setError('Debes seleccionar al menos un archivo')
-          setSubmitting(false)
-          return
-        }
-        await onAddAdjunto(files, tipos, descripciones)
-      } else if (mode === 'both') {
-        if (!comentarioTexto.trim() && files.length === 0) {
-          setError('Debes agregar un comentario y/o archivos')
-          setSubmitting(false)
-          return
-        }
-        await onAddBoth(comentarioTexto, files, tipos, descripciones)
-      }
-
-      handleClose()
-    } catch (err: any) {
-      setError(err.message || 'Error al agregar el item')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const handleSubmit = () => submit({})
 
   const handleFileChange = (newFiles: File[], newTipos?: string[], newDescripciones?: string[]) => {
     setFiles(newFiles)

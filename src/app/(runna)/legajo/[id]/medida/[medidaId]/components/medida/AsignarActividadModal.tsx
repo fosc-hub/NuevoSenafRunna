@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import BaseModal from "@/components/shared/BaseModal"
+import { useFormSubmission } from "@/hooks"
 import { actividadService } from "../../services/actividadService"
 import { useCatalogData, useConditionalData } from "@/hooks/useApiQuery"
 import type { TActividadPlanTrabajo, THistorialActividad } from "../../types/actividades"
@@ -91,9 +92,6 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   // Combine loading states
   const isLoading = isLoadingActividad || isLoadingUsuarios || isLoadingZonas || isLoadingUserZonas || isLoadingHistorial
 
-  // Submission state
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
   // ===== TAB 1: ASIGNAR RESPONSABLE =====
   const [selectedResponsablePrincipal, setSelectedResponsablePrincipal] = useState<number | null>(
     actividad?.responsable_principal || null
@@ -119,75 +117,65 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
     return usuarios.filter((u) => userIds.includes(u.id))
   }, [selectedEquipoDestino, usuarios, userZonas])
 
+  // ========== Form Submission Hooks ==========
+
   // Handler for Tab 1: Asignar Responsable
-  const handleAsignarResponsable = async () => {
-    if (!actividadId || !actividad) {
-      toast.error("No hay actividad seleccionada")
-      return
-    }
-
-    // Validation: at least one responsable must be selected
-    if (!selectedResponsablePrincipal && selectedResponsablesSecundarios.length === 0) {
-      toast.error("Debe seleccionar al menos un responsable")
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      await actividadService.update(actividadId, {
+  const { submit: submitAsignar, isLoading: isLoadingAsignar } = useFormSubmission({
+    onSubmit: async () => {
+      await actividadService.update(actividadId!, {
         responsable_principal: selectedResponsablePrincipal || undefined,
         responsables_secundarios: selectedResponsablesSecundarios,
       })
-
-      toast.success("Responsables actualizados exitosamente")
+    },
+    validate: () => {
+      if (!actividadId || !actividad) return "No hay actividad seleccionada"
+      if (!selectedResponsablePrincipal && selectedResponsablesSecundarios.length === 0) {
+        return "Debe seleccionar al menos un responsable"
+      }
+      return undefined
+    },
+    showSuccessToast: true,
+    successMessage: "Responsables actualizados exitosamente",
+    showErrorToast: true,
+    onSuccess: () => {
       setComentariosAsignacion("")
       onSuccess?.()
-    } catch (error) {
-      console.error("Error asignando responsables:", error)
-      toast.error("Error al asignar responsables")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+    },
+  })
 
   // Handler for Tab 2: Transferir entre Equipos
-  const handleTransferir = async () => {
-    if (!actividadId) {
-      toast.error("No hay actividad seleccionada")
-      return
-    }
-
-    if (!selectedEquipoDestino) {
-      toast.error("Debe seleccionar un equipo de destino")
-      return
-    }
-
-    // Validation per PLTM-02: comentarios required, min 15 chars
-    if (!comentariosTransferencia || comentariosTransferencia.trim().length < 15) {
-      toast.error("Los comentarios son obligatorios (mínimo 15 caracteres)")
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      await actividadService.transferir(actividadId, {
-        equipo_destino: selectedEquipoDestino,
+  const { submit: submitTransferir, isLoading: isLoadingTransferir } = useFormSubmission({
+    onSubmit: async () => {
+      await actividadService.transferir(actividadId!, {
+        equipo_destino: selectedEquipoDestino!,
         responsable_nuevo_id: selectedResponsableNuevo || undefined,
         motivo: comentariosTransferencia,
       })
-
-      toast.success("Actividad transferida exitosamente")
+    },
+    validate: () => {
+      if (!actividadId) return "No hay actividad seleccionada"
+      if (!selectedEquipoDestino) return "Debe seleccionar un equipo de destino"
+      if (!comentariosTransferencia || comentariosTransferencia.trim().length < 15) {
+        return "Los comentarios son obligatorios (mínimo 15 caracteres)"
+      }
+      return undefined
+    },
+    showSuccessToast: true,
+    successMessage: "Actividad transferida exitosamente",
+    showErrorToast: true,
+    onSuccess: () => {
       setComentariosTransferencia("")
       setSelectedEquipoDestino(null)
       setSelectedResponsableNuevo(null)
       onSuccess?.()
-    } catch (error) {
-      console.error("Error transfiriendo actividad:", error)
-      toast.error("Error al transferir la actividad")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+    },
+  })
+
+  // Combine submission loading states
+  const isSubmitting = isLoadingAsignar || isLoadingTransferir
+
+  const handleAsignarResponsable = () => submitAsignar({})
+  const handleTransferir = () => submitTransferir({})
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)

@@ -5,26 +5,15 @@
  *
  * Modal for Jefe Zonal to reject closure report and return to Estado 3
  *
- * Features:
- * - Show current informe context for reference
- * - Observaciones textarea (required)
- * - Warning message about consequences
- * - Confirmation before submission
- * - Error handling
- *
- * Workflow:
- * 1. JZ reviews informe context
- * 2. JZ enters observaciones explaining rejection reason
- * 3. System returns medida to Estado 3
- * 4. System marks current informe as rejected and inactive
- * 5. System notifies ET with observaciones
+ * REFACTORED: Uses BaseDialog + useFormSubmission hook
+ * Previous implementation: ~70 lines of form logic
+ * Current implementation: ~40 lines with hook
+ * Savings: ~30 lines of duplicate boilerplate
  */
 
 import React, { useState } from "react"
 import {
-  Button,
   TextField,
-  Box,
   Typography,
   Alert,
   Paper,
@@ -36,6 +25,7 @@ import { rechazarCierre } from "../../api/informe-cierre-api-service"
 import type { InformeCierre } from "../../types/informe-cierre-api"
 import BaseDialog from "@/components/shared/BaseDialog"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
+import { useFormSubmission } from "@/hooks"
 
 // ============================================================================
 // PROPS
@@ -60,67 +50,24 @@ export const RechazarCierreModal: React.FC<RechazarCierreModalProps> = ({
   informe,
   onSuccess,
 }) => {
-  // ========== State ==========
   const [observaciones, setObservaciones] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  // ========== Validation ==========
-  const canSubmit = observaciones.trim().length > 0 && !isSubmitting
-
-  // ========== Submit Handler ==========
-  const handleSubmit = async () => {
-    setError(null)
-
-    // Validate observaciones
-    if (observaciones.trim().length === 0) {
-      setError("Las observaciones son obligatorias al rechazar un informe de cierre")
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      // Call rejection endpoint
-      // This returns medida to Estado 3 and marks informe as rejected
+  const { submit, isLoading, error, close } = useFormSubmission({
+    onSubmit: async () => {
       await rechazarCierre(medidaId, {
         observaciones: observaciones.trim(),
       })
+    },
+    validate: () => !observaciones.trim() ? "Las observaciones son obligatorias al rechazar un informe de cierre" : undefined,
+    showSuccessToast: false,
+    showErrorToast: false, // BaseDialog handles error display
+    onSuccess: () => onSuccess?.(),
+    onReset: () => setObservaciones(""),
+    onClose,
+  })
 
-      console.log("Informe rechazado successfully")
-
-      // Success - notify parent and close
-      if (onSuccess) {
-        onSuccess()
-      }
-
-      // Close modal and reset
-      handleClose()
-    } catch (err: any) {
-      console.error("Error rechazando informe:", err)
-
-      // Extract error message
-      const errorMessage =
-        err?.response?.data?.detalle ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Error al rechazar el informe de cierre"
-
-      setError(errorMessage)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // ========== Close Handler ==========
-  const handleClose = () => {
-    if (isSubmitting) return // Prevent close during submission
-
-    // Reset state
-    setObservaciones("")
-    setError(null)
-    onClose()
-  }
+  const handleSubmit = () => submit({})
+  const handleClose = () => close()
 
   // ========== Render ==========
   return (
@@ -131,22 +78,22 @@ export const RechazarCierreModal: React.FC<RechazarCierreModalProps> = ({
       fullWidth
       title="Rechazar Informe de Cierre"
       titleIcon={<CancelIcon />}
-      showCloseButton={!isSubmitting}
+      showCloseButton={!isLoading}
       error={error}
       actions={[
         {
           label: "Cancelar",
           onClick: handleClose,
           variant: "text",
-          disabled: isSubmitting
+          disabled: isLoading
         },
         {
-          label: isSubmitting ? "Rechazando..." : "Rechazar Informe",
+          label: isLoading ? "Rechazando..." : "Rechazar Informe",
           onClick: handleSubmit,
           variant: "contained",
           color: "error",
-          disabled: !canSubmit,
-          loading: isSubmitting
+          disabled: isLoading || !observaciones.trim(),
+          loading: isLoading
         }
       ]}
     >
@@ -199,8 +146,8 @@ export const RechazarCierreModal: React.FC<RechazarCierreModalProps> = ({
         onChange={(e) => setObservaciones(e.target.value)}
         placeholder="Especifique qué aspectos deben corregirse o mejorarse en el informe..."
         helperText="Explique detalladamente las razones del rechazo y qué correcciones debe realizar el Equipo Técnico"
-        error={error !== null && observaciones.trim().length === 0}
-        disabled={isSubmitting}
+        error={!!error && !observaciones.trim()}
+        disabled={isLoading}
       />
     </BaseDialog>
   )

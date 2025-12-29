@@ -2,8 +2,8 @@
 
 **Project:** RUNNA (Next.js 14.2 + TypeScript + MUI v6)
 **Session Date Range:** December 2024 - Ongoing
-**Total Impact:** ~2,100+ lines eliminated, 60+ files refactored
-**Current Progress:** 8/17 major tasks complete (P7 newly completed)
+**Total Impact:** ~2,150+ lines eliminated, 66+ files refactored
+**Current Progress:** 9/17 major tasks complete (P8 newly completed)
 
 ---
 
@@ -17,7 +17,7 @@ Systematic elimination of code duplication across the RUNNA codebase following D
 
 ## 📊 Progress Summary
 
-### ✅ **COMPLETED TASKS** (8/17)
+### ✅ **COMPLETED TASKS** (9/17)
 
 #### 🔴 **P1: DocumentUploadModal Component** ✅ COMPLETE
 - **Impact:** 3 files refactored, ~289 lines saved
@@ -382,40 +382,74 @@ return (
 
 ---
 
-### ⏳ **PENDING TASKS** (8/17)
+### ⏳ **PENDING TASKS** (7/17)
 
-#### 🟡 **P8: Adopt formatFileSize Utility**
+#### 🟡 **P18: formatDate Consolidation** ⏳ NEW
 - **Priority:** IMPORTANT
-- **Impact:** 8+ duplicate file size formatting functions
-- **Pattern:** Consolidate bytes → human-readable size conversions
-- **Target Pattern:**
+- **Impact:** 12+ duplicate date formatting functions
+- **Pattern:** Consolidate toLocaleDateString patterns to central dateUtils
+- **Central Utility:** `src/utils/dateUtils.ts` (already exists)
 
-**Current Duplicates:**
+**Existing Utilities:**
+- `formatDateLocaleAR(date)` - DD/MM/YYYY format
+- `formatDateTimeLocaleAR(date)` - DD/MM/YYYY HH:MM format
+- `formatDateLocaleES(date)` - Same as AR, using es-ES locale
+
+**Duplicates Found (12+ files):**
+- `adjuntos-informe-juridico.tsx` - es-AR with time
+- `adjuntos-ratificacion.tsx` - es-AR with time
+- `adjuntos-nota-aval.tsx` - es-AR with time
+- `AsignarActividadModal.tsx` - es-AR with time
+- `asignar-legajo-modal.tsx` - es-AR with time
+- `asignarModal.tsx` - es-ES with time
+- `informe-juridico-section.tsx` - es-AR with month: "long"
+- `nota-aval-section.tsx` - es-AR with month: "long" + time
+- `ratificacion-judicial-section.tsx` - es-AR with month: "long"
+- Others...
+
+**Needs New Utilities:**
 ```typescript
-// Found in multiple files
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+// Add to src/utils/dateUtils.ts
+export const formatDateLongAR = (date: Date | string): string => {
+  // DD de Month de YYYY format
+}
+
+export const formatDateTimeLongAR = (date: Date | string): string => {
+  // DD de Month de YYYY HH:MM format
 }
 ```
 
-**Discovery Steps:**
-1. Search for file size formatting:
-   ```bash
-   grep -r "formatFileSize" src/
-   grep -r "1024.*KB.*MB.*GB" src/
-   grep -r "Math.log.*bytes" src/
-   ```
-2. Check if utility already exists in `src/utils/`
-3. If exists: migrate all duplicates
-4. If not: create utility then migrate
+**Migration Steps:**
+1. Add missing utility variants to `src/utils/dateUtils.ts`
+2. Replace each duplicate with appropriate utility import
+3. Remove local function definitions
 
-**Utility Location:** `src/utils/formatFileSize.ts` (check if exists first!)
+**Estimated Impact:** ~7-8 lines saved per duplicate × 12+ files = ~84-96 lines
 
-**Estimated Impact:** ~8-12 lines saved per duplicate × 8+ files = ~64-96 lines
+---
+
+#### 🟢 **P8: formatFileSize Utility** ✅ COMPLETE
+- **Status:** COMPLETED (Dec 2024)
+- **Impact:** 6 files refactored, ~41 lines saved
+- **Pattern:** Consolidated bytes → human-readable size conversions
+- **Central Utility:** `src/utils/fileUtils.ts`
+
+**Files Migrated:**
+1. `adjuntos-informe-juridico.tsx`
+2. `AdjuntoCard.tsx`
+3. `EvidenciasTab.tsx`
+4. `adjuntar-nota-modal.tsx`
+5. `file-upload-section.tsx`
+6. `useNotaAvalAdjuntos.ts`
+
+**Usage:**
+```typescript
+import { formatFileSize } from '@/utils/fileUtils'
+
+formatFileSize(1024)      // "1.00 KB"
+formatFileSize(1048576)   // "1.00 MB"
+formatFileSize(500, 1)    // "500 B" (with 1 decimal)
+```
 
 ---
 

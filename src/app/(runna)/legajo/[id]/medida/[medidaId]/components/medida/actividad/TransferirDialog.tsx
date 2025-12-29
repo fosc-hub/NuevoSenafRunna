@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Button,
   FormControl,
@@ -15,6 +15,7 @@ import {
 } from '@mui/material'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import BaseDialog from '@/components/shared/BaseDialog'
+import { useFormSubmission } from '@/hooks'
 import type { TActividadPlanTrabajo } from '../../../types/actividades'
 
 interface TransferirDialogProps {
@@ -23,6 +24,12 @@ interface TransferirDialogProps {
   onTransferir: (equipoDestinoId: number, responsableNuevoId?: number, motivo?: string) => Promise<any>
   loading: boolean
   onSuccess: () => void
+}
+
+interface TransferFormData {
+  equipoDestino: number
+  responsableNuevo?: number
+  motivo: string
 }
 
 // Mock data - Replace with actual API calls
@@ -40,6 +47,10 @@ const USUARIOS_DISPONIBLES = [
   { id: 4, nombre_completo: 'Ana Martínez' },
 ]
 
+/**
+ * REFACTORED: Uses BaseDialog + useFormSubmission hook
+ * Eliminated duplicate loading/error state management
+ */
 export const TransferirDialog: React.FC<TransferirDialogProps> = ({
   actividad,
   canTransfer,
@@ -51,8 +62,37 @@ export const TransferirDialog: React.FC<TransferirDialogProps> = ({
   const [equipoDestino, setEquipoDestino] = useState<number | ''>('')
   const [responsableNuevo, setResponsableNuevo] = useState<number | ''>('')
   const [motivo, setMotivo] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+
+  const resetFormState = () => {
+    setEquipoDestino('')
+    setResponsableNuevo('')
+    setMotivo('')
+  }
+
+  const { submit, isLoading, error, close } = useFormSubmission<TransferFormData>({
+    onSubmit: async (data) => {
+      const result = await onTransferir(
+        data.equipoDestino,
+        data.responsableNuevo,
+        data.motivo
+      )
+      if (!result) {
+        throw new Error('Error al transferir la actividad')
+      }
+      return result
+    },
+    validate: () => {
+      if (!equipoDestino) return 'Debe seleccionar un equipo destino'
+      if (!motivo.trim()) return 'El motivo de la transferencia es obligatorio'
+      if (motivo.trim().length < 15) return 'El motivo debe tener al menos 15 caracteres'
+      return undefined
+    },
+    showSuccessToast: false,
+    showErrorToast: false, // BaseDialog handles error display
+    onSuccess: () => onSuccess(),
+    onReset: resetFormState,
+    onClose: () => setDialogOpen(false),
+  })
 
   if (!canTransfer) {
     return null
@@ -60,54 +100,17 @@ export const TransferirDialog: React.FC<TransferirDialogProps> = ({
 
   const handleOpenDialog = () => {
     setDialogOpen(true)
-    setEquipoDestino('')
-    setResponsableNuevo('')
-    setMotivo('')
-    setError(null)
+    resetFormState()
   }
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false)
-    setEquipoDestino('')
-    setResponsableNuevo('')
-    setMotivo('')
-    setError(null)
-  }
+  const handleCloseDialog = () => close()
 
-  const handleSubmit = async () => {
-    // Validation
-    if (!equipoDestino) {
-      setError('Debe seleccionar un equipo destino')
-      return
-    }
-
-    if (!motivo.trim()) {
-      setError('El motivo de la transferencia es obligatorio')
-      return
-    }
-
-    if (motivo.trim().length < 15) {
-      setError('El motivo debe tener al menos 15 caracteres')
-      return
-    }
-
-    setSubmitting(true)
-    setError(null)
-
-    const result = await onTransferir(
-      equipoDestino as number,
-      responsableNuevo ? (responsableNuevo as number) : undefined,
-      motivo
-    )
-
-    if (result) {
-      handleCloseDialog()
-      onSuccess()
-    } else {
-      setError('Error al transferir la actividad')
-    }
-
-    setSubmitting(false)
+  const handleSubmit = () => {
+    submit({
+      equipoDestino: equipoDestino as number,
+      responsableNuevo: responsableNuevo ? (responsableNuevo as number) : undefined,
+      motivo,
+    })
   }
 
   return (
@@ -137,16 +140,16 @@ export const TransferirDialog: React.FC<TransferirDialogProps> = ({
             label: "Cancelar",
             onClick: handleCloseDialog,
             variant: "text",
-            disabled: submitting
+            disabled: isLoading
           },
           {
-            label: submitting ? 'Transfiriendo...' : 'Confirmar Transferencia',
+            label: isLoading ? 'Transfiriendo...' : 'Confirmar Transferencia',
             onClick: handleSubmit,
             variant: "contained",
             color: "warning",
-            disabled: submitting || !equipoDestino || !motivo.trim(),
+            disabled: isLoading || !equipoDestino || !motivo.trim(),
             startIcon: <SwapHorizIcon />,
-            loading: submitting
+            loading: isLoading
           }
         ]}
       >

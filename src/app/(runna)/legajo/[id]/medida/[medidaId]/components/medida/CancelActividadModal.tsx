@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { TextField, Typography, Box } from '@mui/material'
 import BaseDialog from '@/components/shared/BaseDialog'
 import { actividadService } from '../../services/actividadService'
+import { useFormSubmission } from '@/hooks'
 
 interface CancelActividadModalProps {
   open: boolean
@@ -16,10 +17,9 @@ interface CancelActividadModalProps {
 /**
  * Modal for canceling an activity
  *
- * REFACTORED: Now uses BaseDialog shared component
- * Previous implementation: ~130 lines
- * Current implementation: ~60 lines
- * Savings: ~70 lines of duplicate dialog boilerplate
+ * REFACTORED: Uses BaseDialog + useFormSubmission hooks
+ * Previous implementation: ~130 lines → ~60 lines → ~45 lines
+ * Cumulative savings: ~85 lines of duplicate boilerplate
  */
 export const CancelActividadModal: React.FC<CancelActividadModalProps> = ({
   open,
@@ -29,35 +29,22 @@ export const CancelActividadModal: React.FC<CancelActividadModalProps> = ({
   onSuccess
 }) => {
   const [motivo, setMotivo] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const handleCancel = async () => {
-    if (!motivo.trim()) {
-      setError('El motivo de cancelación es requerido')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
+  const { submit, isLoading, error, close } = useFormSubmission({
+    onSubmit: async () => {
       await actividadService.cancel(actividadId, motivo)
-      onSuccess?.()
-      handleClose()
-    } catch (err: any) {
-      console.error('Error canceling activity:', err)
-      setError(err.response?.data?.detail || 'Error al cancelar la actividad')
-    } finally {
-      setLoading(false)
-    }
-  }
+    },
+    validate: () => !motivo.trim() ? 'El motivo de cancelación es requerido' : undefined,
+    showSuccessToast: false,
+    showErrorToast: false, // BaseDialog handles error display
+    onSuccess: () => onSuccess?.(),
+    onReset: () => setMotivo(''),
+    onClose,
+  })
 
-  const handleClose = () => {
-    setMotivo('')
-    setError(null)
-    onClose()
-  }
+  const handleCancel = () => submit({})
+
+  const handleClose = () => close()
 
   return (
     <BaseDialog
@@ -66,7 +53,7 @@ export const CancelActividadModal: React.FC<CancelActividadModalProps> = ({
       title="Cancelar Actividad"
       centerTitle
       error={error}
-      loading={loading}
+      loading={isLoading}
       loadingMessage="Cancelando actividad..."
       warning="Esta acción no se puede deshacer. La actividad quedará marcada como CANCELADA."
       actions={[
@@ -74,15 +61,15 @@ export const CancelActividadModal: React.FC<CancelActividadModalProps> = ({
           label: "Cancelar",
           onClick: handleClose,
           variant: "outlined",
-          disabled: loading,
+          disabled: isLoading,
         },
         {
           label: "Confirmar Cancelación",
           onClick: handleCancel,
           variant: "contained",
           color: "error",
-          disabled: loading || !motivo.trim(),
-          loading: loading,
+          disabled: isLoading || !motivo.trim(),
+          loading: isLoading,
         },
       ]}
     >

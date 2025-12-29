@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -13,6 +13,7 @@ import BaseDialog from '@/components/shared/BaseDialog'
 import { TipoActividadSelect } from './TipoActividadSelect'
 import { ResponsableSelect } from './ResponsableSelect'
 import { actividadService } from '../../services/actividadService'
+import { useFormSubmission } from '@/hooks'
 import type { TActividadPlanTrabajo, UpdateActividadRequest } from '../../types/actividades'
 
 const editActividadSchema = z.object({
@@ -34,15 +35,16 @@ interface EditActividadModalProps {
   onSuccess?: () => void
 }
 
+/**
+ * REFACTORED: Uses BaseDialog + useFormSubmission + React Hook Form
+ * Eliminated duplicate loading/error state management
+ */
 export const EditActividadModal: React.FC<EditActividadModalProps> = ({
   open,
   onClose,
   actividad,
   onSuccess
 }) => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
   const {
     control,
     handleSubmit,
@@ -61,6 +63,27 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
     }
   })
 
+  const { submit, isLoading, error } = useFormSubmission<EditActividadFormData>({
+    onSubmit: async (data) => {
+      const updateData: UpdateActividadRequest = {
+        tipo_actividad: data.tipo_actividad,
+        subactividad: data.subactividad,
+        fecha_planificacion: data.fecha_planificacion.toISOString().split('T')[0],
+        descripcion: data.descripcion,
+        responsable_principal: data.responsable_principal,
+        responsables_secundarios: data.responsables_secundarios,
+        referentes_externos: data.referentes_externos
+      }
+      await actividadService.update(actividad.id, updateData)
+    },
+    showSuccessToast: false,
+    showErrorToast: false, // BaseDialog handles error display
+    onSuccess: () => {
+      onSuccess?.()
+      onClose()
+    },
+  })
+
   useEffect(() => {
     if (open) {
       reset({
@@ -75,31 +98,7 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
     }
   }, [open, actividad, reset])
 
-  const onSubmit = async (data: EditActividadFormData) => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const updateData: UpdateActividadRequest = {
-        tipo_actividad: data.tipo_actividad,
-        subactividad: data.subactividad,
-        fecha_planificacion: data.fecha_planificacion.toISOString().split('T')[0],
-        descripcion: data.descripcion,
-        responsable_principal: data.responsable_principal,
-        responsables_secundarios: data.responsables_secundarios,
-        referentes_externos: data.referentes_externos
-      }
-
-      await actividadService.update(actividad.id, updateData)
-      onSuccess?.()
-      onClose()
-    } catch (err: any) {
-      console.error('Error updating activity:', err)
-      setError(err.response?.data?.detail || 'Error al actualizar la actividad')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const onSubmitForm = handleSubmit((data) => submit(data))
 
   return (
     <BaseDialog
@@ -108,7 +107,7 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
       title="Editar Actividad"
       centerTitle
       error={error}
-      loading={loading}
+      loading={isLoading}
       loadingMessage="Guardando..."
       maxWidth="md"
       fullWidth
@@ -119,18 +118,18 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
           label: "Cancelar",
           onClick: onClose,
           variant: "outlined",
-          disabled: loading,
+          disabled: isLoading,
         },
         {
-          label: loading ? "Guardando..." : "Guardar Cambios",
-          onClick: handleSubmit(onSubmit),
+          label: isLoading ? "Guardando..." : "Guardar Cambios",
+          onClick: onSubmitForm,
           variant: "contained",
-          disabled: loading,
-          loading: loading,
+          disabled: isLoading,
+          loading: isLoading,
         },
       ]}
     >
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box component="form" onSubmit={onSubmitForm} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Controller
           name="tipo_actividad"
           control={control}

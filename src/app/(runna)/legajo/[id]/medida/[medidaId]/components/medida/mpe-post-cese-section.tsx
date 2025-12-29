@@ -18,16 +18,15 @@
 import React from "react"
 import {
   Box,
-  Paper,
   Typography,
   Alert,
   AlertTitle,
-  Chip,
   useTheme,
 } from "@mui/material"
 import EventAvailableIcon from "@mui/icons-material/EventAvailable"
 import AssignmentIcon from "@mui/icons-material/Assignment"
 import InfoIcon from "@mui/icons-material/Info"
+import { SectionCard } from "./shared/section-card"
 
 // ============================================================================
 // TYPES
@@ -67,21 +66,20 @@ export const MPEPostCeseSection: React.FC<MPEPostCeseSectionProps> = ({
   })
 
   return (
-    <Paper
-      elevation={1}
-      sx={{
-        p: 3,
-        backgroundColor: theme.palette.background.paper,
-        borderRadius: 2,
-      }}
+    <SectionCard
+      title="Post-Cese (MPE)"
+      chips={[{ label: "Post-Cese", color: "info" }]}
+      additionalInfo={["Actividades de seguimiento posterior al cese"]}
     >
-      {/* Header */}
+      {/* Section Icon - Visual indicator */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           gap: 2,
           mb: 2,
+          pb: 2,
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <EventAvailableIcon
@@ -91,19 +89,13 @@ export const MPEPostCeseSection: React.FC<MPEPostCeseSectionProps> = ({
           }}
         />
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Post-Cese (MPE)
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Etapa Post-Cese Activa
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Actividades de seguimiento posterior al cese
+            Fecha de cese efectivo: {formattedDate}
           </Typography>
         </Box>
-        <Chip
-          label="Post-Cese"
-          color="info"
-          size="small"
-          sx={{ ml: 'auto' }}
-        />
       </Box>
 
       {/* Info Alert */}
@@ -113,12 +105,9 @@ export const MPEPostCeseSection: React.FC<MPEPostCeseSectionProps> = ({
         sx={{ mb: 3 }}
       >
         <AlertTitle sx={{ fontWeight: 600 }}>
-          Etapa Post-Cese Activa
+          Información
         </AlertTitle>
         <Typography variant="body2">
-          <strong>Fecha de cese efectivo:</strong> {formattedDate}
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
           Esta etapa permite registrar actividades de seguimiento posteriores al cese
           de la medida a través del Plan de Trabajo (PLTM).
         </Typography>
@@ -190,7 +179,7 @@ export const MPEPostCeseSection: React.FC<MPEPostCeseSectionProps> = ({
           Solo se pueden registrar actividades de seguimiento en el Plan de Trabajo.
         </Typography>
       </Box>
-    </Paper>
+    </SectionCard>
   )
 }
 

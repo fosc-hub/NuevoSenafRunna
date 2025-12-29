@@ -21,6 +21,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import { AttachmentUpload } from '../AttachmentUpload'
 import type { TAdjuntoActividad } from '../../../types/actividades'
 import { actividadService } from '../../../services/actividadService'
+import { formatFileSize } from '@/utils/fileUtils'
 
 interface EvidenciasTabProps {
   actividadId: number
@@ -68,12 +69,6 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
     } finally {
       setUploading(false)
     }
-  }
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
   }
 
   // Group adjuntos by activo status

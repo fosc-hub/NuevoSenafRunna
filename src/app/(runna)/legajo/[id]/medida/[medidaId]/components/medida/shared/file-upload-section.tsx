@@ -43,6 +43,7 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import DescriptionIcon from "@mui/icons-material/Description"
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
+import { formatFileSize } from "@/utils/fileUtils"
 
 export interface FileItem {
   id: number | string
@@ -176,14 +177,9 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
     }
   }
 
-  const formatFileSize = (bytes?: number): string => {
+  const formatFileSizeWrapper = (bytes?: number): string => {
     if (!bytes) return ""
-    const mb = bytes / (1024 * 1024)
-    if (mb < 1) {
-      const kb = bytes / 1024
-      return `${kb.toFixed(1)} KB`
-    }
-    return `${mb.toFixed(2)} MB`
+    return formatFileSize(bytes)
   }
 
   const formatDate = (dateString?: string): string => {
@@ -324,7 +320,7 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                     secondary={
                       <>
                         {file.tipo && <span>{file.tipo}</span>}
-                        {file.tamano && <span> • {formatFileSize(file.tamano)}</span>}
+                        {file.tamano && <span> • {formatFileSizeWrapper(file.tamano)}</span>}
                         {file.fecha_subida && <span> • {formatDate(file.fecha_subida)}</span>}
                       </>
                     }

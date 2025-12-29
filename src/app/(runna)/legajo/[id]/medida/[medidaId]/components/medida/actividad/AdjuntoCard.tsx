@@ -17,18 +17,13 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import type { TAdjuntoActividad } from '../../../types/actividades'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { formatFileSize } from '@/utils/fileUtils'
 
 interface AdjuntoCardProps {
   adjunto: TAdjuntoActividad
 }
 
 export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-  }
-
   const getFileIcon = (tipo_mime: string) => {
     if (tipo_mime.includes('pdf')) return '📄'
     if (tipo_mime.includes('image')) return '🖼️'

@@ -45,6 +45,7 @@ import SaveIcon from "@mui/icons-material/Save"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import DescriptionIcon from "@mui/icons-material/Description"
 import { FileUploadSection, type FileItem } from "../shared/file-upload-section"
+import { formatFileSize } from "@/utils/fileUtils"
 
 interface AdjuntarNotaModalProps {
     open: boolean
@@ -180,14 +181,6 @@ export const AdjuntarNotaModal: React.FC<AdjuntarNotaModalProps> = ({
 
     const removeArchivo = (id: string) => {
         setArchivosAdjuntos(prev => prev.filter(a => a.id !== id))
-    }
-
-    const formatFileSize = (bytes: number) => {
-        if (bytes === 0) return '0 Bytes'
-        const k = 1024
-        const sizes = ['Bytes', 'KB', 'MB', 'GB']
-        const i = Math.floor(Math.log(bytes) / Math.log(k))
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
     const getCompletionPercentage = () => {

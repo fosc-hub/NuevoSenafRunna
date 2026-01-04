@@ -41,6 +41,7 @@ import { QuickFilterChips } from "../QuickFilterChips"
 import { actividadService } from "../../../services/actividadService"
 import type { TActividadPlanTrabajo, ActividadFilters } from "../../../types/actividades"
 import { getActorColor } from "../../../types/actividades"
+import { useActorVisibility } from "../../../hooks/useActorVisibility"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import TimelineIcon from "@mui/icons-material/Timeline"
 
@@ -51,6 +52,9 @@ interface PlanTrabajoTabProps {
 }
 
 export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, planTrabajoId, filterEtapa }) => {
+    // Actor visibility - determines which activities the user can see
+    const { actorFilter, allowedActors, isActorAllowed, canSeeAllActors } = useActorVisibility()
+
     // Pagination and filter state
     const [page, setPage] = useState(0)
     const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -67,18 +71,20 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
     const [asignarModalOpen, setAsignarModalOpen] = useState(false)
     const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
 
+    // Build filters with actor restriction
+    const effectiveFilters = useMemo(() => ({
+        ...filters,
+        // Apply actor filter if user is restricted to specific actors
+        ...(actorFilter && { actor: actorFilter }),
+        ordering: '-fecha_creacion'
+    }), [filters, actorFilter])
+
     // Fetch actividades using TanStack Query
-    const { data: response, isLoading: loading } = useApiQuery<any>(
+    const { data: response, isLoading: loading, refetch: loadActividades } = useApiQuery<any>(
         `actividades-plan/${planTrabajoId}`,
+        effectiveFilters,
         {
-            ...filters,
-            ordering: '-fecha_creacion'
-        },
-        {
-            queryFn: () => actividadService.list(planTrabajoId, {
-                ...filters,
-                ordering: '-fecha_creacion'
-            }),
+            queryFn: () => actividadService.list(planTrabajoId, effectiveFilters),
         }
     )
 
@@ -139,10 +145,27 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
         setAsignarModalOpen(true)
     }
 
-    // Filter activities by etapa if filterEtapa prop is provided (MPJ)
-    const filteredActividades = filterEtapa
-        ? actividades.filter(actividad => actividad.tipo_actividad_info.etapa_medida_aplicable === filterEtapa)
-        : actividades
+    // Filter activities by etapa and actor visibility
+    const filteredActividades = useMemo(() => {
+        let result = actividades
+
+        // Client-side actor filtering (backup for API filtering)
+        // This ensures users only see activities for their allowed actors
+        if (!canSeeAllActors && allowedActors.length > 0) {
+            result = result.filter(actividad =>
+                isActorAllowed(actividad.actor)
+            )
+        }
+
+        // Filter by etapa if filterEtapa prop is provided (MPJ)
+        if (filterEtapa) {
+            result = result.filter(actividad =>
+                actividad.tipo_actividad_info.etapa_medida_aplicable === filterEtapa
+            )
+        }
+
+        return result
+    }, [actividades, canSeeAllActors, allowedActors, isActorAllowed, filterEtapa])
 
     return (
         <>

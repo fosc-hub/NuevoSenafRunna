@@ -319,6 +319,10 @@ export interface ActividadFilters {
   search?: string
   /** V3.0: Filter by actor (team responsible) */
   actor?: string
+  /** Filter for overdue activities */
+  vencidas?: string
+  /** Filter activities with days remaining less than or equal to this value */
+  dias_restantes_max?: string
 }
 
 export interface ActividadListResponse {

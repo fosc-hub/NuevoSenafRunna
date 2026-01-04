@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Box, Chip } from '@mui/material'
 import ErrorIcon from '@mui/icons-material/Error'
 import WarningIcon from '@mui/icons-material/Warning'
@@ -10,7 +10,8 @@ import GroupWorkIcon from '@mui/icons-material/GroupWork'
 import GavelIcon from '@mui/icons-material/Gavel'
 import HomeIcon from '@mui/icons-material/Home'
 import BusinessIcon from '@mui/icons-material/Business'
-import type { ActividadFilters } from '../../types/actividades'
+import type { ActividadFilters, ActorEnum } from '../../types/actividades'
+import { useActorVisibility } from '../../hooks/useActorVisibility'
 
 interface QuickFilterChipsProps {
   activeFilters: ActividadFilters
@@ -23,67 +24,101 @@ export const QuickFilterChips: React.FC<QuickFilterChipsProps> = ({
   onFilterChange,
   currentUserId
 }) => {
-  const quickFilters = [
-    {
-      id: 'todos',
-      label: 'Todas',
-      icon: <AllInclusiveIcon fontSize="small" />,
-      filter: {},
-      color: 'default' as const
-    },
-    // V3.0: Actor-based filters (team filters)
+  // Get actor visibility to filter which actor chips to show
+  const { isActorAllowed, canSeeAllActors } = useActorVisibility()
+
+  // Common type for all quick filter chips
+  interface QuickFilterChip {
+    id: string
+    label: string
+    icon: React.ReactElement
+    filter: Partial<ActividadFilters>
+    color: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error'
+    disabled?: boolean
+    actorValue?: ActorEnum
+  }
+
+  // Define actor filter chips with their associated actor
+  const actorFilters: QuickFilterChip[] = [
     {
       id: 'equipo_tecnico',
       label: 'Equipo Técnico',
       icon: <GroupWorkIcon fontSize="small" />,
       filter: { actor: 'EQUIPO_TECNICO' },
-      color: 'primary' as const
+      color: 'primary',
+      actorValue: 'EQUIPO_TECNICO'
     },
     {
       id: 'equipo_legal',
       label: 'Equipo Legal',
       icon: <GavelIcon fontSize="small" />,
       filter: { actor: 'EQUIPO_LEGAL' },
-      color: 'secondary' as const
+      color: 'secondary',
+      actorValue: 'EQUIPO_LEGAL'
     },
     {
       id: 'equipos_residenciales',
       label: 'Equipos Residenciales',
       icon: <HomeIcon fontSize="small" />,
       filter: { actor: 'EQUIPOS_RESIDENCIALES' },
-      color: 'success' as const
+      color: 'success',
+      actorValue: 'EQUIPOS_RESIDENCIALES'
     },
     {
       id: 'adultos_institucion',
       label: 'Adultos/Institución',
       icon: <BusinessIcon fontSize="small" />,
       filter: { actor: 'ADULTOS_INSTITUCION' },
-      color: 'warning' as const
+      color: 'warning',
+      actorValue: 'ADULTOS_INSTITUCION'
+    }
+  ]
+
+  // Filter actor chips based on user permissions
+  // Only show actor filter chips if user can see all actors (supervisors/admins)
+  // Regular users already have their view filtered by their actor, so they don't need these chips
+  const visibleActorFilters = useMemo(() => {
+    if (!canSeeAllActors) {
+      // Non-supervisors don't see actor filter chips - their view is already filtered
+      return []
+    }
+    return actorFilters
+  }, [canSeeAllActors])
+
+  const quickFilters: QuickFilterChip[] = useMemo(() => [
+    {
+      id: 'todos',
+      label: 'Todas',
+      icon: <AllInclusiveIcon fontSize="small" />,
+      filter: {},
+      color: 'default'
     },
-    // State-based filters
+    // Actor filters (only visible to supervisors/admins)
+    ...visibleActorFilters,
+    // State-based filters (visible to all)
     {
       id: 'vencidas',
       label: 'Vencidas',
       icon: <ErrorIcon fontSize="small" />,
       filter: { estado: 'PENDIENTE', vencidas: 'true' },
-      color: 'error' as const
+      color: 'error'
     },
     {
       id: 'proximas',
       label: 'Próximas a vencer',
       icon: <WarningIcon fontSize="small" />,
       filter: { estado: 'PENDIENTE', dias_restantes_max: '7' },
-      color: 'warning' as const
+      color: 'warning'
     },
     {
       id: 'mis_actividades',
       label: 'Mis Actividades',
       icon: <PersonIcon fontSize="small" />,
       filter: { responsable_principal: currentUserId },
-      color: 'primary' as const,
+      color: 'primary',
       disabled: !currentUserId
     }
-  ]
+  ], [visibleActorFilters, currentUserId])
 
   const isFilterActive = (filterId: string) => {
     switch (filterId) {

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -8,11 +8,13 @@ import {
   Tabs,
   Tab,
   Box,
-  IconButton
+  IconButton,
+  Typography
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import { ActorTabContent } from './ActorTabContent'
-import type { CreateActividadRequest } from '../../types/actividades'
+import type { CreateActividadRequest, ActorEnum } from '../../types/actividades'
+import { useActorVisibility } from '../../hooks/useActorVisibility'
 
 interface PlanAccionModalProps {
   open: boolean
@@ -32,12 +34,24 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
   const [activeTab, setActiveTab] = useState(0)
   const [formData, setFormData] = useState<Partial<CreateActividadRequest>>({})
 
-  const actors = [
+  // Get actor visibility based on user permissions
+  const { isActorAllowed, allowedActors, canSeeAllActors } = useActorVisibility()
+
+  // All available actors
+  const allActors: Array<{ value: ActorEnum; label: string }> = [
     { value: 'EQUIPO_TECNICO', label: 'Equipo técnico' },
     { value: 'EQUIPOS_RESIDENCIALES', label: 'Equipos residenciales' },
     { value: 'ADULTOS_INSTITUCION', label: 'Adultos responsables/Institución' },
     { value: 'EQUIPO_LEGAL', label: 'Equipo de Legales' }
   ]
+
+  // Filter actors based on user permissions
+  const actors = useMemo(() => {
+    if (canSeeAllActors) {
+      return allActors
+    }
+    return allActors.filter(actor => isActorAllowed(actor.value))
+  }, [canSeeAllActors, isActorAllowed])
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue)
@@ -84,31 +98,54 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ px: 4, py: 3, overflow: 'auto' }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          sx={{
-            mb: 3,
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontSize: '0.875rem'
-            }
-          }}
-        >
-          {actors.map((actor, index) => (
-            <Tab key={actor.value} label={actor.label} />
-          ))}
-        </Tabs>
+        {actors.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="body1" color="text.secondary">
+              No tiene permisos para crear actividades.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Contacte a su administrador si cree que esto es un error.
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {/* Only show tabs if user has multiple actor options */}
+            {actors.length > 1 && (
+              <Tabs
+                value={activeTab}
+                onChange={handleTabChange}
+                sx={{
+                  mb: 3,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: '0.875rem'
+                  }
+                }}
+              >
+                {actors.map((actor) => (
+                  <Tab key={actor.value} label={actor.label} />
+                ))}
+              </Tabs>
+            )}
 
-        <ActorTabContent
-          actor={actors[activeTab].value}
-          planTrabajoId={planTrabajoId}
-          formData={formData}
-          onChange={handleFormChange}
-          onClose={onClose}
-          onSuccess={onSuccess}
-          filterEtapa={filterEtapa}
-        />
+            {/* Show single actor label when only one is available */}
+            {actors.length === 1 && (
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500, color: 'primary.main' }}>
+                {actors[0].label}
+              </Typography>
+            )}
+
+            <ActorTabContent
+              actor={actors[activeTab]?.value || actors[0]?.value}
+              planTrabajoId={planTrabajoId}
+              formData={formData}
+              onChange={handleFormChange}
+              onClose={onClose}
+              onSuccess={onSuccess}
+              filterEtapa={filterEtapa}
+            />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )

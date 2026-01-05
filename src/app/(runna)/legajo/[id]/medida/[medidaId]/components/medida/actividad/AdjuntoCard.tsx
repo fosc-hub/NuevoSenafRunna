@@ -18,12 +18,27 @@ import type { TAdjuntoActividad } from '../../../types/actividades'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { formatFileSize } from '@/utils/fileUtils'
+import { usePdfViewer } from '@/hooks'
+import { isPdfFile } from '@/utils/pdfUtils'
 
 interface AdjuntoCardProps {
   adjunto: TAdjuntoActividad
 }
 
 export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
+  const { openUrl, PdfModal } = usePdfViewer()
+  const isPdf = isPdfFile(adjunto.nombre_original, adjunto.tipo_mime)
+
+  const handleViewFile = () => {
+    if (isPdf) {
+      openUrl(adjunto.archivo_url, {
+        title: adjunto.nombre_original,
+        fileName: adjunto.nombre_original
+      })
+    } else {
+      window.open(adjunto.archivo_url, '_blank', 'noopener,noreferrer')
+    }
+  }
   const getFileIcon = (tipo_mime: string) => {
     if (tipo_mime.includes('pdf')) return '📄'
     if (tipo_mime.includes('image')) return '🖼️'
@@ -99,12 +114,10 @@ export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
 
         {/* Action buttons */}
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Tooltip title="Ver archivo">
+          <Tooltip title={isPdf ? "Ver PDF" : "Ver archivo"}>
             <IconButton
               size="small"
-              href={adjunto.archivo_url}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={handleViewFile}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.8)',
                 '&:hover': { bgcolor: 'white' }
@@ -194,6 +207,9 @@ export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
           />
         )}
       </Box>
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </Paper>
   )
 }

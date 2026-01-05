@@ -22,12 +22,21 @@ import { useUser } from "@/utils/auth/userZustand"
 import { fetchUsuarios } from "@/app/(runna)/legajo-mesa/api/legajo-asignacion-api-service"
 import type { Usuario } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
 
-// Dynamic import para evitar errores SSR con Next.js
+// Dynamic imports para evitar errores SSR con Next.js
 const DownloadPDFButton = dynamic(() => import("./pdf/download-pdf-button"), {
   ssr: false,
   loading: () => (
     <Button variant="contained" color="primary" disabled>
       Cargando PDF...
+    </Button>
+  ),
+})
+
+const DownloadDocxButton = dynamic(() => import("./pdf/download-docx-button"), {
+  ssr: false,
+  loading: () => (
+    <Button variant="outlined" color="primary" disabled>
+      Cargando Word...
     </Button>
   ),
 })
@@ -431,6 +440,7 @@ export default function ActionButtons({
   return (
     <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
       <DownloadPDFButton data={combinedData} onGenerate={handlePDFGenerated} />
+      <DownloadDocxButton data={combinedData} />
 
       {/* Selector de firmantes con búsqueda */}
       <Autocomplete

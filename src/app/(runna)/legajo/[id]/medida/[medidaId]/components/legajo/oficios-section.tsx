@@ -18,6 +18,8 @@ import DownloadIcon from "@mui/icons-material/Download"
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { SectionCard } from "../medida/shared/section-card"
+import { usePdfViewer } from "@/hooks"
+import { isPdfFile, getFileNameFromUrl } from "@/utils/pdfUtils"
 
 interface OficiosSectionProps {
   legajoData: LegajoDetailResponse
@@ -25,19 +27,19 @@ interface OficiosSectionProps {
 
 export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData }) => {
   const oficios = legajoData.oficios || []
+  const { openUrl, PdfModal } = usePdfViewer()
 
   const extractFileName = (url: string): string => {
-    try {
-      const urlParts = url.split("/")
-      const fileName = urlParts[urlParts.length - 1]
-      return decodeURIComponent(fileName)
-    } catch {
-      return "documento.pdf"
-    }
+    return getFileNameFromUrl(url, "documento.pdf")
   }
 
   const handleViewFile = (url: string) => {
-    window.open(url, "_blank")
+    const fileName = extractFileName(url)
+    if (isPdfFile(fileName)) {
+      openUrl(url, { title: fileName, fileName })
+    } else {
+      window.open(url, "_blank")
+    }
   }
 
   const handleDownloadFile = (url: string, fileName: string) => {
@@ -131,6 +133,9 @@ export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData }) =>
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </SectionCard>
   )
 }

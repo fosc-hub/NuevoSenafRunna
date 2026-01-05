@@ -31,6 +31,8 @@ import { create } from "@/app/api/apiService"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
 import { useCatalogData, useApiQuery } from "@/hooks/useApiQuery"
+import { usePdfViewer } from "@/hooks"
+import { isPdfFile } from "@/utils/pdfUtils"
 // Types defined locally since @/types/actividad doesn't exist
 
 // Update the Actividad type to match the new API response structure
@@ -82,6 +84,9 @@ interface RegistrarActividadFormProps {
 }
 
 export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProps) {
+  // PDF Viewer hook
+  const { openUrl: openPdfUrl, PdfModal } = usePdfViewer()
+
   // Fetch catalog data using TanStack Query
   const { data: actividadTipos = [] } = useCatalogData<ActividadTipo[]>("actividad-tipo/")
 
@@ -337,12 +342,15 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
                                 <Button
                                   size="small"
                                   startIcon={<AttachFile />}
-                                  onClick={() =>
-                                    window.open(
-                                      `https://web-runna-v2legajos.up.railway.app${adjunto.archivo}`,
-                                      "_blank",
-                                    )
-                                  }
+                                  onClick={() => {
+                                    const fileName = adjunto.archivo.split("/").pop() || "archivo"
+                                    const fileUrl = `https://web-runna-v2legajos.up.railway.app${adjunto.archivo}`
+                                    if (isPdfFile(fileName)) {
+                                      openPdfUrl(fileUrl, { title: "Adjunto de Actividad", fileName })
+                                    } else {
+                                      window.open(fileUrl, "_blank")
+                                    }
+                                  }}
                                   sx={{ textTransform: "none", justifyContent: "flex-start" }}
                                 >
                                   {adjunto.archivo.split("/").pop()}
@@ -367,6 +375,9 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </Box>
   )
 }

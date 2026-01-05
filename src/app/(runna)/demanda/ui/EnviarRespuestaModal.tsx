@@ -23,6 +23,8 @@ import MessageIcon from "@mui/icons-material/Message"
 import { create } from "@/app/api/apiService"
 import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
 import { useApiQuery, useCatalogData } from "@/hooks/useApiQuery"
+import { usePdfViewer } from "@/hooks"
+import { isPdfFile } from "@/utils/pdfUtils"
 
 // URL base para los archivos
 const BASE_URL = "https://web-runna-v2legajos.up.railway.app"
@@ -59,6 +61,9 @@ interface EnviarRespuestaFormProps {
 }
 
 export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
+  // PDF Viewer hook
+  const { openUrl: openPdfUrl, PdfModal } = usePdfViewer()
+
   // Fetch data using TanStack Query
   const { data: respuestas = [], isLoading: isLoadingRespuestas } = useApiQuery<Respuesta[]>(
     "respuesta/",
@@ -437,7 +442,12 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
                               }}
                               onClick={(e) => {
                                 e.stopPropagation()
-                                window.open(getFullFileUrl(adjunto.archivo), "_blank")
+                                const fileUrl = getFullFileUrl(adjunto.archivo)
+                                if (isPdfFile(fileName)) {
+                                  openPdfUrl(fileUrl, { title: "Adjunto", fileName })
+                                } else {
+                                  window.open(fileUrl, "_blank")
+                                }
                               }}
                             />
                           )
@@ -491,6 +501,9 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </Box>
   )
 }

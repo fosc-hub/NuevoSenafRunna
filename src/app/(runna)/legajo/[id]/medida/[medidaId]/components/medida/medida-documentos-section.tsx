@@ -25,10 +25,12 @@ import DownloadIcon from "@mui/icons-material/Download"
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile"
 import InfoIcon from "@mui/icons-material/Info"
 import { useApiQuery } from "@/hooks/useApiQuery"
+import { usePdfViewer } from "@/hooks"
 import { extractDemandaIdFromMedida } from "@/app/(runna)/legajo-mesa/utils/extract-demanda-from-observaciones"
 import { fetchDemandaFullDetail } from "@/app/(runna)/legajo-mesa/api/demanda-api-service"
 import { processDemandaAdjuntos } from "@/app/(runna)/legajo-mesa/utils/demanda-adjuntos-processor"
 import { SectionCard } from "./shared/section-card"
+import { isPdfFile, getFileNameFromUrl } from "@/utils/pdfUtils"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 import type { ProcessedOficio, ProcessedDocumento } from "@/app/(runna)/legajo-mesa/utils/demanda-adjuntos-processor"
 
@@ -38,6 +40,7 @@ interface MedidaDocumentosSectionProps {
 
 export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = ({ medidaApiData }) => {
   const [activeTab, setActiveTab] = useState(0)
+  const { openUrl, PdfModal } = usePdfViewer()
 
   // Extract demanda ID from medida data
   const demandaId = useMemo(() => extractDemandaIdFromMedida(medidaApiData), [medidaApiData])
@@ -71,17 +74,16 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
   }
 
   const extractFileName = (url: string): string => {
-    try {
-      const urlParts = url.split("/")
-      const fileName = urlParts[urlParts.length - 1]
-      return decodeURIComponent(fileName)
-    } catch {
-      return "documento.pdf"
-    }
+    return getFileNameFromUrl(url, "documento.pdf")
   }
 
-  const handleViewFile = (url: string) => {
-    window.open(url, "_blank")
+  const handleViewFile = (url: string, fileName?: string) => {
+    const name = fileName || extractFileName(url)
+    if (isPdfFile(name)) {
+      openUrl(url, { title: name, fileName: name })
+    } else {
+      window.open(url, "_blank")
+    }
   }
 
   const handleDownloadFile = (url: string, fileName: string) => {
@@ -297,7 +299,7 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
                               <IconButton
                                 size="small"
                                 color="primary"
-                                onClick={() => handleViewFile(documento.archivo_url)}
+                                onClick={() => handleViewFile(documento.archivo_url, documento.nombre)}
                               >
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
@@ -322,6 +324,9 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
           </>
         )}
       </Box>
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </SectionCard>
   )
 }

@@ -25,7 +25,9 @@ import {
   Card,
   CardContent,
 } from "@mui/material"
-import { Add, Remove, CloudUpload, AttachFile, OpenInNew, ExpandMore, ExpandLess } from "@mui/icons-material"
+import { Add, Remove, CloudUpload, AttachFile, OpenInNew, ExpandMore, ExpandLess, PictureAsPdf } from "@mui/icons-material"
+import { usePdfViewer } from "@/hooks"
+import { isPdfFile } from "@/utils/pdfUtils"
 import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
@@ -46,7 +48,15 @@ const TIPOS_MEDIDA_MOCK = [
 
 
 // Componente para la sección de archivos adjuntos
-const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; readOnly?: boolean }) => {
+const FileUploadSection = ({
+  control,
+  readOnly,
+  openPdfUrl,
+}: {
+  control: Control<FormData>
+  readOnly?: boolean
+  openPdfUrl: (url: string, options?: { title?: string; fileName?: string }) => void
+}) => {
   const { field } = useController({ name: "adjuntos", control, defaultValue: [] })
   const { value, onChange } = field
 
@@ -62,14 +72,24 @@ const FileUploadSection = ({ control, readOnly }: { control: Control<FormData>; 
     return filePath.split("/").pop() || filePath
   }
 
-  // Función para abrir el archivo en una nueva pestaña
+  // Función para abrir el archivo en una nueva pestaña o en el visor de PDF
   const openFile = (filePath: string) => {
     // If the path already includes the full URL, use it directly
     // Otherwise, prepend the base URL
     const url = filePath.startsWith("http://") || filePath.startsWith("https://")
       ? filePath
       : `https://web-runna-v2legajos.up.railway.app${filePath}`
-    window.open(url, "_blank")
+    const fileName = filePath.split("/").pop() || "archivo"
+
+    console.log("[PDF Debug] filePath:", filePath, "fileName:", fileName, "isPdf:", isPdfFile(fileName))
+
+    if (isPdfFile(fileName)) {
+      console.log("[PDF Debug] Opening PDF viewer for:", url)
+      openPdfUrl(url, { title: "Archivo Adjunto", fileName })
+    } else {
+      console.log("[PDF Debug] Opening in new tab:", url)
+      window.open(url, "_blank")
+    }
   }
 
   // Función para eliminar un archivo nuevo
@@ -317,6 +337,9 @@ interface Step1FormProps {
 }
 
 const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?: number }> = ({ control, readOnly = false, id }) => {
+  // PDF Viewer hook
+  const { openUrl: openPdfUrl, PdfModal } = usePdfViewer()
+
   const {
     data: dropdownData,
     isLoading,
@@ -1058,7 +1081,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
 
         {/* Sección de Archivos Adjuntos */}
         <FormSection title="Archivos Adjuntos">
-          <FileUploadSection control={control} readOnly={readOnly} />
+          <FileUploadSection control={control} readOnly={readOnly} openPdfUrl={openPdfUrl} />
         </FormSection>
 
         {/* Sección de Observaciones */}
@@ -1096,6 +1119,9 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
         currentDemandaId={id}
         onVincularLegajo={handleVincularLegajo}
       />
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </>
   )
 }

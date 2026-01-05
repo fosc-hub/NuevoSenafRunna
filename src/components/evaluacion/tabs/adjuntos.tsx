@@ -25,6 +25,8 @@ import {
   Description as DescriptionIcon,
 } from "@mui/icons-material"
 import { formatDateTimeLocaleAR } from "@/utils/dateUtils"
+import { usePdfViewer } from "@/hooks"
+import { isPdfFile } from "@/utils/pdfUtils"
 
 // Modificar la interfaz Adjunto para que coincida con la estructura de datos real
 interface Adjunto {
@@ -46,6 +48,9 @@ interface AdjuntosTabProps {
 export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  // PDF Viewer hook
+  const { openUrl: openPdfUrl, PdfModal } = usePdfViewer()
 
   const handleDeleteAdjunto = (archivo: string) => {
     setAdjuntos((prev) => prev.filter((file) => file.archivo !== archivo))
@@ -89,8 +94,12 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
   }
 
   // Función para previsualizar archivos
-  const handlePreview = (fileUrl: string, fileType: string) => {
-    if (fileType.startsWith("image/") || fileType === "application/pdf") {
+  const handlePreview = (fileUrl: string, fileType: string, fileName: string) => {
+    // Check if it's a PDF file - use the PDF viewer modal
+    if (fileType === "application/pdf" || isPdfFile(fileName)) {
+      openPdfUrl(fileUrl, { title: "Adjunto", fileName })
+    } else if (fileType.startsWith("image/")) {
+      // For images, open in new tab
       setPreviewUrl(fileUrl)
       window.open(fileUrl, "_blank")
     } else {
@@ -125,7 +134,7 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
                   secondaryAction={
                     <Box>
                       <Tooltip title="Previsualizar">
-                        <IconButton edge="end" aria-label="preview" onClick={() => handlePreview(fileUrl, fileType)}>
+                        <IconButton edge="end" aria-label="preview" onClick={() => handlePreview(fileUrl, fileType, fileName)}>
                           <VisibilityIcon />
                         </IconButton>
                       </Tooltip>
@@ -188,6 +197,9 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
           })}
         </List>
       )}
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </Paper>
   )
 }

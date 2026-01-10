@@ -3,6 +3,8 @@
 import type React from "react"
 import { useState } from "react"
 import { Button, Skeleton } from "@mui/material"
+import AssignmentIcon from "@mui/icons-material/Assignment"
+import { useRouter } from "next/navigation"
 import CrearLegajoDialog from "@/features/legajo/components/crear-legajo/CrearLegajoDialog"
 
 interface FilterState {
@@ -27,6 +29,7 @@ interface ButtonsProps {
 }
 
 const Buttons: React.FC<ButtonsProps> = ({ isLoading, onLegajoCreated }) => {
+  const router = useRouter()
   const [isRegistroModalOpen, setIsRegistroModalOpen] = useState(false)
 
   const handleNuevoLegajo = () => {
@@ -42,6 +45,10 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, onLegajoCreated }) => {
     setIsRegistroModalOpen(false)
   }
 
+  const handleGoToActividades = () => {
+    router.push('/legajo/actividades')
+  }
+
   return (
     <div className="flex gap-4">
       {isLoading ? (
@@ -54,6 +61,22 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, onLegajoCreated }) => {
             sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" } }}
           >
             + Nuevo Legajo
+          </Button>
+
+          <Button
+            variant="outlined"
+            startIcon={<AssignmentIcon />}
+            onClick={handleGoToActividades}
+            sx={{
+              borderColor: "secondary.main",
+              color: "secondary.main",
+              "&:hover": {
+                borderColor: "secondary.dark",
+                bgcolor: "rgba(156, 39, 176, 0.04)"
+              }
+            }}
+          >
+            Mis Actividades
           </Button>
 
           <CrearLegajoDialog

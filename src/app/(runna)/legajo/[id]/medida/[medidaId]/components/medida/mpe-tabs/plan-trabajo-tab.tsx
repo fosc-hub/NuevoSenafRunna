@@ -509,6 +509,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                 onClose={() => setPlanAccionModalOpen(false)}
                 planTrabajoId={planTrabajoId}
                 onSuccess={loadActividades}
+                tipoMedida={medidaData?.tipo_medida}
                 filterEtapa={filterEtapa}
             />
 
@@ -531,6 +532,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
                             setSelectedActividad(null)
                         }}
                         actividad={selectedActividad}
+                        tipoMedida={medidaData?.tipo_medida}
                         onSuccess={loadActividades}
                     />
 

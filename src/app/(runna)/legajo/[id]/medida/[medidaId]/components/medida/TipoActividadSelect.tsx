@@ -10,6 +10,7 @@ interface TipoActividadSelectProps {
   value: number
   onChange: (value: number) => void
   actor?: string
+  tipoMedida?: 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
   error?: boolean
   helperText?: string
@@ -20,24 +21,32 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
   value,
   onChange,
   actor,
+  tipoMedida,
   filterEtapa,
   error,
   helperText,
   disabled
 }) => {
   // Fetch activity types using TanStack Query
-  const { data: allTipos = [], isLoading: loading } = useCatalogData<TTipoActividad[]>(
+  const { data: allTiposData, isLoading: loading } = useCatalogData<TTipoActividad[]>(
     'actividad-tipos/',
     {
       queryFn: () => import('../../services/actividadService').then(m => m.actividadService.getTipos(actor)),
     }
   )
+  const allTipos = Array.isArray(allTiposData) ? allTiposData : []
+
+  // Filter by tipoMedida first (MPE vs MPJ)
+  const tiposByMedida = useMemo(() => {
+    if (!tipoMedida) return allTipos
+    return allTipos.filter(tipo => tipo.tipo_medida_aplicable === tipoMedida)
+  }, [allTipos, tipoMedida])
 
   // Filter by actor if provided
   const tipos = useMemo(() => {
-    if (!actor) return allTipos
-    return allTipos.filter(tipo => tipo.actor === actor)
-  }, [allTipos, actor])
+    if (!actor) return tiposByMedida
+    return tiposByMedida.filter(tipo => tipo.actor === actor)
+  }, [tiposByMedida, actor])
 
   // Filter activity types by etapa if filterEtapa is provided (for MPJ)
   const filteredTipos = filterEtapa

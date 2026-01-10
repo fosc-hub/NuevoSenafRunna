@@ -32,6 +32,7 @@ interface EditActividadModalProps {
   open: boolean
   onClose: () => void
   actividad: TActividadPlanTrabajo
+  tipoMedida?: 'MPE' | 'MPJ'
   onSuccess?: () => void
 }
 
@@ -43,6 +44,7 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
   open,
   onClose,
   actividad,
+  tipoMedida,
   onSuccess
 }) => {
   const {
@@ -137,6 +139,7 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
             <TipoActividadSelect
               value={field.value}
               onChange={field.onChange}
+              tipoMedida={tipoMedida}
               error={!!errors.tipo_actividad}
               helperText={errors.tipo_actividad?.message}
             />

@@ -138,6 +138,31 @@ export interface TUsuarioInfo {
 }
 
 /**
+ * Legajo info nested in activity response
+ * Added in API v12 for global activities listing
+ */
+export interface TLegajoInfo {
+  id: number
+  numero: string
+  nnya_nombre: string
+  nnya_apellido: string
+  nnya_dni: string
+}
+
+/**
+ * Medida info nested in activity response
+ * Added in API v12 for global activities listing
+ */
+export interface TMedidaInfo {
+  id: number
+  numero_medida: string
+  tipo_medida: 'MPI' | 'MPE' | 'MPJ'
+  tipo_medida_display: string
+  estado_vigencia: 'VIGENTE' | 'CERRADA' | 'ARCHIVADA' | 'NO_RATIFICADA'
+  estado_vigencia_display: string
+}
+
+/**
  * TActividadPlanTrabajo - Activity instance in a work plan
  *
  * Source: RUNNA API (9).yaml lines 10307-10514
@@ -152,6 +177,18 @@ export interface TActividadPlanTrabajo {
 
   /** Plan de trabajo this activity belongs to */
   plan_trabajo: number
+
+  /**
+   * Legajo info (readonly, nested from plan_trabajo relationship)
+   * Added in API v12 for global activities listing
+   */
+  legajo_info?: TLegajoInfo
+
+  /**
+   * Medida info (readonly, nested from plan_trabajo relationship)
+   * Added in API v12 for global activities listing
+   */
+  medida_info?: TMedidaInfo
 
   // Type & Classification
   /** FK to activity type catalog */

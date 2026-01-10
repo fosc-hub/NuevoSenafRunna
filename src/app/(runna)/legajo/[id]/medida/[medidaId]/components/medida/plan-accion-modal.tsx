@@ -21,6 +21,7 @@ interface PlanAccionModalProps {
   onClose: () => void
   planTrabajoId: number
   onSuccess?: () => void
+  tipoMedida?: 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
 }
 
@@ -29,6 +30,7 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
   onClose,
   planTrabajoId,
   onSuccess,
+  tipoMedida = 'MPE',
   filterEtapa
 }) => {
   const [activeTab, setActiveTab] = useState(0)
@@ -83,7 +85,7 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
         pb: 1,
         borderBottom: '1px solid #e0e0e0'
       }}>
-        Plan de Acción MPE
+        Plan de Acción {tipoMedida}
         <IconButton
           onClick={onClose}
           sx={{
@@ -142,6 +144,7 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
               onChange={handleFormChange}
               onClose={onClose}
               onSuccess={onSuccess}
+              tipoMedida={tipoMedida}
               filterEtapa={filterEtapa}
             />
           </>

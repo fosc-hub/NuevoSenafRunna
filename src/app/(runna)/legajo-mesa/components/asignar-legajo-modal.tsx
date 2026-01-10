@@ -69,7 +69,8 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   const [tabValue, setTabValue] = useState(0)
 
   // Fetch data using TanStack Query - React Query will parallelize these automatically
-  const { data: zonas = [], isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
+  const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
+  const zonas = Array.isArray(zonasData) ? zonasData : []
 
   const { data: usuarios = [], isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("usuarios/")
 

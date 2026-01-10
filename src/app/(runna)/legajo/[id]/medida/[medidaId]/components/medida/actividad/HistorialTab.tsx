@@ -29,6 +29,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import type { THistorialActividad } from '../../../types/actividades'
+import { extractArray } from '@/hooks/useApiQuery'
 
 interface HistorialTabProps {
   actividadId: number
@@ -88,8 +89,8 @@ export const HistorialTab: React.FC<HistorialTabProps> = ({
     const result = await onGetHistorial()
 
     if (result) {
-      // Ensure result is always an array
-      setHistorial(Array.isArray(result) ? result : [])
+      // Ensure result is always an array (handles paginated responses)
+      setHistorial(extractArray(result))
     } else {
       setError('Error al cargar el historial')
     }

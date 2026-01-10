@@ -30,7 +30,7 @@ import { AttachFile, Download, CloudUpload } from "@mui/icons-material"
 import { create } from "@/app/api/apiService"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
-import { useCatalogData, useApiQuery } from "@/hooks/useApiQuery"
+import { useCatalogData, useApiQuery, extractArray } from "@/hooks/useApiQuery"
 import { usePdfViewer } from "@/hooks"
 import { isPdfFile } from "@/utils/pdfUtils"
 // Types defined locally since @/types/actividad doesn't exist
@@ -88,12 +88,14 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   const { openUrl: openPdfUrl, PdfModal } = usePdfViewer()
 
   // Fetch catalog data using TanStack Query
-  const { data: actividadTipos = [] } = useCatalogData<ActividadTipo[]>("actividad-tipo/")
+  const { data: actividadTiposData } = useCatalogData<ActividadTipo[]>("actividad-tipo/")
+  const actividadTipos = extractArray(actividadTiposData)
 
-  const { data: actividades = [] } = useApiQuery<ActividadResponse[]>(
+  const { data: actividadesData } = useApiQuery<ActividadResponse[]>(
     "actividad/",
     { demanda: demandaId }
   )
+  const actividades = extractArray(actividadesData)
 
   const { data: institucionesResponse } = useCatalogData<{ instituciones_actividad: { id: number; nombre: string }[] }>(
     "actividad-dropdown/"

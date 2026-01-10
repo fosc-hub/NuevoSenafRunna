@@ -2,6 +2,7 @@
 // Backend API: stories/RUNNA API (9).yaml
 
 import { get, create, patch, remove } from '@/app/api/apiService'
+import { extractArray } from '@/hooks/useApiQuery'
 import axiosInstance from '@/app/api/utils/axiosInstance' // Only for cancel() - non-standard DELETE with payload
 import type {
   TActividadPlanTrabajo,
@@ -107,8 +108,7 @@ export const actividadService = {
   async getTipos(actor?: string): Promise<TTipoActividad[]> {
     const params = actor ? `?actor=${actor}&activo=true` : '?activo=true'
     const response = await get<TTipoActividad[] | { results: TTipoActividad[] }>(`tipos-actividad-plan-trabajo/${params}`)
-    // Handle both direct array and paginated response
-    return Array.isArray(response) ? response : (response as any)?.results ?? []
+    return extractArray(response)
   },
 
   // Get single activity type

@@ -31,7 +31,7 @@ import CloseIcon from "@mui/icons-material/Close"
 import SearchIcon from "@mui/icons-material/Search"
 import LinkIcon from "@mui/icons-material/Link"
 import { create } from "@/app/api/apiService"
-import { useCatalogData } from "@/hooks/useApiQuery"
+import { useCatalogData, extractArray } from "@/hooks/useApiQuery"
 import { debounce } from "lodash"
 import { ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -103,7 +103,8 @@ export default function SearchModal({
   const [activeSearchFields, setActiveSearchFields] = useState<string[]>([])
 
   // Fetch localidades using TanStack Query
-  const { data: localidades = [], isLoading: loadingLocalidades } = useCatalogData<Localidad[]>("localidad/")
+  const { data: localidadesData, isLoading: loadingLocalidades } = useCatalogData<Localidad[]>("localidad/")
+  const localidades = extractArray(localidadesData)
   const [selectedLocalidad, setSelectedLocalidad] = useState<Localidad | null>(null)
 
   // Reset state when modal closes (only for modal mode)

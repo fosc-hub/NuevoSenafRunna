@@ -20,7 +20,7 @@ import {
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import AddIcon from "@mui/icons-material/Add"
 import { useRouter } from "next/navigation"
-import { useApiQuery } from "@/hooks/useApiQuery"
+import { useApiQuery, extractArray } from "@/hooks/useApiQuery"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { getMedidasByLegajo } from "@/app/(runna)/legajo-mesa/api/medidas-api-service"
 import type { MedidaBasicResponse } from "@/app/(runna)/legajo-mesa/types/medida-api"
@@ -42,7 +42,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
   const router = useRouter()
 
   // Fetch medidas using TanStack Query
-  const { data: medidas = [], isLoading, error: queryError } = useApiQuery<MedidaBasicResponse[]>(
+  const { data: medidasData, isLoading, error: queryError } = useApiQuery<MedidaBasicResponse[]>(
     `legajo/${legajoData.legajo.id}/medidas`,
     { estado_vigencia: "VIGENTE", _refresh: refreshTrigger },
     {
@@ -50,6 +50,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
       enabled: !!legajoData.legajo.id,
     }
   )
+  const medidas = extractArray(medidasData)
 
   const error = queryError ? String(queryError) : null
 

@@ -20,7 +20,7 @@ import AttachFileIcon from "@mui/icons-material/AttachFile"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import EditIcon from "@mui/icons-material/Edit"
 import VisibilityIcon from "@mui/icons-material/Visibility"
-import { useApiQuery } from "@/hooks/useApiQuery"
+import { useApiQuery, extractArray } from "@/hooks/useApiQuery"
 import { getIntervencionesByMedida } from "../../api/intervenciones-api-service"
 import { IntervencionActions } from "../medida/intervencion-actions"
 import type { IntervencionResponse } from "../../types/intervencion-api"
@@ -43,13 +43,14 @@ export const IntervencionesSection: React.FC<IntervencionesSectionProps> = ({
     const [expandedId, setExpandedId] = useState<number | null>(null)
 
     // Fetch intervenciones using TanStack Query
-    const { data: intervenciones = [], isLoading, error: queryError, refetch } = useApiQuery<IntervencionResponse[]>(
+    const { data: intervencionesData, isLoading, error: queryError, refetch } = useApiQuery<IntervencionResponse[]>(
         `intervenciones/medida/${medidaId}`,
         { ordering: '-fecha_creacion' },
         {
             queryFn: () => getIntervencionesByMedida(medidaId, { ordering: '-fecha_creacion' }),
         }
     )
+    const intervenciones = extractArray(intervencionesData)
 
     const error = queryError ? String(queryError) : null
 

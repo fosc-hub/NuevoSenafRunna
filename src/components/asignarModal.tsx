@@ -24,7 +24,7 @@ import {
   Assignment as AssignmentIcon,
 } from "@mui/icons-material"
 import { create } from "@/app/api/apiService"
-import { useConditionalData } from "@/hooks/useApiQuery"
+import { useConditionalData, extractArray } from "@/hooks/useApiQuery"
 import { toast } from "react-toastify"
 
 // Function to get the current user's ID
@@ -81,7 +81,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   }>(`gestion-demanda-zona/${demandaId}/`, open && !!demandaId)
 
   // Fetch audit history using TanStack Query (only when modal is open)
-  const { data: auditHistory = [] } = useConditionalData<
+  const { data: auditHistoryData } = useConditionalData<
     Array<{
       id: number
       descripcion: string
@@ -89,6 +89,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       timestamp: string
     }>
   >(`auditoria-demanda-zona/${demandaId}`, open && !!demandaId)
+  const auditHistory = extractArray(auditHistoryData)
 
   // Extract data from response
   const zonas = mainData?.zonas || []

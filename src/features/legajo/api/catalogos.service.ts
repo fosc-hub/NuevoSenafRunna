@@ -4,6 +4,7 @@
  */
 
 import { get } from '@/app/api/apiService'
+import { extractArray } from '@/hooks/useApiQuery'
 import type {
   UrgenciaVulneracion,
   ZonaInfo,
@@ -60,10 +61,7 @@ export const getZonasDisponibles = async (): Promise<ZonaInfo[]> => {
     // This should return only zones where user has permissions
     // Backend should filter based on user permissions
     const response = await get<ZonaInfo[] | { results: ZonaInfo[] }>('zonas/')
-    // Handle both direct array and paginated response
-    const zonas = Array.isArray(response) 
-      ? response 
-      : (response as any)?.results ?? []
+    const zonas = extractArray(response)
 
     console.log('Zonas fetched:', zonas)
     return zonas
@@ -97,10 +95,7 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
 
     // 1. Obtener relaciones users-zonas
     const userZonasResponse = await get<UserZonaResponse[] | { results: UserZonaResponse[] }>('users-zonas/', { zona: zonaId })
-    // Handle both direct array and paginated response
-    const userZonas = Array.isArray(userZonasResponse) 
-      ? userZonasResponse 
-      : (userZonasResponse as any)?.results ?? []
+    const userZonas = extractArray(userZonasResponse)
 
     console.log(`UserZonas for zona ${zonaId}:`, userZonas)
 
@@ -113,10 +108,7 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
 
     // 3. Obtener todos los usuarios del sistema
     const allUsersResponse = await get<UserInfo[] | { results: UserInfo[] }>('users/')
-    // Handle both direct array and paginated response
-    const allUsers = Array.isArray(allUsersResponse) 
-      ? allUsersResponse 
-      : (allUsersResponse as any)?.results ?? []
+    const allUsers = extractArray(allUsersResponse)
 
     // 4. Filtrar solo los usuarios que están en la zona
     const usersInZona = allUsers.filter((user: UserInfo) => userIds.includes(user.id))
@@ -148,10 +140,7 @@ export const getLocalesCentroVida = async (zonaId: number): Promise<LocalCentroV
   try {
     // Endpoint correcto: /api/locales-centro-vida/?zona={zonaId}
     const response = await get<LocalCentroVida[] | { results: LocalCentroVida[] }>('locales-centro-vida/', { zona: zonaId })
-    // Handle both direct array and paginated response
-    const locales = Array.isArray(response) 
-      ? response 
-      : (response as any)?.results ?? []
+    const locales = extractArray(response)
 
     console.log(`Locales for zona ${zonaId} fetched:`, locales)
     return locales

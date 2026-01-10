@@ -11,7 +11,7 @@ import {
   FormHelperText,
   OutlinedInput
 } from '@mui/material'
-import { useCatalogData } from '@/hooks/useApiQuery'
+import { useCatalogData, extractArray } from '@/hooks/useApiQuery'
 
 interface User {
   id: number
@@ -45,9 +45,7 @@ export const ResponsableSelect: React.FC<ResponsableSelectProps> = ({
   // Fetch users using TanStack Query
   const { data: rawUsersData, isLoading: loading } = useCatalogData<User[]>('users/?is_active=true')
   // Handle both direct array and paginated response { results: [...] }
-  const rawUsers: User[] = Array.isArray(rawUsersData) 
-    ? rawUsersData 
-    : (rawUsersData as any)?.results ?? []
+  const rawUsers: User[] = extractArray(rawUsersData)
 
   // Transform users to add full_name property
   const users = useMemo(() => {

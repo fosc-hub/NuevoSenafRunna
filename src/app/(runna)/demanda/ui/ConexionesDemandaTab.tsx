@@ -26,6 +26,7 @@ import FolderIcon from "@mui/icons-material/Folder"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import { get, create, update } from "@/app/api/apiService"
+import { extractArray } from "@/hooks/useApiQuery"
 import SearchModal from "@/components/searchModal/searchModal"
 import { useUser } from "@/utils/auth/userZustand"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
@@ -114,21 +115,23 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   const legajoVinculos = legajoVinculosRaw as unknown as VinculoLegajoDemanda[]
 
   // Fetch all demandas
-  const { data: allDemandas = [], isLoading: isLoadingDemandas } = useQuery({
+  const { data: allDemandasData, isLoading: isLoadingDemandas } = useQuery({
     queryKey: ["allDemandas"],
     queryFn: () => get<Demanda[]>("demanda/"),
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
+  const allDemandas = extractArray(allDemandasData)
 
   // Fetch existing connections
-  const { data: conexiones = [], isLoading: isLoadingConexiones } = useQuery({
+  const { data: conexionesData, isLoading: isLoadingConexiones } = useQuery({
     queryKey: ["demandaConexiones", demandaId],
     queryFn: async () => {
       try {
         // Fetch all connections for this demanda
-        const data = await get<DemandaVinculada[]>("demanda-vinculada/", {
+        const rawData = await get<DemandaVinculada[]>("demanda-vinculada/", {
           demanda_preexistente: demandaId,
         })
+        const data = extractArray(rawData)
 
         // Get the IDs of connected demandas
         const connectedIds = data.filter((conn: DemandaVinculada) => !conn.deleted).map((conn: DemandaVinculada) => conn.demanda_entrante)
@@ -143,6 +146,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     },
     enabled: !isLoadingDemandas, // Only run this query after allDemandas is loaded
   })
+  const conexiones = conexionesData || []
 
   // Create connection mutation
   const createConnectionMutation = useMutation({
@@ -162,10 +166,11 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
     mutationFn: async (connectedDemandaId: number) => {
       try {
         // Find the connection
-        const connections = await get<DemandaVinculada[]>("demanda-vinculada/", {
+        const rawConnections = await get<DemandaVinculada[]>("demanda-vinculada/", {
           demanda_preexistente: demandaId,
           demanda_entrante: connectedDemandaId,
         })
+        const connections = extractArray(rawConnections)
 
         if (connections.length === 0) {
           throw new Error("No se encontró la conexión")

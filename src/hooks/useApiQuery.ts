@@ -22,6 +22,46 @@ import { useQuery, type UseQueryOptions, type UseQueryResult } from '@tanstack/r
 import { get } from '@/app/api/apiService'
 
 // ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Paginated response structure from Django REST Framework
+ */
+export interface PaginatedResponse<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
+}
+
+/**
+ * Safely extracts an array from data that may be:
+ * - A direct array
+ * - A paginated response with { results: [...] }
+ * - undefined/null
+ *
+ * @example
+ * const { data: usersData } = useCatalogData<User[]>('users/')
+ * const users = extractArray(usersData)
+ *
+ * @example
+ * // Handles paginated responses
+ * const { data } = useQuery(...)
+ * const items = extractArray(data) // Works with { results: [...] } or direct arrays
+ */
+export const extractArray = <T>(
+  data: T[] | PaginatedResponse<T> | { results: T[] } | undefined | null
+): T[] => {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  if (data && typeof data === 'object' && 'results' in data && Array.isArray((data as any).results)) {
+    return (data as any).results
+  }
+  return []
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 

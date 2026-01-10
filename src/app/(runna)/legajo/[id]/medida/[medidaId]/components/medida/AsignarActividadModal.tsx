@@ -27,7 +27,7 @@ import { toast } from "react-toastify"
 import BaseModal from "@/components/shared/BaseModal"
 import { useFormSubmission } from "@/hooks"
 import { actividadService } from "../../services/actividadService"
-import { useCatalogData, useConditionalData } from "@/hooks/useApiQuery"
+import { useCatalogData, useConditionalData, extractArray } from "@/hooks/useApiQuery"
 import type { TActividadPlanTrabajo, THistorialActividad } from "../../types/actividades"
 import type { Usuario, Zona } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
 
@@ -60,17 +60,17 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>(
     "usuarios/"
   )
-  const usuarios = Array.isArray(usuariosData) ? usuariosData : []
+  const usuarios = extractArray(usuariosData)
 
   const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>(
     "zonas/"
   )
-  const zonas = Array.isArray(zonasData) ? zonasData : []
+  const zonas = extractArray(zonasData)
 
   const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
     "users-zonas/"
   )
-  const userZonas = Array.isArray(userZonasData) ? userZonasData : []
+  const userZonas = extractArray(userZonasData)
 
   const { data: historialData, isLoading: isLoadingHistorial } = useConditionalData<THistorialActividad[]>(
     `actividades/${actividadId}/historial`,
@@ -83,8 +83,8 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
 
   // Filter historial for relevant actions
   const historial = useMemo(() => {
-    if (!historialData) return []
-    return historialData.filter(
+    const historialArray = extractArray(historialData)
+    return historialArray.filter(
       (h) =>
         h.tipo_accion === "ASIGNACION" ||
         h.tipo_accion === "TRANSFERENCIA" ||

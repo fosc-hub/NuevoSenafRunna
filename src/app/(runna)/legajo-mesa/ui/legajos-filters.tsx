@@ -23,7 +23,7 @@ import FilterList from "@mui/icons-material/FilterList"
 import { Check, AlertCircle, FileText, Clock, Shield, Filter } from "lucide-react"
 import AdvancedFiltersPanel from "../components/filters/AdvancedFiltersPanel"
 import { useFilterOptions } from "../hooks/useFilterOptions"
-import { useCatalogData } from "@/hooks/useApiQuery"
+import { useCatalogData, extractArray } from "@/hooks/useApiQuery"
 
 // Interfaz para los filtros de legajos
 export interface LegajoFiltersState {
@@ -76,7 +76,7 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
 
   // Fetch zonas using TanStack Query
   const { data: zonasData } = useCatalogData<Zona[]>("zona/")
-  const zonas = Array.isArray(zonasData) ? zonasData : []
+  const zonas = extractArray(zonasData)
 
   const filterOptions = useFilterOptions()
   const [filterState, setFilterState] = useState<LegajoFiltersState>({

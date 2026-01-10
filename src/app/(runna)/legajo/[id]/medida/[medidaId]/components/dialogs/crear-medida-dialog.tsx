@@ -16,7 +16,7 @@ import AddIcon from "@mui/icons-material/Add"
 import BaseDialog from "@/components/shared/BaseDialog"
 import { createMedida } from "@/app/(runna)/legajo-mesa/api/medidas-api-service"
 import type { CreateMedidaRequest, TipoMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
-import { useConditionalData } from "@/hooks/useApiQuery"
+import { useConditionalData, extractArray } from "@/hooks/useApiQuery"
 
 interface UrgenciaVulneracion {
   id: number
@@ -57,15 +57,17 @@ export const CrearMedidaDialog: React.FC<CrearMedidaDialogProps> = ({
   const [error, setError] = useState<string | null>(null)
 
   // Fetch dropdown data using TanStack Query (only when dialog is open)
-  const { data: juzgados = [], isLoading: isLoadingJuzgados } = useConditionalData<Juzgado[]>(
+  const { data: juzgadosData, isLoading: isLoadingJuzgados } = useConditionalData<Juzgado[]>(
     "juzgados/",
     open
   )
+  const juzgados = extractArray(juzgadosData)
 
-  const { data: urgencias = [], isLoading: isLoadingUrgencias } = useConditionalData<UrgenciaVulneracion[]>(
+  const { data: urgenciasData, isLoading: isLoadingUrgencias } = useConditionalData<UrgenciaVulneracion[]>(
     "urgencia-vulneracion/",
     open
   )
+  const urgencias = extractArray(urgenciasData)
 
   const isLoadingData = isLoadingJuzgados || isLoadingUrgencias
 

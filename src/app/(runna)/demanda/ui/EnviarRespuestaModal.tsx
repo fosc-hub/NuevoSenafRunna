@@ -22,7 +22,7 @@ import { DataGrid } from "@mui/x-data-grid"
 import MessageIcon from "@mui/icons-material/Message"
 import { create } from "@/app/api/apiService"
 import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
-import { useApiQuery, useCatalogData } from "@/hooks/useApiQuery"
+import { useApiQuery, useCatalogData, extractArray } from "@/hooks/useApiQuery"
 import { usePdfViewer } from "@/hooks"
 import { isPdfFile } from "@/utils/pdfUtils"
 
@@ -65,12 +65,14 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const { openUrl: openPdfUrl, PdfModal } = usePdfViewer()
 
   // Fetch data using TanStack Query
-  const { data: respuestas = [], isLoading: isLoadingRespuestas } = useApiQuery<Respuesta[]>(
+  const { data: respuestasData, isLoading: isLoadingRespuestas } = useApiQuery<Respuesta[]>(
     "respuesta/",
     { demanda: demandaId }
   )
+  const respuestas = extractArray(respuestasData)
 
-  const { data: etiquetas = [] } = useCatalogData<RespuestaEtiqueta[]>("respuesta-etiqueta/")
+  const { data: etiquetasData } = useCatalogData<RespuestaEtiqueta[]>("respuesta-etiqueta/")
+  const etiquetas = extractArray(etiquetasData)
 
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])

@@ -24,6 +24,7 @@ import {
   Alert,
 } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
+import { extractArray } from '@/hooks/useApiQuery'
 import {
   getUrgencias,
   getZonasDisponibles,
@@ -58,49 +59,34 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
     queryKey: ['urgencias'],
     queryFn: getUrgencias,
   })
-  // Handle both direct array and paginated response { results: [...] }
-  const urgencias = Array.isArray(urgenciasData) 
-    ? urgenciasData 
-    : (urgenciasData as any)?.results ?? []
+  const urgencias = extractArray(urgenciasData)
 
   const { data: zonasData, isLoading: loadingZonas } = useQuery({
     queryKey: ['zonas'],
     queryFn: getZonasDisponibles,
   })
-  // Handle both direct array and paginated response { results: [...] }
-  const zonas = Array.isArray(zonasData) 
-    ? zonasData 
-    : (zonasData as any)?.results ?? []
+  const zonas = extractArray(zonasData)
 
   const { data: usuariosTrabajoData, isLoading: loadingUsuariosTrabajo } = useQuery({
     queryKey: ['usuarios', zonaTrabajo],
     queryFn: () => getUsuariosPorZona(zonaTrabajo!),
     enabled: !!zonaTrabajo,
   })
-  // Handle both direct array and paginated response { results: [...] }
-  const usuariosTrabajo = Array.isArray(usuariosTrabajoData) 
-    ? usuariosTrabajoData 
-    : (usuariosTrabajoData as any)?.results ?? []
+  const usuariosTrabajo = extractArray(usuariosTrabajoData)
 
   const { data: usuariosCentroVidaData } = useQuery({
     queryKey: ['usuarios', zonaCentroVida],
     queryFn: () => getUsuariosPorZona(zonaCentroVida!),
     enabled: !!zonaCentroVida && includeCentroVida,
   })
-  // Handle both direct array and paginated response { results: [...] }
-  const usuariosCentroVida = Array.isArray(usuariosCentroVidaData) 
-    ? usuariosCentroVidaData 
-    : (usuariosCentroVidaData as any)?.results ?? []
+  const usuariosCentroVida = extractArray(usuariosCentroVidaData)
 
   const { data: localesData } = useQuery({
     queryKey: ['locales', zonaCentroVida],
     queryFn: () => getLocalesCentroVida(zonaCentroVida!),
     enabled: !!zonaCentroVida && includeCentroVida,
   })
-  // Handle both direct array and paginated response { results: [...] }
-  const locales = Array.isArray(localesData) 
-    ? localesData 
-    : (localesData as any)?.results ?? []
+  const locales = extractArray(localesData)
 
   const onSubmit = (data: any) => {
     // Convertir strings vacíos a null y asegurar que los IDs sean números

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { FormControl, InputLabel, Select, MenuItem, FormHelperText, Chip, Box } from '@mui/material'
-import { useCatalogData } from '@/hooks/useApiQuery'
+import { useCatalogData, extractArray } from '@/hooks/useApiQuery'
 import type { TTipoActividad } from '../../types/actividades'
 import { getActorColor } from '../../types/actividades'
 
@@ -35,9 +35,7 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
     }
   )
   // Handle both direct array and paginated response { results: [...] }
-  const allTipos = Array.isArray(allTiposData) 
-    ? allTiposData 
-    : (allTiposData as any)?.results ?? []
+  const allTipos = extractArray(allTiposData)
 
   // Filter by tipoMedida first (MPE vs MPJ)
   // Include types where tipo_medida_aplicable is null (applies to all measure types)

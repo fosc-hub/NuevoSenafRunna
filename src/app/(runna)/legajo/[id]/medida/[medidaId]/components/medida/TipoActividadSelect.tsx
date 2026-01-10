@@ -34,12 +34,19 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
       queryFn: () => import('../../services/actividadService').then(m => m.actividadService.getTipos(actor)),
     }
   )
-  const allTipos = Array.isArray(allTiposData) ? allTiposData : []
+  // Handle both direct array and paginated response { results: [...] }
+  const allTipos = Array.isArray(allTiposData) 
+    ? allTiposData 
+    : (allTiposData as any)?.results ?? []
 
   // Filter by tipoMedida first (MPE vs MPJ)
+  // Include types where tipo_medida_aplicable is null (applies to all measure types)
   const tiposByMedida = useMemo(() => {
     if (!tipoMedida) return allTipos
-    return allTipos.filter(tipo => tipo.tipo_medida_aplicable === tipoMedida)
+    return allTipos.filter(tipo => 
+      tipo.tipo_medida_aplicable === tipoMedida || 
+      tipo.tipo_medida_aplicable === null
+    )
   }, [allTipos, tipoMedida])
 
   // Filter by actor if provided

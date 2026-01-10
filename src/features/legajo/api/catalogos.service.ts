@@ -59,10 +59,14 @@ export const getZonasDisponibles = async (): Promise<ZonaInfo[]> => {
   try {
     // This should return only zones where user has permissions
     // Backend should filter based on user permissions
-    const response = await get<ZonaInfo[]>('zonas/')
+    const response = await get<ZonaInfo[] | { results: ZonaInfo[] }>('zonas/')
+    // Handle both direct array and paginated response
+    const zonas = Array.isArray(response) 
+      ? response 
+      : (response as any)?.results ?? []
 
-    console.log('Zonas fetched:', response)
-    return response
+    console.log('Zonas fetched:', zonas)
+    return zonas
   } catch (error) {
     console.error('Error fetching zonas:', error)
     return []
@@ -92,7 +96,11 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
     }
 
     // 1. Obtener relaciones users-zonas
-    const userZonas = await get<UserZonaResponse[]>('users-zonas/', { zona: zonaId })
+    const userZonasResponse = await get<UserZonaResponse[] | { results: UserZonaResponse[] }>('users-zonas/', { zona: zonaId })
+    // Handle both direct array and paginated response
+    const userZonas = Array.isArray(userZonasResponse) 
+      ? userZonasResponse 
+      : (userZonasResponse as any)?.results ?? []
 
     console.log(`UserZonas for zona ${zonaId}:`, userZonas)
 
@@ -101,13 +109,17 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
     }
 
     // 2. Extraer IDs de usuarios
-    const userIds = userZonas.map(uz => uz.user)
+    const userIds = userZonas.map((uz: UserZonaResponse) => uz.user)
 
     // 3. Obtener todos los usuarios del sistema
-    const allUsers = await get<UserInfo[]>('users/')
+    const allUsersResponse = await get<UserInfo[] | { results: UserInfo[] }>('users/')
+    // Handle both direct array and paginated response
+    const allUsers = Array.isArray(allUsersResponse) 
+      ? allUsersResponse 
+      : (allUsersResponse as any)?.results ?? []
 
     // 4. Filtrar solo los usuarios que están en la zona
-    const usersInZona = allUsers.filter(user => userIds.includes(user.id))
+    const usersInZona = allUsers.filter((user: UserInfo) => userIds.includes(user.id))
 
     // 5. Asegurar que cada usuario tenga nombre_completo
     const usersWithNombreCompleto = usersInZona.map(user => ({
@@ -135,10 +147,14 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
 export const getLocalesCentroVida = async (zonaId: number): Promise<LocalCentroVida[]> => {
   try {
     // Endpoint correcto: /api/locales-centro-vida/?zona={zonaId}
-    const response = await get<LocalCentroVida[]>('locales-centro-vida/', { zona: zonaId })
+    const response = await get<LocalCentroVida[] | { results: LocalCentroVida[] }>('locales-centro-vida/', { zona: zonaId })
+    // Handle both direct array and paginated response
+    const locales = Array.isArray(response) 
+      ? response 
+      : (response as any)?.results ?? []
 
-    console.log(`Locales for zona ${zonaId} fetched:`, response)
-    return response
+    console.log(`Locales for zona ${zonaId} fetched:`, locales)
+    return locales
   } catch (error) {
     console.error(`Error fetching locales for zona ${zonaId}:`, error)
     return []

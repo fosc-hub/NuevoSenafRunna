@@ -75,7 +75,8 @@ const LegajoFilters: React.FC<LegajoFiltersProps> = ({ onFilterChange }) => {
   const [advancedAnchorEl, setAdvancedAnchorEl] = useState<null | HTMLElement>(null)
 
   // Fetch zonas using TanStack Query
-  const { data: zonas = [] } = useCatalogData<Zona[]>("zona/")
+  const { data: zonasData } = useCatalogData<Zona[]>("zona/")
+  const zonas = Array.isArray(zonasData) ? zonasData : []
 
   const filterOptions = useFilterOptions()
   const [filterState, setFilterState] = useState<LegajoFiltersState>({

@@ -70,22 +70,26 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
 
   // Fetch data using TanStack Query - React Query will parallelize these automatically
   const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
-  const zonas = Array.isArray(zonasData) ? zonasData : []
+  const zonas = Array.isArray(zonasData) ? zonasData : (zonasData as any)?.results ?? []
 
-  const { data: usuarios = [], isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("usuarios/")
+  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("usuarios/")
+  const usuarios = Array.isArray(usuariosData) ? usuariosData : (usuariosData as any)?.results ?? []
 
-  const { data: localesCentroVida = [], isLoading: isLoadingLocales } = useCatalogData<LocalCentroVida[]>(
+  const { data: localesCentroVidaData, isLoading: isLoadingLocales } = useCatalogData<LocalCentroVida[]>(
     "locales-centro-vida/"
   )
+  const localesCentroVida = Array.isArray(localesCentroVidaData) ? localesCentroVidaData : (localesCentroVidaData as any)?.results ?? []
 
-  const { data: userZonas = [], isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
+  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
     "users-zonas/"
   )
+  const userZonas = Array.isArray(userZonasData) ? userZonasData : (userZonasData as any)?.results ?? []
 
-  const { data: historial = [], isLoading: isLoadingHistorial } = useConditionalData<HistorialAsignacion[]>(
+  const { data: historialData, isLoading: isLoadingHistorial } = useConditionalData<HistorialAsignacion[]>(
     `legajo/${legajoId}/historial-asignaciones/`,
     open && !!legajoId
   )
+  const historial = Array.isArray(historialData) ? historialData : (historialData as any)?.results ?? []
 
   const { data: legajoData, isLoading: isLoadingLegajo } = useConditionalData<any>(
     `legajo/${legajoId}/`,

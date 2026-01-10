@@ -88,7 +88,8 @@ export const HistorialTab: React.FC<HistorialTabProps> = ({
     const result = await onGetHistorial()
 
     if (result) {
-      setHistorial(result)
+      // Ensure result is always an array
+      setHistorial(Array.isArray(result) ? result : [])
     } else {
       setError('Error al cargar el historial')
     }

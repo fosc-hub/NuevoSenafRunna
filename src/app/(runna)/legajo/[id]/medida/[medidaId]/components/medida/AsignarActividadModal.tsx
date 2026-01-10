@@ -57,17 +57,20 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
     }
   )
 
-  const { data: usuarios = [], isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>(
+  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>(
     "usuarios/"
   )
+  const usuarios = Array.isArray(usuariosData) ? usuariosData : []
 
-  const { data: zonas = [], isLoading: isLoadingZonas } = useCatalogData<Zona[]>(
+  const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>(
     "zonas/"
   )
+  const zonas = Array.isArray(zonasData) ? zonasData : []
 
-  const { data: userZonas = [], isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
+  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
     "users-zonas/"
   )
+  const userZonas = Array.isArray(userZonasData) ? userZonasData : []
 
   const { data: historialData, isLoading: isLoadingHistorial } = useConditionalData<THistorialActividad[]>(
     `actividades/${actividadId}/historial`,

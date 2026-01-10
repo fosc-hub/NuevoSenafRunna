@@ -43,7 +43,11 @@ export const ResponsableSelect: React.FC<ResponsableSelectProps> = ({
   sx
 }) => {
   // Fetch users using TanStack Query
-  const { data: rawUsers = [], isLoading: loading } = useCatalogData<User[]>('users/?is_active=true')
+  const { data: rawUsersData, isLoading: loading } = useCatalogData<User[]>('users/?is_active=true')
+  // Handle both direct array and paginated response { results: [...] }
+  const rawUsers: User[] = Array.isArray(rawUsersData) 
+    ? rawUsersData 
+    : (rawUsersData as any)?.results ?? []
 
   // Transform users to add full_name property
   const users = useMemo(() => {

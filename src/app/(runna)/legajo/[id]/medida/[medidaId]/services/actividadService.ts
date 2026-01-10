@@ -106,7 +106,9 @@ export const actividadService = {
   // Get activity types catalog
   async getTipos(actor?: string): Promise<TTipoActividad[]> {
     const params = actor ? `?actor=${actor}&activo=true` : '?activo=true'
-    return get<TTipoActividad[]>(`tipos-actividad-plan-trabajo/${params}`)
+    const response = await get<TTipoActividad[] | { results: TTipoActividad[] }>(`tipos-actividad-plan-trabajo/${params}`)
+    // Handle both direct array and paginated response
+    return Array.isArray(response) ? response : (response as any)?.results ?? []
   },
 
   // Get single activity type

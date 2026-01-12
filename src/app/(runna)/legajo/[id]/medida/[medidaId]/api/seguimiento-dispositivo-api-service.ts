@@ -27,7 +27,7 @@ class SeguimientoDispositivoApiService {
   /**
    * Get seguimiento data for a specific medida
    */
-  async getSeguimiento(medidaId: number, tipoMedida: 'MPE' | 'MPJ'): Promise<SeguimientoResponse> {
+  async getSeguimiento(medidaId: number, tipoMedida: 'MPI' | 'MPE' | 'MPJ'): Promise<SeguimientoResponse> {
     return get<SeguimientoResponse>(`medidas/${medidaId}/seguimiento/`)
   }
 

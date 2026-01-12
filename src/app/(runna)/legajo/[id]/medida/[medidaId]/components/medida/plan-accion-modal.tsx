@@ -21,7 +21,8 @@ interface PlanAccionModalProps {
   onClose: () => void
   planTrabajoId: number
   onSuccess?: () => void
-  tipoMedida?: 'MPE' | 'MPJ'
+  /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
+  tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
 }
 

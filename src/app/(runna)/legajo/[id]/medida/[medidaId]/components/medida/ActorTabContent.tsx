@@ -61,7 +61,8 @@ interface ActorTabContentProps {
   onChange: (updates: Partial<CreateActividadRequest>) => void
   onClose: () => void
   onSuccess?: () => void
-  tipoMedida?: 'MPE' | 'MPJ'
+  /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
+  tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
 }
 

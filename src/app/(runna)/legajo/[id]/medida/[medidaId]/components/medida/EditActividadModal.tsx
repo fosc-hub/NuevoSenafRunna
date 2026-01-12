@@ -32,7 +32,8 @@ interface EditActividadModalProps {
   open: boolean
   onClose: () => void
   actividad: TActividadPlanTrabajo
-  tipoMedida?: 'MPE' | 'MPJ'
+  /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
+  tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   onSuccess?: () => void
 }
 

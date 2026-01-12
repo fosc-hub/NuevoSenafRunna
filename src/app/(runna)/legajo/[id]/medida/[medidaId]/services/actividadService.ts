@@ -105,9 +105,22 @@ export const actividadService = {
   },
 
   // Get activity types catalog
-  async getTipos(actor?: string): Promise<TTipoActividad[]> {
-    const params = actor ? `?actor=${actor}&activo=true` : '?activo=true'
-    const response = await get<TTipoActividad[] | { results: TTipoActividad[] }>(`tipos-actividad-plan-trabajo/${params}`)
+  // NOTE: Fetches all pages with page_size=500 to avoid pagination issues
+  // tipo_medida_aplicable: MPI (Protección Integral), MPE (Protección Excepcional), MPJ (Penal Juvenil), null (all)
+  // We fetch ALL types (not filtering by tipo_medida or etapa) and let client-side filter
+  // This ensures we get types with null (universal) that apply to all measure types
+  async getTipos(filters?: {
+    actor?: string
+    tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
+    etapa?: 'APERTURA' | 'PROCESO' | 'CESE'
+  }): Promise<TTipoActividad[]> {
+    const params = new URLSearchParams({ activo: 'true', page_size: '500' })
+    // Only filter by actor on the API - tipo_medida and etapa are filtered client-side
+    // to properly include null values (universal types)
+    if (filters?.actor) {
+      params.append('actor', filters.actor)
+    }
+    const response = await get<TTipoActividad[] | { results: TTipoActividad[] }>(`tipos-actividad-plan-trabajo/?${params.toString()}`)
     return extractArray(response)
   },
 

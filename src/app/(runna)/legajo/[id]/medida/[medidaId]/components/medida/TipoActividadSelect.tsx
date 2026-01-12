@@ -2,15 +2,18 @@
 
 import { useMemo } from 'react'
 import { FormControl, InputLabel, Select, MenuItem, FormHelperText, Chip, Box } from '@mui/material'
-import { useCatalogData, extractArray } from '@/hooks/useApiQuery'
+import { useQuery } from '@tanstack/react-query'
+import { extractArray } from '@/hooks/useApiQuery'
 import type { TTipoActividad } from '../../types/actividades'
 import { getActorColor } from '../../types/actividades'
+import { actividadService } from '../../services/actividadService'
 
 interface TipoActividadSelectProps {
   value: number
   onChange: (value: number) => void
   actor?: string
-  tipoMedida?: 'MPE' | 'MPJ'
+  /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
+  tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
   error?: boolean
   helperText?: string
@@ -28,35 +31,31 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
   disabled
 }) => {
   // Fetch activity types using TanStack Query
-  const { data: allTiposData, isLoading: loading } = useCatalogData<TTipoActividad[]>(
-    'actividad-tipos/',
-    {
-      queryFn: () => import('../../services/actividadService').then(m => m.actividadService.getTipos(actor)),
-    }
-  )
+  // Only actor is used as API filter - tipoMedida and etapa are filtered client-side
+  // This ensures we get all types including those with null (universal)
+  const { data: tiposData, isLoading: loading } = useQuery<TTipoActividad[]>({
+    queryKey: ['tipos-actividad-plan-trabajo', actor],
+    queryFn: () => actividadService.getTipos({ actor }),
+    staleTime: 10 * 60 * 1000, // 10 minutes for catalogs
+  })
+
   // Handle both direct array and paginated response { results: [...] }
-  const allTipos = extractArray(allTiposData)
+  const allTipos = extractArray(tiposData)
 
-  // Filter by tipoMedida first (MPE vs MPJ)
-  // Include types where tipo_medida_aplicable is null (applies to all measure types)
-  const tiposByMedida = useMemo(() => {
-    if (!tipoMedida) return allTipos
-    return allTipos.filter(tipo => 
-      tipo.tipo_medida_aplicable === tipoMedida || 
-      tipo.tipo_medida_aplicable === null
-    )
-  }, [allTipos, tipoMedida])
+  // Client-side filtering:
+  // - NO filtrar por tipoMedida - mostrar TODAS las actividades del actor
+  // - Solo filtrar por etapa si se especifica (incluyendo null = todas las etapas)
+  // El usuario puede ver qué tipo de medida aplica cada actividad gracias al chip
+  const filteredTipos = useMemo(() => {
+    return allTipos.filter(tipo => {
+      // Include if etapa_medida_aplicable matches OR is null (universal)
+      const matchesEtapa = !filterEtapa || 
+        tipo.etapa_medida_aplicable === filterEtapa || 
+        tipo.etapa_medida_aplicable === null
 
-  // Filter by actor if provided
-  const tipos = useMemo(() => {
-    if (!actor) return tiposByMedida
-    return tiposByMedida.filter(tipo => tipo.actor === actor)
-  }, [tiposByMedida, actor])
-
-  // Filter activity types by etapa if filterEtapa is provided (for MPJ)
-  const filteredTipos = filterEtapa
-    ? tipos.filter(tipo => tipo.etapa_medida_aplicable === filterEtapa)
-    : tipos
+      return matchesEtapa
+    })
+  }, [allTipos, filterEtapa])
 
   return (
     <FormControl fullWidth error={error} disabled={disabled}>
@@ -90,15 +89,36 @@ export const TipoActividadSelect: React.FC<TipoActividadSelectProps> = ({
                   }}
                 />
 
+                {/* Tipo Medida chip - shows which measure type this applies to */}
+                <Chip
+                  label={tipo.tipo_medida_aplicable || 'Todas'}
+                  size="small"
+                  sx={{
+                    fontSize: '0.6rem',
+                    height: '18px',
+                    backgroundColor: tipo.tipo_medida_aplicable 
+                      ? 'rgba(156, 39, 176, 0.1)' 
+                      : 'rgba(76, 175, 80, 0.1)',
+                    color: tipo.tipo_medida_aplicable 
+                      ? 'secondary.main' 
+                      : 'success.main',
+                    fontWeight: 600
+                  }}
+                />
+
                 {/* Etapa chip */}
                 <Chip
-                  label={tipo.etapa_medida_aplicable_display}
+                  label={tipo.etapa_medida_aplicable_display || 'Todas las etapas'}
                   size="small"
                   sx={{
                     fontSize: '0.7rem',
                     height: '20px',
-                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                    color: 'primary.main'
+                    backgroundColor: tipo.etapa_medida_aplicable 
+                      ? 'rgba(25, 118, 210, 0.08)' 
+                      : 'rgba(76, 175, 80, 0.08)',
+                    color: tipo.etapa_medida_aplicable 
+                      ? 'primary.main' 
+                      : 'success.main'
                   }}
                 />
               </Box>

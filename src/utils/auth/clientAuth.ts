@@ -94,4 +94,43 @@ export const getSession = async (returnUserData: boolean = false): Promise<strin
 export async function logout() {
     Cookies.remove('refreshToken');
     Cookies.remove('accessToken');
+}
+
+/**
+ * Refresh the access token using the refresh token
+ * POST /api/token/refresh/
+ * @returns The new access token or null if refresh fails
+ */
+export async function refreshToken(): Promise<string | null> {
+    try {
+        const refreshTokenValue = Cookies.get('refreshToken');
+        
+        if (!refreshTokenValue) {
+            console.warn('No refresh token available');
+            return null;
+        }
+
+        const response = await axiosInstance.post('/token/refresh/', {
+            refresh: refreshTokenValue
+        });
+
+        const newAccessToken = response.data.access;
+        
+        if (newAccessToken) {
+            Cookies.set('accessToken', newAccessToken, {
+                secure: true,
+                sameSite: 'lax',
+            });
+            
+            return newAccessToken;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Token refresh failed:', error);
+        // Clear tokens on refresh failure
+        Cookies.remove('accessToken');
+        Cookies.remove('refreshToken');
+        return null;
+    }
 } 

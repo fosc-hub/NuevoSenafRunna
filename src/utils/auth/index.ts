@@ -119,3 +119,46 @@ export async function logout() {
   cookieStore.delete("refreshToken");
   cookieStore.delete("accessToken");
 }
+
+/**
+ * Refresh the access token using the refresh token (Server-side)
+ * POST /api/token/refresh/
+ * @returns The new access token or null if refresh fails
+ */
+export async function refreshToken(): Promise<string | null> {
+  try {
+    const cookieStore = cookies();
+    const refreshTokenValue = cookieStore.get('refreshToken')?.value;
+    
+    if (!refreshTokenValue) {
+      console.warn('No refresh token available');
+      return null;
+    }
+
+    const response = await axiosInstance.post('/token/refresh/', {
+      refresh: refreshTokenValue
+    });
+
+    const newAccessToken = response.data.access;
+    
+    if (newAccessToken) {
+      cookieStore.set('accessToken', newAccessToken, {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+      });
+      
+      return newAccessToken;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    // Clear tokens on refresh failure
+    const cookieStore = cookies();
+    cookieStore.delete('accessToken');
+    cookieStore.delete('refreshToken');
+    return null;
+  }
+}

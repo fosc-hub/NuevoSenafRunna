@@ -58,7 +58,7 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   )
 
   const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>(
-    "usuarios/"
+    "users/"
   )
   const usuarios = extractArray(usuariosData)
 

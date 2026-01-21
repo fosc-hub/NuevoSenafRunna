@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   Box,
   Paper,
@@ -12,27 +12,25 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Grid,
   IconButton,
   Chip,
   Tooltip,
-  CircularProgress,
   Alert,
-  InputAdornment,
-  Skeleton
+  Skeleton,
+  Checkbox,
+  Button,
+  Collapse,
+  LinearProgress,
 } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import SearchIcon from '@mui/icons-material/Search'
 import RefreshIcon from '@mui/icons-material/Refresh'
-import FilterListIcon from '@mui/icons-material/FilterList'
 import ClearIcon from '@mui/icons-material/Clear'
+import FilterListIcon from '@mui/icons-material/FilterList'
 import FolderIcon from '@mui/icons-material/Folder'
-import { useQuery } from '@tanstack/react-query'
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/utils/auth/userZustand'
 
@@ -40,7 +38,7 @@ import { useUser } from '@/utils/auth/userZustand'
 import { globalActividadService, type GlobalActividadFilters } from '../services/globalActividadService'
 
 // Import types from existing location
-import type { TActividadPlanTrabajo, ActorEnum } from '../../[id]/medida/[medidaId]/types/actividades'
+import type { TActividadPlanTrabajo } from '../../[id]/medida/[medidaId]/types/actividades'
 import { getActorColor, ACTOR_LABELS } from '../../[id]/medida/[medidaId]/types/actividades'
 
 // Import reusable components from existing location
@@ -48,37 +46,8 @@ import { ActividadDetailModal } from '../../[id]/medida/[medidaId]/components/me
 import { ResponsablesAvatarGroup } from '../../[id]/medida/[medidaId]/components/medida/ResponsablesAvatarGroup'
 import { DeadlineIndicator } from '../../[id]/medida/[medidaId]/components/medida/DeadlineIndicator'
 import { useActorVisibility } from '../../[id]/medida/[medidaId]/hooks/useActorVisibility'
-
-// Estado options with display labels
-const ESTADO_OPTIONS = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'PENDIENTE', label: 'Pendiente' },
-  { value: 'EN_PROGRESO', label: 'En Progreso' },
-  { value: 'COMPLETADA', label: 'Completada' },
-  { value: 'PENDIENTE_VISADO', label: 'Pendiente de Visado' },
-  { value: 'VISADO_CON_OBSERVACION', label: 'Visado con Observaciones' },
-  { value: 'VISADO_APROBADO', label: 'Visado Aprobado' },
-  { value: 'CANCELADA', label: 'Cancelada' },
-  { value: 'VENCIDA', label: 'Vencida' }
-]
-
-// Actor options
-const ACTOR_OPTIONS = [
-  { value: '', label: 'Todos los equipos' },
-  { value: 'EQUIPO_TECNICO', label: 'Equipo Técnico' },
-  { value: 'EQUIPO_LEGAL', label: 'Equipo Legal' },
-  { value: 'EQUIPOS_RESIDENCIALES', label: 'Equipos Residenciales' },
-  { value: 'ADULTOS_INSTITUCION', label: 'Adultos/Institución' }
-]
-
-// Origen options
-const ORIGEN_OPTIONS = [
-  { value: '', label: 'Todos los orígenes' },
-  { value: 'MANUAL', label: 'Creación Manual' },
-  { value: 'DEMANDA_PI', label: 'Demanda - Petición de Informe' },
-  { value: 'DEMANDA_OFICIO', label: 'Demanda - Carga de Oficios' },
-  { value: 'OFICIO', label: 'Oficio Judicial' }
-]
+import BulkAsignarActividadModal from './BulkAsignarActividadModal'
+import { AdvancedFiltersPanel } from './AdvancedFiltersPanel'
 
 // Get estado color for chip
 const getEstadoColor = (estado: string): { backgroundColor: string; color: string } => {
@@ -97,8 +66,8 @@ const getEstadoColor = (estado: string): { backgroundColor: string; color: strin
 
 export const GlobalActividadesTable: React.FC = () => {
   const router = useRouter()
-  const { user } = useUser()
-  const { actorFilter, canSeeAllActors, isActorAllowed } = useActorVisibility()
+  useUser() // For auth context
+  const { actorFilter, canSeeAllActors } = useActorVisibility()
 
   // Pagination state
   const [page, setPage] = useState(0)
@@ -116,6 +85,10 @@ export const GlobalActividadesTable: React.FC = () => {
   // Modal state
   const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
+
+  // Selection state for bulk operations
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
 
   // Build effective filters with actor restriction
   const effectiveFilters = useMemo(() => {
@@ -136,10 +109,11 @@ export const GlobalActividadesTable: React.FC = () => {
   }, [filters, page, rowsPerPage, actorFilter, canSeeAllActors])
 
   // Fetch activities
-  const { data: response, isLoading, error, refetch } = useQuery({
+  const { data: response, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['global-actividades', effectiveFilters],
     queryFn: () => globalActividadService.list(effectiveFilters),
-    staleTime: 2 * 60 * 1000 // 2 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    placeholderData: keepPreviousData, // Keep showing old data while fetching new data
   })
 
   // Parse response
@@ -177,10 +151,10 @@ export const GlobalActividadesTable: React.FC = () => {
     setPage(0)
   }
 
-  const handleFilterChange = (key: keyof GlobalActividadFilters, value: string | boolean) => {
+  const handleFilterChange = useCallback((key: keyof GlobalActividadFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }))
     setPage(0) // Reset to first page on filter change
-  }
+  }, [])
 
   const handleClearFilters = () => {
     setFilters({
@@ -188,7 +162,23 @@ export const GlobalActividadesTable: React.FC = () => {
       estado: '',
       actor: '',
       origen: '',
-      ordering: '-fecha_creacion'
+      ordering: '-fecha_creacion',
+      // Reset all advanced filters
+      nnya_nombre: undefined,
+      nnya_dni: undefined,
+      numero_legajo: undefined,
+      tipo_medida: undefined,
+      responsable: undefined,
+      tipo_actividad: undefined,
+      zona: undefined,
+      fecha_desde: undefined,
+      fecha_hasta: undefined,
+      fecha_creacion_desde: undefined,
+      fecha_creacion_hasta: undefined,
+      vencida: undefined,
+      pendiente_visado: undefined,
+      es_borrador: undefined,
+      dias_restantes_max: undefined,
     })
     setPage(0)
   }
@@ -210,7 +200,85 @@ export const GlobalActividadesTable: React.FC = () => {
     }
   }
 
-  const hasActiveFilters = filters.search || filters.estado || filters.actor || filters.origen
+  const hasActiveFilters = Boolean(
+    filters.search ||
+    filters.estado ||
+    filters.actor ||
+    filters.origen ||
+    filters.nnya_nombre ||
+    filters.nnya_dni ||
+    filters.numero_legajo ||
+    filters.tipo_medida ||
+    filters.responsable ||
+    filters.tipo_actividad ||
+    filters.zona ||
+    filters.fecha_desde ||
+    filters.fecha_hasta ||
+    filters.fecha_creacion_desde ||
+    filters.fecha_creacion_hasta ||
+    filters.vencida ||
+    filters.pendiente_visado ||
+    filters.es_borrador ||
+    filters.dias_restantes_max
+  )
+
+  // Selection handlers for bulk operations
+  const selectedActividades = useMemo(
+    () => actividades.filter((a) => selectedIds.has(a.id)),
+    [actividades, selectedIds]
+  )
+
+  const isAllSelected = useMemo(
+    () => actividades.length > 0 && actividades.every((a) => selectedIds.has(a.id)),
+    [actividades, selectedIds]
+  )
+
+  const isIndeterminate = useMemo(
+    () => selectedIds.size > 0 && !isAllSelected,
+    [selectedIds, isAllSelected]
+  )
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      // Deselect all visible
+      const newSelected = new Set(selectedIds)
+      actividades.forEach((a) => newSelected.delete(a.id))
+      setSelectedIds(newSelected)
+    } else {
+      // Select all visible
+      const newSelected = new Set(selectedIds)
+      actividades.forEach((a) => newSelected.add(a.id))
+      setSelectedIds(newSelected)
+    }
+  }
+
+  const handleSelectOne = (id: number) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set())
+  }
+
+  const handleOpenBulkModal = () => {
+    setBulkModalOpen(true)
+  }
+
+  const handleCloseBulkModal = () => {
+    setBulkModalOpen(false)
+  }
+
+  const handleBulkSuccess = () => {
+    setSelectedIds(new Set())
+    setBulkModalOpen(false)
+    refetch()
+  }
 
   // Loading skeleton
   if (isLoading && actividades.length === 0) {
@@ -231,7 +299,20 @@ export const GlobalActividadesTable: React.FC = () => {
 
   return (
     <>
-      <Paper elevation={2} sx={{ borderRadius: 2 }}>
+      <Paper elevation={2} sx={{ borderRadius: 2, position: 'relative' }}>
+        {/* Subtle loading indicator when fetching new data */}
+        {isFetching && actividades.length > 0 && (
+          <LinearProgress
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              borderRadius: '8px 8px 0 0',
+            }}
+          />
+        )}
         {/* Header */}
         <Box sx={{ p: 3, pb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -323,101 +404,59 @@ export const GlobalActividadesTable: React.FC = () => {
             </Grid>
           </Grid>
 
-          {/* Filters */}
-          <Grid container spacing={2}>
-            {/* Search */}
-            <Grid item xs={12} md={3}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Buscar actividades..."
-                value={filters.search || ''}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" color="action" />
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Grid>
-
-            {/* Estado */}
-            <Grid item xs={12} sm={6} md={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Estado</InputLabel>
-                <Select
-                  value={filters.estado || ''}
-                  onChange={(e) => handleFilterChange('estado', e.target.value)}
-                  label="Estado"
-                >
-                  {ESTADO_OPTIONS.map(opt => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Actor - only show if user can see all actors */}
-            {canSeeAllActors && (
-              <Grid item xs={12} sm={6} md={2}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Equipo</InputLabel>
-                  <Select
-                    value={filters.actor || ''}
-                    onChange={(e) => handleFilterChange('actor', e.target.value)}
-                    label="Equipo"
-                  >
-                    {ACTOR_OPTIONS.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            )}
-
-            {/* Origen */}
-            <Grid item xs={12} sm={6} md={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Origen</InputLabel>
-                <Select
-                  value={filters.origen || ''}
-                  onChange={(e) => handleFilterChange('origen', e.target.value)}
-                  label="Origen"
-                >
-                  {ORIGEN_OPTIONS.map(opt => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Ordering */}
-            <Grid item xs={12} sm={6} md={canSeeAllActors ? 3 : 5}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Ordenar por</InputLabel>
-                <Select
-                  value={filters.ordering || '-fecha_creacion'}
-                  onChange={(e) => handleFilterChange('ordering', e.target.value)}
-                  label="Ordenar por"
-                >
-                  <MenuItem value="-fecha_creacion">Más recientes primero</MenuItem>
-                  <MenuItem value="fecha_creacion">Más antiguos primero</MenuItem>
-                  <MenuItem value="fecha_planificacion">Fecha planificada (asc)</MenuItem>
-                  <MenuItem value="-fecha_planificacion">Fecha planificada (desc)</MenuItem>
-                  <MenuItem value="estado">Estado (A-Z)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
+          {/* Advanced Filters Panel */}
+          <AdvancedFiltersPanel
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            canSeeAllActors={canSeeAllActors}
+          />
         </Box>
+
+        {/* Bulk Actions Toolbar */}
+        <Collapse in={selectedIds.size > 0}>
+          <Box
+            sx={{
+              mx: 3,
+              mb: 2,
+              p: 2,
+              bgcolor: 'primary.50',
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'primary.200',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <CheckBoxIcon color="primary" />
+              <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                {selectedIds.size} {selectedIds.size === 1 ? 'actividad seleccionada' : 'actividades seleccionadas'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                startIcon={<AssignmentIndIcon />}
+                onClick={handleOpenBulkModal}
+              >
+                Asignar Responsables
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="small"
+                onClick={handleClearSelection}
+              >
+                Cancelar Selección
+              </Button>
+            </Box>
+          </Box>
+        </Collapse>
 
         {/* Error State */}
         {error && (
@@ -434,6 +473,20 @@ export const GlobalActividadesTable: React.FC = () => {
                 backgroundColor: 'primary.main',
                 '& .MuiTableCell-root': { position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'primary.main' }
               }}>
+                <TableCell padding="checkbox" sx={{ backgroundColor: 'primary.main' }}>
+                  <Tooltip title={isAllSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}>
+                    <Checkbox
+                      checked={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onChange={handleSelectAll}
+                      sx={{
+                        color: 'white',
+                        '&.Mui-checked': { color: 'white' },
+                        '&.MuiCheckbox-indeterminate': { color: 'white' },
+                      }}
+                    />
+                  </Tooltip>
+                </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: 'white', fontSize: '0.875rem' }}>
                   Tipo / Subactividad
                 </TableCell>
@@ -461,10 +514,11 @@ export const GlobalActividadesTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {isLoading ? (
-                // Loading rows
+              {isLoading && actividades.length === 0 ? (
+                // Initial loading rows (only when no data yet)
                 [...Array(5)].map((_, index) => (
                   <TableRow key={index}>
+                    <TableCell padding="checkbox"><Skeleton variant="rectangular" width={24} height={24} /></TableCell>
                     <TableCell><Skeleton variant="text" /></TableCell>
                     <TableCell><Skeleton variant="text" width={120} /></TableCell>
                     <TableCell><Skeleton variant="rounded" width={100} height={24} /></TableCell>
@@ -477,7 +531,7 @@ export const GlobalActividadesTable: React.FC = () => {
                 ))
               ) : actividades.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
+                  <TableCell colSpan={9} align="center">
                     <Box sx={{ py: 8, textAlign: 'center' }}>
                       <FilterListIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
                       <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -510,25 +564,42 @@ export const GlobalActividadesTable: React.FC = () => {
                   <TableRow
                     key={actividad.id}
                     hover
+                    selected={selectedIds.has(actividad.id)}
                     sx={{
-                      backgroundColor: actividad.esta_vencida && actividad.estado === 'PENDIENTE'
-                        ? 'rgba(211, 47, 47, 0.05)'
-                        : actividad.es_borrador
-                          ? 'rgba(237, 108, 2, 0.05)'
-                          : 'transparent',
-                      borderLeft: actividad.esta_vencida && actividad.estado === 'PENDIENTE'
-                        ? '4px solid #d32f2f'
-                        : actividad.es_borrador
-                          ? '4px solid #ed6c02'
-                          : '4px solid transparent',
+                      backgroundColor: selectedIds.has(actividad.id)
+                        ? 'rgba(156, 39, 176, 0.08)'
+                        : actividad.esta_vencida && actividad.estado === 'PENDIENTE'
+                          ? 'rgba(211, 47, 47, 0.05)'
+                          : actividad.es_borrador
+                            ? 'rgba(237, 108, 2, 0.05)'
+                            : 'transparent',
+                      borderLeft: selectedIds.has(actividad.id)
+                        ? '4px solid #9c27b0'
+                        : actividad.esta_vencida && actividad.estado === 'PENDIENTE'
+                          ? '4px solid #d32f2f'
+                          : actividad.es_borrador
+                            ? '4px solid #ed6c02'
+                            : '4px solid transparent',
                       transition: 'all 0.2s',
                       cursor: 'pointer',
                       '&:hover': {
-                        backgroundColor: actividad.esta_vencida ? 'rgba(211, 47, 47, 0.08)' : 'rgba(156, 39, 176, 0.04)'
+                        backgroundColor: selectedIds.has(actividad.id)
+                          ? 'rgba(156, 39, 176, 0.12)'
+                          : actividad.esta_vencida
+                            ? 'rgba(211, 47, 47, 0.08)'
+                            : 'rgba(156, 39, 176, 0.04)'
                       }
                     }}
                     onClick={() => handleViewDetail(actividad)}
                   >
+                    {/* Checkbox */}
+                    <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(actividad.id)}
+                        onChange={() => handleSelectOne(actividad.id)}
+                        color="primary"
+                      />
+                    </TableCell>
                     {/* Tipo / Subactividad */}
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -745,6 +816,14 @@ export const GlobalActividadesTable: React.FC = () => {
           onUpdate={() => refetch()}
         />
       )}
+
+      {/* Bulk Assignment Modal */}
+      <BulkAsignarActividadModal
+        open={bulkModalOpen}
+        onClose={handleCloseBulkModal}
+        selectedActividades={selectedActividades}
+        onSuccess={handleBulkSuccess}
+      />
     </>
   )
 }

@@ -20,7 +20,11 @@ import type {
   ReabrirRequest,
   TransferirRequest,
   VisarRequest,
-  HistorialFilters
+  HistorialFilters,
+  // Bulk operations
+  BulkUpdateActividadesRequest,
+  BulkTransferActividadesRequest,
+  BulkOperationResponse
 } from '../types/actividades'
 
 export const actividadService = {
@@ -259,5 +263,41 @@ export const actividadService = {
    */
   async visar(id: number, data: VisarRequest): Promise<TActividadPlanTrabajo> {
     return create<TActividadPlanTrabajo>(`actividades/${id}/visar/`, data, true, data.aprobado ? 'Visado aprobado' : 'Visado con observaciones')
+  },
+
+  // ============================================================================
+  // BULK OPERATIONS - API V13
+  // Endpoints: PATCH /api/actividades/bulk-update/
+  //            POST /api/actividades/bulk-transferir/
+  // ============================================================================
+
+  /**
+   * Bulk update multiple activities with the same changes
+   * Endpoint: PATCH /api/actividades/bulk-update/
+   *
+   * Allowed fields: responsable_principal, responsables_secundarios, estado,
+   * descripcion, fecha_planificacion, es_borrador, actor
+   *
+   * Permissions: JZ, Director, Admin can bulk update any. Técnicos only their own.
+   *
+   * @param data - Bulk update request with activity IDs and updates
+   * @returns Response with updated count, activities, and any errors
+   */
+  async bulkUpdate(data: BulkUpdateActividadesRequest): Promise<BulkOperationResponse> {
+    const response = await axiosInstance.patch<BulkOperationResponse>('actividades/bulk-update/', data)
+    return response.data
+  },
+
+  /**
+   * Transfer multiple activities to a new responsible
+   * Endpoint: POST /api/actividades/bulk-transferir/
+   *
+   * Permissions: JZ, Director, Legal, Admin
+   *
+   * @param data - Bulk transfer request with activity IDs, new responsible, and reason
+   * @returns Response with transferred count, activities, and any errors
+   */
+  async bulkTransfer(data: BulkTransferActividadesRequest): Promise<BulkOperationResponse> {
+    return create<BulkOperationResponse>('actividades/bulk-transferir/', data, true, 'Actividades transferidas exitosamente')
   }
 }

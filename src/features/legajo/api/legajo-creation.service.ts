@@ -26,7 +26,7 @@ export const createLegajo = async (
     console.log('Creating legajo with data:', data)
 
     // Call API - create() already adds trailing slash
-    const response = await create<CreateLegajoResponse>('legajos', data)
+    const response = await create<CreateLegajoResponse>('legajos/', data)
 
     console.log('Legajo created successfully:', response)
 

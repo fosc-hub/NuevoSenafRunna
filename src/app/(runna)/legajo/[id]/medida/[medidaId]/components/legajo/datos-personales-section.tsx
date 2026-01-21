@@ -1,15 +1,52 @@
 "use client"
 
 import type React from "react"
-import { Typography, Grid, Divider, Chip, IconButton, Tooltip } from "@mui/material"
+import { Typography, Grid, Divider, Chip, IconButton, Tooltip, Box, Button } from "@mui/material"
 import EditIcon from "@mui/icons-material/Edit"
-import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import type { LegajoDetailResponse, PersonaDetailData } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
 import { SectionCard } from "../medida/shared/section-card"
+import { PersonaCompletaSection } from "@/components/legajo/persona-completa"
+import type { PersonaCompletaData } from "@/components/legajo/persona-completa"
 
 interface DatosPersonalesSectionProps {
   legajoData: LegajoDetailResponse
   onEdit?: () => void
+}
+
+// Helper to map PersonaDetailData to PersonaCompletaData
+const mapToPersonaCompleta = (persona: PersonaDetailData): PersonaCompletaData => {
+  return {
+    id: persona.id,
+    nombre: persona.nombre,
+    nombre_autopercibido: persona.nombre_autopercibido,
+    apellido: persona.apellido,
+    fecha_nacimiento: persona.fecha_nacimiento,
+    edad_aproximada: persona.edad_aproximada,
+    edad_calculada: typeof persona.edad_calculada === 'string'
+      ? parseInt(persona.edad_calculada, 10) || null
+      : persona.edad_calculada,
+    nacionalidad: persona.nacionalidad,
+    dni: persona.dni,
+    situacion_dni: persona.situacion_dni,
+    genero: persona.genero,
+    telefono: persona.telefono,
+    observaciones: persona.observaciones,
+    fecha_defuncion: persona.fecha_defuncion,
+    adulto: persona.adulto,
+    nnya: persona.nnya,
+    deleted: persona.deleted,
+    // Embedded fields (from v6.0 API)
+    localizacion: persona.localizacion || null,
+    educacion: persona.educacion || null,
+    cobertura_medica: persona.cobertura_medica || null,
+    persona_enfermedades: persona.persona_enfermedades || [],
+    demanda_persona: persona.demanda_persona || null,
+    use_demanda_localizacion: persona.use_demanda_localizacion || false,
+    condiciones_vulnerabilidad: persona.condiciones_vulnerabilidad || [],
+    vulneraciones: persona.vulneraciones || [],
+  }
 }
 
 export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ legajoData, onEdit }) => {
@@ -210,7 +247,7 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
 
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">
-                Barriooo:
+                Barrio:
               </Typography>
             </Grid>
             <Grid item xs={6}>
@@ -346,6 +383,27 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
           </Grid>
         </Grid>
       </Grid>
+
+      {/* PersonaCompletaSection - Ver todos los datos */}
+      {persona && hasEmbeddedData(persona) && (
+        <PersonaCompletaSection
+          persona={mapToPersonaCompleta(persona)}
+          showEditButton={puedeEditar}
+          onEdit={onEdit}
+        />
+      )}
     </SectionCard>
+  )
+}
+
+// Helper to check if persona has embedded data (v6.0 API)
+const hasEmbeddedData = (persona: PersonaDetailData): boolean => {
+  return !!(
+    persona.localizacion ||
+    persona.educacion ||
+    persona.cobertura_medica ||
+    (persona.persona_enfermedades && persona.persona_enfermedades.length > 0) ||
+    (persona.condiciones_vulnerabilidad && persona.condiciones_vulnerabilidad.length > 0) ||
+    (persona.vulneraciones && persona.vulneraciones.length > 0)
   )
 }

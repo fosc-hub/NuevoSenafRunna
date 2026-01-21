@@ -28,7 +28,7 @@ export const createMedida = async (
     console.log(`Creating medida for legajo ${legajoId}:`, data)
 
     // Make API call - create() already adds trailing slash
-    const response = await create<MedidaDetailResponse>(`legajos/${legajoId}/medidas`, data as Partial<MedidaDetailResponse>)
+    const response = await create<MedidaDetailResponse>(`legajos/${legajoId}/medidas/`, data as Partial<MedidaDetailResponse>)
 
     console.log("Medida created successfully:", response)
 

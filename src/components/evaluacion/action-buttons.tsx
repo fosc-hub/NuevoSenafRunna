@@ -343,7 +343,7 @@ export default function ActionButtons({
         console.log("Sending FormData with", newFilesToUpload.length, "files")
 
         // Send as multipart/form-data - apiService.create() supports FormData
-        const response = await create<any>("evaluaciones/", formData, false)
+        const response = await create<any>("evaluaciones", formData, false)
         console.log("API Response:", response)
 
         toast.success("Solicitud de archivar enviada exitosamente", {

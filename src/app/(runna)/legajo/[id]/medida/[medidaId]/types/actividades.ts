@@ -601,3 +601,70 @@ export const getActorIcon = (actor: ActorEnum): string => {
   }
   return icons[actor] || 'Group'
 }
+
+// ============================================================================
+// BULK OPERATIONS - API V13
+// Endpoints: PATCH /api/actividades/bulk-update/
+//            POST /api/actividades/bulk-transferir/
+// ============================================================================
+
+/**
+ * Request body for bulk update of multiple activities
+ * Endpoint: PATCH /api/actividades/bulk-update/
+ *
+ * Allowed fields: responsable_principal, responsables_secundarios, estado,
+ * descripcion, fecha_planificacion, es_borrador, actor
+ *
+ * Permissions: JZ, Director, Admin can bulk update any. Técnicos only their own.
+ */
+export interface BulkUpdateActividadesRequest {
+  /** Array of activity IDs to update */
+  actividad_ids: number[]
+  /** Fields to update (partial) */
+  updates: {
+    responsable_principal?: number
+    responsables_secundarios?: number[]
+    estado?: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
+    descripcion?: string
+    fecha_planificacion?: string
+    es_borrador?: boolean
+    actor?: ActorEnum
+  }
+}
+
+/**
+ * Request body for bulk transfer of multiple activities
+ * Endpoint: POST /api/actividades/bulk-transferir/
+ *
+ * Permissions: JZ, Director, Legal, Admin
+ */
+export interface BulkTransferActividadesRequest {
+  /** Array of activity IDs to transfer */
+  actividad_ids: number[]
+  /** ID of the new responsible user */
+  responsable_nuevo: number
+  /** Reason for the transfer (required) */
+  motivo: string
+}
+
+/**
+ * Response for bulk operations
+ * HTTP Codes:
+ * - 200: All successful
+ * - 207: Partial success (some errors)
+ * - 400: Validation errors
+ * - 403: Permission denied
+ * - 404: Activities/user not found
+ */
+export interface BulkOperationResponse {
+  /** Number of successfully updated/transferred activities */
+  updated_count?: number
+  transferred_count?: number
+  /** Updated activities */
+  actividades: TActividadPlanTrabajo[]
+  /** Errors (only if partial success - HTTP 207) */
+  errors: Array<{
+    actividad_id: number
+    error: string
+  }>
+}

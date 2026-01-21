@@ -68,12 +68,14 @@ const FileUploadSection = ({
   const newFiles = Array.isArray(value) ? value.filter((file) => !(typeof file === "object" && "archivo" in file)) : []
 
   // Función para extraer el nombre del archivo de la ruta
-  const getFileName = (filePath: string) => {
+  const getFileName = (filePath: string | null | undefined): string => {
+    if (!filePath) return "Archivo sin nombre"
     return filePath.split("/").pop() || filePath
   }
 
   // Función para abrir el archivo en una nueva pestaña o en el visor de PDF
-  const openFile = (filePath: string) => {
+  const openFile = (filePath: string | null | undefined) => {
+    if (!filePath) return
     // If the path already includes the full URL, use it directly
     // Otherwise, prepend the base URL
     const url = filePath.startsWith("http://") || filePath.startsWith("https://")

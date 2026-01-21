@@ -171,7 +171,197 @@ export interface LegajosQueryParams {
 // Types for GET /api/legajos/{id}/ - Legajo Detail
 // ============================================
 
-// Persona nested data
+// ============================================
+// Embedded Types for PersonaCompleta (v6.0)
+// ============================================
+
+// Embedded Localization
+export interface LocalizacionEmbedded {
+  id: number
+  deleted: boolean
+  calle: string
+  tipo_calle: string | null
+  piso_depto: string | null
+  lote: string | null
+  mza: string | null
+  casa_nro: number | null
+  referencia_geo: string | null
+  geolocalizacion: string | null
+  barrio: number | null
+  barrio_nombre: string | null
+  localidad: number
+  localidad_nombre: string
+  cpc: number | null
+  cpc_nombre: string | null
+}
+
+// Embedded Education
+export interface InstitucionEducativaInfo {
+  id: number
+  nombre: string
+}
+
+export interface EducacionEmbedded {
+  id: number
+  deleted: boolean
+  nivel_alcanzado: string | null
+  esta_escolarizado: boolean
+  ultimo_cursado: string | null
+  tipo_escuela: string | null
+  comentarios_educativos: string | null
+  institucion_educativa: InstitucionEducativaInfo | null
+}
+
+// Embedded Medical Coverage
+export interface MedicoCabeceraInfo {
+  id: number
+  nombre: string
+  mail: string | null
+  telefono: number | null
+}
+
+export interface InstitucionSanitariaInfo {
+  id: number
+  nombre: string
+}
+
+export interface CoberturaMedicaEmbedded {
+  id: number
+  deleted: boolean
+  obra_social: string | null
+  intervencion: string | null
+  auh: boolean
+  observaciones: string | null
+  institucion_sanitaria: InstitucionSanitariaInfo | null
+  medico_cabecera: MedicoCabeceraInfo | null
+}
+
+// Embedded Disease/Health Condition
+export interface EnfermedadInfo {
+  id: number
+  nombre: string
+  situacion_salud_categoria: number | null
+}
+
+export interface SituacionSaludInfo {
+  id: number
+  nombre: string
+}
+
+export interface ArchivoAdjuntoInfo {
+  archivo: string
+}
+
+export interface PersonaEnfermedadEmbedded {
+  id: number
+  deleted: boolean
+  certificacion: string | null
+  beneficios_gestionados: string | null
+  recibe_tratamiento: boolean
+  informacion_tratamiento: string | null
+  enfermedad: EnfermedadInfo
+  situacion_salud: SituacionSaludInfo | null
+  institucion_sanitaria_interviniente: InstitucionSanitariaInfo | null
+  medico_tratamiento: MedicoCabeceraInfo | null
+  oficio_adjunto: ArchivoAdjuntoInfo[]
+  certificado_adjunto: ArchivoAdjuntoInfo[]
+}
+
+// Embedded Demanda-Persona Relationship
+export interface DemandaInfoEmbedded {
+  id: number
+  fecha_creacion: string
+  estado_demanda: string
+  objetivo_de_demanda: string
+}
+
+export interface VinculoNnyaPrincipalInfoEmbedded {
+  id: number
+  nombre: string
+}
+
+export interface DemandaPersonaEmbedded {
+  id: number
+  deleted: boolean
+  conviviente: boolean
+  legalmente_responsable: boolean
+  ocupacion: string | null
+  vinculo_demanda: string
+  demanda: number
+  persona: number
+  demanda_info: DemandaInfoEmbedded
+  vinculo_con_nnya_principal_info: VinculoNnyaPrincipalInfoEmbedded | null
+}
+
+// Embedded Vulnerability Condition
+export interface CondicionVulnerabilidadInfoEmbedded {
+  id: number
+  nombre: string
+  peso: number
+  nnya: boolean
+  adulto: boolean
+}
+
+export interface CondicionVulnerabilidadEmbedded {
+  id: number
+  si_no: boolean
+  persona: number
+  demanda: number | null
+  condicion_vulnerabilidad: number
+  condicion_vulnerabilidad_info: CondicionVulnerabilidadInfoEmbedded
+}
+
+// Embedded Vulneracion (Rights Violation)
+export interface CategoriaInfo {
+  id: number
+  nombre: string
+  peso: number
+}
+
+export interface GravedadVulneracionInfo {
+  id: number
+  nombre: string
+  peso: number
+}
+
+export interface UrgenciaVulneracionInfo {
+  id: number
+  nombre: string
+  peso: number
+}
+
+export interface AutorDvInfoEmbedded {
+  id: number
+  nombre: string
+  apellido: string
+  dni: number | null
+}
+
+export interface VulneracionEmbedded {
+  id: number
+  deleted: boolean
+  fecha_creacion: string
+  ultima_modificacion: string
+  principal_demanda: boolean
+  transcurre_actualidad: boolean
+  sumatoria_de_pesos: number
+  demanda: number | null
+  nnya: number
+  autor_dv: number | null
+  categoria_motivo: number
+  categoria_submotivo: number
+  gravedad_vulneracion: number
+  urgencia_vulneracion: number
+  categoria_motivo_info: CategoriaInfo
+  categoria_submotivo_info: CategoriaInfo
+  gravedad_vulneracion_info: GravedadVulneracionInfo
+  urgencia_vulneracion_info: UrgenciaVulneracionInfo
+  autor_dv_info: AutorDvInfoEmbedded | null
+}
+
+// ============================================
+// Persona nested data (with optional embedded fields for v6.0)
+// ============================================
 export interface PersonaDetailData {
   id: number
   nombre: string
@@ -179,7 +369,7 @@ export interface PersonaDetailData {
   apellido: string
   fecha_nacimiento: string | null // ISO date string
   edad_aproximada: number | null
-  edad_calculada: string | number | null
+  edad_calculada: number | null // Changed to number only for consistency
   nacionalidad: string // e.g., "ARGENTINA"
   dni: number | null
   situacion_dni: string | null // e.g., "EN_TRAMITE", etc.
@@ -190,6 +380,16 @@ export interface PersonaDetailData {
   adulto: boolean
   nnya: boolean
   deleted: boolean
+
+  // v6.0 Embedded fields (optional for backward compatibility)
+  localizacion?: LocalizacionEmbedded | null
+  educacion?: EducacionEmbedded | null
+  cobertura_medica?: CoberturaMedicaEmbedded | null
+  persona_enfermedades?: PersonaEnfermedadEmbedded[]
+  demanda_persona?: DemandaPersonaEmbedded | null
+  use_demanda_localizacion?: boolean
+  condiciones_vulnerabilidad?: CondicionVulnerabilidadEmbedded[]
+  vulneraciones?: VulneracionEmbedded[]
 }
 
 // Estado object structure returned by API

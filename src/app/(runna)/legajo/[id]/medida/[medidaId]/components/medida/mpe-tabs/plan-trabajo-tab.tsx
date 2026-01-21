@@ -158,9 +158,11 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
         }
 
         // Filter by etapa if filterEtapa prop is provided (MPJ)
+        // Activities with null etapa_medida_aplicable are universal and show in all tabs
         if (filterEtapa) {
             result = result.filter(actividad =>
-                actividad.tipo_actividad_info.etapa_medida_aplicable === filterEtapa
+                actividad.tipo_actividad_info.etapa_medida_aplicable === filterEtapa ||
+                actividad.tipo_actividad_info.etapa_medida_aplicable === null
             )
         }
 

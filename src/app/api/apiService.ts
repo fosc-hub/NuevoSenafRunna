@@ -64,8 +64,8 @@ export const getWithCustomParams = async <T>(
  */
 export const create = async <T>(endpoint: string, data: Partial<T>, showToast: boolean = false, toastMessage: string = '¡Registro asignado con exito!')
   : Promise<T> => {
-  const response = await axiosInstance.post<T>(`${endpoint}/`, data)
-
+  const response = await axiosInstance.post<T>(`${endpoint}`, data)
+      
   if (showToast) {
     toast.success(toastMessage)
   }

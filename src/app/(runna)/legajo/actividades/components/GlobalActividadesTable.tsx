@@ -22,6 +22,11 @@ import {
   Button,
   Collapse,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -30,6 +35,8 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 import FolderIcon from '@mui/icons-material/Folder'
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/utils/auth/userZustand'
@@ -85,6 +92,23 @@ export const GlobalActividadesTable: React.FC = () => {
   // Modal state
   const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
+
+  // Acuse de Recibo state
+  const [pendingAcuseActividad, setPendingAcuseActividad] = useState<TActividadPlanTrabajo | null>(null)
+  const [acknowledgedIds, setAcknowledgedIds] = useState<Set<number>>(() => {
+    // Initialize from sessionStorage if available
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('acknowledgedActividades')
+      if (stored) {
+        try {
+          return new Set(JSON.parse(stored))
+        } catch {
+          return new Set()
+        }
+      }
+    }
+    return new Set()
+  })
 
   // Selection state for bulk operations
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -183,6 +207,44 @@ export const GlobalActividadesTable: React.FC = () => {
     setPage(0)
   }
 
+  // Check if activity requires acknowledgment before viewing
+  const handleRequestViewDetail = (actividad: TActividadPlanTrabajo) => {
+    if (acknowledgedIds.has(actividad.id)) {
+      // Already acknowledged, open directly
+      setSelectedActividad(actividad)
+      setDetailModalOpen(true)
+    } else {
+      // Requires acknowledgment first
+      setPendingAcuseActividad(actividad)
+    }
+  }
+
+  // Handle acknowledgment confirmation
+  const handleConfirmAcuse = () => {
+    if (pendingAcuseActividad) {
+      // Add to acknowledged set
+      const newAcknowledged = new Set(acknowledgedIds)
+      newAcknowledged.add(pendingAcuseActividad.id)
+      setAcknowledgedIds(newAcknowledged)
+
+      // Persist to sessionStorage
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('acknowledgedActividades', JSON.stringify([...newAcknowledged]))
+      }
+
+      // Open the detail modal
+      setSelectedActividad(pendingAcuseActividad)
+      setDetailModalOpen(true)
+      setPendingAcuseActividad(null)
+    }
+  }
+
+  // Handle acknowledgment cancel
+  const handleCancelAcuse = () => {
+    setPendingAcuseActividad(null)
+  }
+
+  // Direct view (for already acknowledged activities)
   const handleViewDetail = (actividad: TActividadPlanTrabajo) => {
     setSelectedActividad(actividad)
     setDetailModalOpen(true)
@@ -590,7 +652,7 @@ export const GlobalActividadesTable: React.FC = () => {
                             : 'rgba(156, 39, 176, 0.04)'
                       }
                     }}
-                    onClick={() => handleViewDetail(actividad)}
+                    onClick={() => handleRequestViewDetail(actividad)}
                   >
                     {/* Checkbox */}
                     <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
@@ -738,23 +800,44 @@ export const GlobalActividadesTable: React.FC = () => {
                     {/* Acciones */}
                     <TableCell sx={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                        <Tooltip title="Ver detalle">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewDetail(actividad)}
-                            sx={{
-                              backgroundColor: 'rgba(156, 39, 176, 0.1)',
-                              color: 'primary.main',
-                              '&:hover': {
-                                backgroundColor: 'rgba(156, 39, 176, 0.2)',
-                                transform: 'scale(1.1)'
-                              },
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        {/* Acuse de Recibo / Ver Detalle Button */}
+                        {acknowledgedIds.has(actividad.id) ? (
+                          <Tooltip title="Ver detalle (ya confirmado)">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewDetail(actividad)}
+                              sx={{
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                color: 'success.main',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <CheckCircleOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="Acuse de Recibo - Confirmar para ver">
+                            <IconButton
+                              size="small"
+                              onClick={() => setPendingAcuseActividad(actividad)}
+                              sx={{
+                                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                color: 'warning.main',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <ReceiptLongIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         <Tooltip title={actividad.legajo_info ? `Ir al legajo ${actividad.legajo_info.numero}` : 'Ir al legajo'}>
                           <IconButton
                             size="small"
@@ -824,6 +907,89 @@ export const GlobalActividadesTable: React.FC = () => {
         selectedActividades={selectedActividades}
         onSuccess={handleBulkSuccess}
       />
+
+      {/* Acuse de Recibo Dialog */}
+      <Dialog
+        open={!!pendingAcuseActividad}
+        onClose={handleCancelAcuse}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            borderTop: '4px solid #ff9800',
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ReceiptLongIcon color="warning" />
+          Acuse de Recibo
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Está a punto de acceder a la siguiente actividad:
+          </DialogContentText>
+          {pendingAcuseActividad && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                bgcolor: 'grey.50',
+                border: '1px solid',
+                borderColor: 'grey.200',
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                {pendingAcuseActividad.tipo_actividad_info?.nombre || 'Sin tipo'}
+              </Typography>
+              {pendingAcuseActividad.subactividad && (
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {pendingAcuseActividad.subactividad}
+                </Typography>
+              )}
+              <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap' }}>
+                {pendingAcuseActividad.legajo_info && (
+                  <Chip
+                    size="small"
+                    icon={<FolderIcon />}
+                    label={`${pendingAcuseActividad.legajo_info.nnya_apellido}, ${pendingAcuseActividad.legajo_info.nnya_nombre}`}
+                    variant="outlined"
+                  />
+                )}
+                <Chip
+                  size="small"
+                  label={pendingAcuseActividad.estado_display || pendingAcuseActividad.estado}
+                  sx={{
+                    ...getEstadoColor(pendingAcuseActividad.estado),
+                    fontWeight: 500,
+                  }}
+                />
+              </Box>
+            </Paper>
+          )}
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Al confirmar el acuse de recibo, quedará registrado que ha tomado conocimiento de esta actividad.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={handleCancelAcuse}
+            color="inherit"
+            variant="outlined"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmAcuse}
+            color="warning"
+            variant="contained"
+            startIcon={<CheckCircleOutlineIcon />}
+          >
+            Confirmar Acuse de Recibo
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   )
 }

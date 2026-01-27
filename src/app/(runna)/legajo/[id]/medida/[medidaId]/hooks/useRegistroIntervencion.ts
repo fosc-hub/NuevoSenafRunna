@@ -24,6 +24,9 @@ import {
   getCategoriasIntervencion,
 } from "../api/intervenciones-api-service"
 import { medidaKeys } from './useMedidaDetail'
+
+/** Query key prefix used by IntervencionesSection to list intervenciones */
+const intervencionesListKey = (medidaId: number) => [`intervenciones/medida/${medidaId}`]
 import type {
   CreateIntervencionRequest,
   UpdateIntervencionRequest,
@@ -272,15 +275,18 @@ export const useRegistroIntervencion = ({
       const data = await createIntervencion(medidaId, payload)
       setIntervencion(data)
 
-      // Invalidate and refetch medida detail to refresh estado immediately
-      await queryClient.invalidateQueries({
-        queryKey: medidaKeys.detail(medidaId),
-        refetchType: 'active'
-      })
-
       toast.success('Registro de Intervención creado exitosamente', {
         position: 'top-center',
         autoClose: 3000,
+      })
+
+      // Non-blocking cache invalidation: fire-and-forget so onSaved() callback
+      // is never blocked by a failed refetch of other queries
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
+      ]).catch((invalidateErr) => {
+        console.warn('[useRegistroIntervencion] Cache invalidation failed (create):', invalidateErr)
       })
 
       return data
@@ -314,7 +320,8 @@ export const useRegistroIntervencion = ({
    * Update existing intervención
    */
   const updateExistingIntervencion = async (): Promise<IntervencionResponse | null> => {
-    if (!intervencionId) {
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) {
       setError("No se puede actualizar: ID de intervención no definido")
       return null
     }
@@ -344,18 +351,20 @@ export const useRegistroIntervencion = ({
         requiere_informes_ampliatorios: formData.requiere_informes_ampliatorios,
       }
 
-      const data = await updateIntervencion(medidaId, intervencionId, payload)
+      const data = await updateIntervencion(medidaId, effectiveId, payload)
       setIntervencion(data)
-
-      // Invalidate and refetch medida detail to refresh estado immediately
-      await queryClient.invalidateQueries({
-        queryKey: medidaKeys.detail(medidaId),
-        refetchType: 'active'
-      })
 
       toast.success('Registro de Intervención actualizado exitosamente', {
         position: 'top-center',
         autoClose: 3000,
+      })
+
+      // Non-blocking cache invalidation
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
+      ]).catch((invalidateErr) => {
+        console.warn('[useRegistroIntervencion] Cache invalidation failed (update):', invalidateErr)
       })
 
       return data
@@ -389,7 +398,9 @@ export const useRegistroIntervencion = ({
    * Save intervención (create or update based on whether intervencionId exists)
    */
   const guardarBorrador = async (): Promise<IntervencionResponse | null> => {
-    if (intervencionId) {
+    // Use prop intervencionId, or fallback to a just-created intervention's ID
+    const effectiveId = intervencionId || intervencion?.id
+    if (effectiveId) {
       return await updateExistingIntervencion()
     } else {
       return await createNewIntervencion()
@@ -405,7 +416,9 @@ export const useRegistroIntervencion = ({
    * Estado 1 → Estado 2 (BORRADOR → ENVIADO)
    */
   const enviar = async (): Promise<boolean> => {
-    if (!intervencionId) {
+    // Use prop intervencionId, or fallback to the ID from a just-created intervention
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) {
       setError("No se puede enviar: guarde la intervención primero")
       return false
     }
@@ -414,18 +427,20 @@ export const useRegistroIntervencion = ({
     setError(null)
 
     try {
-      const response = await enviarIntervencion(medidaId, intervencionId)
+      const response = await enviarIntervencion(medidaId, effectiveId)
       setIntervencion(response.intervencion)
-
-      // Invalidate and refetch medida detail to refresh estado immediately
-      await queryClient.invalidateQueries({
-        queryKey: medidaKeys.detail(medidaId),
-        refetchType: 'active' // Force refetch of active queries
-      })
 
       toast.success('Intervención enviada exitosamente', {
         position: 'top-center',
         autoClose: 3000,
+      })
+
+      // Non-blocking cache invalidation
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
+      ]).catch((invalidateErr) => {
+        console.warn('[useRegistroIntervencion] Cache invalidation failed (enviar):', invalidateErr)
       })
 
       return true
@@ -448,7 +463,8 @@ export const useRegistroIntervencion = ({
    * Estado 2 → Estado 3 (ENVIADO → APROBADO)
    */
   const aprobar = async (): Promise<boolean> => {
-    if (!intervencionId) {
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) {
       setError("No se puede aprobar: ID de intervención no definido")
       return false
     }
@@ -457,18 +473,20 @@ export const useRegistroIntervencion = ({
     setError(null)
 
     try {
-      const response = await aprobarIntervencion(medidaId, intervencionId)
+      const response = await aprobarIntervencion(medidaId, effectiveId)
       setIntervencion(response.intervencion)
-
-      // Invalidate and refetch medida detail to refresh estado immediately
-      await queryClient.invalidateQueries({
-        queryKey: medidaKeys.detail(medidaId),
-        refetchType: 'active'
-      })
 
       toast.success('Intervención aprobada exitosamente', {
         position: 'top-center',
         autoClose: 3000,
+      })
+
+      // Non-blocking cache invalidation
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
+      ]).catch((invalidateErr) => {
+        console.warn('[useRegistroIntervencion] Cache invalidation failed (aprobar):', invalidateErr)
       })
 
       return true
@@ -491,7 +509,8 @@ export const useRegistroIntervencion = ({
    * Estado 2 → Estado 1 (ENVIADO → RECHAZADO → BORRADOR)
    */
   const rechazar = async (observaciones: string): Promise<boolean> => {
-    if (!intervencionId) {
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) {
       setError("No se puede rechazar: ID de intervención no definido")
       return false
     }
@@ -505,20 +524,22 @@ export const useRegistroIntervencion = ({
     setError(null)
 
     try {
-      const response = await rechazarIntervencion(medidaId, intervencionId, {
+      const response = await rechazarIntervencion(medidaId, effectiveId, {
         observaciones_jz: observaciones,
       })
       setIntervencion(response.intervencion)
 
-      // Invalidate and refetch medida detail to refresh estado immediately
-      await queryClient.invalidateQueries({
-        queryKey: medidaKeys.detail(medidaId),
-        refetchType: 'active'
-      })
-
       toast.info('Intervención rechazada. Se notificó al equipo técnico', {
         position: 'top-center',
         autoClose: 3000,
+      })
+
+      // Non-blocking cache invalidation
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
+      ]).catch((invalidateErr) => {
+        console.warn('[useRegistroIntervencion] Cache invalidation failed (rechazar):', invalidateErr)
       })
 
       return true
@@ -544,12 +565,13 @@ export const useRegistroIntervencion = ({
    * Load adjuntos list
    */
   const loadAdjuntos = async () => {
-    if (!intervencionId) return
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) return
 
     setIsLoadingAdjuntos(true)
 
     try {
-      const data = await getAdjuntos(medidaId, intervencionId)
+      const data = await getAdjuntos(medidaId, effectiveId)
       setAdjuntos(data)
     } catch (err: any) {
       console.error("Error loading adjuntos:", err)
@@ -566,7 +588,8 @@ export const useRegistroIntervencion = ({
     file: File,
     tipo: string
   ): Promise<AdjuntoIntervencion | null> => {
-    if (!intervencionId) {
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) {
       setError("Debe guardar la intervención antes de subir adjuntos")
       return null
     }
@@ -575,7 +598,7 @@ export const useRegistroIntervencion = ({
     setError(null)
 
     try {
-      const adjunto = await uploadAdjunto(medidaId, intervencionId, file, tipo)
+      const adjunto = await uploadAdjunto(medidaId, effectiveId, file, tipo)
       // Reload adjuntos list
       await loadAdjuntos()
       return adjunto
@@ -592,10 +615,11 @@ export const useRegistroIntervencion = ({
    * Delete adjunto
    */
   const deleteAdjuntoFile = async (adjuntoId: number): Promise<boolean> => {
-    if (!intervencionId) return false
+    const effectiveId = intervencionId || intervencion?.id
+    if (!effectiveId) return false
 
     try {
-      await deleteAdjunto(medidaId, intervencionId, adjuntoId)
+      await deleteAdjunto(medidaId, effectiveId, adjuntoId)
       // Reload adjuntos list
       await loadAdjuntos()
       return true

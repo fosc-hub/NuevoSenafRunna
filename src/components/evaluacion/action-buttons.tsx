@@ -17,7 +17,8 @@ import {
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import { Cancel as CancelIcon, Person as PersonIcon } from "@mui/icons-material"
-import { create, put } from "@/app/api/apiService"
+import { create } from "@/app/api/apiService"
+import axiosInstance from "@/app/api/utils/axiosInstance"
 import { useUser } from "@/utils/auth/userZustand"
 import { fetchUsuarios } from "@/app/(runna)/legajo-mesa/api/legajo-asignacion-api-service"
 import type { Usuario } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
@@ -381,11 +382,11 @@ export default function ActionButtons({
 
         if (action === "autorizar") {
           // LEG-02: Autorizar admisión y crear legajos automáticamente
-          const response = await put<any>(
+          // Use axiosInstance directly because the put() wrapper appends /${id}/ to the URL,
+          // but the demandaId is already part of the endpoint path
+          const { data: response } = await axiosInstance.put<any>(
             `evaluaciones/${demandaId}/autorizar/?autorizar=true`,
-            demandaId,
-            formData,
-            false
+            formData
           )
           console.log("API Response:", response)
 
@@ -397,11 +398,9 @@ export default function ActionButtons({
           })
         } else {
           // No autorizar - no crea legajos
-          const response = await put<any>(
+          const { data: response } = await axiosInstance.put<any>(
             `evaluaciones/${demandaId}/autorizar/?autorizar=false`,
-            demandaId,
-            formData,
-            false
+            formData
           )
           console.log("API Response:", response)
 

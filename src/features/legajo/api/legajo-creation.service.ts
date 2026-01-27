@@ -3,7 +3,8 @@
  * Endpoints: POST /api/legajos/, PUT /api/evaluaciones/{id}/autorizar/
  */
 
-import { create, put } from '@/app/api/apiService'
+import { create } from '@/app/api/apiService'
+import axiosInstance from '@/app/api/utils/axiosInstance'
 import { toast } from 'react-toastify'
 import type {
   CreateLegajoManualRequest,
@@ -123,16 +124,15 @@ export const autorizarAdmisionYCrearLegajos = async (
   try {
     console.log(`Authorizing admision for demanda ${demandaId}:`, data)
 
-    // REFACTORED: Use apiService.put() instead of axiosInstance
-    const response = await put<AutorizarAdmisionResponse>(
+    // Use axiosInstance directly because the put() wrapper appends /${id}/ to the URL,
+    // but the demandaId is already part of the endpoint path
+    const { data: response } = await axiosInstance.put<AutorizarAdmisionResponse>(
       `evaluaciones/${demandaId}/autorizar/?autorizar=true`,
-      demandaId,
       {
         decision: data.decision || 'AUTORIZAR_ADMISION',
         justificacion_director: data.justificacion_director || 'Autorizado por Director',
         ...data
-      },
-      false // Don't show toast - we handle toasts manually below
+      }
     )
 
     console.log('Admision authorized successfully:', response)

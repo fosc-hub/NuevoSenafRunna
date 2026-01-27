@@ -46,6 +46,7 @@ import { globalActividadService, type GlobalActividadFilters } from '../services
 
 // Import types from existing location
 import type { TActividadPlanTrabajo } from '../../[id]/medida/[medidaId]/types/actividades'
+import { extractArray } from '@/hooks/useApiQuery'
 import { getActorColor, ACTOR_LABELS } from '../../[id]/medida/[medidaId]/types/actividades'
 
 // Import reusable components from existing location
@@ -140,20 +141,18 @@ export const GlobalActividadesTable: React.FC = () => {
     placeholderData: keepPreviousData, // Keep showing old data while fetching new data
   })
 
-  // Parse response
+  // Parse response - safely extract array from paginated or direct response
   const { actividades, totalCount } = useMemo(() => {
     if (!response) {
       return { actividades: [], totalCount: 0 }
     }
 
-    if (Array.isArray(response)) {
-      return { actividades: response, totalCount: response.length }
-    }
+    const items = extractArray<TActividadPlanTrabajo>(response as any)
+    const count = !Array.isArray(response) && response && typeof response === 'object' && 'count' in response
+      ? (response as any).count ?? items.length
+      : items.length
 
-    return {
-      actividades: response.results || [],
-      totalCount: response.count || 0
-    }
+    return { actividades: items, totalCount: count }
   }, [response])
 
   // Statistics

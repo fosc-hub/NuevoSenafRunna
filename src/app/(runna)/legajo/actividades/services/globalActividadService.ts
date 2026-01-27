@@ -3,6 +3,7 @@
 // API v12: Response now includes legajo_info and medida_info nested objects
 
 import { get } from '@/app/api/apiService'
+import { extractArray } from '@/hooks/useApiQuery'
 import type {
   TActividadPlanTrabajo,
   ActividadListResponse
@@ -149,7 +150,7 @@ export const globalActividadService = {
       page_size: 1000 // Large page size to get all for stats
     })
 
-    const actividades = Array.isArray(response) ? response : response.results
+    const actividades = extractArray<TActividadPlanTrabajo>(response as any)
 
     return {
       total: actividades.length,

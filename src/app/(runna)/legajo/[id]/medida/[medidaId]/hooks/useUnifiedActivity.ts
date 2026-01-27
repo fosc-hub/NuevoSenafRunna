@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { UnifiedTimelineItem, TComentarioActividad, TAdjuntoActividad, THistorialActividad } from '../types/actividades'
 import { actividadService } from '../services/actividadService'
+import { extractArray } from '@/hooks/useApiQuery'
 
 interface UseUnifiedActivityReturn {
   items: UnifiedTimelineItem[]
@@ -96,7 +97,9 @@ export const useUnifiedActivity = (actividadId: number): UseUnifiedActivityRetur
       ])
 
       // Extract comentarios from historial entries with tipo_accion === "COMENTARIO"
-      const comentarios: TComentarioActividad[] = historialEntries
+      // Use extractArray to safely handle paginated responses from the API
+      const historialArray = extractArray<THistorialActividad>(historialEntries as any)
+      const comentarios: TComentarioActividad[] = historialArray
         .filter((entry: THistorialActividad) => entry.tipo_accion === 'COMENTARIO')
         .map(transformHistorialToComentario)
 

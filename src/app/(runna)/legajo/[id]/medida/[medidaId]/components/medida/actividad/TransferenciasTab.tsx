@@ -21,6 +21,7 @@ import {
 } from '@mui/lab'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import type { TTransferenciaActividad } from '../../../types/actividades'
+import { extractArray } from '@/hooks/useApiQuery'
 
 interface TransferenciasTabProps {
   actividadId: number
@@ -48,7 +49,7 @@ export const TransferenciasTab: React.FC<TransferenciasTabProps> = ({
     const result = await onGetTransferencias()
 
     if (result) {
-      setTransferencias(result)
+      setTransferencias(extractArray(result))
     } else {
       setError('Error al cargar el historial de transferencias')
     }

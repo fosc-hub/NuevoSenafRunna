@@ -9,6 +9,8 @@
  */
 
 import { get, create, update, remove } from "@/app/api/apiService"
+import axiosInstance from "@/app/api/utils/axiosInstance"
+import { toast } from "react-toastify"
 import type {
   CreateIntervencionRequest,
   UpdateIntervencionRequest,
@@ -267,13 +269,12 @@ export const enviarIntervencion = async (
   try {
     console.log(`Enviando intervención: medida ${medidaId}, intervención ${intervencionId}`)
 
-    // Uses create() with empty object for POST to custom action endpoint
-    const response = await create<EnviarIntervencionResponse>(
+    // PATCH to custom action endpoint (backend registers enviar/ as PATCH)
+    const { data: response } = await axiosInstance.patch<EnviarIntervencionResponse>(
       `medidas/${medidaId}/intervenciones/${intervencionId}/enviar/`,
-      {},
-      true,
-      'Intervención enviada exitosamente'
+      {}
     )
+    toast.success('Intervención enviada exitosamente')
 
     console.log("Intervención enviada successfully:", response)
 

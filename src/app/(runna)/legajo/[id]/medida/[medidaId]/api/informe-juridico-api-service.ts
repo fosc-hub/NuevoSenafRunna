@@ -251,7 +251,7 @@ export const enviarInformeJuridico = async (
   try {
     console.log(`Enviando informe jurídico for medida ${medidaId}`)
 
-    // Uses create() with empty object for POST to custom action endpoint
+    // POST to custom action endpoint (urls.py line 243: {'post': 'enviar_informe'})
     const response = await create<EnviarInformeJuridicoResponse>(
       `medidas/${medidaId}/informe-juridico/enviar/`,
       {},

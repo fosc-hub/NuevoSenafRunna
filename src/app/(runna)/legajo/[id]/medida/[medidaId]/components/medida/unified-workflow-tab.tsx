@@ -105,7 +105,9 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   const isDirector = user?.zonas?.some((z) => z.director) || false
   const userLevel = isDirector ? 3 : undefined
   const isJZ = user?.zonas?.some((z) => z.jefe) || false
-  const isEquipoLegal = false // TODO: Add legal flag to user zonas data
+  const isEquipoLegal = user?.groups?.some(
+    (g: any) => ["legal", "legales", "equipo legal"].includes(g.name.toLowerCase())
+  ) || false
 
   // ========== V2 Etapa Filtering ==========
   /**

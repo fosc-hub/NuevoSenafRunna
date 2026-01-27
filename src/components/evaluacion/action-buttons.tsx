@@ -134,8 +134,8 @@ export default function ActionButtons({
       try {
         // Get zona ID from demanda data
         const zonaId = data?.relacion_demanda?.demanda_zona?.zona ||
-                       data?.registrado_por_user_zona?.id ||
-                       null
+          data?.registrado_por_user_zona?.id ||
+          null
 
         console.log("Loading usuarios for zona:", zonaId)
 
@@ -148,8 +148,8 @@ export default function ActionButtons({
           usuarios = allUsuarios.filter((usuario: any) => {
             // Only include active users who belong to the target zona
             return usuario.is_active &&
-                   usuario.zonas &&
-                   usuario.zonas.some((userZona: any) => userZona.zona === zonaId)
+              usuario.zonas &&
+              usuario.zonas.some((userZona: any) => userZona.zona === zonaId)
           })
           console.log(`Filtered ${usuarios.length} active usuarios for zona ${zonaId}`)
         } else {

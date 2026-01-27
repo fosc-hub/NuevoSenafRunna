@@ -29,7 +29,7 @@ export function getUserWorkflowRole(user: any): UserRole {
   const groupNames = groups.map((g: any) => g.name.toLowerCase())
 
   // Check specific roles (order matters - most specific first)
-  if (groupNames.includes("legales") || groupNames.includes("equipo legal")) {
+  if (groupNames.includes("legal") || groupNames.includes("legales") || groupNames.includes("equipo legal")) {
     return 'LEGAL'
   }
 

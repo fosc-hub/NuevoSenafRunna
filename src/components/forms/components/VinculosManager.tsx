@@ -34,6 +34,7 @@ interface VinculosManagerProps {
 export default function VinculosManager({ dropdownData, readOnly = false }: VinculosManagerProps) {
   const theme = useTheme()
   const { watch, setValue } = useFormContext<FormData>()
+  const tipoVinculoOptions = Array.isArray(dropdownData.tipos_vinculo) ? dropdownData.tipos_vinculo : []
 
   const vinculos = watch("vinculos") || []
   const [expandedVinculos, setExpandedVinculos] = useState<Set<number>>(new Set())
@@ -298,9 +299,9 @@ export default function VinculosManager({ dropdownData, readOnly = false }: Vinc
                       }
                       error={Boolean(errors.tipo_vinculo)}
                       helperText={errors.tipo_vinculo}
-                      disabled={readOnly || !dropdownData.tipos_vinculo || dropdownData.tipos_vinculo.length === 0}
+                      disabled={readOnly || tipoVinculoOptions.length === 0}
                     >
-                      {dropdownData.tipos_vinculo?.map((tipo) => (
+                      {tipoVinculoOptions.map((tipo) => (
                         <MenuItem key={tipo.id} value={tipo.id}>
                           <Box>
                             <Typography variant="body2" fontWeight={500}>

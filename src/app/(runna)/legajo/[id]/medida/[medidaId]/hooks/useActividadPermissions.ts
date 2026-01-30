@@ -7,7 +7,7 @@ import type { TActividadPlanTrabajo } from '../types/actividades'
  * Based on PLTM-02 story requirements
  *
  * Permission Rules:
- * - canEdit: Responsable OR JZ OR Director OR Admin
+ * - canEdit: Todos los usuarios mientras la actividad no esté bloqueada
  * - canAddActivity: Any user can add comments/files (unless activity is locked)
  * - canReopen: JZ OR Director OR Admin (only for locked activities)
  * - canTransfer: JZ OR Director (nivel 3-4)
@@ -62,8 +62,8 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     const isLocked = lockedStates.includes(actividad.estado)
 
     // Permission calculations
-    // canEdit: responsable OR JZ OR Director OR Admin
-    const canEdit = !isLocked && (isResponsable || isJZ || isDirector || isAdmin)
+    // canEdit: unrestricted while the activity is editable
+    const canEdit = !isLocked
 
     // canAddActivity: Any user can add comments/files (unless activity is locked)
     const canAddActivity = !isLocked

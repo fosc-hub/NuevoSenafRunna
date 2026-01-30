@@ -42,6 +42,8 @@ export interface BaseModalProps extends Omit<ModalProps, "children"> {
   title: string | React.ReactNode
   /** Optional icon to display before title */
   titleIcon?: React.ReactNode
+  /** Optional actions rendered below the title (left aligned) */
+  customLeftActions?: React.ReactNode
   /** Modal content */
   children: React.ReactNode
   /** Actions to display in footer */
@@ -147,6 +149,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
   title,
   titleIcon,
   children,
+  customLeftActions,
   actions = [],
   tabs,
   activeTab,
@@ -228,6 +231,12 @@ const BaseModal: React.FC<BaseModalProps> = ({
         </Box>
 
         {showHeaderDivider && <Divider sx={{ mb: 2 }} />}
+
+        {customLeftActions && (
+          <Box sx={{ mb: 2 }}>
+            {customLeftActions}
+          </Box>
+        )}
 
         {/* Tabs (optional) */}
         {tabs && tabs.length > 0 && (

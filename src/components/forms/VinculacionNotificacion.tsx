@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { create } from "@/app/api/apiService"
 import { useUser } from "@/utils/auth/userZustand"
+import { hasVinculacionAccess } from "@/utils/auth/permissionUtils"
 
 interface VinculacionResult {
   demanda_ids: number[]
@@ -41,11 +42,7 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
   const user = useUser((state) => state.user)
 
   // Check if user has permission to view/access connections
-  const hasVinculacionPermission = user?.all_permissions?.includes('view_tdemandavinculada') ||
-    user?.all_permissions?.includes('add_tdemandavinculada') ||
-    user?.all_permissions?.includes('change_tdemandavinculada') ||
-    user?.is_superuser ||
-    user?.is_staff
+  const hasVinculacionPermission = hasVinculacionAccess(user)
 
   // Verificar si hay resultados (demandas o legajos)
   useEffect(() => {

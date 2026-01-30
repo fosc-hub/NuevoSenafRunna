@@ -31,6 +31,7 @@ import SearchModal from "@/components/searchModal/searchModal"
 import { useUser } from "@/utils/auth/userZustand"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { useVinculos } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/hooks/useVinculos"
+import { hasVinculacionAccess } from "@/utils/auth/permissionUtils"
 import CrearVinculoLegajoDialog from "./dialogs/CrearVinculoLegajoDialog"
 import DesvincularVinculoDialog from "./dialogs/DesvincularVinculoDialog"
 
@@ -88,11 +89,7 @@ export function ConexionesDemandaTab({ demandaId }: ConexionesDemandaTabProps) {
   const user = useUser((state) => state.user)
 
   // Check if user has permission to view/access connections
-  const hasVinculacionPermission = user?.all_permissions?.includes('view_tdemandavinculada') ||
-    user?.all_permissions?.includes('add_tdemandavinculada') ||
-    user?.all_permissions?.includes('change_tdemandavinculada') ||
-    user?.is_superuser ||
-    user?.is_staff
+  const hasVinculacionPermission = hasVinculacionAccess(user)
 
   // States for existing connections
   const [error, setError] = useState<string | null>(null)

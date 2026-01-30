@@ -15,6 +15,7 @@ import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
 import { useRouter } from "next/navigation"
 import { fetchCaseData } from "@/components/forms/utils/apiToFormData"
 import { useUser } from "@/utils/auth/userZustand"
+import { hasVinculacionAccess } from "@/utils/auth/permissionUtils"
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -66,11 +67,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
   const user = useUser((state) => state.user)
 
   // Check if user has permission to view/access connections
-  const hasVinculacionPermission = user?.all_permissions?.includes('view_tdemandavinculada') ||
-    user?.all_permissions?.includes('add_tdemandavinculada') ||
-    user?.all_permissions?.includes('change_tdemandavinculada') ||
-    user?.is_superuser ||
-    user?.is_staff
+  const hasVinculacionPermission = hasVinculacionAccess(user)
 
   useEffect(() => {
     const loadCaseData = async () => {

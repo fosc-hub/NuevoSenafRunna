@@ -22,10 +22,12 @@ export interface UserPermissions {
         id: number;
         director: boolean;
         jefe: boolean;
+        legal: boolean;
         user: number;
         zona: number;
         localidad: number | null;
     }>;
+    legal?: boolean;
     zonas_ids: number[];
     all_permissions: string[];
 }

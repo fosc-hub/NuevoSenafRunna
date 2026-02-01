@@ -90,7 +90,7 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
 
             {/* Tables outside tabs */}
             <HistorialSeguimientoTable />
-            <InformesMensualesTable />
+            {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
         </Box>
     )
 } 

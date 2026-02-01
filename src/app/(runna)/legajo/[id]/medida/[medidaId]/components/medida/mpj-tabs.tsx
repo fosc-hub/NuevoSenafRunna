@@ -106,7 +106,7 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
 
             {/* Tables outside tabs */}
             <HistorialSeguimientoTable />
-            <InformesMensualesTable />
+            {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
         </Box>
     )
 }

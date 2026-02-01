@@ -43,6 +43,7 @@ import {
   School as SchoolIcon,
   MedicalServices as MedicalIcon,
   LocalHospital as LocalHospitalIcon,
+  People as PeopleIcon,
 } from "@mui/icons-material"
 import {
   usePersonaLocalizacion,
@@ -51,6 +52,7 @@ import {
   usePersonaCondicionesVulnerabilidad,
 } from "../../hooks/usePersonaData"
 import { buildFullAddress } from "../../api/localizacion-api-service"
+import { PersonasRelacionadasSection } from "../personas-relacionadas"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface PersonaDetailModalProps {
@@ -276,8 +278,9 @@ export default function PersonaDetailModalEnhanced({
         <Tab icon={<SchoolIcon />} iconPosition="start" label="Educación" {...a11yProps(2)} />
         <Tab icon={<MedicalIcon />} iconPosition="start" label="Salud" {...a11yProps(3)} />
         <Tab icon={<WarningIcon />} iconPosition="start" label="Vulnerabilidad" {...a11yProps(4)} />
-        <Tab icon={<FolderOpenIcon />} iconPosition="start" label="Legajo" {...a11yProps(5)} />
-        <Tab icon={<InfoIcon />} iconPosition="start" label="Contexto" {...a11yProps(6)} />
+        <Tab icon={<PeopleIcon />} iconPosition="start" label="Familia" {...a11yProps(5)} />
+        <Tab icon={<FolderOpenIcon />} iconPosition="start" label="Legajo" {...a11yProps(6)} />
+        <Tab icon={<InfoIcon />} iconPosition="start" label="Contexto" {...a11yProps(7)} />
       </Tabs>
 
       <DialogContent sx={{ p: 0 }}>
@@ -888,8 +891,18 @@ export default function PersonaDetailModalEnhanced({
           )}
         </TabPanel>
 
-        {/* Tab 5: Información del Legajo */}
+        {/* Tab 5: Familia / Personas Relacionadas */}
         <TabPanel value={activeTab} index={5}>
+          <PersonasRelacionadasSection
+            legajoId={legajo?.id || 0}
+            nnyaId={persona?.id || 0}
+            readOnly={readOnly}
+            canEdit={permisos?.puede_editar}
+          />
+        </TabPanel>
+
+        {/* Tab 6: Información del Legajo */}
+        <TabPanel value={activeTab} index={6}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Información del Legajo
@@ -998,8 +1011,8 @@ export default function PersonaDetailModalEnhanced({
           </Grid>
         </TabPanel>
 
-        {/* Tab 6: Contexto Adicional */}
-        <TabPanel value={activeTab} index={6}>
+        {/* Tab 7: Contexto Adicional */}
+        <TabPanel value={activeTab} index={7}>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
             Contexto Adicional
           </Typography>

@@ -22,12 +22,14 @@ import ChangeCircleIcon from '@mui/icons-material/ChangeCircle'
 import type { TActividadPlanTrabajo } from '../../../types/actividades'
 
 // Valid state transitions based on PLTM-02 specification
-// Note: PENDIENTE_VISADO is auto-transitioned by backend when completing activity with requiere_visado_legales=true
-// Note: VISADO_APROBADO/VISADO_CON_OBSERVACION should ONLY be reached via /visar/ endpoint (VisarButton component)
+// Note: PENDIENTE_VISADO_JZ is auto-transitioned by backend when completing activity with requiere_visado_legales=true
+// Note: PENDIENTE_VISADO_JZ → PENDIENTE_VISADO should ONLY be done via /visar-jz/ endpoint (VisarJzButton component)
+// Note: PENDIENTE_VISADO → VISADO_APROBADO/VISADO_CON_OBSERVACION should ONLY be done via /visar/ endpoint (VisarButton component)
 const TRANSICIONES_PERMITIDAS: Record<string, string[]> = {
   'PENDIENTE': ['EN_PROGRESO', 'CANCELADA'],
   'EN_PROGRESO': ['COMPLETADA', 'CANCELADA', 'PENDIENTE'],
-  // COMPLETADA state removed - backend auto-transitions to PENDIENTE_VISADO if needed
+  // COMPLETADA state removed - backend auto-transitions to PENDIENTE_VISADO_JZ if needed
+  // PENDIENTE_VISADO_JZ transitions removed - use VisarJzButton component with /visar-jz/ endpoint
   // PENDIENTE_VISADO transitions removed - use VisarButton component with /visar/ endpoint
   'VISADO_CON_OBSERVACION': ['EN_PROGRESO'], // Can reopen after legal rejection
   'VENCIDA': ['EN_PROGRESO', 'CANCELADA'],
@@ -37,7 +39,8 @@ const ESTADO_LABELS: Record<string, string> = {
   'PENDIENTE': 'Pendiente',
   'EN_PROGRESO': 'En Progreso',
   'COMPLETADA': 'Completada',
-  'PENDIENTE_VISADO': 'Pendiente Visado',
+  'PENDIENTE_VISADO_JZ': 'Pendiente Visado JZ',
+  'PENDIENTE_VISADO': 'Pendiente Visado Legal',
   'VISADO_CON_OBSERVACION': 'Visado con Observación',
   'VISADO_APROBADO': 'Visado Aprobado',
   'CANCELADA': 'Cancelada',
@@ -183,7 +186,7 @@ export const CambiarEstadoSection: React.FC<CambiarEstadoSectionProps> = ({
             {/* Warnings */}
             {nuevoEstado === 'COMPLETADA' && actividad.requiere_visado_legales && (
               <Alert severity="info">
-                Esta actividad requiere visado legal. Al completarla, pasará automáticamente a estado &quot;Pendiente Visado&quot; y se notificará al equipo legal.
+                Esta actividad requiere visado. Al completarla, pasará a &quot;Pendiente Visado JZ&quot; para revisión del Jefe Zonal, y luego al equipo Legal para visado final.
               </Alert>
             )}
 

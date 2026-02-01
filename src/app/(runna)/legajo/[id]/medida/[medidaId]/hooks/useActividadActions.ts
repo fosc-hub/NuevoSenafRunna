@@ -9,6 +9,7 @@ import type {
   ReabrirRequest,
   TransferirRequest,
   VisarRequest,
+  VisarJzRequest,
   HistorialFilters
 } from '../types/actividades'
 
@@ -89,6 +90,14 @@ export const useActividadActions = () => {
     )
   }
 
+  // JZ approval (before Legal)
+  const visarJz = async (id: number, data: VisarJzRequest) => {
+    return handleAction(
+      () => actividadService.visarJz(id, data),
+      data.aprobado ? 'Visado JZ aprobado - Enviado a Legal' : 'Visado JZ rechazado'
+    )
+  }
+
   // Legal approval
   const visar = async (id: number, data: VisarRequest) => {
     return handleAction(
@@ -106,6 +115,7 @@ export const useActividadActions = () => {
     reabrir,
     getTransferencias,
     transferir,
+    visarJz,
     visar,
   }
 }

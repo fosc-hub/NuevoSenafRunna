@@ -20,6 +20,7 @@ import type {
   ReabrirRequest,
   TransferirRequest,
   VisarRequest,
+  VisarJzRequest,
   HistorialFilters,
   // Bulk operations
   BulkUpdateActividadesRequest,
@@ -263,6 +264,23 @@ export const actividadService = {
    */
   async visar(id: number, data: VisarRequest): Promise<TActividadPlanTrabajo> {
     return create<TActividadPlanTrabajo>(`actividades/${id}/visar/`, data, true, data.aprobado ? 'Visado aprobado' : 'Visado con observaciones')
+  },
+
+  /**
+   * JZ approval or rejection (visado JZ) - paso previo al visado Legal
+   * Endpoint: POST /api/actividades/{id}/visar-jz/
+   *
+   * Permission: JZ (jefe=true), Director (director=true), or Admin (is_superuser)
+   * Activity must be in PENDIENTE_VISADO_JZ state.
+   * - aprobado=true → PENDIENTE_VISADO (goes to Legal for final approval)
+   * - aprobado=false → EN_PROGRESO (returns for corrections)
+   *
+   * @param id - Activity ID
+   * @param data - JZ approval request (aprobado boolean, observaciones optional)
+   * @returns Updated activity with new state
+   */
+  async visarJz(id: number, data: VisarJzRequest): Promise<TActividadPlanTrabajo> {
+    return create<TActividadPlanTrabajo>(`actividades/${id}/visar-jz/`, data, true, data.aprobado ? 'Visado JZ aprobado' : 'Visado JZ rechazado')
   },
 
   // ============================================================================

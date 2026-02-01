@@ -210,9 +210,9 @@ export interface TActividadPlanTrabajo {
   /** Actual completion date (readonly, set when → COMPLETADA) */
   fecha_finalizacion_real: string | null
 
-  // State (PLTM-02: Updated to include legal approval states)
+  // State (PLTM-02: Updated to include JZ and legal approval states)
   /** Current activity state */
-  estado: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
+  estado: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO_JZ' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
 
   /** Display name for estado (readonly) */
   estado_display: string
@@ -500,7 +500,7 @@ export interface TTransferenciaActividad {
  * Endpoint: POST /api/actividades/{id}/cambiar-estado/
  */
 export interface CambiarEstadoRequest {
-  nuevo_estado: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
+  nuevo_estado: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO_JZ' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
   motivo?: string // Required for CANCELADA
 }
 
@@ -529,6 +529,16 @@ export interface TransferirRequest {
 export interface VisarRequest {
   aprobado: boolean // true = VISADO_APROBADO, false = VISADO_CON_OBSERVACION
   observaciones?: string // Required if aprobado=false, min 10 characters
+}
+
+/**
+ * Request for JZ approval/rejection (visado JZ)
+ * Endpoint: POST /api/actividades/{id}/visar-jz/
+ * Paso previo al visado Legal
+ */
+export interface VisarJzRequest {
+  aprobado: boolean // true = goes to PENDIENTE_VISADO (Legal), false = returns to EN_PROGRESO
+  observaciones?: string // Optional, recommended if rejecting
 }
 
 /**
@@ -624,7 +634,7 @@ export interface BulkUpdateActividadesRequest {
   updates: {
     responsable_principal?: number
     responsables_secundarios?: number[]
-    estado?: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
+    estado?: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'PENDIENTE_VISADO_JZ' | 'PENDIENTE_VISADO' | 'VISADO_CON_OBSERVACION' | 'VISADO_APROBADO' | 'CANCELADA' | 'VENCIDA'
     descripcion?: string
     fecha_planificacion?: string
     es_borrador?: boolean

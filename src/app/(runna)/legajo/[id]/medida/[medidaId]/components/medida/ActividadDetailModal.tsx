@@ -27,6 +27,7 @@ import { CambiarEstadoSection } from './actividad/CambiarEstadoSection'
 import { ReabrirButton } from './actividad/ReabrirButton'
 import { TransferirDialog } from './actividad/TransferirDialog'
 import { VisarButton } from './actividad/VisarButton'
+import { VisarJzButton } from './actividad/VisarJzButton'
 import { UnifiedActivityTab } from './actividad/UnifiedActivityTab'
 import { HistorialTab } from './actividad/HistorialTab'
 import { TransferenciasTab } from './actividad/TransferenciasTab'
@@ -69,7 +70,8 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
       'COMPLETADA': 'success',
       'CANCELADA': 'error',
       'VENCIDA': 'default',
-      'PENDIENTE_VISADO': 'secondary',
+      'PENDIENTE_VISADO_JZ': 'warning', // JZ review pending
+      'PENDIENTE_VISADO': 'secondary', // Legal review pending
       'VISADO_APROBADO': 'success',
       'VISADO_CON_OBSERVACION': 'warning'
     }
@@ -130,6 +132,20 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
           actions.cambiarEstado(actividad.id, { nuevo_estado: nuevoEstado, motivo })
         }
         loading={actions.loading}
+      />
+
+      {/* JZ Approval (before Legal) */}
+      <VisarJzButton
+        actividadId={actividad.id}
+        canVisarJZ={permissions.canVisarJZ}
+        onVisarJZ={(aprobado, observaciones) =>
+          actions.visarJz(actividad.id, { aprobado, observaciones })
+        }
+        loading={actions.loading}
+        onSuccess={() => {
+          handleSuccess()
+          onClose()
+        }}
       />
 
       {/* Legal Approval */}

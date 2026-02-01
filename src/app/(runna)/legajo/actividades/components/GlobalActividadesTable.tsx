@@ -63,7 +63,8 @@ const getEstadoColor = (estado: string): { backgroundColor: string; color: strin
     'PENDIENTE': { backgroundColor: '#ff9800', color: 'white' },
     'EN_PROGRESO': { backgroundColor: '#2196f3', color: 'white' },
     'COMPLETADA': { backgroundColor: '#4caf50', color: 'white' },
-    'PENDIENTE_VISADO': { backgroundColor: '#9c27b0', color: 'white' },
+    'PENDIENTE_VISADO_JZ': { backgroundColor: '#f57c00', color: 'white' }, // Orange darker - JZ review
+    'PENDIENTE_VISADO': { backgroundColor: '#9c27b0', color: 'white' }, // Purple - Legal review
     'VISADO_CON_OBSERVACION': { backgroundColor: '#ff5722', color: 'white' },
     'VISADO_APROBADO': { backgroundColor: '#009688', color: 'white' },
     'CANCELADA': { backgroundColor: '#f44336', color: 'white' },

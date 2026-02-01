@@ -59,6 +59,9 @@ import { RejectionDialog } from "./rejection-dialog"
 // Import business logic hook
 import { useRegistroIntervencion } from "../../../hooks/useRegistroIntervencion"
 
+// Import subtipo dispositivo service
+import { subtipoDispositivoService, type TSubtipoDispositivo } from "../../../services/subtipoDispositivoService"
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -138,6 +141,10 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     const [activeStep, setActiveStep] = useState(0)
     const [validationError, setValidationError] = useState<string | null>(null)
 
+    // Subtipo dispositivo state (dynamic loading based on tipo_dispositivo)
+    const [subtiposDispositivo, setSubtiposDispositivo] = useState<TSubtipoDispositivo[]>([])
+    const [isLoadingSubtipos, setIsLoadingSubtipos] = useState(false)
+
     // Validate medidaId on mount
     useEffect(() => {
         if (open && !medidaId) {
@@ -146,6 +153,27 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
             setValidationError(null)
         }
     }, [open, medidaId])
+
+    // Load subtipos when tipo_dispositivo changes
+    useEffect(() => {
+        const loadSubtipos = async () => {
+            if (formData.tipo_dispositivo_id) {
+                setIsLoadingSubtipos(true)
+                try {
+                    const subtipos = await subtipoDispositivoService.list(formData.tipo_dispositivo_id)
+                    setSubtiposDispositivo(subtipos)
+                } catch (error) {
+                    console.error('Error loading subtipos dispositivo:', error)
+                    setSubtiposDispositivo([])
+                } finally {
+                    setIsLoadingSubtipos(false)
+                }
+            } else {
+                setSubtiposDispositivo([])
+            }
+        }
+        loadSubtipos()
+    }, [formData.tipo_dispositivo_id])
 
     const [showSuccessMessage, setShowSuccessMessage] = useState(false)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
@@ -423,7 +451,14 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                     <InputLabel>Tipo de dispositivo (opcional)</InputLabel>
                                     <Select
                                         value={formData.tipo_dispositivo_id || ''}
-                                        onChange={(e) => updateField('tipo_dispositivo_id', e.target.value ? Number(e.target.value) : null)}
+                                        onChange={(e) => {
+                                            const newValue = e.target.value ? Number(e.target.value) : null
+                                            updateField('tipo_dispositivo_id', newValue)
+                                            // Clear subtipo when tipo changes
+                                            if (newValue !== formData.tipo_dispositivo_id) {
+                                                updateField('subtipo_dispositivo', null)
+                                            }
+                                        }}
                                         label="Tipo de dispositivo (opcional)"
                                         disabled={!canEdit || isLoadingCatalogs}
                                     >
@@ -445,14 +480,23 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                     <InputLabel>Subtipo de dispositivo (opcional)</InputLabel>
                                     <Select
                                         value={formData.subtipo_dispositivo || ''}
-                                        onChange={(e) => updateField('subtipo_dispositivo', e.target.value)}
+                                        onChange={(e) => updateField('subtipo_dispositivo', e.target.value || null)}
                                         label="Subtipo de dispositivo (opcional)"
-                                        disabled={!canEdit}
+                                        disabled={!canEdit || !formData.tipo_dispositivo_id || isLoadingSubtipos}
                                     >
                                         <MenuItem value="">Sin especificar</MenuItem>
-                                        <MenuItem value="RESIDENCIA CHE GUEVARA">RESIDENCIA CHE GUEVARA</MenuItem>
-                                        <MenuItem value="RESIDENCIA MADRES ADOLESCENTES">RESIDENCIA MADRES ADOLESCENTES</MenuItem>
+                                        {subtiposDispositivo.map((subtipo) => (
+                                            <MenuItem key={subtipo.id} value={subtipo.id}>
+                                                {subtipo.nombre}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
+                                    {isLoadingSubtipos && (
+                                        <FormHelperText>Cargando subtipos...</FormHelperText>
+                                    )}
+                                    {!formData.tipo_dispositivo_id && (
+                                        <FormHelperText>Seleccione primero un tipo de dispositivo</FormHelperText>
+                                    )}
                                 </FormControl>
                             </Box>
                         </Card>

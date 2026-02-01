@@ -11,6 +11,7 @@ import type { TActividadPlanTrabajo } from '../types/actividades'
  * - canAddActivity: Any user can add comments/files (unless activity is locked)
  * - canReopen: JZ OR Director OR Admin (only for locked activities)
  * - canTransfer: JZ OR Director (nivel 3-4)
+ * - canVisarJZ: JZ OR Director OR Admin (estado must be PENDIENTE_VISADO_JZ)
  * - canVisar: Legal team members OR Admin (estado must be PENDIENTE_VISADO)
  * - isLocked: Activity in COMPLETADA, CANCELADA, or VISADO_APROBADO state
  * - isResponsable: User is the responsable_principal of the activity
@@ -25,6 +26,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
         canAddActivity: false,
         canReopen: false,
         canTransfer: false,
+        canVisarJZ: false,
         canVisar: false,
         isLocked: false,
         isResponsable: false,
@@ -74,6 +76,9 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     // canTransfer: JZ OR Director (nivel 3+)
     const canTransfer = !isLocked && (isJZ || isDirector)
 
+    // canVisarJZ: JZ OR Director OR Admin, and activity must be in PENDIENTE_VISADO_JZ state
+    const canVisarJZ = (isJZ || isDirector || isAdmin) && actividad.estado === 'PENDIENTE_VISADO_JZ'
+
     // canVisar: Legal team OR Admin, and activity must be in PENDIENTE_VISADO state
     const canVisar = (isLegal || isAdmin) && actividad.estado === 'PENDIENTE_VISADO'
 
@@ -82,6 +87,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
       canAddActivity,
       canReopen,
       canTransfer,
+      canVisarJZ,
       canVisar,
       isLocked,
       isResponsable,

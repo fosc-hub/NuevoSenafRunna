@@ -8,9 +8,9 @@ import { InnovacionTab } from "./mpe-tabs/innovacion-tab"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
 import { CeseTab } from "./mpe-tabs/cese-tab"
-import { HistorialSeguimientoTable } from "./historial-seguimiento-table"
 import { InformesMensualesTable } from "./informes-mensuales-table"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
+import { HistorialTab } from "./historial/historial-tab"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPETabsProps {
@@ -56,6 +56,7 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                     <Tab label="Cese" />
                     <Tab label="Post cese" />
                     <Tab label="Documentos Demanda" />
+                    <Tab label="Historial" />
                 </Tabs>
             </Box>
 
@@ -75,6 +76,14 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                     )
                 )}
                 {activeTab === 5 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
+                {activeTab === 6 && (
+                    <HistorialTab
+                        medidaId={medidaApiData?.id}
+                        numeroMedida={typeof medidaApiData?.numero_medida === 'string'
+                            ? medidaApiData.numero_medida
+                            : `MED-${medidaApiData?.id}`}
+                    />
+                )}
             </Box>
 
             {/* Plan de Trabajo - Always visible */}
@@ -88,8 +97,7 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                 )}
             </Box>
 
-            {/* Tables outside tabs */}
-            <HistorialSeguimientoTable />
+            {/* Informes Mensuales Table */}
             {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
         </Box>
     )

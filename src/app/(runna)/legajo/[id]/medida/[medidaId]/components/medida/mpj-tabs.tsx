@@ -5,8 +5,8 @@ import { useState } from "react"
 import { Box, Tabs, Tab } from "@mui/material"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
-import { HistorialSeguimientoTable } from "./historial-seguimiento-table"
 import { InformesMensualesTable } from "./informes-mensuales-table"
+import { HistorialTab } from "./historial/historial-tab"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPJTabsProps {
@@ -50,6 +50,7 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
                     <Tab label="Proceso" />
                     <Tab label="Cese" />
                     <Tab label="Documentos Demanda" />
+                    <Tab label="Historial" />
                 </Tabs>
             </Box>
 
@@ -102,10 +103,19 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
 
                 {/* Tab Documentos Demanda */}
                 {activeTab === 3 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
+
+                {/* Tab Historial */}
+                {activeTab === 4 && (
+                    <HistorialTab
+                        medidaId={medidaApiData?.id}
+                        numeroMedida={typeof medidaApiData?.numero_medida === 'string'
+                            ? medidaApiData.numero_medida
+                            : `MED-${medidaApiData?.id}`}
+                    />
+                )}
             </Box>
 
-            {/* Tables outside tabs */}
-            <HistorialSeguimientoTable />
+            {/* Informes Mensuales Table */}
             {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
         </Box>
     )

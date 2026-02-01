@@ -16,9 +16,8 @@ import { PlanTrabajoTab } from "./[medidaId]/components/medida/mpe-tabs/plan-tra
 import { PlanEvaluacionSection } from "./[medidaId]/components/medida/plan-evaluacion-section"
 import { EvaluacionFamiliarSection } from "./[medidaId]/components/medida/evaluacion-familiar-section"
 import { LegajosAfectadosSection } from "./[medidaId]/components/medida/legajos-afectados-section"
-import { HistorialSeguimientoSection } from "./[medidaId]/components/medida/historial-seguimiento-section"
-import { HistorialSeguimientoTable } from "./[medidaId]/components/medida/historial-seguimiento-table"
 import { InformesMensualesTable } from "./[medidaId]/components/medida/informes-mensuales-table"
+import { HistorialTab } from "./[medidaId]/components/medida/historial/historial-tab"
 import { CierreSection } from "./[medidaId]/components/medida/cierre-section"
 import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-informe-section"
 import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-dialog"
@@ -665,14 +664,19 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 )}
               </Grid>
 
-              {/* Historial de seguimiento - Detailed Table */}
+              {/* Historial de seguimiento - Unified Timeline */}
               <Grid item xs={12}>
-                <HistorialSeguimientoTable />
+                <HistorialTab
+                  medidaId={medidaApiData?.id}
+                  numeroMedida={typeof medidaApiData?.numero_medida === 'string'
+                    ? medidaApiData.numero_medida
+                    : `MED-${medidaApiData?.id}`}
+                />
               </Grid>
 
               {/* Informes Mensuales - Detailed Table */}
               <Grid item xs={12}>
-                <InformesMensualesTable />
+                {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
               </Grid>
             </Grid>
           </>

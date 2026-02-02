@@ -37,10 +37,16 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
   console.log('User data from Zustand:', user)
   console.log('All permissions:', user?.all_permissions)
 
+  // Check if user is in Legal group
+  const isLegalUser = user?.groups?.some(
+    (g: { id: number; name: string }) => ['legal', 'legales', 'equipo legal'].includes(g.name.toLowerCase())
+  )
+
   // Check if user has the permission
   const hasAddPermission = user?.all_permissions?.includes('add_tdemanda') ||
     user?.is_superuser ||
-    user?.is_staff
+    user?.is_staff ||
+    isLegalUser
 
   console.log('Has add_tdemanda permission:', hasAddPermission)
   console.log('Is superuser:', user?.is_superuser)

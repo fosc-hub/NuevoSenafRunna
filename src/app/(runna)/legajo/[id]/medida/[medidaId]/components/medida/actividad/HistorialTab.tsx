@@ -48,13 +48,17 @@ const getIconByTipoAccion = (tipo: string) => {
     'COMENTARIO': <CommentIcon />,
     'VISADO_APROBADO': <CheckCircleIcon />,
     'VISADO_RECHAZADO': <CancelIcon />,
+    'VISADO_JZ_APROBADO': <CheckCircleIcon />,
+    'VISADO_JZ_RECHAZADO': <CancelIcon />,
+    'VISADO_DIR_APROBADO': <CheckCircleIcon />,
+    'VISADO_DIR_RECHAZADO': <CancelIcon />,
     'TRANSFERENCIA': <SwapHorizIcon />,
   }
   return icons[tipo] || <ChangeCircleIcon />
 }
 
-const getColorByTipoAccion = (tipo: string): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'default' => {
-  const colors: Record<string, any> = {
+const getColorByTipoAccion = (tipo: string): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' => {
+  const colors: Record<string, 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
     'CREACION': 'info',
     'CAMBIO_ESTADO': 'primary',
     'EDICION_CAMPOS': 'secondary',
@@ -64,9 +68,13 @@ const getColorByTipoAccion = (tipo: string): 'primary' | 'secondary' | 'success'
     'COMENTARIO': 'primary',
     'VISADO_APROBADO': 'success',
     'VISADO_RECHAZADO': 'error',
+    'VISADO_JZ_APROBADO': 'success',
+    'VISADO_JZ_RECHAZADO': 'error',
+    'VISADO_DIR_APROBADO': 'success',
+    'VISADO_DIR_RECHAZADO': 'error',
     'TRANSFERENCIA': 'warning',
   }
-  return colors[tipo] || 'default'
+  return colors[tipo] || 'info'
 }
 
 export const HistorialTab: React.FC<HistorialTabProps> = ({

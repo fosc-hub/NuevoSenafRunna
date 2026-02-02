@@ -80,21 +80,31 @@ export const getZonasDisponibles = async (): Promise<ZonaInfo[]> => {
 export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> => {
   try {
     // Endpoint: /api/users-zonas/?zona={zonaId}
-    // Retorna: { id, user: <user_id>, zona, jefe, director, legal }
-    // NOTA: 'user' es solo el ID, NO el objeto completo
+    // Response includes expanded user data (user_detail) with the user information
 
     interface UserZonaResponse {
       id: number
-      user: number  // ← Solo el ID del usuario
+      user: number
       zona: number
       jefe: boolean
       director: boolean
       legal: boolean
       localidad: number | null
+      // Expanded user details from backend
+      user_detail?: {
+        id: number
+        username: string
+        first_name: string
+        last_name: string
+        email: string
+      }
     }
 
-    // 1. Obtener relaciones users-zonas
-    const userZonasResponse = await get<UserZonaResponse[] | { results: UserZonaResponse[] }>('users-zonas/', { zona: zonaId })
+    // Obtener relaciones users-zonas con datos de usuario expandidos
+    const userZonasResponse = await get<UserZonaResponse[] | { results: UserZonaResponse[] }>(
+      'users-zonas/',
+      { zona: zonaId, page_size: 500 }
+    )
     const userZonas = extractArray(userZonasResponse)
 
     console.log(`UserZonas for zona ${zonaId}:`, userZonas)
@@ -103,27 +113,25 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
       return []
     }
 
-    // 2. Extraer IDs de usuarios
-    const userIds = userZonas.map((uz: UserZonaResponse) => uz.user)
+    // Map user details from expanded response
+    const users: UserInfo[] = userZonas
+      .filter((uz: UserZonaResponse) => uz.user_detail)
+      .map((uz: UserZonaResponse) => {
+        const detail = uz.user_detail!
+        return {
+          id: detail.id,
+          username: detail.username,
+          first_name: detail.first_name,
+          last_name: detail.last_name,
+          email: detail.email,
+          nombre_completo: detail.first_name && detail.last_name
+            ? `${detail.first_name} ${detail.last_name}`.trim()
+            : detail.username
+        }
+      })
 
-    // 3. Obtener todos los usuarios del sistema
-    const allUsersResponse = await get<UserInfo[] | { results: UserInfo[] }>('users/')
-    const allUsers = extractArray(allUsersResponse)
-
-    // 4. Filtrar solo los usuarios que están en la zona
-    const usersInZona = allUsers.filter((user: UserInfo) => userIds.includes(user.id))
-
-    // 5. Asegurar que cada usuario tenga nombre_completo
-    const usersWithNombreCompleto = usersInZona.map(user => ({
-      ...user,
-      nombre_completo: user.nombre_completo ||
-                       (user.first_name && user.last_name
-                         ? `${user.first_name} ${user.last_name}`.trim()
-                         : user.username)
-    }))
-
-    console.log(`Users for zona ${zonaId} fetched:`, usersWithNombreCompleto)
-    return usersWithNombreCompleto
+    console.log(`Users for zona ${zonaId} fetched:`, users)
+    return users
   } catch (error) {
     console.error(`Error fetching users for zona ${zonaId}:`, error)
     return []

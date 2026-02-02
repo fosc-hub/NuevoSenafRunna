@@ -91,39 +91,25 @@ export default function Header() {
       <div className="flex items-center gap-3">
         {/* Botones de Navegación */}
         <div className="flex gap-2">
-          <Link href="/mesadeentrada">
-            <button
-              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
-              }}
-            >
-              Mesa de Entradas
-            </button>
+          <Link
+            href="/mesadeentrada"
+            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)]"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            Mesa de Entradas
           </Link>
-          <Link href="/legajo-mesa">
-            <button
-              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
-              }}
-            >
-              Bandeja de legajos
-            </button>
+          <Link
+            href="/legajo-mesa"
+            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)]"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            Bandeja de legajos
           </Link>
         </div>
 

@@ -47,16 +47,22 @@ export const getTiposVinculo = async (): Promise<TTipoVinculo[]> => {
   try {
     console.log("Obteniendo tipos de vínculo...")
 
-    const response = await get<TTipoVinculo[]>("tipos-vinculo/")
+    const response = await get<TTipoVinculo[] | PaginatedResponse<TTipoVinculo>>("tipos-vinculo/?page_size=500")
 
-    if (!response || !Array.isArray(response)) {
-      console.warn("Respuesta inválida de tipos de vínculo:", response)
-      return []
+    // Handle both array and paginated response formats
+    if (Array.isArray(response)) {
+      console.log(`Tipos de vínculo obtenidos: ${response.length} (array format)`)
+      return response
     }
 
-    console.log(`Tipos de vínculo obtenidos: ${response.length}`)
+    // Handle paginated response
+    if (response && 'results' in response && Array.isArray(response.results)) {
+      console.log(`Tipos de vínculo obtenidos: ${response.results.length} de ${response.count} (paginated format)`)
+      return response.results
+    }
 
-    return response
+    console.warn("Respuesta inválida de tipos de vínculo:", response)
+    return []
   } catch (error: any) {
     console.error("Error obteniendo tipos de vínculo:", error)
 

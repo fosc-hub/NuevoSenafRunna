@@ -23,7 +23,7 @@ import {
   Send as SendIcon,
   Assignment as AssignmentIcon,
 } from "@mui/icons-material"
-import { create } from "@/app/api/apiService"
+import { create, get } from "@/app/api/apiService"
 import { useConditionalData, extractArray } from "@/hooks/useApiQuery"
 import { toast } from "react-toastify"
 
@@ -50,8 +50,18 @@ interface User {
   first_name: string
   last_name: string
   email: string
-  zonas: Array<{ id: number; zona: number }>
-  zonas_ids: number[]
+  zonas?: Array<{ id: number; zona: number }>
+  zonas_ids?: number[]
+}
+
+interface UserZona {
+  id: number
+  director: boolean
+  jefe: boolean
+  legal: boolean
+  user: number
+  zona: number
+  localidad: number
 }
 
 interface DemandaZona {
@@ -72,9 +82,11 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   const [objetivo, setObjetivo] = useState<string>("peticion_informe")
   const [selectedUsers, setSelectedUsers] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [usersForSelectedZona, setUsersForSelectedZona] = useState<User[]>([])
+  const [isLoadingUsersForZona, setIsLoadingUsersForZona] = useState(false)
 
   // Fetch main data using TanStack Query (only when modal is open)
-  const { data: mainData, isLoading: isDataLoading } = useConditionalData<{
+  const { data: mainData, isLoading: isDataLoading, refetch: refetchMainData } = useConditionalData<{
     zonas: Zona[]
     demanda_zonas: DemandaZona[]
     users: User[]
@@ -118,6 +130,35 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       setObjetivo("peticion_informe")
     }
   }, [lastActiveDemandaZona])
+
+  // Fetch users for selected zona using the users-zonas endpoint
+  useEffect(() => {
+    const fetchUsersForZona = async () => {
+      if (!selectedZona) {
+        setUsersForSelectedZona([])
+        return
+      }
+
+      setIsLoadingUsersForZona(true)
+      try {
+        const response = await get<{ count: number; results: UserZona[] }>(
+          `users-zonas/?zona=${selectedZona}&page_size=500`
+        )
+
+        // Map user IDs from users-zonas to actual user objects from the main users list
+        const userIds = response.results?.map((uz) => uz.user) || []
+        const filteredUsers = users.filter((user) => userIds.includes(user.id))
+        setUsersForSelectedZona(filteredUsers)
+      } catch (error) {
+        console.error("Error fetching users for zona:", error)
+        setUsersForSelectedZona([])
+      } finally {
+        setIsLoadingUsersForZona(false)
+      }
+    }
+
+    fetchUsersForZona()
+  }, [selectedZona, users])
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue)
@@ -171,7 +212,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       )
 
       // Recargar los datos para obtener la última asignación
-      await fetchData()
+      await refetchMainData()
       setComentarios("")
     } catch (error) {
       console.error("Error assigning demanda:", error)
@@ -181,11 +222,10 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     }
   }
 
+  // Get users for selected zona (now fetched via useEffect above)
   const filteredUsersByZona = useMemo(() => {
-    return (zonaId: number) => {
-      return users.filter((user) => user.zonas_ids.includes(zonaId))
-    }
-  }, [users])
+    return usersForSelectedZona
+  }, [usersForSelectedZona])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -277,16 +317,26 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
                       </Typography>
                       <Autocomplete
                         multiple
-                        options={filteredUsersByZona(selectedZona)}
+                        options={filteredUsersByZona}
                         getOptionLabel={(option) => option.username}
-                        value={users.filter((user) => selectedUsers.includes(user.id))}
+                        value={filteredUsersByZona.filter((user) => selectedUsers.includes(user.id))}
                         onChange={(_, newValue) => setSelectedUsers(newValue.map((user) => user.id))}
+                        loading={isLoadingUsersForZona}
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            placeholder="Seleccione usuarios responsables"
+                            placeholder={isLoadingUsersForZona ? "Cargando usuarios..." : "Seleccione usuarios responsables"}
                             size="small"
                             fullWidth
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {isLoadingUsersForZona ? <CircularProgress color="inherit" size={20} /> : null}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
                           />
                         )}
                         renderTags={(value, getTagProps) =>
@@ -304,9 +354,10 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
                             />
                           ))
                         }
-                        disabled={isLoading}
+                        disabled={isLoading || isLoadingUsersForZona}
+                        noOptionsText={isLoadingUsersForZona ? "Cargando..." : "No hay usuarios en esta zona"}
                       />
-                      {selectedUsers.length === 0 && (
+                      {selectedUsers.length === 0 && !isLoadingUsersForZona && (
                         <FormHelperText>Seleccione al menos un usuario responsable</FormHelperText>
                       )}
                     </FormControl>

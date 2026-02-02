@@ -33,13 +33,10 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const user = useUser((state) => state.user)
 
-  // Debug logging
-  console.log('User data from Zustand:', user)
-  console.log('All permissions:', user?.all_permissions)
-
   // Check if user is in Legal group
   const isLegalUser = user?.groups?.some(
-    (g: { id: number; name: string }) => ['legal', 'legales', 'equipo legal'].includes(g.name.toLowerCase())
+    (g: { id: number; name: string }) =>
+      ['legal', 'legales', 'equipo legal', 'invitado legal'].includes(g.name?.toLowerCase() || '')
   )
 
   // Check if user has the permission
@@ -47,10 +44,6 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
     user?.is_superuser ||
     user?.is_staff ||
     isLegalUser
-
-  console.log('Has add_tdemanda permission:', hasAddPermission)
-  console.log('Is superuser:', user?.is_superuser)
-  console.log('Is staff:', user?.is_staff)
 
   const [filterState, setFilterState] = useState<FilterState>({
     envio_de_respuesta: null,

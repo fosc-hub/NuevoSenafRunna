@@ -103,10 +103,10 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
   >(`auditoria-demanda-zona/${demandaId}`, open && !!demandaId)
   const auditHistory = extractArray(auditHistoryData)
 
-  // Extract data from response
-  const zonas = mainData?.zonas || []
-  const demandaZonas = mainData?.demanda_zonas || []
-  const users = mainData?.users || []
+  // Extract data from response (memoize to prevent infinite loops)
+  const zonas = useMemo(() => mainData?.zonas || [], [mainData?.zonas])
+  const demandaZonas = useMemo(() => mainData?.demanda_zonas || [], [mainData?.demanda_zonas])
+  const users = useMemo(() => mainData?.users || [], [mainData?.users])
 
   // Obtener la última demanda zona activa
   const lastActiveDemandaZona = useMemo(() => {

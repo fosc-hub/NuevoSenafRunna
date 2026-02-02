@@ -109,6 +109,81 @@ export const fetchTiposVinculoPersona = async (): Promise<TipoVinculoPersona[]> 
 // ============================================================================
 
 /**
+ * Generic NNyA update request interface
+ * Supports all fields that can be updated via PATCH /api/legajos/{id}/nnya/
+ */
+export interface NNyAUpdateRequest {
+  // Personal info
+  nombre?: string
+  nombre_autopercibido?: string | null
+  apellido?: string
+  fecha_nacimiento?: string | null
+  edad_aproximada?: number | null
+  nacionalidad?: string | null
+  dni?: number | null
+  situacion_dni?: string | null
+  genero?: string | null
+  telefono?: string | null
+  observaciones?: string | null
+  fecha_defuncion?: string | null
+  // Nested objects
+  localizacion?: {
+    calle?: string
+    casa_nro?: string // NOT NULL in DB - send empty string if not provided
+    piso?: string
+    departamento?: string
+    barrio?: number | null // FK to barrio
+    localidad?: number | null // FK to localidad
+    cpc?: number | null // FK to CPC
+    referencia_geo?: string
+    mza?: number | null // Integer
+    lote?: number | null // Integer
+  } | null
+  educacion?: {
+    institucion_educativa?: number | null // FK
+    nivel_alcanzado?: string | null // Enum key
+    esta_escolarizado?: boolean
+    ultimo_cursado?: string | null // Enum key
+    tipo_escuela?: string | null // Enum key
+    comentarios_educativos?: string | null
+  } | null
+  cobertura_medica?: {
+    institucion_sanitaria?: number | null // FK
+    obra_social?: string | null // Enum key
+    intervencion?: string | null // Enum key
+    auh?: boolean
+    medico_cabecera?: number | null // FK to TMedico
+    observaciones?: string | null
+  } | null
+  condiciones_vulnerabilidad?: number[] | null
+  persona_enfermedades?: number[] | null
+  personas_relacionadas?: PersonaRelacionadaRequest[]
+}
+
+/**
+ * Update NNyA data (general update for all fields)
+ * Uses PATCH /api/legajos/{id}/nnya/ endpoint
+ *
+ * @param legajoId Legajo ID
+ * @param data Fields to update
+ * @returns Updated NNyA data
+ */
+export const updateNNyAData = async (
+  legajoId: number,
+  data: NNyAUpdateRequest
+): Promise<NNyADataResponse> => {
+  try {
+    console.log(`[NNyA] Updating NNyA data for legajo ${legajoId}:`, data)
+    const response = await axiosInstance.patch<NNyADataResponse>(`legajos/${legajoId}/nnya/`, data)
+    console.log(`[NNyA] Updated NNyA data:`, response.data)
+    return response.data
+  } catch (error: any) {
+    console.error(`[NNyA] Error updating NNyA data:`, error)
+    throw error
+  }
+}
+
+/**
  * Update personas relacionadas for a legajo
  * Uses PATCH /api/legajos/{id}/nnya/ endpoint with personas_relacionadas field
  *

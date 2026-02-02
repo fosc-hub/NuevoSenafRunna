@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,15 @@ import {
   ListItemText,
   ListItemIcon,
   CircularProgress,
+  TextField,
+  FormControlLabel,
+  Switch,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material"
+import { Save as SaveIcon, Cancel as CancelIcon } from "@mui/icons-material"
 import {
   Close as CloseIcon,
   Person as PersonIcon,
@@ -45,15 +53,17 @@ import {
   LocalHospital as LocalHospitalIcon,
   People as PeopleIcon,
 } from "@mui/icons-material"
-import {
-  usePersonaLocalizacion,
-  usePersonaEducacion,
-  usePersonaCoberturaMedica,
-  usePersonaCondicionesVulnerabilidad,
-} from "../../hooks/usePersonaData"
+import { usePersonaCondicionesVulnerabilidad } from "../../hooks/usePersonaData"
+import { useNNyAData } from "../../hooks/usePersonasRelacionadas"
 import { buildFullAddress } from "../../api/localizacion-api-service"
+import { updateNNyAData, type NNyAUpdateRequest } from "../../api/personas-relacionadas-api-service"
 import { PersonasRelacionadasSection } from "../personas-relacionadas"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
+import { toast } from "react-toastify"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { fetchDropdownData } from "@/components/forms/utils/fetchFormCase"
+import type { DropdownData } from "@/components/forms/types/formTypes"
+import { Autocomplete } from "@mui/material"
 
 interface PersonaDetailModalProps {
   open: boolean
@@ -153,6 +163,93 @@ const copyToClipboard = async (text: string, label: string) => {
   }
 }
 
+// Form state interface for inline editing
+interface PersonaFormState {
+  // Personal info
+  nombre: string
+  nombre_autopercibido: string
+  apellido: string
+  fecha_nacimiento: string
+  edad_aproximada: string
+  nacionalidad: string
+  dni: string
+  situacion_dni: string
+  genero: string
+  telefono: string
+  observaciones: string
+  // Location - FKs are numbers, strings for text fields
+  calle: string
+  numero: string
+  piso: string
+  departamento: string
+  barrio: number | null // FK
+  localidad: number | null // FK
+  cpc: number | null // FK
+  referencia_geo: string
+  mza: string // Will be converted to number on save
+  lote: string // Will be converted to number on save
+  // Education - FK for institucion, enum keys for choices
+  institucion_educativa: number | null // FK
+  nivel_alcanzado: string // Enum key
+  esta_escolarizado: boolean
+  ultimo_cursado: string // Enum key
+  tipo_escuela: string // Enum key
+  comentarios_educativos: string
+  // Health - FK for institucion and medico, enum keys for choices
+  institucion_sanitaria: number | null // FK
+  obra_social: string // Enum key
+  intervencion: string // Enum key
+  auh: boolean
+  medico_cabecera: number | null // FK to TMedico
+  // Display-only fields for medico (read from API, not sent back)
+  medico_nombre: string
+  medico_mail: string
+  medico_telefono: string
+  observaciones_medicas: string
+  // Vulnerability
+  condiciones_vulnerabilidad: number[]
+}
+
+const initialFormState: PersonaFormState = {
+  nombre: "",
+  nombre_autopercibido: "",
+  apellido: "",
+  fecha_nacimiento: "",
+  edad_aproximada: "",
+  nacionalidad: "",
+  dni: "",
+  situacion_dni: "",
+  genero: "",
+  telefono: "",
+  observaciones: "",
+  calle: "",
+  numero: "",
+  piso: "",
+  departamento: "",
+  barrio: null,
+  localidad: null,
+  cpc: null,
+  referencia_geo: "",
+  mza: "",
+  lote: "",
+  institucion_educativa: null,
+  nivel_alcanzado: "",
+  esta_escolarizado: false,
+  ultimo_cursado: "",
+  tipo_escuela: "",
+  comentarios_educativos: "",
+  institucion_sanitaria: null,
+  obra_social: "",
+  intervencion: "",
+  auh: false,
+  medico_cabecera: null,
+  medico_nombre: "",
+  medico_mail: "",
+  medico_telefono: "",
+  observaciones_medicas: "",
+  condiciones_vulnerabilidad: [],
+}
+
 export default function PersonaDetailModalEnhanced({
   open,
   onClose,
@@ -162,7 +259,11 @@ export default function PersonaDetailModalEnhanced({
 }: PersonaDetailModalProps) {
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"))
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState(0)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [formData, setFormData] = useState<PersonaFormState>(initialFormState)
 
   // Extract data
   const persona = legajoData?.persona
@@ -172,20 +273,27 @@ export default function PersonaDetailModalEnhanced({
   const demandas = legajoData?.demandas_relacionadas
   const permisos = legajoData?.permisos_usuario
   const personaId = persona?.id
+  const legajoId = legajo?.id
 
-  // Fetch persona data using React Query hooks
-  const { data: localizacion, isLoading: loadingLocalizacion } = usePersonaLocalizacion(personaId, {
-    enabled: open && !!personaId,
+  // Fetch NNyA data from unified endpoint (includes localizacion, educacion, cobertura_medica)
+  const { data: nnyaData, isLoading: loadingNNyA } = useNNyAData(legajoId, {
+    enabled: open && !!legajoId,
   })
 
-  const { data: educacion, isLoading: loadingEducacion } = usePersonaEducacion(personaId, {
-    enabled: open && !!personaId && activeTab === 2, // Only load when Education tab is active
-  })
+  // Extract data from NNyA response
+  const localizacion = nnyaData?.localizacion || null
+  const educacion = nnyaData?.educacion || null
+  const saludData = nnyaData ? {
+    cobertura_medica: nnyaData.cobertura_medica || null,
+    persona_enfermedades: nnyaData.persona_enfermedades || [],
+  } : null
 
-  const { data: saludData, isLoading: loadingSalud } = usePersonaCoberturaMedica(personaId, {
-    enabled: open && !!personaId && activeTab === 3, // Only load when Health tab is active
-  })
+  // Loading states derived from NNyA loading
+  const loadingLocalizacion = loadingNNyA
+  const loadingEducacion = loadingNNyA
+  const loadingSalud = loadingNNyA
 
+  // Fetch vulnerability data (separate endpoint for now)
   const { data: vulnerabilidadData, isLoading: loadingVulnerabilidad } = usePersonaCondicionesVulnerabilidad(
     personaId,
     {
@@ -193,8 +301,173 @@ export default function PersonaDetailModalEnhanced({
     }
   )
 
+  // Fetch dropdown data for edit mode
+  const { data: dropdownData, isLoading: loadingDropdowns } = useQuery<DropdownData>({
+    queryKey: ["registro-demanda-form-dropdowns"],
+    queryFn: fetchDropdownData,
+    enabled: open && isEditing,
+    staleTime: 60 * 60 * 1000, // 1 hour
+  })
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue)
+  }
+
+  // Initialize form data when entering edit mode
+  const initializeFormData = () => {
+    // Helper to extract ID from object or return value if already a number
+    const extractId = (value: any): number | null => {
+      if (!value) return null
+      if (typeof value === "number") return value
+      if (typeof value === "object" && value.id) return value.id
+      return null
+    }
+
+    // Use NNyA data which has the correct field names from /api/legajos/{id}/nnya/
+    const loc = localizacion as any
+    const edu = educacion as any
+    const salud = saludData?.cobertura_medica as any
+
+    setFormData({
+      nombre: nnyaData?.nombre || persona?.nombre || "",
+      nombre_autopercibido: nnyaData?.nombre_autopercibido || persona?.nombre_autopercibido || "",
+      apellido: nnyaData?.apellido || persona?.apellido || "",
+      fecha_nacimiento: nnyaData?.fecha_nacimiento || persona?.fecha_nacimiento || "",
+      edad_aproximada: (nnyaData?.edad_aproximada || persona?.edad_aproximada)?.toString() || "",
+      nacionalidad: nnyaData?.nacionalidad || persona?.nacionalidad || "",
+      dni: (nnyaData?.dni || persona?.dni)?.toString() || "",
+      situacion_dni: nnyaData?.situacion_dni || persona?.situacion_dni || "",
+      genero: nnyaData?.genero || persona?.genero || "",
+      telefono: (nnyaData?.telefono || persona?.telefono)?.toString() || "",
+      observaciones: nnyaData?.observaciones || persona?.observaciones || "",
+      // Location - NNyA response uses casa_nro, piso_depto, and FKs are already integers
+      calle: loc?.calle || "",
+      numero: loc?.casa_nro?.toString() || "", // API field is casa_nro
+      piso: loc?.piso_depto || "", // API field is piso_depto
+      departamento: "", // Not in NNyA response
+      barrio: typeof loc?.barrio === "number" ? loc.barrio : extractId(loc?.barrio),
+      localidad: typeof loc?.localidad === "number" ? loc.localidad : extractId(loc?.localidad),
+      cpc: typeof loc?.cpc === "number" ? loc.cpc : extractId(loc?.cpc),
+      referencia_geo: loc?.referencia_geo || "",
+      mza: loc?.mza?.toString() || "",
+      lote: loc?.lote?.toString() || "",
+      // Education - institucion_educativa can be object with id/nombre
+      institucion_educativa: extractId(edu?.institucion_educativa),
+      nivel_alcanzado: edu?.nivel_alcanzado || "",
+      esta_escolarizado: edu?.esta_escolarizado || false,
+      ultimo_cursado: edu?.ultimo_cursado || "",
+      tipo_escuela: edu?.tipo_escuela || "",
+      comentarios_educativos: edu?.comentarios_educativos || "",
+      // Health - institucion_sanitaria can be object with id/nombre
+      institucion_sanitaria: extractId(salud?.institucion_sanitaria),
+      obra_social: salud?.obra_social || "",
+      intervencion: salud?.intervencion || "",
+      auh: salud?.auh || false,
+      medico_cabecera: extractId(salud?.medico_cabecera),
+      // Display-only fields for medico info
+      medico_nombre: salud?.medico_cabecera?.nombre || "",
+      medico_mail: salud?.medico_cabecera?.mail || "",
+      medico_telefono: salud?.medico_cabecera?.telefono || "",
+      observaciones_medicas: salud?.observaciones || "",
+      // Vulnerability
+      condiciones_vulnerabilidad: vulnerabilidadData?.condiciones_vulnerabilidad?.map((c: any) => c.condicion_vulnerabilidad?.id || c.id) || [],
+    })
+  }
+
+  // Handle entering edit mode
+  const handleEnterEditMode = () => {
+    initializeFormData()
+    setIsEditing(true)
+  }
+
+  // Handle canceling edit
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setFormData(initialFormState)
+  }
+
+  // Handle form field change
+  const handleFieldChange = (field: keyof PersonaFormState, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Handle saving changes
+  const handleSave = async () => {
+    if (!legajo?.id) {
+      toast.error("No se puede guardar: ID de legajo no disponible")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Helper to parse integer or return null
+      const parseIntOrNull = (value: string | number | null | undefined): number | null => {
+        if (value === null || value === undefined || value === "") return null
+        const parsed = typeof value === "number" ? value : parseInt(value, 10)
+        return isNaN(parsed) ? null : parsed
+      }
+
+      const updateData: NNyAUpdateRequest = {
+        nombre: formData.nombre || undefined,
+        nombre_autopercibido: formData.nombre_autopercibido || null,
+        apellido: formData.apellido || undefined,
+        fecha_nacimiento: formData.fecha_nacimiento || null,
+        edad_aproximada: parseIntOrNull(formData.edad_aproximada),
+        nacionalidad: formData.nacionalidad || null,
+        dni: parseIntOrNull(formData.dni),
+        situacion_dni: formData.situacion_dni || null,
+        genero: formData.genero || null,
+        telefono: formData.telefono || null,
+        observaciones: formData.observaciones || null,
+        localizacion: {
+          calle: formData.calle || undefined,
+          casa_nro: formData.numero || "", // NOT NULL in DB - send empty string if not provided
+          piso: formData.piso || undefined,
+          departamento: formData.departamento || undefined,
+          barrio: formData.barrio, // FK - already number or null
+          localidad: formData.localidad, // FK - already number or null
+          cpc: formData.cpc, // FK - already number or null
+          referencia_geo: formData.referencia_geo || undefined,
+          mza: parseIntOrNull(formData.mza), // Convert to integer
+          lote: parseIntOrNull(formData.lote), // Convert to integer
+        },
+        educacion: {
+          institucion_educativa: formData.institucion_educativa, // FK - already number or null
+          nivel_alcanzado: formData.nivel_alcanzado || null, // Enum key
+          esta_escolarizado: formData.esta_escolarizado,
+          ultimo_cursado: formData.ultimo_cursado || null, // Enum key
+          tipo_escuela: formData.tipo_escuela || null, // Enum key
+          comentarios_educativos: formData.comentarios_educativos || null,
+        },
+        cobertura_medica: {
+          institucion_sanitaria: formData.institucion_sanitaria, // FK - already number or null
+          obra_social: formData.obra_social || null, // Enum key
+          intervencion: formData.intervencion || null, // Enum key
+          auh: formData.auh,
+          medico_cabecera: formData.medico_cabecera, // FK - integer or null
+          observaciones: formData.observaciones_medicas || null,
+        },
+      }
+
+      await updateNNyAData(legajo.id, updateData)
+      toast.success("Datos actualizados correctamente")
+
+      // Invalidate related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["legajo-detail"] })
+      queryClient.invalidateQueries({ queryKey: ["nnya-data"] })
+      queryClient.invalidateQueries({ queryKey: ["persona-localizacion"] })
+      queryClient.invalidateQueries({ queryKey: ["persona-educacion"] })
+      queryClient.invalidateQueries({ queryKey: ["persona-cobertura-medica"] })
+      queryClient.invalidateQueries({ queryKey: ["persona-condiciones-vulnerabilidad"] })
+
+      setIsEditing(false)
+    } catch (error: any) {
+      console.error("[PersonaDetailModal] Error saving:", error)
+      const errorMessage = error?.response?.data?.detail || error?.response?.data?.message || "Error al guardar los cambios"
+      toast.error(errorMessage)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Calculate edad
@@ -290,112 +563,248 @@ export default function PersonaDetailModalEnhanced({
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Información Personal
             </Typography>
-            {!readOnly && permisos?.puede_editar && (
+            {!readOnly && permisos?.puede_editar && !isEditing && (
               <Button
                 startIcon={<EditIcon />}
-                onClick={() => {
-                  onEdit?.("personal")
-                  onClose()
-                }}
+                onClick={handleEnterEditMode}
                 size="small"
               >
                 Editar
               </Button>
             )}
+            {isEditing && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelEdit}
+                  size="small"
+                  color="inherit"
+                  disabled={isSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  size="small"
+                  variant="contained"
+                  disabled={isSaving}
+                >
+                  Guardar
+                </Button>
+              </Box>
+            )}
           </Box>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Nombre Completo
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {persona?.nombre} {persona?.apellido}
-                  </Typography>
-                  <IconButton size="small" onClick={() => copyToClipboard(`${persona?.nombre} ${persona?.apellido}`, "Nombre")}>
-                    <ContentCopyIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              </Paper>
+          {isEditing ? (
+            // Edit mode
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Nombre"
+                  value={formData.nombre}
+                  onChange={(e) => handleFieldChange("nombre", e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Apellido"
+                  value={formData.apellido}
+                  onChange={(e) => handleFieldChange("apellido", e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Nombre Autopercibido"
+                  value={formData.nombre_autopercibido}
+                  onChange={(e) => handleFieldChange("nombre_autopercibido", e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="DNI"
+                  value={formData.dni}
+                  onChange={(e) => handleFieldChange("dni", e.target.value)}
+                  size="small"
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Situación DNI"
+                  value={formData.situacion_dni}
+                  onChange={(e) => handleFieldChange("situacion_dni", e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Fecha de Nacimiento"
+                  type="date"
+                  value={formData.fecha_nacimiento}
+                  onChange={(e) => handleFieldChange("fecha_nacimiento", e.target.value)}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Edad Aproximada"
+                  value={formData.edad_aproximada}
+                  onChange={(e) => handleFieldChange("edad_aproximada", e.target.value)}
+                  size="small"
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Género</InputLabel>
+                  <Select
+                    value={formData.genero}
+                    label="Género"
+                    onChange={(e) => handleFieldChange("genero", e.target.value)}
+                  >
+                    <MenuItem value="">Sin especificar</MenuItem>
+                    <MenuItem value="MASCULINO">Masculino</MenuItem>
+                    <MenuItem value="FEMENINO">Femenino</MenuItem>
+                    <MenuItem value="NO_BINARIO">No Binario</MenuItem>
+                    <MenuItem value="OTRO">Otro</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Nacionalidad"
+                  value={formData.nacionalidad}
+                  onChange={(e) => handleFieldChange("nacionalidad", e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Teléfono"
+                  value={formData.telefono}
+                  onChange={(e) => handleFieldChange("telefono", e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Observaciones"
+                  value={formData.observaciones}
+                  onChange={(e) => handleFieldChange("observaciones", e.target.value)}
+                  size="small"
+                  multiline
+                  rows={3}
+                />
+              </Grid>
             </Grid>
-
-            {persona?.nombre_autopercibido && (
+          ) : (
+            // View mode
+            <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Nombre Autopercibido
+                    Nombre Completo
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {persona.nombre_autopercibido}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {persona?.nombre} {persona?.apellido}
+                    </Typography>
+                    <IconButton size="small" onClick={() => copyToClipboard(`${persona?.nombre} ${persona?.apellido}`, "Nombre")}>
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {persona?.nombre_autopercibido && (
+                <Grid item xs={12} md={6}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Nombre Autopercibido
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {persona.nombre_autopercibido}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              )}
+
+              <Grid item xs={12} md={6}>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    DNI
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <BadgeIcon color="action" />
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {persona?.dni || "No registrado"}
+                    </Typography>
+                    {persona?.dni && (
+                      <IconButton size="small" onClick={() => copyToClipboard(String(persona.dni), "DNI")}>
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+                  {persona?.situacion_dni && (
+                    <Chip label={persona.situacion_dni} size="small" sx={{ mt: 1 }} variant="outlined" />
+                  )}
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Fecha de Nacimiento
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <CalendarTodayIcon color="action" />
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {formatFecha(persona?.fecha_nacimiento)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Edad: {edad || "No calculada"} años
                   </Typography>
                 </Paper>
               </Grid>
-            )}
 
-            <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  DNI
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <BadgeIcon color="action" />
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {persona?.dni || "No registrado"}
+              <Grid item xs={12} md={6}>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Género
                   </Typography>
-                  {persona?.dni && (
-                    <IconButton size="small" onClick={() => copyToClipboard(String(persona.dni), "DNI")}>
-                      <ContentCopyIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </Box>
-                {persona?.situacion_dni && (
-                  <Chip label={persona.situacion_dni} size="small" sx={{ mt: 1 }} variant="outlined" />
-                )}
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Fecha de Nacimiento
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <CalendarTodayIcon color="action" />
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {formatFecha(persona?.fecha_nacimiento)}
+                    {persona?.genero || "No especificado"}
                   </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Edad: {edad || "No calculada"} años
-                </Typography>
-              </Paper>
-            </Grid>
+                </Paper>
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Género
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {persona?.genero || "No especificado"}
-                </Typography>
-              </Paper>
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Nacionalidad
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {persona?.nacionalidad || "No especificada"}
+                  </Typography>
+                </Paper>
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Nacionalidad
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {persona?.nacionalidad || "No especificada"}
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {persona?.telefono && (
               <Grid item xs={12} md={6}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -404,38 +813,40 @@ export default function PersonaDetailModalEnhanced({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <PhoneIcon color="action" />
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {persona.telefono}
+                      {persona?.telefono || "No registrado"}
                     </Typography>
-                    <IconButton size="small" onClick={() => copyToClipboard(String(persona.telefono), "Teléfono")}>
-                      <ContentCopyIcon fontSize="small" />
-                    </IconButton>
+                    {persona?.telefono && (
+                      <IconButton size="small" onClick={() => copyToClipboard(String(persona.telefono), "Teléfono")}>
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    )}
                   </Box>
                 </Paper>
               </Grid>
-            )}
 
-            {persona?.observaciones && (
-              <Grid item xs={12}>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Observaciones
-                  </Typography>
-                  <Typography variant="body1">{persona.observaciones}</Typography>
-                </Paper>
-              </Grid>
-            )}
+              {persona?.observaciones && (
+                <Grid item xs={12}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Observaciones
+                    </Typography>
+                    <Typography variant="body1">{persona.observaciones}</Typography>
+                  </Paper>
+                </Grid>
+              )}
 
-            {persona?.fecha_defuncion && (
-              <Grid item xs={12}>
-                <Alert severity="warning" icon={<WarningIcon />}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Fecha de Defunción
-                  </Typography>
-                  <Typography variant="body2">{formatFecha(persona.fecha_defuncion)}</Typography>
-                </Alert>
-              </Grid>
-            )}
-          </Grid>
+              {persona?.fecha_defuncion && (
+                <Grid item xs={12}>
+                  <Alert severity="warning" icon={<WarningIcon />}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Fecha de Defunción
+                    </Typography>
+                    <Typography variant="body2">{formatFecha(persona.fecha_defuncion)}</Typography>
+                  </Alert>
+                </Grid>
+              )}
+            </Grid>
+          )}
         </TabPanel>
 
         {/* Tab 1: Ubicación y Contacto */}
@@ -444,17 +855,36 @@ export default function PersonaDetailModalEnhanced({
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Ubicación y Contacto
             </Typography>
-            {!readOnly && permisos?.puede_editar && (
+            {!readOnly && permisos?.puede_editar && !isEditing && (
               <Button
                 startIcon={<EditIcon />}
-                onClick={() => {
-                  onEdit?.("location")
-                  onClose()
-                }}
+                onClick={handleEnterEditMode}
                 size="small"
               >
                 Editar
               </Button>
+            )}
+            {isEditing && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelEdit}
+                  size="small"
+                  color="inherit"
+                  disabled={isSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  size="small"
+                  variant="contained"
+                  disabled={isSaving}
+                >
+                  Guardar
+                </Button>
+              </Box>
             )}
           </Box>
 
@@ -462,7 +892,134 @@ export default function PersonaDetailModalEnhanced({
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
+          ) : isEditing ? (
+            // Edit mode
+            <Grid container spacing={2}>
+              {loadingDropdowns ? (
+                <Grid item xs={12}>
+                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                </Grid>
+              ) : (
+                <>
+                  <Grid item xs={12} md={8}>
+                    <TextField
+                      fullWidth
+                      label="Calle"
+                      value={formData.calle}
+                      onChange={(e) => handleFieldChange("calle", e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Número"
+                      value={formData.numero}
+                      onChange={(e) => handleFieldChange("numero", e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Piso"
+                      value={formData.piso}
+                      onChange={(e) => handleFieldChange("piso", e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Departamento"
+                      value={formData.departamento}
+                      onChange={(e) => handleFieldChange("departamento", e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.barrio || []}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={
+                        (dropdownData?.barrio || [])
+                          .find((item: any) => item.id === formData.barrio) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("barrio", newValue?.id || null)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Barrio" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.localidad || []}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={
+                        (dropdownData?.localidad || [])
+                          .find((item: any) => item.id === formData.localidad) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("localidad", newValue?.id || null)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Localidad" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.cpc || []}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={
+                        (dropdownData?.cpc || [])
+                          .find((item: any) => item.id === formData.cpc) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("cpc", newValue?.id || null)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="CPC" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Manzana"
+                      value={formData.mza}
+                      onChange={(e) => handleFieldChange("mza", e.target.value)}
+                      size="small"
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Lote"
+                      value={formData.lote}
+                      onChange={(e) => handleFieldChange("lote", e.target.value)}
+                      size="small"
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Referencia Geográfica"
+                      value={formData.referencia_geo}
+                      onChange={(e) => handleFieldChange("referencia_geo", e.target.value)}
+                      size="small"
+                      multiline
+                      rows={2}
+                    />
+                  </Grid>
+                </>
+              )}
+            </Grid>
           ) : localizacion ? (
+            // View mode with data
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
@@ -478,40 +1035,40 @@ export default function PersonaDetailModalEnhanced({
                 </Paper>
               </Grid>
 
-              {localizacion.barrio && (
+              {((localizacion as any).barrio_nombre || (localizacion as any).barrio) && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Barrio
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {localizacion.barrio}
+                      {(localizacion as any).barrio_nombre || (localizacion as any).barrio}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {localizacion.localidad?.nombre && (
+              {((localizacion as any).localidad_nombre || (localizacion as any).localidad?.nombre) && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Localidad
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {localizacion.localidad.nombre}
+                      {(localizacion as any).localidad_nombre || (localizacion as any).localidad?.nombre}
                     </Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {localizacion.cpc && (
+              {((localizacion as any).cpc_nombre || (localizacion as any).cpc) && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       CPC
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {localizacion.cpc}
+                      {(localizacion as any).cpc_nombre || (localizacion as any).cpc}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -576,21 +1133,160 @@ export default function PersonaDetailModalEnhanced({
           ) : (
             <Alert severity="info">
               No hay información de ubicación registrada para esta persona.
+              {!readOnly && permisos?.puede_editar && (
+                <Button
+                  size="small"
+                  onClick={handleEnterEditMode}
+                  sx={{ ml: 2 }}
+                >
+                  Agregar información
+                </Button>
+              )}
             </Alert>
           )}
         </TabPanel>
 
         {/* Tab 2: Información Educativa */}
         <TabPanel value={activeTab} index={2}>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            Información Educativa
-          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Información Educativa
+            </Typography>
+            {!readOnly && permisos?.puede_editar && !isEditing && (
+              <Button
+                startIcon={<EditIcon />}
+                onClick={handleEnterEditMode}
+                size="small"
+              >
+                Editar
+              </Button>
+            )}
+            {isEditing && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelEdit}
+                  size="small"
+                  color="inherit"
+                  disabled={isSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  size="small"
+                  variant="contained"
+                  disabled={isSaving}
+                >
+                  Guardar
+                </Button>
+              </Box>
+            )}
+          </Box>
 
           {loadingEducacion ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
+          ) : isEditing ? (
+            // Edit mode
+            <Grid container spacing={2}>
+              {loadingDropdowns ? (
+                <Grid item xs={12}>
+                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                </Grid>
+              ) : (
+                <>
+                  <Grid item xs={12}>
+                    <Autocomplete
+                      options={dropdownData?.instituciones_educativas || dropdownData?.institucion_educativa || []}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={
+                        (dropdownData?.instituciones_educativas || dropdownData?.institucion_educativa || [])
+                          .find((item: any) => item.id === formData.institucion_educativa) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("institucion_educativa", newValue?.id || null)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Institución Educativa" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.nivel_alcanzado_choices || dropdownData?.nivel_educativo_choices || []}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={
+                        (dropdownData?.nivel_alcanzado_choices || dropdownData?.nivel_educativo_choices || [])
+                          .find((item: any) => item.key === formData.nivel_alcanzado) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("nivel_alcanzado", newValue?.key || "")}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Nivel Alcanzado" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.esta_escolarizado}
+                          onChange={(e) => handleFieldChange("esta_escolarizado", e.target.checked)}
+                        />
+                      }
+                      label="Está Escolarizado"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.ultimo_cursado_choices || []}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={
+                        (dropdownData?.ultimo_cursado_choices || [])
+                          .find((item: any) => item.key === formData.ultimo_cursado) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("ultimo_cursado", newValue?.key || "")}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Último Cursado" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.tipo_escuela_choices || []}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={
+                        (dropdownData?.tipo_escuela_choices || [])
+                          .find((item: any) => item.key === formData.tipo_escuela) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("tipo_escuela", newValue?.key || "")}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Tipo de Escuela" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Comentarios Educativos"
+                      value={formData.comentarios_educativos}
+                      onChange={(e) => handleFieldChange("comentarios_educativos", e.target.value)}
+                      size="small"
+                      multiline
+                      rows={3}
+                    />
+                  </Grid>
+                </>
+              )}
+            </Grid>
           ) : educacion ? (
+            // View mode with data
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
@@ -670,21 +1366,178 @@ export default function PersonaDetailModalEnhanced({
           ) : (
             <Alert severity="info">
               No hay información educativa registrada para esta persona.
+              {!readOnly && permisos?.puede_editar && (
+                <Button
+                  size="small"
+                  onClick={handleEnterEditMode}
+                  sx={{ ml: 2 }}
+                >
+                  Agregar información
+                </Button>
+              )}
             </Alert>
           )}
         </TabPanel>
 
         {/* Tab 3: Información de Salud */}
         <TabPanel value={activeTab} index={3}>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            Información de Salud
-          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Información de Salud
+            </Typography>
+            {!readOnly && permisos?.puede_editar && !isEditing && (
+              <Button
+                startIcon={<EditIcon />}
+                onClick={handleEnterEditMode}
+                size="small"
+              >
+                Editar
+              </Button>
+            )}
+            {isEditing && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelEdit}
+                  size="small"
+                  color="inherit"
+                  disabled={isSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  size="small"
+                  variant="contained"
+                  disabled={isSaving}
+                >
+                  Guardar
+                </Button>
+              </Box>
+            )}
+          </Box>
 
           {loadingSalud ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
+          ) : isEditing ? (
+            // Edit mode
+            <Grid container spacing={2}>
+              {loadingDropdowns ? (
+                <Grid item xs={12}>
+                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                </Grid>
+              ) : (
+                <>
+                  <Grid item xs={12}>
+                    <Autocomplete
+                      options={dropdownData?.instituciones_sanitarias || dropdownData?.institucion_sanitaria || []}
+                      getOptionLabel={(option: any) => option.nombre || ""}
+                      value={
+                        (dropdownData?.instituciones_sanitarias || dropdownData?.institucion_sanitaria || [])
+                          .find((item: any) => item.id === formData.institucion_sanitaria) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("institucion_sanitaria", newValue?.id || null)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Institución Sanitaria" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.obra_social_choices || []}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={
+                        (dropdownData?.obra_social_choices || [])
+                          .find((item: any) => item.key === formData.obra_social) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("obra_social", newValue?.key || "")}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Obra Social" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={dropdownData?.intervencion_choices || []}
+                      getOptionLabel={(option: any) => option.value || ""}
+                      value={
+                        (dropdownData?.intervencion_choices || [])
+                          .find((item: any) => item.key === formData.intervencion) || null
+                      }
+                      onChange={(_, newValue) => handleFieldChange("intervencion", newValue?.key || "")}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Tipo de Intervención" size="small" />
+                      )}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.auh}
+                          onChange={(e) => handleFieldChange("auh", e.target.checked)}
+                        />
+                      }
+                      label="Asignación Universal por Hijo (AUH)"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      Médico de Cabecera
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Nombre del Médico"
+                      value={formData.medico_nombre}
+                      onChange={(e) => handleFieldChange("medico_nombre", e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Email del Médico"
+                      value={formData.medico_mail}
+                      onChange={(e) => handleFieldChange("medico_mail", e.target.value)}
+                      size="small"
+                      type="email"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Teléfono del Médico"
+                      value={formData.medico_telefono}
+                      onChange={(e) => handleFieldChange("medico_telefono", e.target.value)}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Observaciones Médicas"
+                      value={formData.observaciones_medicas}
+                      onChange={(e) => handleFieldChange("observaciones_medicas", e.target.value)}
+                      size="small"
+                      multiline
+                      rows={3}
+                    />
+                  </Grid>
+                </>
+              )}
+            </Grid>
           ) : saludData?.cobertura_medica ? (
+            // View mode with data
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
@@ -812,21 +1665,93 @@ export default function PersonaDetailModalEnhanced({
           ) : (
             <Alert severity="info">
               No hay información de salud registrada para esta persona.
+              {!readOnly && permisos?.puede_editar && (
+                <Button
+                  size="small"
+                  onClick={handleEnterEditMode}
+                  sx={{ ml: 2 }}
+                >
+                  Agregar información
+                </Button>
+              )}
             </Alert>
           )}
         </TabPanel>
 
         {/* Tab 4: Condiciones de Vulnerabilidad */}
         <TabPanel value={activeTab} index={4}>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            Condiciones de Vulnerabilidad
-          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Condiciones de Vulnerabilidad
+            </Typography>
+            {!readOnly && permisos?.puede_editar && !isEditing && (
+              <Button
+                startIcon={<EditIcon />}
+                onClick={handleEnterEditMode}
+                size="small"
+              >
+                Editar
+              </Button>
+            )}
+            {isEditing && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelEdit}
+                  size="small"
+                  color="inherit"
+                  disabled={isSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  size="small"
+                  variant="contained"
+                  disabled={isSaving}
+                >
+                  Guardar
+                </Button>
+              </Box>
+            )}
+          </Box>
 
           {loadingVulnerabilidad ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
+          ) : isEditing ? (
+            // Edit mode - show current conditions with ability to modify
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Las condiciones de vulnerabilidad se gestionan desde la sección de evaluación del legajo.
+                  Esta vista permite visualizar las condiciones actuales.
+                </Alert>
+              </Grid>
+              {vulnerabilidadData?.condiciones_vulnerabilidad && vulnerabilidadData.condiciones_vulnerabilidad.length > 0 && (
+                <Grid item xs={12}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
+                      Condiciones Actuales
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      {vulnerabilidadData.condiciones_vulnerabilidad.map((condicion: any, idx: number) => (
+                        <Chip
+                          key={idx}
+                          label={condicion.condicion_vulnerabilidad?.nombre || condicion.nombre || "Condición"}
+                          color="warning"
+                          variant="outlined"
+                        />
+                      ))}
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
+            </Grid>
           ) : vulnerabilidadData?.condiciones_vulnerabilidad && vulnerabilidadData.condiciones_vulnerabilidad.length > 0 ? (
+            // View mode with data
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Alert severity="warning" icon={<WarningIcon />}>
@@ -907,18 +1832,7 @@ export default function PersonaDetailModalEnhanced({
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Información del Legajo
             </Typography>
-            {!readOnly && permisos?.puede_editar && (
-              <Button
-                startIcon={<EditIcon />}
-                onClick={() => {
-                  onEdit?.("legajo")
-                  onClose()
-                }}
-                size="small"
-              >
-                Editar
-              </Button>
-            )}
+            {/* Legajo info is read-only in this modal - edit from main page */}
           </Box>
 
           <Grid container spacing={3}>

@@ -80,7 +80,7 @@ export const getZonasDisponibles = async (): Promise<ZonaInfo[]> => {
 export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> => {
   try {
     // Endpoint: /api/users-zonas/?zona={zonaId}
-    // Response includes expanded user data (user_detail) with the user information
+    // Response includes user_info with expanded user data
 
     interface UserZonaResponse {
       id: number
@@ -90,47 +90,43 @@ export const getUsuariosPorZona = async (zonaId: number): Promise<UserInfo[]> =>
       director: boolean
       legal: boolean
       localidad: number | null
-      // Expanded user details from backend
-      user_detail?: {
+      user_info: {
         id: number
         username: string
         first_name: string
         last_name: string
         email: string
+        is_active: boolean
       }
     }
 
-    // Obtener relaciones users-zonas con datos de usuario expandidos
     const userZonasResponse = await get<UserZonaResponse[] | { results: UserZonaResponse[] }>(
       'users-zonas/',
       { zona: zonaId, page_size: 500 }
     )
     const userZonas = extractArray(userZonasResponse)
 
-    console.log(`UserZonas for zona ${zonaId}:`, userZonas)
-
     if (userZonas.length === 0) {
       return []
     }
 
-    // Map user details from expanded response
+    // Map user details from user_info
     const users: UserInfo[] = userZonas
-      .filter((uz: UserZonaResponse) => uz.user_detail)
+      .filter((uz: UserZonaResponse) => uz.user_info)
       .map((uz: UserZonaResponse) => {
-        const detail = uz.user_detail!
+        const info = uz.user_info
         return {
-          id: detail.id,
-          username: detail.username,
-          first_name: detail.first_name,
-          last_name: detail.last_name,
-          email: detail.email,
-          nombre_completo: detail.first_name && detail.last_name
-            ? `${detail.first_name} ${detail.last_name}`.trim()
-            : detail.username
+          id: info.id,
+          username: info.username,
+          first_name: info.first_name,
+          last_name: info.last_name,
+          email: info.email,
+          nombre_completo: info.first_name && info.last_name
+            ? `${info.first_name} ${info.last_name}`.trim()
+            : info.username
         }
       })
 
-    console.log(`Users for zona ${zonaId} fetched:`, users)
     return users
   } catch (error) {
     console.error(`Error fetching users for zona ${zonaId}:`, error)

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
-import { Bell, LogOut, UserIcon, ChevronDown } from "lucide-react"
+import { Bell, LogOut, ChevronDown } from "lucide-react"
 import UserAvatar from "./UserAvatar"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -91,26 +91,26 @@ export default function Header() {
       <div className="flex items-center gap-3">
         {/* Botones de Navegación */}
         <div className="flex gap-2">
-          <Link
+          <a
             href="/mesadeentrada"
-            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)]"
+            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(8px)',
             }}
           >
             Mesa de Entradas
-          </Link>
-          <Link
+          </a>
+          <a
             href="/legajo-mesa"
-            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)]"
+            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(8px)',
             }}
           >
             Bandeja de legajos
-          </Link>
+          </a>
         </div>
 
         {/* Notificaciones */}

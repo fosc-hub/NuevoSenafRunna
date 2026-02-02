@@ -72,7 +72,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
   const zonas = extractArray(zonasData)
 
-  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("usuarios/")
+  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("users/")
   const usuarios = extractArray(usuariosData)
 
   const { data: localesCentroVidaData, isLoading: isLoadingLocales } = useCatalogData<LocalCentroVida[]>(

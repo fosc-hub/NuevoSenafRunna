@@ -178,16 +178,17 @@ export const useActorVisibility = (): ActorVisibilityResult => {
       }
     }
 
-    // If user has exactly one actor, use it as filter
-    // If user has multiple actors, don't filter (they can see all their actors)
-    const actorFilter = allowedActors.length === 1 ? allowedActors[0] : null
+    // REMOVED: Actor filter restriction
+    // Previously filtered by actor when user had only one actor group
+    // Now all users can see all activities within a medida
+    // const actorFilter = allowedActors.length === 1 ? allowedActors[0] : null
 
     return {
       allowedActors,
-      canSeeAllActors: false,
+      canSeeAllActors: true, // Allow all users to see all actors within medida
       primaryActor,
-      actorFilter,
-      isActorAllowed: (actor: ActorEnum) => allowedActors.includes(actor),
+      actorFilter: null, // No API-level filter - show all activities
+      isActorAllowed: () => true, // All actors are allowed
       userGroups: groupNames,
     }
   }, [user])

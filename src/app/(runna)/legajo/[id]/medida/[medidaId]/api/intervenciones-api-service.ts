@@ -195,8 +195,10 @@ export const updateIntervencion = async (
     console.log(`Updating intervención: medida ${medidaId}, intervención ${intervencionId}`, data)
 
     // Make API call - update() uses PATCH and adds trailing slash
+    // update(endpoint, id, data) - pass intervencionId as the ID parameter
     const response = await update<IntervencionResponse>(
-      `medidas/${medidaId}/intervenciones/${intervencionId}`,
+      `medidas/${medidaId}/intervenciones`,
+      intervencionId,
       data as Partial<IntervencionResponse>
     )
 

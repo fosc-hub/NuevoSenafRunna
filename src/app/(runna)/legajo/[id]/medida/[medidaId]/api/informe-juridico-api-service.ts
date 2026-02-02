@@ -200,8 +200,10 @@ export const updateInformeJuridico = async (
     console.log(`Updating informe jurídico: medida ${medidaId}, informe ${informeJuridicoId}`, data)
 
     // Uses update() which sends PATCH request
+    // update(endpoint, id, data) - pass informeJuridicoId as the ID parameter
     const response = await update<InformeJuridicoResponse>(
-      `medidas/${medidaId}/informe-juridico/${informeJuridicoId}`,
+      `medidas/${medidaId}/informe-juridico`,
+      informeJuridicoId,
       data as Partial<InformeJuridicoResponse>
     )
 

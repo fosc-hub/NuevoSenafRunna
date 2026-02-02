@@ -1,7 +1,7 @@
 # Edición de Datos NNyA desde Legajo + Sistema de Personas Relacionadas
 
-**Fecha**: 2026-02-01
-**Versión**: 2.0
+**Fecha**: 2026-02-02
+**Versión**: 2.1
 **Estado**: ✅ **Completamente implementado y listo para integración**
 
 ---
@@ -26,9 +26,17 @@ El Frontend y PO necesitaban **editar datos del NNyA desde el contexto del Legaj
 | Cobertura Médica | ✅ Implementado | `PATCH /api/legajos/{id}/nnya/` |
 | Enfermedades | ✅ Implementado | `PATCH /api/legajos/{id}/nnya/` |
 | Condiciones Vulnerabilidad | ✅ Implementado | `PATCH /api/legajos/{id}/nnya/` |
-| Personas Relacionadas | ✅ **NUEVO** | `PATCH /api/legajos/{id}/nnya/` |
+| Personas Relacionadas | ✅ Implementado | `PATCH /api/legajos/{id}/nnya/` |
+| Catálogo Tipos de Vínculo | ✅ **NUEVO** | `GET /api/vinculo-de-personas/` |
 
 **Todo se gestiona desde un único endpoint unificado.**
+
+### Endpoints de Soporte
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/vinculo-de-personas/` | GET | Catálogo de tipos de parentesco (Madre, Padre, etc.) |
+| `/api/tipos-vinculo/` | GET | Catálogo de tipos de vinculación entre entidades (Legajos/Demandas/Medidas) - **NO confundir** |
 
 ---
 
@@ -717,7 +725,29 @@ Al buscar vinculaciones, la respuesta ahora incluye las personas relacionadas de
 
 ## Catálogo de Tipos de Vínculo
 
-Los tipos de vínculo se obtienen del endpoint existente `/api/vinculo-de-personas/`:
+### Endpoint para obtener tipos de vínculo
+
+```
+GET /api/vinculo-de-personas/
+```
+
+**Respuesta:**
+```json
+[
+  { "id": 1, "nombre": "Madre" },
+  { "id": 2, "nombre": "Padre" },
+  { "id": 3, "nombre": "Hermano/a" },
+  { "id": 4, "nombre": "Abuelo/a" },
+  { "id": 5, "nombre": "Tío/a" },
+  ...
+]
+```
+
+**Uso:** Este endpoint retorna los IDs válidos para el campo `tipo_vinculo` en `personas_relacionadas`.
+
+> ⚠️ **IMPORTANTE:** No confundir con `/api/tipos-vinculo/` que es para vincular Legajos/Demandas/Medidas entre sí (TTipoVinculo), no personas.
+
+### Tipos disponibles (referencia)
 
 | ID | Nombre | Descripción |
 |----|--------|-------------|
@@ -733,6 +763,8 @@ Los tipos de vínculo se obtienen del endpoint existente `/api/vinculo-de-person
 | 10 | OTRO_FAMILIAR | Otro familiar |
 | 11 | REFERENTE_COMUNITARIO | Referente comunitario |
 | 12 | VECINO | Vecino |
+
+> **Nota:** Los IDs pueden variar según los datos cargados en la base de datos. Siempre usar el endpoint `GET /api/vinculo-de-personas/` para obtener los valores actuales.
 
 ---
 
@@ -1181,15 +1213,18 @@ interface PersonaRelacionadaBusqueda {
 | `infrastructure/signals/persona_vinculo_signals.py` | Signal para historial automático |
 | `services/persona_matcher.py` | Servicio para búsqueda/creación de personas sin duplicados |
 | `api/serializers/TPersonaVinculoSerializer.py` | Serializers de lectura/escritura para vínculos |
+| `api/views/TVinculoDePersonasViewSet.py` | **NUEVO** ViewSet para catálogo de tipos de parentesco |
 
 ### Archivos Modificados
 | Archivo | Cambio |
 |---------|--------|
 | `api/serializers/TPersonaCompletaUpdateSerializer.py` | Soporte completo para todos los datos del NNyA incluyendo `personas_relacionadas` |
-| `api/serializers/LegajoDetalleSerializer.py` | Campo `personas_relacionadas` en respuesta de GET |
+| `api/serializers/LegajoDetalleSerializer.py` | Campo `personas_relacionadas` en respuesta de GET y PATCH |
 | `api/serializers/ComposedSerializer.py` | Campo `personas_relacionadas_nnya` en MesaDeEntrada |
 | `api/views/ConexionesView.py` | Campo `personas_relacionadas` en búsqueda de vinculación |
 | `api/views/LegajoView.py` | Acción `nnya` ya existía con GET/PATCH unificado |
+| `api/views/__init__.py` | Export de `TVinculoDePersonasViewSet` |
+| `api/urls.py` | Registro de ruta `/api/vinculo-de-personas/` |
 | `infrastructure/signals/historial_seguimiento_signals.py` | Fix import circular con lazy import |
 | `infrastructure/management/fixtures/sorted_models.json` | Agregados nuevos modelos al orden de carga |
 
@@ -1223,5 +1258,6 @@ El endpoint `PATCH /api/legajos/{id}/nnya/` requiere uno de los siguientes permi
 
 | Fecha | Versión | Cambios |
 |-------|---------|---------|
+| 2026-02-02 | 2.1 | Nuevo endpoint `GET /api/vinculo-de-personas/` para catálogo de tipos de parentesco. Respuesta de PATCH ahora incluye `personas_relacionadas`. |
 | 2026-02-01 | 2.0 | Documentación completa del endpoint `/api/legajos/{id}/nnya/` con todos los datos (PERSONAL, EDUCACIÓN, SALUD, VULNERABILIDAD, PERSONAS RELACIONADAS) |
 | 2026-02-01 | 1.0 | Implementación inicial de TPersonaVinculo |

@@ -7,7 +7,8 @@
  * Based on API documentation: claudedocs/API_PERSONAS_RELACIONADAS_FRONTEND.md
  */
 
-import { get, patch } from "@/app/api/apiService"
+import { get } from "@/app/api/apiService"
+import axiosInstance from "@/app/api/utils/axiosInstance"
 import type {
   PersonaVinculo,
   PersonaRelacionadaRequest,
@@ -121,11 +122,11 @@ export const updatePersonasRelacionadas = async (
 ): Promise<NNyADataResponse> => {
   try {
     console.log(`[PersonasRelacionadas] Updating personas relacionadas for legajo ${legajoId}:`, personasRelacionadas)
-    const response = await patch<NNyADataResponse>(`legajos/${legajoId}/nnya/`, {
+    const response = await axiosInstance.patch<NNyADataResponse>(`legajos/${legajoId}/nnya/`, {
       personas_relacionadas: personasRelacionadas,
     })
-    console.log(`[PersonasRelacionadas] Updated NNyA data:`, response)
-    return response
+    console.log(`[PersonasRelacionadas] Updated NNyA data:`, response.data)
+    return response.data
   } catch (error: any) {
     console.error(`[PersonasRelacionadas] Error updating personas relacionadas:`, error)
     throw error

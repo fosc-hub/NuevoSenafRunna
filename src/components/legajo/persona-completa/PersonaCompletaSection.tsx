@@ -17,6 +17,11 @@ import {
   useMediaQuery,
   Avatar,
   Chip,
+  TextField,
+  Grid,
+  MenuItem,
+  CircularProgress,
+  Alert,
 } from "@mui/material"
 import {
   ExpandMore as ExpandMoreIcon,
@@ -27,6 +32,9 @@ import {
   Warning as WarningIcon,
   Visibility as VisibilityIcon,
   Close as CloseIcon,
+  Edit as EditIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
 } from "@mui/icons-material"
 import {
   PersonalInfoDisplay,
@@ -34,7 +42,7 @@ import {
   HealthDisplay,
   VulnerabilityDisplay,
 } from "./display"
-import type { PersonaCompletaSectionProps, TabId } from "./types/persona-completa.types"
+import type { PersonaCompletaSectionProps, PersonaEditableFields } from "./types/persona-completa.types"
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -87,11 +95,30 @@ const PersonaCompletaSection: React.FC<PersonaCompletaSectionProps> = ({
   defaultExpanded = false,
   showEditButton = false,
   onEdit,
+  onSave,
+  hideActions = false,
 }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [activeTab, setActiveTab] = useState(0)
+
+  // Inline editing state
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [formData, setFormData] = useState<PersonaEditableFields>({
+    nombre: persona.nombre || "",
+    apellido: persona.apellido || "",
+    nombre_autopercibido: persona.nombre_autopercibido || "",
+    fecha_nacimiento: persona.fecha_nacimiento || "",
+    nacionalidad: persona.nacionalidad || "",
+    dni: persona.dni,
+    situacion_dni: persona.situacion_dni || "",
+    genero: persona.genero || "",
+    telefono: persona.telefono,
+    observaciones: persona.observaciones || "",
+  })
 
   // Calculate counts for badges
   const condicionesCount = persona.condiciones_vulnerabilidad?.length || 0
@@ -107,8 +134,75 @@ const PersonaCompletaSection: React.FC<PersonaCompletaSectionProps> = ({
     setExpanded(!expanded)
   }
 
+  // Handle entering edit mode
+  const handleEnterEditMode = () => {
+    // Reset form data to current persona values
+    setFormData({
+      nombre: persona.nombre || "",
+      apellido: persona.apellido || "",
+      nombre_autopercibido: persona.nombre_autopercibido || "",
+      fecha_nacimiento: persona.fecha_nacimiento || "",
+      nacionalidad: persona.nacionalidad || "",
+      dni: persona.dni,
+      situacion_dni: persona.situacion_dni || "",
+      genero: persona.genero || "",
+      telefono: persona.telefono,
+      observaciones: persona.observaciones || "",
+    })
+    setEditError(null)
+    setIsEditing(true)
+    // Switch to Personal tab when entering edit mode
+    setActiveTab(0)
+  }
+
+  // Handle canceling edit mode
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditError(null)
+  }
+
+  // Handle saving
+  const handleSave = async () => {
+    if (!onSave) return
+
+    try {
+      setIsSaving(true)
+      setEditError(null)
+      await onSave(formData)
+      setIsEditing(false)
+    } catch (error) {
+      console.error("Error saving persona data:", error)
+      setEditError(error instanceof Error ? error.message : "Error al guardar los datos")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Handle form field changes
+  const handleFieldChange = (field: keyof PersonaEditableFields) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = event.target.value
+    setFormData((prev) => ({
+      ...prev,
+      [field]: field === 'dni' || field === 'telefono'
+        ? (value === '' ? null : Number(value))
+        : value,
+    }))
+  }
+
   // Calculate age
   const edad = persona.edad_calculada ?? persona.edad_aproximada
+
+  // Determine if we should use inline editing (onSave provided) or external dialog (onEdit provided)
+  const useInlineEditing = !!onSave
+  const handleEditClick = () => {
+    if (useInlineEditing) {
+      handleEnterEditMode()
+    } else if (onEdit) {
+      onEdit()
+    }
+  }
 
   return (
     <Paper
@@ -128,14 +222,14 @@ const PersonaCompletaSection: React.FC<PersonaCompletaSectionProps> = ({
           alignItems: "center",
           justifyContent: "space-between",
           p: 2,
-          bgcolor: expanded ? "primary.50" : "grey.50",
-          cursor: "pointer",
+          bgcolor: isEditing ? "warning.50" : (expanded ? "primary.50" : "grey.50"),
+          cursor: isEditing ? "default" : "pointer",
           transition: "background-color 0.3s ease",
           "&:hover": {
-            bgcolor: expanded ? "primary.100" : "grey.100",
+            bgcolor: isEditing ? "warning.50" : (expanded ? "primary.100" : "grey.100"),
           },
         }}
-        onClick={toggleExpanded}
+        onClick={isEditing ? undefined : toggleExpanded}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Avatar
@@ -149,8 +243,17 @@ const PersonaCompletaSection: React.FC<PersonaCompletaSectionProps> = ({
           </Avatar>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
-              <VisibilityIcon fontSize="small" color="primary" />
-              Ver todos los datos de {persona.nombre} {persona.apellido}
+              {isEditing ? (
+                <>
+                  <EditIcon fontSize="small" color="warning" />
+                  Editando datos de {persona.nombre} {persona.apellido}
+                </>
+              ) : (
+                <>
+                  <VisibilityIcon fontSize="small" color="primary" />
+                  Ver todos los datos de {persona.nombre} {persona.apellido}
+                </>
+              )}
             </Typography>
             <Box sx={{ display: "flex", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
               {persona.dni && (
@@ -168,112 +271,301 @@ const PersonaCompletaSection: React.FC<PersonaCompletaSectionProps> = ({
                   variant="outlined"
                 />
               )}
+              {isEditing && (
+                <Chip
+                  label="Modo edición"
+                  size="small"
+                  color="warning"
+                />
+              )}
             </Box>
           </Box>
         </Box>
-        <IconButton size="large">
-          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        </IconButton>
+        {!isEditing && (
+          <IconButton size="large">
+            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        )}
       </Box>
 
       {/* Expanded Content */}
-      <Collapse in={expanded}>
+      <Collapse in={expanded || isEditing}>
         <Divider />
 
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant={isMobile ? "scrollable" : "fullWidth"}
-            scrollButtons={isMobile ? "auto" : undefined}
-            aria-label="Información completa de la persona"
-          >
-            <Tab
-              icon={<PersonIcon />}
-              iconPosition="start"
-              label={isMobile ? undefined : "Personal"}
-              {...a11yProps(0)}
-            />
-            <Tab
-              icon={<SchoolIcon />}
-              iconPosition="start"
-              label={isMobile ? undefined : "Educación"}
-              {...a11yProps(1)}
-            />
-            <Tab
-              icon={
-                <Badge
-                  badgeContent={enfermedadesCount}
-                  color="warning"
-                  max={99}
-                  invisible={enfermedadesCount === 0}
-                >
-                  <MedicalIcon />
-                </Badge>
-              }
-              iconPosition="start"
-              label={isMobile ? undefined : "Salud"}
-              {...a11yProps(2)}
-            />
-            <Tab
-              icon={
-                <Badge
-                  badgeContent={condicionesCount + vulneracionesCount}
-                  color="error"
-                  max={99}
-                  invisible={!hasVulnerabilityData}
-                >
-                  <WarningIcon />
-                </Badge>
-              }
-              iconPosition="start"
-              label={isMobile ? undefined : "Vulnerabilidad"}
-              {...a11yProps(3)}
-            />
-          </Tabs>
-        </Box>
+        {/* Error alert */}
+        {editError && (
+          <Alert severity="error" sx={{ mx: 2, mt: 2 }}>
+            {editError}
+          </Alert>
+        )}
 
-        {/* Tab Panels */}
+        {/* Tabs - Hidden during editing since we only edit Personal info */}
+        {!isEditing && (
+          <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              variant={isMobile ? "scrollable" : "fullWidth"}
+              scrollButtons={isMobile ? "auto" : undefined}
+              aria-label="Información completa de la persona"
+            >
+              <Tab
+                icon={<PersonIcon />}
+                iconPosition="start"
+                label={isMobile ? undefined : "Personal"}
+                {...a11yProps(0)}
+              />
+              <Tab
+                icon={<SchoolIcon />}
+                iconPosition="start"
+                label={isMobile ? undefined : "Educación"}
+                {...a11yProps(1)}
+              />
+              <Tab
+                icon={
+                  <Badge
+                    badgeContent={enfermedadesCount}
+                    color="warning"
+                    max={99}
+                    invisible={enfermedadesCount === 0}
+                  >
+                    <MedicalIcon />
+                  </Badge>
+                }
+                iconPosition="start"
+                label={isMobile ? undefined : "Salud"}
+                {...a11yProps(2)}
+              />
+              <Tab
+                icon={
+                  <Badge
+                    badgeContent={condicionesCount + vulneracionesCount}
+                    color="error"
+                    max={99}
+                    invisible={!hasVulnerabilityData}
+                  >
+                    <WarningIcon />
+                  </Badge>
+                }
+                iconPosition="start"
+                label={isMobile ? undefined : "Vulnerabilidad"}
+                {...a11yProps(3)}
+              />
+            </Tabs>
+          </Box>
+        )}
+
+        {/* Tab Panels / Edit Form */}
         <Box sx={{ px: 3 }}>
-          <TabPanel value={activeTab} index={0}>
-            <PersonalInfoDisplay persona={persona} />
-          </TabPanel>
+          {isEditing ? (
+            // Edit Form
+            <Box sx={{ py: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonIcon color="primary" />
+                Editar Información Personal
+              </Typography>
 
-          <TabPanel value={activeTab} index={1}>
-            <EducationDisplay persona={persona} />
-          </TabPanel>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Nombre"
+                    value={formData.nombre}
+                    onChange={handleFieldChange("nombre")}
+                    disabled={isSaving}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Apellido"
+                    value={formData.apellido}
+                    onChange={handleFieldChange("apellido")}
+                    disabled={isSaving}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Nombre Autopercibido"
+                    value={formData.nombre_autopercibido || ""}
+                    onChange={handleFieldChange("nombre_autopercibido")}
+                    disabled={isSaving}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="DNI"
+                    type="number"
+                    value={formData.dni || ""}
+                    onChange={handleFieldChange("dni")}
+                    disabled={isSaving}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Situación DNI"
+                    value={formData.situacion_dni || ""}
+                    onChange={handleFieldChange("situacion_dni")}
+                    disabled={isSaving}
+                  >
+                    <MenuItem value="">Sin especificar</MenuItem>
+                    <MenuItem value="VALIDO">Válido</MenuItem>
+                    <MenuItem value="EN_TRAMITE">En trámite</MenuItem>
+                    <MenuItem value="EXTRAVIADO">Extraviado</MenuItem>
+                    <MenuItem value="SIN_DNI">Sin DNI</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Fecha de Nacimiento"
+                    type="date"
+                    value={formData.fecha_nacimiento || ""}
+                    onChange={handleFieldChange("fecha_nacimiento")}
+                    disabled={isSaving}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Género"
+                    value={formData.genero || ""}
+                    onChange={handleFieldChange("genero")}
+                    disabled={isSaving}
+                  >
+                    <MenuItem value="">Sin especificar</MenuItem>
+                    <MenuItem value="MASCULINO">Masculino</MenuItem>
+                    <MenuItem value="FEMENINO">Femenino</MenuItem>
+                    <MenuItem value="NO_BINARIO">No Binario</MenuItem>
+                    <MenuItem value="OTRO">Otro</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Nacionalidad"
+                    value={formData.nacionalidad || ""}
+                    onChange={handleFieldChange("nacionalidad")}
+                    disabled={isSaving}
+                  >
+                    <MenuItem value="">Sin especificar</MenuItem>
+                    <MenuItem value="ARGENTINA">Argentina</MenuItem>
+                    <MenuItem value="BOLIVIANA">Boliviana</MenuItem>
+                    <MenuItem value="BRASILEÑA">Brasileña</MenuItem>
+                    <MenuItem value="CHILENA">Chilena</MenuItem>
+                    <MenuItem value="PARAGUAYA">Paraguaya</MenuItem>
+                    <MenuItem value="PERUANA">Peruana</MenuItem>
+                    <MenuItem value="URUGUAYA">Uruguaya</MenuItem>
+                    <MenuItem value="VENEZOLANA">Venezolana</MenuItem>
+                    <MenuItem value="OTRA">Otra</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Teléfono"
+                    type="tel"
+                    value={formData.telefono || ""}
+                    onChange={handleFieldChange("telefono")}
+                    disabled={isSaving}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="Observaciones"
+                    value={formData.observaciones || ""}
+                    onChange={handleFieldChange("observaciones")}
+                    disabled={isSaving}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          ) : (
+            // View Mode - Tab Panels
+            <>
+              <TabPanel value={activeTab} index={0}>
+                <PersonalInfoDisplay persona={persona} />
+              </TabPanel>
 
-          <TabPanel value={activeTab} index={2}>
-            <HealthDisplay persona={persona} />
-          </TabPanel>
+              <TabPanel value={activeTab} index={1}>
+                <EducationDisplay persona={persona} />
+              </TabPanel>
 
-          <TabPanel value={activeTab} index={3}>
-            <VulnerabilityDisplay persona={persona} />
-          </TabPanel>
+              <TabPanel value={activeTab} index={2}>
+                <HealthDisplay persona={persona} />
+              </TabPanel>
+
+              <TabPanel value={activeTab} index={3}>
+                <VulnerabilityDisplay persona={persona} />
+              </TabPanel>
+            </>
+          )}
         </Box>
 
         {/* Footer Actions */}
-        <Divider />
-        <Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 1 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={toggleExpanded}
-            startIcon={<CloseIcon />}
-          >
-            Cerrar
-          </Button>
-          {showEditButton && onEdit && (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onEdit}
-            >
-              Editar datos
-            </Button>
-          )}
-        </Box>
+        {!hideActions && (
+          <>
+            <Divider />
+            <Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 1 }}>
+              {isEditing ? (
+                // Edit mode actions
+                <>
+                  <Button
+                    variant="outlined"
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    startIcon={<CancelIcon />}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />}
+                  >
+                    {isSaving ? "Guardando..." : "Guardar cambios"}
+                  </Button>
+                </>
+              ) : (
+                // View mode actions
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={toggleExpanded}
+                    startIcon={<CloseIcon />}
+                  >
+                    Cerrar
+                  </Button>
+                  {showEditButton && (onSave || onEdit) && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleEditClick}
+                      startIcon={<EditIcon />}
+                    >
+                      Editar datos
+                    </Button>
+                  )}
+                </>
+              )}
+            </Box>
+          </>
+        )}
       </Collapse>
     </Paper>
   )

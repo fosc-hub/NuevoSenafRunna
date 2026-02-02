@@ -80,11 +80,29 @@ export interface PersonaCompletaData {
 // Component Props Types
 // ============================================
 
+// Editable fields for PersonaCompleta
+export interface PersonaEditableFields {
+  nombre: string
+  apellido: string
+  nombre_autopercibido: string | null
+  fecha_nacimiento: string | null
+  nacionalidad: string
+  dni: number | null
+  situacion_dni: string | null
+  genero: string
+  telefono: number | null
+  observaciones: string | null
+}
+
 export interface PersonaCompletaSectionProps {
   persona: PersonaCompletaData
   defaultExpanded?: boolean
   showEditButton?: boolean
   onEdit?: () => void
+  /** Called when saving inline edits. If provided, enables inline editing mode */
+  onSave?: (data: Partial<PersonaEditableFields>) => Promise<void>
+  /** Hide the footer action buttons (Cerrar, Editar datos) when used inside a Dialog */
+  hideActions?: boolean
 }
 
 export interface DisplayTabProps {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import type React from "react"
 
-import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab, Menu, MenuItem, ListItemIcon, ListItemText, Divider, AlertTitle, Dialog, DialogTitle, DialogContent } from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab, Menu, MenuItem, ListItemIcon, ListItemText, Divider, AlertTitle } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import ArticleIcon from "@mui/icons-material/Article"
 import AddIcon from "@mui/icons-material/Add"
@@ -34,8 +34,7 @@ import { HistorialCambiosSection } from "./[id]/medida/[medidaId]/components/leg
 import { PlanTrabajoSection } from "./[id]/medida/[medidaId]/components/legajo/plan-trabajo-section"
 import { HistorialAsignacionesSection } from "./[id]/medida/[medidaId]/components/legajo/historial-asignaciones-section"
 import { MedidasActivasSection } from "./[id]/medida/[medidaId]/components/legajo/medidas-activas-section"
-import { PersonaCompletaSection } from "@/components/legajo/persona-completa"
-import type { PersonaCompletaData } from "@/components/legajo/persona-completa"
+import PersonaDetailModalEnhanced from "./[id]/medida/[medidaId]/components/dialogs/persona-detail-modal-enhanced"
 
 // Importar tipos
 
@@ -45,37 +44,6 @@ interface LegajoDetailProps {
   }
   onClose?: () => void
   isFullPage?: boolean
-}
-
-const mapToPersonaCompleta = (persona: PersonaDetailData): PersonaCompletaData => {
-  return {
-    id: persona.id,
-    nombre: persona.nombre,
-    nombre_autopercibido: persona.nombre_autopercibido,
-    apellido: persona.apellido,
-    fecha_nacimiento: persona.fecha_nacimiento,
-    edad_aproximada: persona.edad_aproximada,
-    edad_calculada:
-      typeof persona.edad_calculada === "string" ? parseInt(persona.edad_calculada, 10) || null : persona.edad_calculada,
-    nacionalidad: persona.nacionalidad,
-    dni: persona.dni,
-    situacion_dni: persona.situacion_dni,
-    genero: persona.genero,
-    telefono: persona.telefono,
-    observaciones: persona.observaciones,
-    fecha_defuncion: persona.fecha_defuncion,
-    adulto: persona.adulto,
-    nnya: persona.nnya,
-    deleted: persona.deleted,
-    localizacion: persona.localizacion || null,
-    educacion: persona.educacion || null,
-    cobertura_medica: persona.cobertura_medica || null,
-    persona_enfermedades: persona.persona_enfermedades || [],
-    demanda_persona: persona.demanda_persona || null,
-    use_demanda_localizacion: persona.use_demanda_localizacion || false,
-    condiciones_vulnerabilidad: persona.condiciones_vulnerabilidad || [],
-    vulneraciones: persona.vulneraciones || [],
-  }
 }
 
 export default function LegajoDetail({ params, onClose, isFullPage = false }: LegajoDetailProps) {
@@ -281,7 +249,6 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
 
   // Prepare breadcrumb items
   const breadcrumbItems = [...getDefaultBreadcrumbs()]
-  const personaCompletaData = legajoData.persona ? mapToPersonaCompleta(legajoData.persona) : null
   const puedeEditarPersona = isAdmin || legajoData.permisos_usuario?.puede_editar
 
   return (
@@ -434,36 +401,12 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         onSuccess={handleCrearMedidaSuccess}
       />
 
-      <Dialog
+      <PersonaDetailModalEnhanced
         open={openPersonaCompletaModal}
         onClose={() => setOpenPersonaCompletaModal(false)}
-        fullWidth
-        maxWidth="lg"
-      >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Ver todos los datos
-          </Typography>
-          <IconButton onClick={() => setOpenPersonaCompletaModal(false)}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          {personaCompletaData ? (
-            <PersonaCompletaSection
-              persona={personaCompletaData}
-              defaultExpanded
-              showEditButton={puedeEditarPersona}
-              onEdit={() => {
-                // Mantener el modal abierto para que puedan consultar los datos
-                setOpenEditDatosDialog(true)
-              }}
-            />
-          ) : (
-            <Typography variant="body1">No hay datos completos para mostrar.</Typography>
-          )}
-        </DialogContent>
-      </Dialog>
+        legajoData={legajoData}
+        readOnly={!puedeEditarPersona}
+      />
     </Box>
   )
 }

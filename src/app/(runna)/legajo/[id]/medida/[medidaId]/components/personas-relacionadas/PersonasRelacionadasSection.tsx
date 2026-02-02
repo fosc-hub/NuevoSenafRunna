@@ -267,6 +267,9 @@ export default function PersonasRelacionadasSection({
   readOnly = false,
   canEdit = true,
 }: PersonasRelacionadasSectionProps) {
+  // Debug log
+  console.log(`[PersonasRelacionadasSection] legajoId: ${legajoId}, nnyaId: ${nnyaId}`)
+
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [desvincularModalOpen, setDesvincularModalOpen] = useState(false)

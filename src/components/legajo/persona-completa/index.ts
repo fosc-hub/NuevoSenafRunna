@@ -13,6 +13,7 @@ export {
 export type {
   PersonaCompletaData,
   PersonaCompletaSectionProps,
+  PersonaEditableFields,
   DisplayTabProps,
   LocalizacionEmbedded,
   EducacionEmbedded,

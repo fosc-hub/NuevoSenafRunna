@@ -320,7 +320,8 @@ export const usePersonasRelacionadasManager = (
 
   // Queries
   const personasRelacionadasQuery = usePersonasRelacionadas(legajoId, { enabled })
-  const tiposVinculoQuery = useTiposVinculoPersona({ enabled })
+  // tiposVinculo is a static catalog - always fetch it independently of legajoId
+  const tiposVinculoQuery = useTiposVinculoPersona()
 
   // Mutations (only create if we have a valid legajoId)
   const addExistenteMutation = useAddPersonaRelacionadaExistente(legajoId || 0)

@@ -290,6 +290,7 @@ export interface NNyAPersonasRelacionadasUpdateRequest {
 
 /**
  * Tipo de vínculo familiar from /api/vinculo-de-personas/ endpoint
+ * NOTE: /api/tipos-vinculo/ is for entity linkages (Legajos/Demandas/Medidas), NOT for persons
  */
 export interface TipoVinculoPersona {
   id: number

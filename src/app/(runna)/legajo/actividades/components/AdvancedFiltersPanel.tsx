@@ -38,6 +38,7 @@ import { useCatalogData, extractArray } from '@/hooks/useApiQuery'
 import type { GlobalActividadFilters } from '../services/globalActividadService'
 import type { TTipoActividad } from '../../[id]/medida/[medidaId]/types/actividades'
 import type { Usuario, Zona } from '@/app/(runna)/legajo-mesa/types/asignacion-types'
+import type { TableVariant } from './UnifiedActividadesTable'
 
 // Estado options for multi-select
 const ESTADO_OPTIONS = [
@@ -83,6 +84,8 @@ interface AdvancedFiltersPanelProps {
   onFilterChange: (key: keyof GlobalActividadFilters, value: any) => void
   onClearFilters: () => void
   canSeeAllActors: boolean
+  /** Variant determines which filter sections to show */
+  variant?: TableVariant
 }
 
 export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
@@ -90,7 +93,11 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   onFilterChange,
   onClearFilters,
   canSeeAllActors,
+  variant = 'global',
 }) => {
+  // Determine which sections to show based on variant
+  // Only show NNyA & Legajo section for global view since legajo/medida already have this context
+  const showNnyaLegajoSection = variant === 'global'
   const [expanded, setExpanded] = useState(false)
 
   // Debounced search state - local state for immediate UI feedback
@@ -358,82 +365,86 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
             }}
           >
             <Grid container spacing={2}>
-              {/* Section: NNyA & Legajo */}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <ChildCareIcon fontSize="small" color="primary" />
-                  <Typography variant="subtitle2" color="primary">
-                    NNyA y Legajo
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Nombre NNyA"
-                  placeholder="Buscar por nombre/apellido..."
-                  value={localNnyaNombre}
-                  onChange={(e) => setLocalNnyaNombre(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonIcon fontSize="small" color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="DNI NNyA"
-                  placeholder="Buscar por DNI..."
-                  value={localNnyaDni}
-                  onChange={(e) => setLocalNnyaDni(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Número de Legajo"
-                  placeholder="Ej: LEG-2024-001"
-                  value={localNumeroLegajo}
-                  onChange={(e) => setLocalNumeroLegajo(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FolderIcon fontSize="small" color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Tipo de Medida</InputLabel>
-                  <Select
-                    value={filters.tipo_medida || ''}
-                    onChange={(e) => onFilterChange('tipo_medida', e.target.value)}
-                    label="Tipo de Medida"
-                  >
-                    {TIPO_MEDIDA_OPTIONS.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+              {/* Section: NNyA & Legajo - Only for global variant */}
+              {showNnyaLegajoSection && (
+                <>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <ChildCareIcon fontSize="small" color="primary" />
+                      <Typography variant="subtitle2" color="primary">
+                        NNyA y Legajo
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Nombre NNyA"
+                      placeholder="Buscar por nombre/apellido..."
+                      value={localNnyaNombre}
+                      onChange={(e) => setLocalNnyaNombre(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PersonIcon fontSize="small" color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="DNI NNyA"
+                      placeholder="Buscar por DNI..."
+                      value={localNnyaDni}
+                      onChange={(e) => setLocalNnyaDni(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Número de Legajo"
+                      placeholder="Ej: LEG-2024-001"
+                      value={localNumeroLegajo}
+                      onChange={(e) => setLocalNumeroLegajo(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <FolderIcon fontSize="small" color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Tipo de Medida</InputLabel>
+                      <Select
+                        value={filters.tipo_medida || ''}
+                        onChange={(e) => onFilterChange('tipo_medida', e.target.value)}
+                        label="Tipo de Medida"
+                      >
+                        {TIPO_MEDIDA_OPTIONS.map((opt) => (
+                          <MenuItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
 
-              <Grid item xs={12}>
-                <Divider sx={{ my: 1 }} />
-              </Grid>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 1 }} />
+                  </Grid>
+                </>
+              )}
 
               {/* Section: Responsable & Activity Type */}
               <Grid item xs={12}>

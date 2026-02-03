@@ -20,7 +20,6 @@ import {
 import {
   Send as SendIcon,
   AssignmentInd as AssignmentIcon,
-  CompareArrows as TransferIcon,
   SwapHoriz as SwapHorizIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
@@ -89,11 +88,7 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
   const [selectedResponsablePrincipal, setSelectedResponsablePrincipal] = useState<number | null>(null)
   const [selectedResponsablesSecundarios, setSelectedResponsablesSecundarios] = useState<number[]>([])
 
-  // ===== TAB 2: BULK TRANSFER TO USER =====
-  const [selectedResponsableNuevo, setSelectedResponsableNuevo] = useState<number | null>(null)
-  const [motivoTransferencia, setMotivoTransferencia] = useState("")
-
-  // ===== TAB 3: BULK TRANSFER TO TEAM =====
+  // ===== TAB 2: BULK TRANSFER TO TEAM =====
   const [selectedEquipoDestino, setSelectedEquipoDestino] = useState<number | null>(null)
   const [selectedResponsableEquipo, setSelectedResponsableEquipo] = useState<number | null>(null)
   const [motivoTransferenciaEquipo, setMotivoTransferenciaEquipo] = useState("")
@@ -191,45 +186,7 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
     }
   }
 
-  // Handler for Tab 2: Bulk Transfer to User
-  const handleBulkTransferUser = async () => {
-    if (!selectedResponsableNuevo) {
-      toast.error("Debe seleccionar un responsable nuevo")
-      return
-    }
-
-    if (!motivoTransferencia || motivoTransferencia.trim().length < 15) {
-      toast.error("El motivo es obligatorio (mínimo 15 caracteres)")
-      return
-    }
-
-    setIsSubmitting(true)
-    setOperationResult(null)
-
-    try {
-      const result = await actividadService.bulkTransfer({
-        actividad_ids: actividadIds,
-        responsable_nuevo: selectedResponsableNuevo,
-        motivo: motivoTransferencia,
-      })
-
-      setOperationResult(result)
-
-      if (result.errors && result.errors.length > 0) {
-        toast.warning(`Operación parcial: ${result.transferred_count} transferidas, ${result.errors.length} errores`)
-      } else {
-        toast.success(`${result.transferred_count} actividades transferidas exitosamente`)
-        onSuccess?.()
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || error.message || "Error al transferir las actividades"
-      toast.error(errorMessage)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Handler for Tab 3: Bulk Transfer to Team
+  // Handler for Tab 2: Bulk Transfer to Team
   const handleBulkTransferTeam = async () => {
     if (!selectedEquipoDestino) {
       toast.error("Debe seleccionar un equipo de destino")
@@ -272,8 +229,6 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
     // Reset state on close
     setSelectedResponsablePrincipal(null)
     setSelectedResponsablesSecundarios([])
-    setSelectedResponsableNuevo(null)
-    setMotivoTransferencia("")
     setSelectedEquipoDestino(null)
     setSelectedResponsableEquipo(null)
     setMotivoTransferenciaEquipo("")
@@ -283,7 +238,6 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
   }
 
   const canAssign = selectedResponsablePrincipal !== null || selectedResponsablesSecundarios.length > 0
-  const canTransferUser = selectedResponsableNuevo !== null && motivoTransferencia.trim().length >= 15
   const canTransferTeam = selectedEquipoDestino !== null && motivoTransferenciaEquipo.trim().length >= 15
 
   // Get actions based on current tab
@@ -308,24 +262,6 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
           },
         ]
       case 1:
-        return [
-          {
-            label: "Transferir a Usuario",
-            onClick: handleBulkTransferUser,
-            variant: "contained" as const,
-            color: "primary" as const,
-            disabled: isSubmitting || !canTransferUser,
-            loading: isSubmitting,
-            startIcon: <SendIcon />,
-          },
-          {
-            label: "Cerrar",
-            onClick: handleClose,
-            variant: "outlined" as const,
-            disabled: isSubmitting,
-          },
-        ]
-      case 2:
         return [
           {
             label: "Transferir a Equipo",
@@ -356,7 +292,6 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
       titleIcon={<AssignmentIcon />}
       tabs={[
         { label: "Asignar Responsables", icon: <AssignmentIcon fontSize="small" /> },
-        { label: "Transferir a Usuario", icon: <TransferIcon fontSize="small" /> },
         { label: "Transferir a Equipo", icon: <SwapHorizIcon fontSize="small" /> },
       ]}
       activeTab={tabValue}
@@ -527,65 +462,8 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
             </Box>
           )}
 
-          {/* TAB 2: BULK TRANSFER TO USER */}
+          {/* TAB 2: BULK TRANSFER TO TEAM */}
           {tabValue === 1 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-              <Alert severity="info">
-                Transfiera las {selectedActividades.length} actividades seleccionadas a un nuevo responsable.
-                Esta operación quedará registrada en el historial de cada actividad.
-              </Alert>
-
-              <FormControl fullWidth>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                  Nuevo Responsable *
-                </Typography>
-                <Autocomplete
-                  options={usuarios}
-                  getOptionLabel={(option) => getUserDisplayName(option)}
-                  value={usuarios.find((u) => u.id === selectedResponsableNuevo) || null}
-                  onChange={(_, newValue) => setSelectedResponsableNuevo(newValue?.id || null)}
-                  renderInput={(params) => (
-                    <TextField {...params} placeholder="Seleccione el nuevo responsable" size="small" />
-                  )}
-                  disabled={isSubmitting}
-                />
-                <FormHelperText>
-                  Todas las actividades serán transferidas a este usuario
-                </FormHelperText>
-              </FormControl>
-
-              <FormControl fullWidth>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                  Motivo de la Transferencia * (mínimo 15 caracteres)
-                </Typography>
-                <TextField
-                  multiline
-                  rows={3}
-                  value={motivoTransferencia}
-                  onChange={(e) => setMotivoTransferencia(e.target.value)}
-                  placeholder="Describa el motivo de la transferencia..."
-                  size="small"
-                  disabled={isSubmitting}
-                  error={motivoTransferencia.length > 0 && motivoTransferencia.length < 15}
-                  helperText={
-                    motivoTransferencia.length > 0 && motivoTransferencia.length < 15
-                      ? `${motivoTransferencia.length}/15 caracteres`
-                      : ""
-                  }
-                />
-              </FormControl>
-
-              <Alert severity="warning" icon={<WarningIcon />}>
-                <Typography variant="body2">
-                  <strong>Atención:</strong> Esta acción transferirá {selectedActividades.length} actividades al nuevo responsable.
-                  Cada transferencia quedará registrada en el historial de la actividad.
-                </Typography>
-              </Alert>
-            </Box>
-          )}
-
-          {/* TAB 3: BULK TRANSFER TO TEAM */}
-          {tabValue === 2 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <Alert severity="info">
                 Transfiera las {selectedActividades.length} actividades seleccionadas a otro equipo/zona.

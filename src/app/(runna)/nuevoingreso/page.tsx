@@ -24,6 +24,8 @@ import { useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import { useDraftStore } from "@/components/forms/utils/userDraftStore"
 import { ArrowBack, Save, Delete, Refresh } from "@mui/icons-material"
+import { DemandaSuccessModal } from "./components/DemandaSuccessModal"
+import type { DemandaCreatedResponse } from "./types/demanda-response"
 
 const Home: React.FC = () => {
   const router = useRouter()
@@ -31,6 +33,10 @@ const Home: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [showDraftModal, setShowDraftModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [createdDemandaData, setCreatedDemandaData] = useState<DemandaCreatedResponse | null>(null)
 
   // Use a consistent ID for the draft
   const formId = "new-registro"
@@ -107,20 +113,19 @@ const Home: React.FC = () => {
     router.push("/mesadeentrada")
   }
 
-  // The mutation is no longer needed in this component since MultiStepForm handles submission
+  // The mutation receives the response data from MultiStepForm's submission
   const mutation = useMutation({
-    mutationFn: async (data: FormData) => data,
-    onSuccess: (data) => {
-      console.log("Form data received:", data)
-      setFormData(data)
+    mutationFn: async (data: DemandaCreatedResponse) => data,
+    onSuccess: (data: DemandaCreatedResponse) => {
+      console.log("Demanda created successfully:", data)
       setError(null)
-      toast.success("Formulario enviado exitosamente.")
 
       // Clear the draft after successful submission
       clearDraft(formId)
 
-      // Redirect to mesadeentrada after successful submission
-      router.push("/mesadeentrada")
+      // Store the response and show success modal
+      setCreatedDemandaData(data)
+      setShowSuccessModal(true)
     },
     onError: (error: any) => {
       console.error("Error with form data:", error)
@@ -129,10 +134,20 @@ const Home: React.FC = () => {
     },
   })
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: any) => {
     console.log("Form data received from MultiStepForm:", data)
-    // We're just receiving the data here, not submitting it again
-    mutation.mutate(data) // This just passes the data through the mutation for state management
+    // The data received here is now the full DemandaCreatedResponse from the API
+    mutation.mutate(data as DemandaCreatedResponse)
+  }
+
+  const handleNavigateToDemanda = (demandaId: number) => {
+    setShowSuccessModal(false)
+    router.push(`/demanda/${demandaId}`)
+  }
+
+  const handleNavigateToMesaEntrada = () => {
+    setShowSuccessModal(false)
+    router.push("/mesadeentrada")
   }
 
   if (error) {
@@ -238,6 +253,15 @@ const Home: React.FC = () => {
           </Card>
         </Fade>
       )}
+
+      {/* Success Modal - shows after demanda creation */}
+      <DemandaSuccessModal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        data={createdDemandaData}
+        onNavigateToDemanda={handleNavigateToDemanda}
+        onNavigateToMesaEntrada={handleNavigateToMesaEntrada}
+      />
     </Container>
   )
 }

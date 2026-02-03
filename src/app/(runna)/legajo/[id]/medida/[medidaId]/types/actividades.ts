@@ -647,13 +647,19 @@ export interface BulkUpdateActividadesRequest {
  * Endpoint: POST /api/actividades/bulk-transferir/
  *
  * Permissions: JZ, Director, Legal, Admin
+ *
+ * Two modes supported:
+ * 1. Transfer to user: responsable_nuevo required
+ * 2. Transfer to team: equipo_destino required, responsable_nuevo optional
  */
 export interface BulkTransferActividadesRequest {
   /** Array of activity IDs to transfer */
   actividad_ids: number[]
-  /** ID of the new responsible user */
-  responsable_nuevo: number
-  /** Reason for the transfer (required) */
+  /** ID of the new responsible user (required for user transfer, optional for team transfer) */
+  responsable_nuevo?: number
+  /** ID of the destination team/zona (for team transfer) */
+  equipo_destino?: number
+  /** Reason for the transfer (required, min 15 characters) */
   motivo: string
 }
 

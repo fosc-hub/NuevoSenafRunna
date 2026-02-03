@@ -31,7 +31,7 @@ const nnyaSchema = z.object({
   apellido: z.string().min(1, 'Apellido requerido'),
   dni: z.number().optional(),
   situacion_dni: z.enum(['EN_TRAMITE', 'VENCIDO', 'EXTRAVIADO', 'INEXISTENTE', 'VALIDO', 'OTRO']),
-  fecha_nacimiento: z.date().optional(),
+  fecha_nacimiento: z.date({ required_error: 'Fecha de nacimiento requerida' }),
   edad_aproximada: z.number().optional(),
   nacionalidad: z.enum(['ARGENTINA', 'EXTRANJERA']),
   genero: z.enum(['MASCULINO', 'FEMENINO', 'NO_BINARIO']),
@@ -196,7 +196,7 @@ export default function DatosNnyaStep({ nnyaSeleccionado, modoCreacion, onComple
               render={({ field }) => (
                 <DatePicker
                   {...field}
-                  label="Fecha de Nacimiento"
+                  label="Fecha de Nacimiento *"
                   slotProps={{
                     textField: {
                       fullWidth: true,

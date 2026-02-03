@@ -21,6 +21,7 @@ import {
   Send as SendIcon,
   AssignmentInd as AssignmentIcon,
   CompareArrows as TransferIcon,
+  SwapHoriz as SwapHorizIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Warning as WarningIcon,
@@ -30,13 +31,32 @@ import BaseModal from "@/components/shared/BaseModal"
 import { useCatalogData, extractArray } from "@/hooks/useApiQuery"
 import { actividadService } from "../../[id]/medida/[medidaId]/services/actividadService"
 import type { TActividadPlanTrabajo, BulkOperationResponse } from "../../[id]/medida/[medidaId]/types/actividades"
-import type { Usuario } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
+import type { Usuario, Zona } from "@/app/(runna)/legajo-mesa/types/asignacion-types"
 
 interface BulkAsignarActividadModalProps {
   open: boolean
   onClose: () => void
   selectedActividades: TActividadPlanTrabajo[]
   onSuccess?: () => void
+}
+
+// Type for users-zonas endpoint response with user_info
+interface UserZonaWithInfo {
+  id: number
+  user: number
+  zona: number
+  jefe: boolean
+  director: boolean
+  legal: boolean
+  localidad: number | null
+  user_info: {
+    id: number
+    username: string
+    first_name: string
+    last_name: string
+    email: string
+    is_active: boolean
+  }
 }
 
 const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
@@ -51,20 +71,38 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
   // Operation result state
   const [operationResult, setOperationResult] = useState<BulkOperationResponse | null>(null)
 
-  // Fetch users
+  // Fetch users (for Tab 1 & 2 - all users)
   const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("users/")
   const usuarios = extractArray(usuariosData)
+
+  // Fetch zonas (for Tab 3 - team transfer)
+  const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
+  const zonas = extractArray(zonasData)
+
+  // Fetch users-zonas mapping (for Tab 3 - filter users by team)
+  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<UserZonaWithInfo[]>(
+    "users-zonas/?page_size=500"
+  )
+  const userZonas = extractArray(userZonasData)
 
   // ===== TAB 1: BULK ASSIGN RESPONSABLES =====
   const [selectedResponsablePrincipal, setSelectedResponsablePrincipal] = useState<number | null>(null)
   const [selectedResponsablesSecundarios, setSelectedResponsablesSecundarios] = useState<number[]>([])
 
-  // ===== TAB 2: BULK TRANSFER =====
+  // ===== TAB 2: BULK TRANSFER TO USER =====
   const [selectedResponsableNuevo, setSelectedResponsableNuevo] = useState<number | null>(null)
   const [motivoTransferencia, setMotivoTransferencia] = useState("")
 
+  // ===== TAB 3: BULK TRANSFER TO TEAM =====
+  const [selectedEquipoDestino, setSelectedEquipoDestino] = useState<number | null>(null)
+  const [selectedResponsableEquipo, setSelectedResponsableEquipo] = useState<number | null>(null)
+  const [motivoTransferenciaEquipo, setMotivoTransferenciaEquipo] = useState("")
+
   // Loading states
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Combined loading state
+  const isLoading = isLoadingUsuarios || isLoadingZonas || isLoadingUserZonas
 
   // Get activity IDs
   const actividadIds = useMemo(
@@ -84,6 +122,24 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
 
     return { estadoCounts, actorCounts }
   }, [selectedActividades])
+
+  // Filter users by selected zona for team transfer tab
+  const usuariosFiltradosPorEquipo = useMemo((): Usuario[] => {
+    if (!selectedEquipoDestino) return []
+
+    return userZonas
+      .filter((uz) => uz.zona === selectedEquipoDestino && uz.user_info)
+      .map((uz) => ({
+        id: uz.user_info.id,
+        username: uz.user_info.username,
+        first_name: uz.user_info.first_name,
+        last_name: uz.user_info.last_name,
+        email: uz.user_info.email,
+        nombre_completo: uz.user_info.first_name && uz.user_info.last_name
+          ? `${uz.user_info.first_name} ${uz.user_info.last_name}`.trim()
+          : uz.user_info.username,
+      }))
+  }, [selectedEquipoDestino, userZonas])
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
@@ -135,15 +191,15 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
     }
   }
 
-  // Handler for Tab 2: Bulk Transfer
-  const handleBulkTransfer = async () => {
+  // Handler for Tab 2: Bulk Transfer to User
+  const handleBulkTransferUser = async () => {
     if (!selectedResponsableNuevo) {
       toast.error("Debe seleccionar un responsable nuevo")
       return
     }
 
-    if (!motivoTransferencia || motivoTransferencia.trim().length < 10) {
-      toast.error("El motivo es obligatorio (mínimo 10 caracteres)")
+    if (!motivoTransferencia || motivoTransferencia.trim().length < 15) {
+      toast.error("El motivo es obligatorio (mínimo 15 caracteres)")
       return
     }
 
@@ -173,19 +229,124 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
     }
   }
 
+  // Handler for Tab 3: Bulk Transfer to Team
+  const handleBulkTransferTeam = async () => {
+    if (!selectedEquipoDestino) {
+      toast.error("Debe seleccionar un equipo de destino")
+      return
+    }
+
+    if (!motivoTransferenciaEquipo || motivoTransferenciaEquipo.trim().length < 15) {
+      toast.error("El motivo es obligatorio (mínimo 15 caracteres)")
+      return
+    }
+
+    setIsSubmitting(true)
+    setOperationResult(null)
+
+    try {
+      const result = await actividadService.bulkTransfer({
+        actividad_ids: actividadIds,
+        equipo_destino: selectedEquipoDestino,
+        responsable_nuevo: selectedResponsableEquipo || undefined,
+        motivo: motivoTransferenciaEquipo,
+      })
+
+      setOperationResult(result)
+
+      if (result.errors && result.errors.length > 0) {
+        toast.warning(`Operación parcial: ${result.transferred_count} transferidas, ${result.errors.length} errores`)
+      } else {
+        toast.success(`${result.transferred_count} actividades transferidas al equipo exitosamente`)
+        onSuccess?.()
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message || "Error al transferir las actividades"
+      toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleClose = () => {
     // Reset state on close
     setSelectedResponsablePrincipal(null)
     setSelectedResponsablesSecundarios([])
     setSelectedResponsableNuevo(null)
     setMotivoTransferencia("")
+    setSelectedEquipoDestino(null)
+    setSelectedResponsableEquipo(null)
+    setMotivoTransferenciaEquipo("")
     setOperationResult(null)
     setTabValue(0)
     onClose()
   }
 
   const canAssign = selectedResponsablePrincipal !== null || selectedResponsablesSecundarios.length > 0
-  const canTransfer = selectedResponsableNuevo !== null && motivoTransferencia.trim().length >= 10
+  const canTransferUser = selectedResponsableNuevo !== null && motivoTransferencia.trim().length >= 15
+  const canTransferTeam = selectedEquipoDestino !== null && motivoTransferenciaEquipo.trim().length >= 15
+
+  // Get actions based on current tab
+  const getActions = () => {
+    switch (tabValue) {
+      case 0:
+        return [
+          {
+            label: "Asignar a Todas",
+            onClick: handleBulkAssign,
+            variant: "contained" as const,
+            color: "primary" as const,
+            disabled: isSubmitting || !canAssign,
+            loading: isSubmitting,
+            startIcon: <SendIcon />,
+          },
+          {
+            label: "Cerrar",
+            onClick: handleClose,
+            variant: "outlined" as const,
+            disabled: isSubmitting,
+          },
+        ]
+      case 1:
+        return [
+          {
+            label: "Transferir a Usuario",
+            onClick: handleBulkTransferUser,
+            variant: "contained" as const,
+            color: "primary" as const,
+            disabled: isSubmitting || !canTransferUser,
+            loading: isSubmitting,
+            startIcon: <SendIcon />,
+          },
+          {
+            label: "Cerrar",
+            onClick: handleClose,
+            variant: "outlined" as const,
+            disabled: isSubmitting,
+          },
+        ]
+      case 2:
+        return [
+          {
+            label: "Transferir a Equipo",
+            onClick: handleBulkTransferTeam,
+            variant: "contained" as const,
+            color: "primary" as const,
+            disabled: isSubmitting || !canTransferTeam,
+            loading: isSubmitting,
+            startIcon: <SendIcon />,
+          },
+          {
+            label: "Cerrar",
+            onClick: handleClose,
+            variant: "outlined" as const,
+            disabled: isSubmitting,
+          },
+        ]
+      default:
+        return []
+    }
+  }
 
   return (
     <BaseModal
@@ -195,51 +356,16 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
       titleIcon={<AssignmentIcon />}
       tabs={[
         { label: "Asignar Responsables", icon: <AssignmentIcon fontSize="small" /> },
-        { label: "Transferir", icon: <TransferIcon fontSize="small" /> },
+        { label: "Transferir a Usuario", icon: <TransferIcon fontSize="small" /> },
+        { label: "Transferir a Equipo", icon: <SwapHorizIcon fontSize="small" /> },
       ]}
       activeTab={tabValue}
       onTabChange={handleTabChange}
-      loading={isLoadingUsuarios}
-      loadingMessage="Cargando usuarios..."
+      loading={isLoading}
+      loadingMessage="Cargando datos..."
       maxWidth={800}
       minHeight={600}
-      actions={
-        tabValue === 0
-          ? [
-              {
-                label: "Asignar a Todas",
-                onClick: handleBulkAssign,
-                variant: "contained",
-                color: "primary",
-                disabled: isSubmitting || !canAssign,
-                loading: isSubmitting,
-                startIcon: <SendIcon />,
-              },
-              {
-                label: "Cerrar",
-                onClick: handleClose,
-                variant: "outlined",
-                disabled: isSubmitting,
-              },
-            ]
-          : [
-              {
-                label: "Transferir Todas",
-                onClick: handleBulkTransfer,
-                variant: "contained",
-                color: "primary",
-                disabled: isSubmitting || !canTransfer,
-                loading: isSubmitting,
-                startIcon: <SendIcon />,
-              },
-              {
-                label: "Cerrar",
-                onClick: handleClose,
-                variant: "outlined",
-                disabled: isSubmitting,
-              },
-            ]
-      }
+      actions={getActions()}
     >
       {/* Summary of selected activities */}
       <Box
@@ -322,7 +448,7 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
         </Box>
       )}
 
-      {!isLoadingUsuarios && (
+      {!isLoading && (
         <>
           {/* TAB 1: BULK ASSIGN RESPONSABLES */}
           {tabValue === 0 && (
@@ -369,19 +495,22 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
                     />
                   )}
                   renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                      <Chip
-                        key={option.id}
-                        label={getUserDisplayName(option)}
-                        size="small"
-                        {...getTagProps({ index })}
-                        sx={{
-                          bgcolor: "secondary.light",
-                          color: "secondary.contrastText",
-                          fontWeight: 500,
-                        }}
-                      />
-                    ))
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index })
+                      return (
+                        <Chip
+                          key={key}
+                          label={getUserDisplayName(option)}
+                          size="small"
+                          {...tagProps}
+                          sx={{
+                            bgcolor: "secondary.light",
+                            color: "secondary.contrastText",
+                            fontWeight: 500,
+                          }}
+                        />
+                      )
+                    })
                   }
                   disabled={isSubmitting}
                 />
@@ -398,7 +527,7 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
             </Box>
           )}
 
-          {/* TAB 2: BULK TRANSFER */}
+          {/* TAB 2: BULK TRANSFER TO USER */}
           {tabValue === 1 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <Alert severity="info">
@@ -427,7 +556,7 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
 
               <FormControl fullWidth>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                  Motivo de la Transferencia * (mínimo 10 caracteres)
+                  Motivo de la Transferencia * (mínimo 15 caracteres)
                 </Typography>
                 <TextField
                   multiline
@@ -437,10 +566,10 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
                   placeholder="Describa el motivo de la transferencia..."
                   size="small"
                   disabled={isSubmitting}
-                  error={motivoTransferencia.length > 0 && motivoTransferencia.length < 10}
+                  error={motivoTransferencia.length > 0 && motivoTransferencia.length < 15}
                   helperText={
-                    motivoTransferencia.length > 0 && motivoTransferencia.length < 10
-                      ? `${motivoTransferencia.length}/10 caracteres`
+                    motivoTransferencia.length > 0 && motivoTransferencia.length < 15
+                      ? `${motivoTransferencia.length}/15 caracteres`
                       : ""
                   }
                 />
@@ -449,6 +578,88 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
               <Alert severity="warning" icon={<WarningIcon />}>
                 <Typography variant="body2">
                   <strong>Atención:</strong> Esta acción transferirá {selectedActividades.length} actividades al nuevo responsable.
+                  Cada transferencia quedará registrada en el historial de la actividad.
+                </Typography>
+              </Alert>
+            </Box>
+          )}
+
+          {/* TAB 3: BULK TRANSFER TO TEAM */}
+          {tabValue === 2 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Alert severity="info">
+                Transfiera las {selectedActividades.length} actividades seleccionadas a otro equipo/zona.
+                Esta operación quedará registrada en el historial de cada actividad.
+              </Alert>
+
+              <FormControl fullWidth>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  Equipo Destino *
+                </Typography>
+                <Autocomplete
+                  options={zonas}
+                  getOptionLabel={(option) => option.nombre}
+                  value={zonas.find((z) => z.id === selectedEquipoDestino) || null}
+                  onChange={(_, newValue) => {
+                    setSelectedEquipoDestino(newValue?.id || null)
+                    setSelectedResponsableEquipo(null) // Reset user when zone changes
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="Seleccione el equipo de destino" size="small" />
+                  )}
+                  disabled={isSubmitting}
+                />
+                <FormHelperText>
+                  Todas las actividades serán transferidas a este equipo
+                </FormHelperText>
+              </FormControl>
+
+              {selectedEquipoDestino && (
+                <FormControl fullWidth>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Responsable en el Equipo (opcional)
+                  </Typography>
+                  <Autocomplete
+                    options={usuariosFiltradosPorEquipo}
+                    getOptionLabel={(option) => getUserDisplayName(option)}
+                    value={usuariosFiltradosPorEquipo.find((u) => u.id === selectedResponsableEquipo) || null}
+                    onChange={(_, newValue) => setSelectedResponsableEquipo(newValue?.id || null)}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder="Seleccione un responsable del equipo" size="small" />
+                    )}
+                    disabled={isSubmitting}
+                    noOptionsText="No hay usuarios en este equipo"
+                  />
+                  <FormHelperText>
+                    Si no selecciona, las actividades quedarán sin responsable asignado en el nuevo equipo
+                  </FormHelperText>
+                </FormControl>
+              )}
+
+              <FormControl fullWidth>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  Motivo de la Transferencia * (mínimo 15 caracteres)
+                </Typography>
+                <TextField
+                  multiline
+                  rows={3}
+                  value={motivoTransferenciaEquipo}
+                  onChange={(e) => setMotivoTransferenciaEquipo(e.target.value)}
+                  placeholder="Describa el motivo de la transferencia al equipo..."
+                  size="small"
+                  disabled={isSubmitting}
+                  error={motivoTransferenciaEquipo.length > 0 && motivoTransferenciaEquipo.length < 15}
+                  helperText={
+                    motivoTransferenciaEquipo.length > 0 && motivoTransferenciaEquipo.length < 15
+                      ? `${motivoTransferenciaEquipo.length}/15 caracteres`
+                      : ""
+                  }
+                />
+              </FormControl>
+
+              <Alert severity="warning" icon={<WarningIcon />}>
+                <Typography variant="body2">
+                  <strong>Atención:</strong> Esta acción transferirá {selectedActividades.length} actividades al equipo seleccionado.
                   Cada transferencia quedará registrada en el historial de la actividad.
                 </Typography>
               </Alert>

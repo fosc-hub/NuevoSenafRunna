@@ -61,7 +61,15 @@ interface UserZona {
   legal: boolean
   user: number
   zona: number
-  localidad: number
+  localidad: number | null
+  user_info: {
+    id: number
+    username: string
+    first_name: string
+    last_name: string
+    email: string
+    is_active: boolean
+  }
 }
 
 interface DemandaZona {
@@ -131,7 +139,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     }
   }, [lastActiveDemandaZona])
 
-  // Fetch users for selected zona using the users-zonas endpoint
+  // Fetch users for selected zona using the users-zonas endpoint with user_info
   useEffect(() => {
     const fetchUsersForZona = async () => {
       if (!selectedZona) {
@@ -145,10 +153,17 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
           `users-zonas/?zona=${selectedZona}&page_size=500`
         )
 
-        // Map user IDs from users-zonas to actual user objects from the main users list
-        const userIds = response.results?.map((uz) => uz.user) || []
-        const filteredUsers = users.filter((user) => userIds.includes(user.id))
-        setUsersForSelectedZona(filteredUsers)
+        // Extract user details directly from user_info
+        const usersFromZona: User[] = (response.results || [])
+          .filter((uz) => uz.user_info)
+          .map((uz) => ({
+            id: uz.user_info.id,
+            username: uz.user_info.username,
+            first_name: uz.user_info.first_name,
+            last_name: uz.user_info.last_name,
+            email: uz.user_info.email,
+          }))
+        setUsersForSelectedZona(usersFromZona)
       } catch (error) {
         console.error("Error fetching users for zona:", error)
         setUsersForSelectedZona([])
@@ -158,7 +173,7 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
     }
 
     fetchUsersForZona()
-  }, [selectedZona, users])
+  }, [selectedZona])
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue)

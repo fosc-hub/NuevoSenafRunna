@@ -68,37 +68,53 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   // Tab control
   const [tabValue, setTabValue] = useState(0)
 
+  // Type for users-zonas endpoint response with user_info
+  interface UserZonaWithInfo {
+    id: number
+    user: number
+    zona: number
+    jefe: boolean
+    director: boolean
+    legal: boolean
+    localidad: number | null
+    user_info: {
+      id: number
+      username: string
+      first_name: string
+      last_name: string
+      email: string
+      is_active: boolean
+    }
+  }
+
   // Fetch data using TanStack Query - React Query will parallelize these automatically
   const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
   const zonas = extractArray(zonasData)
-
-  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>("users/")
-  const usuarios = extractArray(usuariosData)
 
   const { data: localesCentroVidaData, isLoading: isLoadingLocales } = useCatalogData<LocalCentroVida[]>(
     "locales-centro-vida/"
   )
   const localesCentroVida = extractArray(localesCentroVidaData)
 
-  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
-    "users-zonas/"
+  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<UserZonaWithInfo[]>(
+    "users-zonas/?page_size=500"
   )
   const userZonas = extractArray(userZonasData)
 
-  const { data: historialData, isLoading: isLoadingHistorial } = useConditionalData<HistorialAsignacion[]>(
+  const { data: historialData, isLoading: isLoadingHistorial, refetch: refetchHistorial } = useConditionalData<HistorialAsignacion[]>(
     `legajo/${legajoId}/historial-asignaciones/`,
     open && !!legajoId
   )
   const historial = extractArray(historialData)
 
-  const { data: legajoData, isLoading: isLoadingLegajo } = useConditionalData<any>(
+  const { data: legajoData, isLoading: isLoadingLegajo, refetch: refetchLegajo } = useConditionalData<any>(
     `legajo/${legajoId}/`,
     open && !!legajoId
   )
 
   // Combine loading states
   const isLoading =
-    isLoadingZonas || isLoadingUsuarios || isLoadingLocales ||
+    isLoadingZonas || isLoadingLocales ||
     isLoadingUserZonas || isLoadingHistorial || isLoadingLegajo
 
   // Submission state
@@ -236,16 +252,23 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
     return result
   }, [historial])
 
-  // Filtrar usuarios por zona seleccionada
-  const usuariosFiltrados = useMemo(() => {
+  // Filtrar usuarios por zona seleccionada - extract from user_info directly
+  const usuariosFiltrados = useMemo((): Usuario[] => {
     if (!selectedZonaAsignacion) return []
 
-    const userIds = userZonas
-      .filter((uz) => uz.zona === selectedZonaAsignacion)
-      .map((uz) => uz.user)
-
-    return usuarios.filter((u) => userIds.includes(u.id))
-  }, [selectedZonaAsignacion, usuarios, userZonas])
+    return userZonas
+      .filter((uz) => uz.zona === selectedZonaAsignacion && uz.user_info)
+      .map((uz) => ({
+        id: uz.user_info.id,
+        username: uz.user_info.username,
+        first_name: uz.user_info.first_name,
+        last_name: uz.user_info.last_name,
+        email: uz.user_info.email,
+        nombre_completo: uz.user_info.first_name && uz.user_info.last_name
+          ? `${uz.user_info.first_name} ${uz.user_info.last_name}`.trim()
+          : uz.user_info.username,
+      }))
+  }, [selectedZonaAsignacion, userZonas])
 
   // Handler para derivar
   const handleDerivar = async () => {
@@ -300,7 +323,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       }
 
       setComentariosDerivacion("")
-      await loadHistorial()
+      await Promise.all([refetchHistorial(), refetchLegajo()])
       onAsignacionComplete?.()
     } catch (error) {
       console.error("Error derivando legajo:", error)
@@ -350,7 +373,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
       }
 
       setComentariosAsignacion("")
-      await loadHistorial()
+      await Promise.all([refetchHistorial(), refetchLegajo()])
       onAsignacionComplete?.()
     } catch (error) {
       console.error("Error asignando legajo:", error)

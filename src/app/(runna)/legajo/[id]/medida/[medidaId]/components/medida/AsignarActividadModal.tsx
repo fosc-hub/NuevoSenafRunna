@@ -47,6 +47,25 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   // Tab control
   const [tabValue, setTabValue] = useState(0)
 
+  // Type for users-zonas endpoint response with user_info
+  interface UserZonaWithInfo {
+    id: number
+    user: number
+    zona: number
+    jefe: boolean
+    director: boolean
+    legal: boolean
+    localidad: number | null
+    user_info: {
+      id: number
+      username: string
+      first_name: string
+      last_name: string
+      email: string
+      is_active: boolean
+    }
+  }
+
   // Fetch data using TanStack Query - React Query will parallelize these automatically
   const { data: actividad, isLoading: isLoadingActividad } = useConditionalData<TActividadPlanTrabajo>(
     `actividades/${actividadId}`,
@@ -57,20 +76,35 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
     }
   )
 
-  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<Usuario[]>(
-    "users/"
-  )
-  const usuarios = extractArray(usuariosData)
-
   const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>(
     "zonas/"
   )
   const zonas = extractArray(zonasData)
 
-  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<Array<{ id: number; user: number; zona: number }>>(
-    "users-zonas/"
+  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<UserZonaWithInfo[]>(
+    "users-zonas/?page_size=500"
   )
   const userZonas = extractArray(userZonasData)
+
+  // Extract ALL unique users from users-zonas with user_info
+  const usuarios = useMemo((): Usuario[] => {
+    const uniqueUsers = new Map<number, Usuario>()
+    userZonas.forEach((uz) => {
+      if (uz.user_info && !uniqueUsers.has(uz.user_info.id)) {
+        uniqueUsers.set(uz.user_info.id, {
+          id: uz.user_info.id,
+          username: uz.user_info.username,
+          first_name: uz.user_info.first_name,
+          last_name: uz.user_info.last_name,
+          email: uz.user_info.email,
+          nombre_completo: uz.user_info.first_name && uz.user_info.last_name
+            ? `${uz.user_info.first_name} ${uz.user_info.last_name}`.trim()
+            : uz.user_info.username,
+        })
+      }
+    })
+    return Array.from(uniqueUsers.values())
+  }, [userZonas])
 
   const { data: historialData, isLoading: isLoadingHistorial } = useConditionalData<THistorialActividad[]>(
     `actividades/${actividadId}/historial`,
@@ -93,7 +127,7 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   }, [historialData])
 
   // Combine loading states
-  const isLoading = isLoadingActividad || isLoadingUsuarios || isLoadingZonas || isLoadingUserZonas || isLoadingHistorial
+  const isLoading = isLoadingActividad || isLoadingZonas || isLoadingUserZonas || isLoadingHistorial
 
   // ===== TAB 1: ASIGNAR RESPONSABLE =====
   const [selectedResponsablePrincipal, setSelectedResponsablePrincipal] = useState<number | null>(
@@ -109,16 +143,23 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   const [selectedResponsableNuevo, setSelectedResponsableNuevo] = useState<number | null>(null)
   const [comentariosTransferencia, setComentariosTransferencia] = useState("")
 
-  // Filter users by selected zone for transfer tab
-  const usuariosFiltrados = useMemo(() => {
+  // Filter users by selected zone for transfer tab - extract from user_info directly
+  const usuariosFiltrados = useMemo((): Usuario[] => {
     if (!selectedEquipoDestino) return []
 
-    const userIds = userZonas
-      .filter((uz) => uz.zona === selectedEquipoDestino)
-      .map((uz) => uz.user)
-
-    return usuarios.filter((u) => userIds.includes(u.id))
-  }, [selectedEquipoDestino, usuarios, userZonas])
+    return userZonas
+      .filter((uz) => uz.zona === selectedEquipoDestino && uz.user_info)
+      .map((uz) => ({
+        id: uz.user_info.id,
+        username: uz.user_info.username,
+        first_name: uz.user_info.first_name,
+        last_name: uz.user_info.last_name,
+        email: uz.user_info.email,
+        nombre_completo: uz.user_info.first_name && uz.user_info.last_name
+          ? `${uz.user_info.first_name} ${uz.user_info.last_name}`.trim()
+          : uz.user_info.username,
+      }))
+  }, [selectedEquipoDestino, userZonas])
 
   // ========== Form Submission Hooks ==========
 

@@ -96,33 +96,52 @@ export const fetchLocalesCentroVida = async (): Promise<LocalCentroVida[]> => {
   return await get<LocalCentroVida[]>("locales-centro-vida/")
 }
 
-/**
- * Obtener lista de usuarios
- * GET /api/users/
- * Opcionalmente filtrados por zona
- */
-export const fetchUsuarios = async (zonaId?: number): Promise<Usuario[]> => {
-  const users = await get<Usuario[]>("users/")
-
-  // Si se proporciona zonaId, filtrar usuarios que pertenezcan a esa zona
-  if (zonaId) {
-    // El filtrado se hace en el backend idealmente, pero si no:
-    // Usar endpoint /api/users-zonas/ para obtener relación users-zonas
-    const userZonas = await get<Array<{ user: number; zona: number }>>("users-zonas/")
-    const userIdsEnZona = userZonas
-      .filter((uz) => uz.zona === zonaId)
-      .map((uz) => uz.user)
-
-    return users.filter((user) => userIdsEnZona.includes(user.id))
+interface UserZonaWithInfo {
+  id: number
+  user: number
+  zona: number
+  jefe: boolean
+  director: boolean
+  legal: boolean
+  localidad: number | null
+  user_info: {
+    id: number
+    username: string
+    first_name: string
+    last_name: string
+    email: string
+    is_active: boolean
   }
-
-  return users
 }
 
 /**
- * Obtener relación usuarios-zonas
+ * Obtener lista de usuarios por zona usando users-zonas con user_info
+ * GET /api/users-zonas/?zona={zonaId}
+ */
+export const fetchUsuariosPorZona = async (zonaId: number): Promise<Usuario[]> => {
+  const response = await get<{ results: UserZonaWithInfo[] } | UserZonaWithInfo[]>(
+    `users-zonas/?zona=${zonaId}&page_size=500`
+  )
+
+  const results = Array.isArray(response) ? response : response.results || []
+
+  return results
+    .filter((uz) => uz.user_info)
+    .map((uz) => ({
+      id: uz.user_info.id,
+      username: uz.user_info.username,
+      first_name: uz.user_info.first_name,
+      last_name: uz.user_info.last_name,
+      email: uz.user_info.email,
+      is_active: uz.user_info.is_active,
+    }))
+}
+
+/**
+ * Obtener relación usuarios-zonas con user_info
  * GET /api/users-zonas/
  */
-export const fetchUsersZonas = async (): Promise<Array<{ id: number; user: number; zona: number }>> => {
-  return await get<Array<{ id: number; user: number; zona: number }>>("users-zonas/")
+export const fetchUsersZonas = async (): Promise<UserZonaWithInfo[]> => {
+  const response = await get<{ results: UserZonaWithInfo[] } | UserZonaWithInfo[]>("users-zonas/?page_size=500")
+  return Array.isArray(response) ? response : response.results || []
 }

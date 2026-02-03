@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   Box,
   Typography,
@@ -12,8 +12,7 @@ import {
   IconButton,
   Chip,
   Alert,
-  Link,
-  Button
+  CircularProgress
 } from '@mui/material'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import DownloadIcon from '@mui/icons-material/Download'
@@ -21,7 +20,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import { AttachmentUpload } from '../AttachmentUpload'
 import type { TAdjuntoActividad } from '../../../types/actividades'
 import { actividadService } from '../../../services/actividadService'
-import { formatFileSize } from '@/utils/fileUtils'
+import { usePdfViewer } from '@/hooks'
+import { isPdfFile, downloadFileAuthenticated } from '@/utils/pdfUtils'
 
 interface EvidenciasTabProps {
   actividadId: number
@@ -38,6 +38,42 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadingId, setLoadingId] = useState<number | null>(null)
+  const { openUrl, PdfModal } = usePdfViewer()
+
+  /**
+   * Handle file view - open in PDF viewer or new window
+   * Uses adjunto.archivo (direct media URL)
+   */
+  const handleViewFile = useCallback((adjunto: TAdjuntoActividad) => {
+    const isPdf = isPdfFile(adjunto.nombre_original, adjunto.tipo_mime)
+
+    if (isPdf) {
+      openUrl(adjunto.archivo, {
+        title: adjunto.nombre_original,
+        fileName: adjunto.nombre_original
+      })
+    } else {
+      window.open(adjunto.archivo, '_blank', 'noopener,noreferrer')
+    }
+  }, [openUrl])
+
+  /**
+   * Handle file download
+   * Uses adjunto.archivo (direct media URL)
+   */
+  const handleDownloadFile = useCallback(async (adjunto: TAdjuntoActividad) => {
+    setLoadingId(adjunto.id)
+    try {
+      await downloadFileAuthenticated(adjunto.archivo, adjunto.nombre_original)
+    } catch (err) {
+      console.error('Error downloading file:', err)
+      // Fallback: open in new tab
+      window.open(adjunto.archivo, '_blank')
+    } finally {
+      setLoadingId(null)
+    }
+  }, [])
 
   const handleFileUpload = async (
     files: File[],
@@ -72,7 +108,7 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
   }
 
   // Group adjuntos by activo status
-  const adjuntosActivos = adjuntos.filter(adj => adj.archivo_url) // Active attachments
+  const adjuntosActivos = adjuntos.filter(adj => adj.activo && adj.archivo) // Active attachments with file
   const totalAdjuntos = adjuntosActivos.length
 
   return (
@@ -140,17 +176,20 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <IconButton
                       edge="end"
-                      href={adjunto.archivo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() => handleViewFile(adjunto)}
+                      disabled={loadingId === adjunto.id}
                       title="Ver archivo"
                     >
-                      <VisibilityIcon />
+                      {loadingId === adjunto.id ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <VisibilityIcon />
+                      )}
                     </IconButton>
                     <IconButton
                       edge="end"
-                      href={adjunto.archivo_url}
-                      download
+                      onClick={() => handleDownloadFile(adjunto)}
+                      disabled={loadingId === adjunto.id}
                       title="Descargar archivo"
                     >
                       <DownloadIcon />
@@ -202,6 +241,9 @@ export const EvidenciasTab: React.FC<EvidenciasTabProps> = ({
           </Typography>
         </Alert>
       )}
+
+      {/* PDF Viewer Modal */}
+      {PdfModal}
     </Box>
   )
 }

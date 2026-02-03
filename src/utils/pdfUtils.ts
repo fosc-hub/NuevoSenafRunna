@@ -216,6 +216,59 @@ export const downloadFileWithFetch = async (url: string, fileName: string): Prom
   }
 }
 
+/**
+ * Download a file from authenticated API endpoint
+ * Uses axiosInstance which includes Bearer token automatically
+ *
+ * @param url - URL to download from (can be relative or absolute)
+ * @param fileName - Name for the downloaded file
+ * @returns Promise resolving when download starts
+ */
+export const downloadFileAuthenticated = async (url: string, fileName: string): Promise<void> => {
+  // Dynamic import to avoid circular dependencies and SSR issues
+  const { default: axiosInstance } = await import("@/app/api/utils/axiosInstance")
+
+  try {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    })
+
+    const blob = new Blob([response.data], {
+      type: response.headers["content-type"] || "application/octet-stream",
+    })
+    const blobUrl = createBlobUrl(blob)
+
+    downloadFile(blobUrl, fileName)
+
+    // Clean up after a short delay
+    setTimeout(() => revokeBlobUrl(blobUrl), 100)
+  } catch (error) {
+    console.error("Authenticated download failed:", error)
+    // Fallback to simple download if authenticated fetch fails
+    downloadFile(url, fileName)
+  }
+}
+
+/**
+ * Fetch a file as Blob from authenticated API endpoint
+ * Useful for previewing files (PDFs, images) that require auth
+ *
+ * @param url - URL to fetch from (can be relative or absolute)
+ * @returns Promise resolving to Blob
+ */
+export const fetchFileAuthenticated = async (url: string): Promise<Blob> => {
+  // Dynamic import to avoid circular dependencies and SSR issues
+  const { default: axiosInstance } = await import("@/app/api/utils/axiosInstance")
+
+  const response = await axiosInstance.get(url, {
+    responseType: "blob",
+  })
+
+  return new Blob([response.data], {
+    type: response.headers["content-type"] || "application/octet-stream",
+  })
+}
+
 // ============================================================================
 // PRINT UTILITIES
 // ============================================================================

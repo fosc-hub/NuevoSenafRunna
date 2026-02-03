@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   Box,
   Typography,
@@ -8,7 +8,8 @@ import {
   Chip,
   Paper,
   IconButton,
-  Tooltip
+  Tooltip,
+  CircularProgress
 } from '@mui/material'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import DownloadIcon from '@mui/icons-material/Download'
@@ -19,26 +20,54 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { formatFileSize } from '@/utils/fileUtils'
 import { usePdfViewer } from '@/hooks'
-import { isPdfFile } from '@/utils/pdfUtils'
+import {
+  isPdfFile,
+  downloadFileAuthenticated
+} from '@/utils/pdfUtils'
 
 interface AdjuntoCardProps {
   adjunto: TAdjuntoActividad
 }
 
 export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
+  const [loading, setLoading] = useState(false)
   const { openUrl, PdfModal } = usePdfViewer()
   const isPdf = isPdfFile(adjunto.nombre_original, adjunto.tipo_mime)
 
-  const handleViewFile = () => {
+  /**
+   * Handle file view - open in PDF viewer or new window
+   * Uses adjunto.archivo (direct media URL) instead of archivo_url
+   */
+  const handleViewFile = useCallback(() => {
     if (isPdf) {
-      openUrl(adjunto.archivo_url, {
+      // Open PDF in the viewer modal
+      openUrl(adjunto.archivo, {
         title: adjunto.nombre_original,
         fileName: adjunto.nombre_original
       })
     } else {
-      window.open(adjunto.archivo_url, '_blank', 'noopener,noreferrer')
+      // For non-PDF files, open in new window
+      window.open(adjunto.archivo, '_blank', 'noopener,noreferrer')
     }
-  }
+  }, [adjunto.archivo, adjunto.nombre_original, isPdf, openUrl])
+
+  /**
+   * Handle file download
+   * Uses adjunto.archivo (direct media URL)
+   */
+  const handleDownload = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Fetch the file and trigger download with correct filename
+      await downloadFileAuthenticated(adjunto.archivo, adjunto.nombre_original)
+    } catch (error) {
+      console.error('Error downloading file:', error)
+      // Fallback: open in new tab
+      window.open(adjunto.archivo, '_blank')
+    } finally {
+      setLoading(false)
+    }
+  }, [adjunto.archivo, adjunto.nombre_original])
   const getFileIcon = (tipo_mime: string) => {
     if (tipo_mime.includes('pdf')) return '📄'
     if (tipo_mime.includes('image')) return '🖼️'
@@ -118,19 +147,24 @@ export const AdjuntoCard: React.FC<AdjuntoCardProps> = ({ adjunto }) => {
             <IconButton
               size="small"
               onClick={handleViewFile}
+              disabled={loading}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.8)',
                 '&:hover': { bgcolor: 'white' }
               }}
             >
-              <VisibilityIcon fontSize="small" />
+              {loading ? (
+                <CircularProgress size={16} />
+              ) : (
+                <VisibilityIcon fontSize="small" />
+              )}
             </IconButton>
           </Tooltip>
           <Tooltip title="Descargar archivo">
             <IconButton
               size="small"
-              href={adjunto.archivo_url}
-              download
+              onClick={handleDownload}
+              disabled={loading}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.8)',
                 '&:hover': { bgcolor: 'white' }

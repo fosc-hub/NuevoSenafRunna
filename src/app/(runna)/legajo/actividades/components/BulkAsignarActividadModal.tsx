@@ -36,7 +36,8 @@ interface BulkAsignarActividadModalProps {
   open: boolean
   onClose: () => void
   selectedActividades: TActividadPlanTrabajo[]
-  onSuccess?: () => void
+  /** Called on successful update. Receives the updated actividades from the API response. */
+  onSuccess?: (updatedActividades?: TActividadPlanTrabajo[]) => void
 }
 
 // Type for users-zonas endpoint response with user_info
@@ -176,7 +177,8 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
         toast.warning(`Operación parcial: ${result.updated_count} actualizadas, ${result.errors.length} errores`)
       } else {
         toast.success(`${result.updated_count} actividades actualizadas exitosamente`)
-        onSuccess?.()
+        // Pass the updated actividades back to the caller
+        onSuccess?.(result.actividades)
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || error.message || "Error al actualizar las actividades"
@@ -215,7 +217,8 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
         toast.warning(`Operación parcial: ${result.transferred_count} transferidas, ${result.errors.length} errores`)
       } else {
         toast.success(`${result.transferred_count} actividades transferidas al equipo exitosamente`)
-        onSuccess?.()
+        // Pass the updated actividades back to the caller
+        onSuccess?.(result.actividades)
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || error.message || "Error al transferir las actividades"

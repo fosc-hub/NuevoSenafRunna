@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import BaseModal from "@/components/shared/BaseModal"
 import type { DemandaCreatedResponse } from "../types/demanda-response"
 import { getNnyaCount, getAdultosCount, OBJETIVO_LABELS } from "../types/demanda-response"
 import { UnifiedActividadesTable } from "@/app/(runna)/legajo/actividades/components/UnifiedActividadesTable"
+import type { TActividadPlanTrabajo } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/types/actividades"
 
 interface DemandaSuccessModalProps {
   open: boolean
@@ -43,12 +44,27 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
   onNavigateToDemanda,
   onNavigateToMesaEntrada,
 }) => {
+  // Local state for actividades - allows updates from bulk operations
+  const [localActividades, setLocalActividades] = useState<TActividadPlanTrabajo[]>([])
+
+  // Sync local state when data changes (new demanda created)
+  useEffect(() => {
+    if (data?.actividades_creadas) {
+      setLocalActividades(data.actividades_creadas)
+    }
+  }, [data])
+
+  // Handle updates from the table (e.g., bulk assign)
+  const handleActividadesUpdate = useCallback((updatedActividades: TActividadPlanTrabajo[]) => {
+    setLocalActividades(updatedActividades)
+  }, [])
+
   if (!data) return null
 
-  const { demanda, demanda_zona, personas, medidas_creadas, actividades_creadas } = data
+  const { demanda, demanda_zona, personas, medidas_creadas } = data
   const nnyaCount = getNnyaCount(data)
   const adultosCount = getAdultosCount(data)
-  const hasPlanTrabajo = actividades_creadas.length > 0
+  const hasPlanTrabajo = localActividades.length > 0
 
   return (
     <BaseModal
@@ -281,7 +297,7 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
                 Plan de Trabajo
               </Typography>
               <Chip
-                label={`${actividades_creadas.length} actividades creadas`}
+                label={`${localActividades.length} actividades creadas`}
                 size="small"
                 color="primary"
                 variant="outlined"
@@ -293,7 +309,8 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
             </Typography>
             <UnifiedActividadesTable
               variant="legajo"
-              actividades={actividades_creadas}
+              actividades={localActividades}
+              onActividadesUpdate={handleActividadesUpdate}
               showWrapper={false}
             />
           </Box>

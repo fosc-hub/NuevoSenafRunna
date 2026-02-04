@@ -93,7 +93,7 @@ export const VisarJzButton: React.FC<VisarJzButtonProps> = ({
         setError('Error al procesar el visado JZ')
       }
     } catch (error: any) {
-      console.error('Error al visar JZ actividad:', error)
+      console.error('Error al Aprobar JZ actividad:', error)
       setError(error?.message || 'Error al procesar el visado JZ')
       toast.error('Error al procesar el visado JZ', {
         position: 'top-center',
@@ -114,7 +114,7 @@ export const VisarJzButton: React.FC<VisarJzButtonProps> = ({
         disabled={loading}
         sx={{ textTransform: 'none' }}
       >
-        Visar JZ
+        Aprobar JZ
       </Button>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

@@ -120,6 +120,8 @@ interface UnifiedActividadesTableProps {
   // === Callbacks ===
   /** Called when data should be refreshed */
   onRefresh?: () => void
+  /** Called when actividades are updated (e.g., bulk assign). Returns the full updated list. */
+  onActividadesUpdate?: (updatedActividades: TActividadPlanTrabajo[]) => void
 
   // === UI Customization ===
   /** Title for the section (default based on variant) */
@@ -139,6 +141,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   medidaData,
   filterEtapa,
   onRefresh,
+  onActividadesUpdate,
   title,
   showWrapper = true,
 }) => {
@@ -567,11 +570,27 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
     [variant, handleRequestAcuse]
   )
 
-  const handleBulkSuccess = useCallback(() => {
+  const handleBulkSuccess = useCallback((updatedActividades?: TActividadPlanTrabajo[]) => {
     setSelectedIds(new Set())
     setBulkModalOpen(false)
-    handleRefresh()
-  }, [handleRefresh])
+
+    // For prop-based data (legajo variant), merge updated actividades and notify parent
+    if (variant === "legajo" && updatedActividades && updatedActividades.length > 0 && propActividades) {
+      // Create a map of updated actividades by ID for quick lookup
+      const updatedMap = new Map(updatedActividades.map(a => [a.id, a]))
+
+      // Merge: replace existing items with updated ones
+      const mergedActividades = propActividades.map(actividad =>
+        updatedMap.has(actividad.id) ? updatedMap.get(actividad.id)! : actividad
+      )
+
+      // Notify parent of the update so it can update its state
+      onActividadesUpdate?.(mergedActividades)
+    } else {
+      // For API-based data, just refresh
+      handleRefresh()
+    }
+  }, [handleRefresh, variant, propActividades, onActividadesUpdate])
 
   const handleModalSuccess = useCallback(() => {
     handleRefresh()

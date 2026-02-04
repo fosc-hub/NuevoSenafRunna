@@ -81,6 +81,35 @@ export interface DemandaCreatedResponse {
    * Uses the full TActividadPlanTrabajo type with all nested info
    */
   actividades_creadas: TActividadPlanTrabajo[]
+  /**
+   * Legajos created (typically empty for CARGA_OFICIOS)
+   */
+  legajos_creados: Array<{
+    id: number
+    numero: string
+  }>
+  /**
+   * Medidas de admision created
+   */
+  medidas_admision: Array<{
+    id: number
+    tipo_medida: string
+  }>
+  /**
+   * Etapas de medida created
+   */
+  etapas_medida_creadas: Array<{
+    id: number
+    medida_id: number
+    etapa: string
+  }>
+  /**
+   * Informes de seguimiento created
+   */
+  informes_seguimiento_creados: Array<{
+    id: number
+    medida_id: number
+  }>
 }
 
 /**

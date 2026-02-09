@@ -12,6 +12,7 @@ import {
   Tooltip,
   IconButton,
   Box,
+  CircularProgress,
 } from "@mui/material"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import DownloadIcon from "@mui/icons-material/Download"
@@ -23,9 +24,10 @@ import { isPdfFile, getFileNameFromUrl } from "@/utils/pdfUtils"
 
 interface OficiosSectionProps {
   legajoData: LegajoDetailResponse
+  isLoadingEnhancements?: boolean
 }
 
-export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData }) => {
+export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData, isLoadingEnhancements = false }) => {
   const oficios = legajoData.oficios || []
   const { openUrl, PdfModal } = usePdfViewer()
 
@@ -56,21 +58,34 @@ export const OficiosSection: React.FC<OficiosSectionProps> = ({ legajoData }) =>
   if (oficios.length === 0) {
     return (
       <SectionCard title="Oficios">
-        <Typography variant="body1" color="text.secondary">
-          No hay oficios registrados.
-        </Typography>
+        {isLoadingEnhancements ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CircularProgress size={16} />
+            <Typography variant="body2" color="text.secondary">
+              Cargando oficios de demandas...
+            </Typography>
+          </Box>
+        ) : (
+          <Typography variant="body1" color="text.secondary">
+            No hay oficios registrados.
+          </Typography>
+        )}
       </SectionCard>
     )
   }
 
+  const chips = [
+    {
+      label: `${oficios.length} total${oficios.length !== 1 ? "es" : ""}`,
+      color: "primary" as const,
+    },
+    ...(isLoadingEnhancements
+      ? [{ label: "Cargando más...", color: "default" as const }]
+      : []),
+  ]
+
   return (
-    <SectionCard
-      title="Oficios"
-      chips={[{
-        label: `${oficios.length} total${oficios.length !== 1 ? "es" : ""}`,
-        color: "primary"
-      }]}
-    >
+    <SectionCard title="Oficios" chips={chips}>
 
       {/* Tabla de oficios */}
       <TableContainer>

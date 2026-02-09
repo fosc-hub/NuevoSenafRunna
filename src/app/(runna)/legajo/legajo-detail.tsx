@@ -14,7 +14,11 @@ import RefreshIcon from "@mui/icons-material/Refresh"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { useRouter } from "next/navigation"
 import { updateLegajoDatosPersonales } from "../legajo-mesa/api/legajos-api-service"
-import { fetchEnhancedLegajoDetail } from "../legajo-mesa/api/legajo-enhanced-service"
+import {
+  fetchBaseLegajoDetail,
+  fetchDemandaEnhancements,
+  mergeDemandaEnhancements,
+} from "../legajo-mesa/api/legajo-enhanced-service"
 import type { LegajoDetailResponse, PersonaDetailData } from "../legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
 import { AddIntervencionDialog, NewIntervencion } from "./[id]/medida/[medidaId]/components/dialogs/add-intervencion-dialog"
@@ -49,6 +53,7 @@ interface LegajoDetailProps {
 export default function LegajoDetail({ params, onClose, isFullPage = false }: LegajoDetailProps) {
   const [legajoData, setLegajoData] = useState<LegajoDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingDemandaDetails, setIsLoadingDemandaDetails] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(0)
   const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
@@ -73,16 +78,37 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         setIsLoading(true)
         setError(null)
 
-        // Call the enhanced API to fetch legajo detail with demanda adjuntos
-        const response = await fetchEnhancedLegajoDetail(Number(params.id), {
-          include_history: false, // Set to true if you want to include history
+        // Step 1: Fetch base legajo detail (fast) - show page immediately
+        const baseLegajo = await fetchBaseLegajoDetail(Number(params.id), {
+          include_history: false,
         })
 
-        console.log("Legajo Detail API Response:", response)
-        console.log("Permisos del usuario:", response.permisos_usuario)
+        console.log("Base Legajo Detail API Response:", baseLegajo)
+        console.log("Permisos del usuario:", baseLegajo.permisos_usuario)
 
-        // Use the response directly without transformation
-        setLegajoData(response)
+        // Show page immediately with base data
+        setLegajoData(baseLegajo)
+        setIsLoading(false)
+
+        // Step 2: Fetch demanda enhancements in background (slower)
+        setIsLoadingDemandaDetails(true)
+        try {
+          const enhancements = await fetchDemandaEnhancements(baseLegajo)
+
+          // Merge enhancements and update state
+          const enhancedLegajo = mergeDemandaEnhancements(baseLegajo, enhancements)
+          setLegajoData(enhancedLegajo)
+
+          console.log("Enhanced with demanda details:", {
+            oficios: enhancedLegajo.oficios?.length || 0,
+            documentos: enhancedLegajo.documentos?.length || 0,
+          })
+        } catch (enhancementError) {
+          console.error("Error loading demanda enhancements (non-blocking):", enhancementError)
+          // Don't show error to user - base data is already displayed
+        } finally {
+          setIsLoadingDemandaDetails(false)
+        }
       } catch (err) {
         console.error("Error loading legajo data:", err)
         // Provide more detailed error messages
@@ -99,7 +125,6 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         } else {
           setError("Error al cargar los datos del legajo. Por favor, intente nuevamente.")
         }
-      } finally {
         setIsLoading(false)
       }
     }
@@ -347,7 +372,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
         {/* TAB 2: Oficios */}
         {activeTab === 2 && (
           <>
-            <OficiosSection legajoData={legajoData} />
+            <OficiosSection legajoData={legajoData} isLoadingEnhancements={isLoadingDemandaDetails} />
           </>
         )}
 

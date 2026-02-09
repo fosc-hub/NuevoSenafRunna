@@ -7,9 +7,10 @@ import { RepositorioDocumentosSection } from "./repositorio-documentos"
 
 interface DocumentosSectionProps {
   legajoData: LegajoDetailResponse
+  isLoadingEnhancements?: boolean
 }
 
-export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData }) => {
+export const DocumentosSection: React.FC<DocumentosSectionProps> = ({ legajoData, isLoadingEnhancements = false }) => {
   const permisos = legajoData.permisos_usuario
   const { user } = useUser()
 

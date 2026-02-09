@@ -1,6 +1,7 @@
 /**
  * Enhanced Legajo Service
  * Fetches legajo details with demanda adjuntos processing
+ * Supports progressive loading for better UX
  */
 
 import type { LegajoDetailResponse, LegajoDetailQueryParams } from "../types/legajo-api"
@@ -17,13 +18,100 @@ export interface EnhancedLegajoDetailResponse extends LegajoDetailResponse {
 }
 
 /**
- * Fetch legajo detail with demanda adjuntos processing
- * This function:
- * 1. Fetches the base legajo detail
- * 2. Extracts demanda IDs from demandas_relacionadas
- * 3. Fetches full details for each demanda
- * 4. Processes adjuntos and routes them to oficios/documentos
- * 5. Merges with existing oficios/documentos
+ * Demanda enhancement data (oficios and documentos from demandas)
+ */
+export interface DemandaEnhancementData {
+  oficios: any[]
+  documentos: any[]
+}
+
+/**
+ * Extract demanda IDs from legajo detail
+ */
+export const extractDemandaIds = (legajoDetail: LegajoDetailResponse): number[] => {
+  const demandaIds: number[] = []
+
+  if (legajoDetail.demandas_relacionadas?.resultados) {
+    legajoDetail.demandas_relacionadas.resultados.forEach((demandaRelacion: any) => {
+      let demandaId: number | null = null
+
+      if (demandaRelacion?.demanda?.demanda_id) {
+        demandaId = demandaRelacion.demanda.demanda_id
+      } else if (demandaRelacion?.demanda_id) {
+        demandaId = demandaRelacion.demanda_id
+      } else if (demandaRelacion?.id && !demandaRelacion?.demanda) {
+        demandaId = demandaRelacion.id
+      }
+
+      if (demandaId && !demandaIds.includes(demandaId)) {
+        demandaIds.push(demandaId)
+      }
+    })
+  }
+
+  return demandaIds
+}
+
+/**
+ * Fetch base legajo detail (fast, no demanda processing)
+ * Use this for immediate page render
+ */
+export const fetchBaseLegajoDetail = async (
+  id: number,
+  params: LegajoDetailQueryParams = {}
+): Promise<LegajoDetailResponse> => {
+  return fetchLegajoDetail(id, params)
+}
+
+/**
+ * Fetch demanda enhancements (oficios and documentos from demandas)
+ * Use this for background loading after initial render
+ */
+export const fetchDemandaEnhancements = async (
+  legajoDetail: LegajoDetailResponse
+): Promise<DemandaEnhancementData> => {
+  const demandaIds = extractDemandaIds(legajoDetail)
+
+  if (demandaIds.length === 0) {
+    return { oficios: [], documentos: [] }
+  }
+
+  console.log(`Fetching demanda enhancements for ${demandaIds.length} demandas:`, demandaIds)
+
+  try {
+    const demandasDetails = await fetchMultipleDemandaDetails(demandaIds)
+    console.log(`Fetched ${demandasDetails.length} demanda details`)
+
+    const { oficios, documentos } = processDemandaAdjuntos(demandasDetails)
+
+    console.log(`Processed ${oficios.length} oficios and ${documentos.length} documentos from demandas`)
+
+    return { oficios, documentos }
+  } catch (error) {
+    console.error("Error fetching demanda enhancements:", error)
+    return { oficios: [], documentos: [] }
+  }
+}
+
+/**
+ * Merge demanda enhancements into legajo detail
+ */
+export const mergeDemandaEnhancements = (
+  legajoDetail: LegajoDetailResponse,
+  enhancements: DemandaEnhancementData
+): EnhancedLegajoDetailResponse => {
+  return {
+    ...legajoDetail,
+    oficios: [...(legajoDetail.oficios || []), ...enhancements.oficios],
+    documentos: [...(legajoDetail.documentos || []), ...enhancements.documentos],
+  }
+}
+
+/**
+ * Fetch legajo detail with demanda adjuntos processing (blocking version)
+ * For backwards compatibility - waits for all data before returning.
+ *
+ * Consider using fetchBaseLegajoDetail + fetchDemandaEnhancements for progressive loading.
  *
  * @param id Legajo ID
  * @param params Query parameters
@@ -37,71 +125,13 @@ export const fetchEnhancedLegajoDetail = async (
     console.log(`Fetching enhanced legajo detail for ID ${id}`)
 
     // Step 1: Fetch base legajo detail
-    const legajoDetail = await fetchLegajoDetail(id, params)
+    const legajoDetail = await fetchBaseLegajoDetail(id, params)
 
-    // Step 2: Extract demanda IDs from demandas_relacionadas
-    const demandaIds: number[] = []
+    // Step 2: Fetch demanda enhancements
+    const enhancements = await fetchDemandaEnhancements(legajoDetail)
 
-    if (legajoDetail.demandas_relacionadas?.resultados) {
-      legajoDetail.demandas_relacionadas.resultados.forEach((demandaRelacion: any) => {
-        // Support multiple formats:
-        // Format 1: { id: 4, demanda: { demanda_id: 6, ... } }
-        // Format 2: { id: 1, demanda: { demanda_id: 9, ... } }
-        // Format 3: { id: 9, ... } (direct ID)
-
-        let demandaId: number | null = null
-
-        // Try nested demanda.demanda_id first
-        if (demandaRelacion?.demanda?.demanda_id) {
-          demandaId = demandaRelacion.demanda.demanda_id
-        }
-        // Try top-level demanda_id
-        else if (demandaRelacion?.demanda_id) {
-          demandaId = demandaRelacion.demanda_id
-        }
-        // Fallback to top-level id (if it's not just a relation ID)
-        else if (demandaRelacion?.id && !demandaRelacion?.demanda) {
-          demandaId = demandaRelacion.id
-        }
-
-        if (demandaId && !demandaIds.includes(demandaId)) {
-          demandaIds.push(demandaId)
-        }
-      })
-    }
-
-    console.log(`Found ${demandaIds.length} demandas to process:`, demandaIds)
-
-    // If no demandas, return base legajo detail as-is
-    if (demandaIds.length === 0) {
-      console.log("No demandas to process, returning base legajo detail")
-      return legajoDetail
-    }
-
-    // Step 3: Fetch full details for each demanda
-    let demandasDetails
-    try {
-      demandasDetails = await fetchMultipleDemandaDetails(demandaIds)
-      console.log(`Fetched ${demandasDetails.length} demanda details`)
-    } catch (error) {
-      console.error("Error fetching demanda details, continuing without them:", error)
-      // Continue without demanda adjuntos if fetch fails
-      return legajoDetail
-    }
-
-    // Step 4: Process adjuntos from demandas
-    const { oficios: demandaOficios, documentos: demandaDocumentos } =
-      processDemandaAdjuntos(demandasDetails)
-
-    console.log(`Processed ${demandaOficios.length} oficios from demandas`)
-    console.log(`Processed ${demandaDocumentos.length} documentos from demandas`)
-
-    // Step 5: Merge with existing oficios and documentos
-    const enhancedLegajo: EnhancedLegajoDetailResponse = {
-      ...legajoDetail,
-      oficios: [...(legajoDetail.oficios || []), ...demandaOficios],
-      documentos: [...(legajoDetail.documentos || []), ...demandaDocumentos],
-    }
+    // Step 3: Merge and return
+    const enhancedLegajo = mergeDemandaEnhancements(legajoDetail, enhancements)
 
     console.log(`Enhanced legajo detail:`, {
       total_oficios: enhancedLegajo.oficios.length,

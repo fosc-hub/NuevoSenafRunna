@@ -22,6 +22,18 @@ import LinkIcon from "@mui/icons-material/Link"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { SectionCard } from "../medida/shared/section-card"
 
+// Helper to safely extract display value from fields that may be strings or objects
+const getDisplayValue = (value: unknown): string | null => {
+  if (!value) return null
+  if (typeof value === "string") return value
+  if (typeof value === "object" && value !== null) {
+    const obj = value as Record<string, unknown>
+    if ("nombre" in obj && typeof obj.nombre === "string") return obj.nombre
+    if ("name" in obj && typeof obj.name === "string") return obj.name
+  }
+  return null
+}
+
 interface DemandasSectionProps {
   legajoData: LegajoDetailResponse
 }
@@ -225,7 +237,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                     <Grid item xs={12} md={6}>
                       <Stack spacing={2}>
                         {/* Etiqueta */}
-                        {demanda.etiqueta && (
+                        {getDisplayValue(demanda.etiqueta) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <LabelIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -234,13 +246,13 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body1" sx={{ fontWeight: 600, pl: 3.5 }}>
-                              {demanda.etiqueta}
+                              {getDisplayValue(demanda.etiqueta)}
                             </Typography>
                           </Box>
                         )}
 
                         {/* Objetivo */}
-                        {demanda.objetivo_de_demanda && (
+                        {getDisplayValue(demanda.objetivo_de_demanda) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <GavelIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -249,13 +261,13 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ pl: 3.5, fontWeight: 500 }}>
-                              {demanda.objetivo_de_demanda}
+                              {getDisplayValue(demanda.objetivo_de_demanda)}
                             </Typography>
                           </Box>
                         )}
 
                         {/* Motivo */}
-                        {demanda.motivo && (
+                        {getDisplayValue(demanda.motivo) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <DescriptionIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -264,7 +276,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ pl: 3.5, color: "text.secondary" }}>
-                              {demanda.motivo.replace(/_/g, " ")}
+                              {getDisplayValue(demanda.motivo)?.replace(/_/g, " ")}
                             </Typography>
                           </Box>
                         )}
@@ -275,7 +287,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                     <Grid item xs={12} md={6}>
                       <Stack spacing={2}>
                         {/* Origen */}
-                        {demanda.origen_demanda && (
+                        {getDisplayValue(demanda.origen_demanda) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <LocationOnIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -284,13 +296,13 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ pl: 3.5 }}>
-                              {demanda.origen_demanda}
+                              {getDisplayValue(demanda.origen_demanda)}
                             </Typography>
                           </Box>
                         )}
 
                         {/* Zona Registrada */}
-                        {demanda.zona_registrada && (
+                        {getDisplayValue(demanda.zona_registrada) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <LocationOnIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -299,13 +311,13 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ pl: 3.5 }}>
-                              {demanda.zona_registrada}
+                              {getDisplayValue(demanda.zona_registrada)}
                             </Typography>
                           </Box>
                         )}
 
                         {/* Tipo de Medida Evaluado */}
-                        {demanda.tipo_medida_evaluado && (
+                        {getDisplayValue(demanda.tipo_medida_evaluado) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <GavelIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -314,13 +326,13 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ pl: 3.5, fontWeight: 500 }}>
-                              {demanda.tipo_medida_evaluado}
+                              {getDisplayValue(demanda.tipo_medida_evaluado)}
                             </Typography>
                           </Box>
                         )}
 
                         {/* Vínculo con NNyA */}
-                        {demanda.vinculo_con_nnya_principal && (
+                        {getDisplayValue(demanda.vinculo_con_nnya_principal) && (
                           <Box>
                             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                               <LinkIcon sx={{ fontSize: 18, mr: 1, color: "text.secondary" }} />
@@ -329,7 +341,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                               </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ pl: 3.5 }}>
-                              {demanda.vinculo_con_nnya_principal}
+                              {getDisplayValue(demanda.vinculo_con_nnya_principal)}
                             </Typography>
                           </Box>
                         )}

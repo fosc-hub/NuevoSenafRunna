@@ -14,14 +14,13 @@ import {
   Select,
   MenuItem,
   Typography,
-  Snackbar,
-  Alert,
   List,
   ListItem,
   ListItemText,
   Divider,
-  Paper,
 } from "@mui/material"
+import { toast } from "react-toastify"
+import { showErrorToast } from "@/utils/showErrorToast"
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
@@ -91,7 +90,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   const { data: actividadTiposData } = useCatalogData<ActividadTipo[]>("actividad-tipo/")
   const actividadTipos = extractArray(actividadTiposData)
 
-  const { data: actividadesData } = useApiQuery<ActividadResponse[]>(
+  const { data: actividadesData, refetch: refetchActividades } = useApiQuery<ActividadResponse[]>(
     "actividad/",
     { demanda: demandaId }
   )
@@ -103,8 +102,6 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   const instituciones = institucionesResponse?.instituciones_actividad || []
 
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   const {
@@ -148,11 +145,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
 
   const handleDownloadTemplate = () => {
     if (!selectedTipoNombre) {
-      setSnackbar({
-        open: true,
-        message: "Por favor seleccione un tipo de actividad primero",
-        severity: "error",
-      })
+      toast.error("Por favor seleccione un tipo de actividad primero")
       return
     }
 
@@ -178,7 +171,6 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
 
   const onSubmit = async (formData: ActividadFormData) => {
     setIsLoading(true)
-    setError(null)
 
     try {
       const formDataToSend = new FormData()
@@ -197,19 +189,19 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
       })
 
       await create("actividad", formDataToSend)
-      await fetchActividades()
+      await refetchActividades()
       reset()
       setSelectedFiles([])
-      setSnackbar({ open: true, message: "Actividad registrada con éxito", severity: "success" })
+      toast.success("Actividad registrada con éxito")
     } catch (err: any) {
       console.error("Error creating activity:", err)
       if (err.response?.data) {
         const errorMessages = Object.entries(err.response.data)
           .map(([_, messages]) => `${messages}`)
           .join("\n")
-        setSnackbar({ open: true, message: errorMessages || "Error al registrar la actividad", severity: "error" })
+        showErrorToast("Error al registrar la actividad", errorMessages || "Ocurrió un error inesperado")
       } else {
-        setSnackbar({ open: true, message: "Error al registrar la actividad", severity: "error" })
+        toast.error("Error al registrar la actividad")
       }
     } finally {
       setIsLoading(false)
@@ -371,12 +363,6 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
           ))}
         </List>
       </Box>
-
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
 
       {/* PDF Viewer Modal */}
       {PdfModal}

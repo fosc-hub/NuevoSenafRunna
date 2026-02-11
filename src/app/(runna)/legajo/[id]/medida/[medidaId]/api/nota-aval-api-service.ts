@@ -222,9 +222,10 @@ export const uploadAdjuntoNotaAval = async (
     formData.append("archivo", file)
 
     // REFACTORED: apiService.create() DOES support FormData
+    // Using type assertion because FormData is handled correctly by axios
     const response = await create<AdjuntoNotaAval>(
       `medidas/${medidaId}/nota-aval/adjuntos/`,
-      formData,
+      formData as unknown as Partial<AdjuntoNotaAval>,
       true,
       'Archivo adjuntado exitosamente'
     )
@@ -236,6 +237,7 @@ export const uploadAdjuntoNotaAval = async (
     console.error(`Error uploading adjunto: medida ${medidaId}`, error)
     console.error("Error details:", {
       message: error?.message,
+      response: error?.response?.data,
     })
     throw error
   }

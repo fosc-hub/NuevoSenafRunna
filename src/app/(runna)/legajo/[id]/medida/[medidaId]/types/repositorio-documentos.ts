@@ -33,6 +33,7 @@ export interface RepositorioDocumentosResponse {
   demanda_id: number | null
   legajo_id: number | null
   medida_id: number | null
+  medidas_ids: number[]
   total_documentos: number
   total_size_bytes: number
   total_size_mb: number
@@ -51,4 +52,18 @@ export interface RepositorioDocumentosParams {
 export interface DocumentosFilterState {
   categoria: CategoriaDocumento | 'TODOS'
   tipoModelo: string | 'TODOS'
+  medidaId: number | 'TODOS'
+}
+
+// Helper type for extracting medida_id from document metadata
+export interface DocumentoMetadata {
+  medida_id?: number
+  intervencion_id?: number
+  informe_juridico_id?: number
+  nota_aval_id?: number
+  plan_trabajo_id?: number
+  actividad_id?: number
+  tipo_adjunto?: string
+  version?: number
+  activo?: boolean
 }

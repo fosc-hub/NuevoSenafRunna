@@ -37,6 +37,7 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
   const [filters, setFilters] = useState<DocumentosFilterState>({
     categoria: 'TODOS',
     tipoModelo: 'TODOS',
+    medidaId: 'TODOS',
   })
 
   // Expansion state for accordions - default all expanded
@@ -45,7 +46,10 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
   )
 
   // Check if any filters are active
-  const hasActiveFilters = filters.categoria !== 'TODOS' || filters.tipoModelo !== 'TODOS'
+  const hasActiveFilters =
+    filters.categoria !== 'TODOS' ||
+    filters.tipoModelo !== 'TODOS' ||
+    filters.medidaId !== 'TODOS'
 
   // Get unique tipo_modelo values for filter dropdown
   const tipoModeloOptions = useMemo(() => {
@@ -64,6 +68,13 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
       }
       if (filters.tipoModelo !== 'TODOS' && doc.tipo_modelo !== filters.tipoModelo) {
         return false
+      }
+      // Filter by medida_id (from metadata)
+      if (filters.medidaId !== 'TODOS') {
+        const metadata = doc.metadata as { medida_id?: number }
+        if (metadata?.medida_id !== filters.medidaId) {
+          return false
+        }
       }
       return true
     })
@@ -192,6 +203,7 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
                 filters={filters}
                 onFilterChange={setFilters}
                 tipoModeloOptions={tipoModeloOptions}
+                medidasIds={data.medidas_ids || []}
                 onExpandAll={handleExpandAll}
                 onCollapseAll={handleCollapseAll}
                 hasActiveFilters={hasActiveFilters}
@@ -212,6 +224,7 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
                   documentos={documentsByCategory[categoria]}
                   expanded={expandedCategories.has(categoria)}
                   onToggle={handleToggle}
+                  medidas_ids={categoria === 'MEDIDA' ? data.medidas_ids : undefined}
                 />
               ))}
             </>

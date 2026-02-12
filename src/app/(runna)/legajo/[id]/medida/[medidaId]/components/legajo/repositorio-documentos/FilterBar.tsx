@@ -22,6 +22,7 @@ interface FilterBarProps {
   filters: DocumentosFilterState
   onFilterChange: (filters: DocumentosFilterState) => void
   tipoModeloOptions: string[]
+  medidasIds: number[]
   onExpandAll: () => void
   onCollapseAll: () => void
   hasActiveFilters: boolean
@@ -31,6 +32,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   filters,
   onFilterChange,
   tipoModeloOptions,
+  medidasIds,
   onExpandAll,
   onCollapseAll,
   hasActiveFilters,
@@ -49,10 +51,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     })
   }
 
+  const handleMedidaIdChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value
+    onFilterChange({
+      ...filters,
+      medidaId: value === 'TODOS' ? 'TODOS' : Number(value),
+    })
+  }
+
   const handleClearFilters = () => {
     onFilterChange({
       categoria: 'TODOS',
       tipoModelo: 'TODOS',
+      medidaId: 'TODOS',
     })
   }
 
@@ -104,6 +115,26 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           ))}
         </Select>
       </FormControl>
+
+      {/* Medida filter - only show if there are multiple medidas */}
+      {medidasIds.length > 1 && (
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel id="medida-filter-label">Medida</InputLabel>
+          <Select
+            labelId="medida-filter-label"
+            value={String(filters.medidaId)}
+            label="Medida"
+            onChange={handleMedidaIdChange}
+          >
+            <MenuItem value="TODOS">Todas</MenuItem>
+            {medidasIds.map((medidaId) => (
+              <MenuItem key={medidaId} value={String(medidaId)}>
+                Medida #{medidaId}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
 
       {/* Clear filters button */}
       {hasActiveFilters && (

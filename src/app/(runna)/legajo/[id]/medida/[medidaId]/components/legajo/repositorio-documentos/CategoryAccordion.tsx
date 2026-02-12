@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   Accordion,
   AccordionSummary,
@@ -15,15 +15,17 @@ import DescriptionIcon from '@mui/icons-material/Description'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import GavelIcon from '@mui/icons-material/Gavel'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
-import type { Documento, CategoriaDocumento } from '../../../types/repositorio-documentos'
+import type { Documento, CategoriaDocumento, DocumentoMetadata } from '../../../types/repositorio-documentos'
 import { CATEGORY_CONFIG } from './constants'
 import { DocumentoCard } from './DocumentoCard'
+import { MedidaSubAccordion } from './MedidaSubAccordion'
 
 interface CategoryAccordionProps {
   categoria: CategoriaDocumento
   documentos: Documento[]
   expanded: boolean
   onToggle: (categoria: CategoriaDocumento) => void
+  medidas_ids?: number[]
 }
 
 const CATEGORY_ICONS: Record<CategoriaDocumento, React.ReactNode> = {
@@ -37,9 +39,56 @@ export const CategoryAccordion: React.FC<CategoryAccordionProps> = ({
   documentos,
   expanded,
   onToggle,
+  medidas_ids = [],
 }) => {
   const config = CATEGORY_CONFIG[categoria]
   const documentCount = documentos.length
+
+  // Track expanded state for sub-accordions (for MEDIDA category)
+  const [expandedMedidas, setExpandedMedidas] = useState<Set<number>>(
+    new Set(medidas_ids)
+  )
+
+  // Group documents by medida_id for MEDIDA category
+  const documentosPorMedida = useMemo(() => {
+    if (categoria !== 'MEDIDA' || medidas_ids.length === 0) {
+      return null
+    }
+
+    const grouped: Record<number, Documento[]> = {}
+
+    // Initialize all medidas (even those with 0 documents)
+    medidas_ids.forEach((medidaId) => {
+      grouped[medidaId] = []
+    })
+
+    // Group documents by their medida_id from metadata
+    documentos.forEach((doc) => {
+      const metadata = doc.metadata as DocumentoMetadata
+      const medidaId = metadata?.medida_id
+      if (medidaId && grouped[medidaId] !== undefined) {
+        grouped[medidaId].push(doc)
+      }
+    })
+
+    return grouped
+  }, [categoria, documentos, medidas_ids])
+
+  // Handle sub-accordion toggle
+  const handleMedidaToggle = useCallback((medidaId: number) => {
+    setExpandedMedidas((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(medidaId)) {
+        newSet.delete(medidaId)
+      } else {
+        newSet.add(medidaId)
+      }
+      return newSet
+    })
+  }, [])
+
+  // Determine if we should use sub-grouping (MEDIDA category with multiple medidas)
+  const useSubGrouping = categoria === 'MEDIDA' && medidas_ids.length > 1 && documentosPorMedida
 
   return (
     <Accordion
@@ -89,6 +138,15 @@ export const CategoryAccordion: React.FC<CategoryAccordionProps> = ({
           color={config.color}
           sx={{ ml: 1 }}
         />
+        {useSubGrouping && (
+          <Chip
+            label={`${medidas_ids.length} medidas`}
+            size="small"
+            variant="outlined"
+            color={config.color}
+            sx={{ ml: 0.5 }}
+          />
+        )}
       </AccordionSummary>
 
       <AccordionDetails sx={{ p: 3, bgcolor: 'grey.50' }}>
@@ -108,7 +166,21 @@ export const CategoryAccordion: React.FC<CategoryAccordionProps> = ({
               No hay documentos en esta categoría
             </Typography>
           </Box>
+        ) : useSubGrouping && documentosPorMedida ? (
+          // Render sub-accordions for each medida
+          <Box>
+            {medidas_ids.map((medidaId) => (
+              <MedidaSubAccordion
+                key={medidaId}
+                medidaId={medidaId}
+                documentos={documentosPorMedida[medidaId] || []}
+                expanded={expandedMedidas.has(medidaId)}
+                onToggle={handleMedidaToggle}
+              />
+            ))}
+          </Box>
         ) : (
+          // Regular grid for other categories or single medida
           <Grid container spacing={2}>
             {documentos.map((documento) => (
               <Grid item xs={12} md={6} lg={4} key={`${documento.tipo_modelo}-${documento.id}`}>

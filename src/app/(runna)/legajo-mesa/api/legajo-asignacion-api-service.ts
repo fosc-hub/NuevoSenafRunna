@@ -145,3 +145,26 @@ export const fetchUsersZonas = async (): Promise<UserZonaWithInfo[]> => {
   const response = await get<{ results: UserZonaWithInfo[] } | UserZonaWithInfo[]>("users-zonas/?page_size=500")
   return Array.isArray(response) ? response : response.results || []
 }
+
+interface UsuarioCompleto {
+  id: number
+  username: string
+  first_name: string
+  last_name: string
+  email: string
+  is_active: boolean
+  is_superuser?: boolean
+  is_staff?: boolean
+  nombre_completo?: string
+  groups?: { id: number; name: string }[]
+  zonas?: { zona: number; jefe: boolean; director: boolean; legal: boolean }[]
+}
+
+/**
+ * Obtener lista completa de usuarios
+ * GET /api/users/
+ */
+export const fetchUsuarios = async (): Promise<UsuarioCompleto[]> => {
+  const response = await get<{ results: UsuarioCompleto[] } | UsuarioCompleto[]>("users/?page_size=500")
+  return Array.isArray(response) ? response : response.results || []
+}

@@ -23,9 +23,11 @@ interface MPETabsProps {
         zona_nombre: string
     }
     planTrabajoId?: number
+    /** Callback to refetch medida data from API after state changes */
+    onMedidaRefetch?: () => void
 }
 
-export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, legajoData, planTrabajoId }) => {
+export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, legajoData, planTrabajoId, onMedidaRefetch }) => {
     const [activeTab, setActiveTab] = useState(0)
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -62,10 +64,10 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
 
             {/* Tab Content */}
             <Box>
-                {activeTab === 0 && <AperturaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
-                {activeTab === 1 && <InnovacionTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
-                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
-                {activeTab === 3 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} />}
+                {activeTab === 0 && <AperturaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} onMedidaRefetch={onMedidaRefetch} />}
+                {activeTab === 1 && <InnovacionTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} onMedidaRefetch={onMedidaRefetch} />}
+                {activeTab === 2 && <ProrrogaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} onMedidaRefetch={onMedidaRefetch} />}
+                {activeTab === 3 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} onMedidaRefetch={onMedidaRefetch} />}
                 {activeTab === 4 && (
                     planTrabajoId ? (
                         <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />

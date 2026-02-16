@@ -30,12 +30,15 @@ interface CeseTabProps {
     persona_apellido: string
     zona_nombre: string
   }
+  /** Callback to refetch medida data from API after state changes */
+  onMedidaRefetch?: () => void
 }
 
 export const CeseTab: React.FC<CeseTabProps> = ({
   medidaData,
   medidaApiData,
   legajoData,
+  onMedidaRefetch,
 }) => {
   return (
     <UnifiedWorkflowTab
@@ -43,6 +46,7 @@ export const CeseTab: React.FC<CeseTabProps> = ({
       medidaApiData={medidaApiData}
       legajoData={legajoData}
       workflowPhase="cese"
+      onMedidaRefetch={onMedidaRefetch}
     />
   )
 }

@@ -30,12 +30,15 @@ interface AperturaTabUnifiedProps {
     persona_apellido: string
     zona_nombre: string
   }
+  /** Callback to refetch medida data from API after state changes */
+  onMedidaRefetch?: () => void
 }
 
 export const AperturaTabUnified: React.FC<AperturaTabUnifiedProps> = ({
   medidaData,
   medidaApiData,
   legajoData,
+  onMedidaRefetch,
 }) => {
   return (
     <UnifiedWorkflowTab
@@ -43,6 +46,7 @@ export const AperturaTabUnified: React.FC<AperturaTabUnifiedProps> = ({
       medidaApiData={medidaApiData}
       legajoData={legajoData}
       workflowPhase="apertura"
+      onMedidaRefetch={onMedidaRefetch}
     />
   )
 }

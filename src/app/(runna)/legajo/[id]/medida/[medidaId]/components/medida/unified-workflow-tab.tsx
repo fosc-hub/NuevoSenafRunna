@@ -87,6 +87,9 @@ interface UnifiedWorkflowTabProps {
 
   /** Workflow phase (apertura, innovacion, prorroga, cese) */
   workflowPhase?: WorkflowPhase
+
+  /** Callback to refetch medida data from API after state changes */
+  onMedidaRefetch?: () => void
 }
 
 // ============================================================================
@@ -98,6 +101,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   medidaApiData,
   legajoData,
   workflowPhase = "apertura",
+  onMedidaRefetch,
 }) => {
   // ========== User Permissions ==========
   const { user } = useUser()
@@ -169,7 +173,9 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   // Allow children sections to force a workflow reload without reloading the page
   const refreshWorkflowData = useCallback(() => {
     setWorkflowRefreshKey((prev) => prev + 1)
-  }, [])
+    // Also trigger parent refetch to update medidaApiData
+    onMedidaRefetch?.()
+  }, [onMedidaRefetch])
 
   /**
    * CRITICAL FIX: Use estado from the SPECIFIC etapa being viewed, not the current medida estado

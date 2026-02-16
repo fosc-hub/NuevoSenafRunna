@@ -314,11 +314,28 @@ export interface AprobarIntervencionRequest {
 }
 
 /**
- * Response de aprobar intervención
+ * Medida info included in aprobar/rechazar responses
+ * Contains etapa_actual with the new state after action
  */
-export interface AprobarIntervencionResponse {
-  message: string
-  intervencion: IntervencionResponse
+export interface MedidaWorkflowInfo {
+  id: number
+  numero_medida: string
+  etapa_actual: {
+    id: number
+    nombre: string
+    estado: string
+    estado_display: string
+    fecha_inicio_estado: string
+  }
+}
+
+/**
+ * Response de aprobar intervención
+ * NOTE: API returns intervention data at top level with medida as object
+ */
+export interface AprobarIntervencionResponse extends Omit<IntervencionResponse, 'medida'> {
+  medida: MedidaWorkflowInfo
+  mensaje: string
 }
 
 /**
@@ -332,10 +349,11 @@ export interface RechazarIntervencionRequest {
 
 /**
  * Response de rechazar intervención
+ * NOTE: API returns intervention data at top level with medida as object
  */
-export interface RechazarIntervencionResponse {
-  message: string
-  intervencion: IntervencionResponse
+export interface RechazarIntervencionResponse extends Omit<IntervencionResponse, 'medida'> {
+  medida: MedidaWorkflowInfo
+  mensaje: string
 }
 
 // ============================================================================

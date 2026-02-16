@@ -196,6 +196,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
     data: medidaApiData,
     isLoading: isMedidaLoading,
     error: medidaError,
+    refetch: refetchMedida,
   } = useMedidaDetail(medidaIdNum!, {
     enabled: isValidMedidaId,
   })
@@ -570,6 +571,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                 zona_nombre: legajoData.asignaciones_activas?.[0]?.zona?.nombre || ""
               } : undefined}
               planTrabajoId={medidaApiData?.plan_trabajo_id}
+              onMedidaRefetch={refetchMedida}
             />
           </>
         ) : medidaData.tipo === "MPJ" ? (
@@ -638,6 +640,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                   zona_nombre: legajoData.asignaciones_activas?.[0]?.zona?.nombre || ""
                 } : undefined}
                 workflowPhase="apertura"
+                onMedidaRefetch={refetchMedida}
               />
             )}
 

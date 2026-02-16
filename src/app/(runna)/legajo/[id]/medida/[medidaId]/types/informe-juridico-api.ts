@@ -230,6 +230,44 @@ export interface UploadAdjuntoInformeJuridicoResponse {
   adjunto: AdjuntoInformeJuridico
 }
 
+/**
+ * Request para crear y enviar informe jurídico en una operación unificada
+ * POST /api/medidas/{medida_id}/informe-juridico/crear-y-enviar/
+ *
+ * Combina: crear informe + subir archivos + enviar (transición Estado 4 → 5)
+ */
+export interface CrearYEnviarInformeJuridicoRequest {
+  // Text fields (same as CreateInformeJuridicoRequest)
+  observaciones?: string | null
+  instituciones_notificadas: string
+  fecha_notificaciones: string // YYYY-MM-DD
+  medio_notificacion: MedioNotificacion
+  destinatarios: string
+
+  // File fields
+  informe_oficial: File // Required PDF
+  acuses?: File[] // Optional array of PDFs
+}
+
+/**
+ * Response de crear y enviar informe jurídico (unificado)
+ * Similar to EnviarInformeJuridicoResponse but includes full informe data
+ */
+export interface CrearYEnviarInformeJuridicoResponse extends Omit<InformeJuridicoResponse, 'medida'> {
+  medida: {
+    id: number
+    numero_medida: string
+    etapa_actual: {
+      id: number
+      nombre: string
+      estado: string
+      estado_display: string
+      fecha_inicio_estado: string
+    }
+  }
+  mensaje: string
+}
+
 // ============================================================================
 // ERRORES Y VALIDACIONES
 // ============================================================================

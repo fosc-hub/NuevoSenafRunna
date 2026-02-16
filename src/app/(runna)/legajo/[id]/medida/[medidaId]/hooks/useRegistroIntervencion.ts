@@ -22,6 +22,9 @@ import {
   getCategorias,
   getTiposDispositivo,
   getCategoriasIntervencion,
+  crearYEnviarIntervencion,
+  type CrearYEnviarRequest,
+  type CrearYEnviarResponse,
 } from "../api/intervenciones-api-service"
 import { medidaKeys } from './useMedidaDetail'
 
@@ -280,14 +283,16 @@ export const useRegistroIntervencion = ({
         autoClose: 3000,
       })
 
-      // Non-blocking cache invalidation: fire-and-forget so onSaved() callback
-      // is never blocked by a failed refetch of other queries
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
-      ]).catch((invalidateErr) => {
-        console.warn('[useRegistroIntervencion] Cache invalidation failed (create):', invalidateErr)
-      })
+      // Force immediate refetch to update UI
+      try {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: medidaKeys.detail(medidaId), type: 'all' }),
+          queryClient.refetchQueries({ queryKey: intervencionesListKey(medidaId), type: 'all' }),
+        ])
+      } catch (refetchErr) {
+        console.warn('[useRegistroIntervencion] Cache refetch failed (create):', refetchErr)
+        await queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId) })
+      }
 
       return data
     } catch (err: any) {
@@ -359,13 +364,16 @@ export const useRegistroIntervencion = ({
         autoClose: 3000,
       })
 
-      // Non-blocking cache invalidation
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
-      ]).catch((invalidateErr) => {
-        console.warn('[useRegistroIntervencion] Cache invalidation failed (update):', invalidateErr)
-      })
+      // Force immediate refetch to update UI
+      try {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: medidaKeys.detail(medidaId), type: 'all' }),
+          queryClient.refetchQueries({ queryKey: intervencionesListKey(medidaId), type: 'all' }),
+        ])
+      } catch (refetchErr) {
+        console.warn('[useRegistroIntervencion] Cache refetch failed (update):', refetchErr)
+        await queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId) })
+      }
 
       return data
     } catch (err: any) {
@@ -407,6 +415,112 @@ export const useRegistroIntervencion = ({
     }
   }
 
+  /**
+   * Create AND send intervención in one operation
+   * Uses the combined /crear-y-enviar/ endpoint for better UX
+   *
+   * @param archivos Optional files to attach during creation
+   * @param tipos Optional file types (must match archivos length)
+   * @returns The created intervention with workflow state, or null on error
+   */
+  const guardarYEnviar = async (
+    archivos?: File[],
+    tipos?: string[]
+  ): Promise<CrearYEnviarResponse | null> => {
+    // Validate required fields
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      return null
+    }
+
+    setIsSaving(true)
+    setIsEnviando(true)
+    setError(null)
+    setValidationErrors({})
+
+    try {
+      const payload: CrearYEnviarRequest = {
+        fecha_intervencion: formData.fecha_intervencion,
+        motivo_id: formData.motivo_id!,
+        sub_motivo_id: formData.sub_motivo_id || null,
+        categoria_intervencion_id: formData.categoria_intervencion_id!,
+        intervencion_especifica: formData.intervencion_especifica,
+        descripcion_detallada: formData.descripcion_detallada || null,
+        motivo_vulneraciones: formData.motivo_vulneraciones || null,
+        tipo_dispositivo_id: formData.tipo_dispositivo_id || null,
+        subtipo_dispositivo: formData.subtipo_dispositivo || null,
+        requiere_informes_ampliatorios: formData.requiere_informes_ampliatorios,
+      }
+
+      const response = await crearYEnviarIntervencion(
+        medidaId,
+        payload,
+        archivos,
+        tipos
+      )
+
+      // Update local state with the created intervention
+      setIntervencion(response)
+
+      // Update cache directly with response data, then refetch for full sync
+      try {
+        // If response contains medida with etapa_actual, update the cache directly
+        const responseAny = response as any
+        if (responseAny.medida?.etapa_actual) {
+          queryClient.setQueryData(
+            medidaKeys.detail(medidaId),
+            (oldData: any) => {
+              if (!oldData) return oldData
+              console.log('[guardarYEnviar] Updating cache with new etapa_actual:', responseAny.medida.etapa_actual)
+              return {
+                ...oldData,
+                etapa_actual: responseAny.medida.etapa_actual,
+                etapa_actual_detalle: responseAny.medida.etapa_actual,
+              }
+            }
+          )
+        }
+
+        // Also refetch to ensure full sync
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: medidaKeys.detail(medidaId), type: 'all' }),
+          queryClient.refetchQueries({ queryKey: intervencionesListKey(medidaId), type: 'all' }),
+        ])
+      } catch (refetchErr) {
+        console.warn('[useRegistroIntervencion] Cache update failed (guardarYEnviar):', refetchErr)
+        // Fallback to invalidation if refetch fails
+        await queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId) })
+      }
+
+      return response
+    } catch (err: any) {
+      console.error("Error creating and sending intervención:", err)
+      const errorMessage =
+        err?.response?.data?.detail || "Error al crear y enviar la intervención"
+      setError(errorMessage)
+
+      toast.error(errorMessage, {
+        position: 'top-center',
+        autoClose: 5000,
+      })
+
+      // Handle validation errors from backend
+      if (err?.response?.data?.errors) {
+        const backendErrors: ValidationErrors = {}
+        err.response.data.errors.forEach((e: any) => {
+          backendErrors[e.field] = e.message
+        })
+        setValidationErrors(backendErrors)
+      }
+
+      return null
+    } finally {
+      setIsSaving(false)
+      setIsEnviando(false)
+    }
+  }
+
   // ============================================================================
   // API CALLS - STATE TRANSITIONS
   // ============================================================================
@@ -435,13 +549,17 @@ export const useRegistroIntervencion = ({
         autoClose: 3000,
       })
 
-      // Non-blocking cache invalidation
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
-      ]).catch((invalidateErr) => {
-        console.warn('[useRegistroIntervencion] Cache invalidation failed (enviar):', invalidateErr)
-      })
+      // Force immediate refetch to update UI with new workflow state
+      try {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: medidaKeys.detail(medidaId), type: 'all' }),
+          queryClient.refetchQueries({ queryKey: intervencionesListKey(medidaId), type: 'all' }),
+        ])
+      } catch (refetchErr) {
+        console.warn('[useRegistroIntervencion] Cache refetch failed (enviar):', refetchErr)
+        // Fallback to invalidation
+        await queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId) })
+      }
 
       return true
     } catch (err: any) {
@@ -474,20 +592,47 @@ export const useRegistroIntervencion = ({
 
     try {
       const response = await aprobarIntervencion(medidaId, effectiveId)
-      setIntervencion(response.intervencion)
+
+      // Response IS the intervention data directly (not nested under .intervencion)
+      // Map medida object back to number for local state compatibility
+      setIntervencion({
+        ...response,
+        medida: response.medida.id,
+      } as IntervencionResponse)
 
       toast.success('Intervención aprobada exitosamente', {
         position: 'top-center',
         autoClose: 3000,
       })
 
-      // Non-blocking cache invalidation
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
-      ]).catch((invalidateErr) => {
-        console.warn('[useRegistroIntervencion] Cache invalidation failed (aprobar):', invalidateErr)
-      })
+      // Update cache directly with response data, then refetch for full sync
+      try {
+        // Response contains medida.etapa_actual with the new workflow state
+        if (response.medida?.etapa_actual) {
+          console.log('[aprobar] Updating cache with new etapa_actual:', response.medida.etapa_actual)
+          queryClient.setQueryData(
+            medidaKeys.detail(medidaId),
+            (oldData: any) => {
+              if (!oldData) return oldData
+              return {
+                ...oldData,
+                etapa_actual: response.medida.etapa_actual,
+                etapa_actual_detalle: response.medida.etapa_actual,
+              }
+            }
+          )
+        }
+
+        // Also refetch to ensure full sync
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: medidaKeys.detail(medidaId), type: 'all' }),
+          queryClient.refetchQueries({ queryKey: intervencionesListKey(medidaId), type: 'all' }),
+        ])
+      } catch (refetchErr) {
+        console.warn('[useRegistroIntervencion] Cache update failed (aprobar):', refetchErr)
+        // Fallback to invalidation
+        await queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId) })
+      }
 
       return true
     } catch (err: any) {
@@ -527,20 +672,47 @@ export const useRegistroIntervencion = ({
       const response = await rechazarIntervencion(medidaId, effectiveId, {
         observaciones_jz: observaciones,
       })
-      setIntervencion(response.intervencion)
+
+      // Response IS the intervention data directly (not nested under .intervencion)
+      // Map medida object back to number for local state compatibility
+      setIntervencion({
+        ...response,
+        medida: response.medida.id,
+      } as IntervencionResponse)
 
       toast.info('Intervención rechazada. Se notificó al equipo técnico', {
         position: 'top-center',
         autoClose: 3000,
       })
 
-      // Non-blocking cache invalidation
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: intervencionesListKey(medidaId), refetchType: 'active' }),
-      ]).catch((invalidateErr) => {
-        console.warn('[useRegistroIntervencion] Cache invalidation failed (rechazar):', invalidateErr)
-      })
+      // Update cache directly with response data, then refetch for full sync
+      try {
+        // Response contains medida.etapa_actual with the new workflow state
+        if (response.medida?.etapa_actual) {
+          console.log('[rechazar] Updating cache with new etapa_actual:', response.medida.etapa_actual)
+          queryClient.setQueryData(
+            medidaKeys.detail(medidaId),
+            (oldData: any) => {
+              if (!oldData) return oldData
+              return {
+                ...oldData,
+                etapa_actual: response.medida.etapa_actual,
+                etapa_actual_detalle: response.medida.etapa_actual,
+              }
+            }
+          )
+        }
+
+        // Also refetch to ensure full sync
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: medidaKeys.detail(medidaId), type: 'all' }),
+          queryClient.refetchQueries({ queryKey: intervencionesListKey(medidaId), type: 'all' }),
+        ])
+      } catch (refetchErr) {
+        console.warn('[useRegistroIntervencion] Cache refetch failed (rechazar):', refetchErr)
+        // Fallback to invalidation
+        await queryClient.invalidateQueries({ queryKey: medidaKeys.detail(medidaId) })
+      }
 
       return true
     } catch (err: any) {
@@ -771,10 +943,10 @@ export const useRegistroIntervencion = ({
   /**
    * Clear all errors
    */
-  const clearErrors = () => {
+  const clearErrors = useCallback(() => {
     setError(null)
     setValidationErrors({})
-  }
+  }, [])
 
   // ============================================================================
   // COMPUTED VALUES
@@ -845,6 +1017,7 @@ export const useRegistroIntervencion = ({
 
     // CRUD operations
     guardarBorrador,
+    guardarYEnviar,
     loadIntervencion,
 
     // State transitions

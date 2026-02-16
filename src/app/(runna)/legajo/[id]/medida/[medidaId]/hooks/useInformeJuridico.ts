@@ -18,6 +18,7 @@ import {
   getInformeJuridicoByMedida,
   hasInformeJuridico as checkHasInformeJuridico,
   canSendInformeJuridico as checkCanSendInformeJuridico,
+  crearYEnviarInformeJuridico,
 } from "../api/informe-juridico-api-service"
 import { medidaKeys } from './useMedidaDetail'
 import type {
@@ -27,6 +28,8 @@ import type {
   AdjuntoInformeJuridico,
   TipoAdjuntoInformeJuridico,
   EnviarInformeJuridicoResponse,
+  CrearYEnviarInformeJuridicoRequest,
+  CrearYEnviarInformeJuridicoResponse,
 } from "../types/informe-juridico-api"
 
 // ============================================================================
@@ -62,6 +65,9 @@ interface UseInformeJuridicoReturn {
   createNewInforme: (data: CreateInformeJuridicoRequest) => Promise<InformeJuridicoResponse>
   updateInforme: (data: Partial<CreateInformeJuridicoRequest>) => Promise<InformeJuridicoResponse>
   refetchInforme: () => Promise<void>
+
+  // Unified create + send operation
+  createAndSendInforme: (data: CrearYEnviarInformeJuridicoRequest) => Promise<CrearYEnviarInformeJuridicoResponse>
 
   // Adjunto operations
   uploadAdjunto: (
@@ -303,6 +309,73 @@ export const useInformeJuridico = (
     await fetchInforme()
   }, [fetchInforme])
 
+  /**
+   * Create and send informe jurídico in one atomic operation (unified flow)
+   * Creates informe + uploads files + sends + transitions state
+   */
+  const createAndSendInforme = useCallback(
+    async (data: CrearYEnviarInformeJuridicoRequest): Promise<CrearYEnviarInformeJuridicoResponse> => {
+      try {
+        setIsLoadingInforme(true)
+        setInformeError(null)
+
+        console.log('[useInformeJuridico] Creating and sending informe with unified endpoint')
+
+        const response = await crearYEnviarInformeJuridico(medidaId, data)
+
+        console.log('[useInformeJuridico] Unified create+send success:', response)
+
+        // Update cache with new medida state from response
+        if (response.medida?.etapa_actual) {
+          console.log('[useInformeJuridico] Updating cache with new etapa_actual:', response.medida.etapa_actual)
+          queryClient.setQueryData(
+            medidaKeys.detail(medidaId),
+            (oldData: any) => {
+              if (!oldData) return oldData
+              return {
+                ...oldData,
+                etapa_actual: response.medida.etapa_actual,
+                etapa_actual_detalle: response.medida.etapa_actual,
+              }
+            }
+          )
+        }
+
+        // Also invalidate to ensure fresh data
+        try {
+          await queryClient.invalidateQueries({
+            queryKey: medidaKeys.detail(medidaId),
+            refetchType: 'active'
+          })
+        } catch (invalidateErr) {
+          console.warn('[useInformeJuridico] Cache invalidation failed:', invalidateErr)
+        }
+
+        // Refetch to update local state
+        await fetchInforme()
+
+        toast.success('Informe Jurídico creado y enviado exitosamente', {
+          position: 'top-center',
+          autoClose: 3000,
+        })
+
+        return response
+      } catch (error: any) {
+        console.error('[useInformeJuridico] Error in createAndSendInforme:', error)
+        const errorMsg = error.response?.data?.detail || error.message || 'Error al crear y enviar informe jurídico'
+        setInformeError(errorMsg)
+        toast.error(errorMsg, {
+          position: 'top-center',
+          autoClose: 5000,
+        })
+        throw new Error(errorMsg)
+      } finally {
+        setIsLoadingInforme(false)
+      }
+    },
+    [medidaId, queryClient, fetchInforme]
+  )
+
   // ============================================================================
   // ADJUNTO OPERATIONS
   // ============================================================================
@@ -464,6 +537,9 @@ export const useInformeJuridico = (
     createNewInforme,
     updateInforme,
     refetchInforme,
+
+    // Unified create + send operation
+    createAndSendInforme,
 
     // Adjunto operations
     uploadAdjunto,

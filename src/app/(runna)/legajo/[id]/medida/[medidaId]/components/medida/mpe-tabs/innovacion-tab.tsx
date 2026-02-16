@@ -30,12 +30,15 @@ interface InnovacionTabProps {
     persona_apellido: string
     zona_nombre: string
   }
+  /** Callback to refetch medida data from API after state changes */
+  onMedidaRefetch?: () => void
 }
 
 export const InnovacionTab: React.FC<InnovacionTabProps> = ({
   medidaData,
   medidaApiData,
   legajoData,
+  onMedidaRefetch,
 }) => {
   return (
     <UnifiedWorkflowTab
@@ -43,6 +46,7 @@ export const InnovacionTab: React.FC<InnovacionTabProps> = ({
       medidaApiData={medidaApiData}
       legajoData={legajoData}
       workflowPhase="innovacion"
+      onMedidaRefetch={onMedidaRefetch}
     />
   )
 }

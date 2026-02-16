@@ -23,7 +23,6 @@ import React, { useState } from "react"
 import {
   Box,
   Typography,
-  Paper,
   Button,
   Card,
   CardContent,
@@ -41,12 +40,9 @@ import {
   Warning as WarningIcon,
   Add as AddIcon,
   Send as SendIcon,
-  Edit as EditIcon,
-  Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Email as EmailIcon,
   Description as DescriptionIcon,
-  Assignment as AssignmentIcon,
 } from "@mui/icons-material"
 import { useInformeJuridico } from "../../hooks/useInformeJuridico"
 import { InformeJuridicoDialog } from "../dialogs/informe-juridico-dialog"
@@ -54,11 +50,10 @@ import { AdjuntosInformeJuridico } from "../informe-juridico/adjuntos-informe-ju
 import {
   extractUserName,
   MEDIO_NOTIFICACION_LABELS,
-  canEnviarInforme,
   canModificarInforme,
 } from "../../types/informe-juridico-api"
 import type { EstadoEtapa } from "@/app/(runna)/legajo-mesa/types/medida-api"
-import type { CreateInformeJuridicoRequest } from "../../types/informe-juridico-api"
+import type { CrearYEnviarInformeJuridicoRequest } from "../../types/informe-juridico-api"
 
 // ============================================================================
 // INTERFACES
@@ -147,7 +142,6 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
   // ============================================================================
 
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editMode, setEditMode] = useState(false)
   const [sendConfirmOpen, setSendConfirmOpen] = useState(false)
 
   // ============================================================================
@@ -166,8 +160,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     isEnviado,
     tieneInformeOficial,
     cantidadAcuses,
-    createNewInforme,
-    updateInforme,
+    createAndSendInforme,
     uploadAdjunto,
     deleteAdjunto,
     sendInforme,
@@ -188,33 +181,25 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
   // ============================================================================
 
   /**
-   * Handle create/update informe
+   * Handle create and send informe (unified flow)
    */
-  const handleSaveInforme = async (data: CreateInformeJuridicoRequest) => {
+  const handleCreateAndSendInforme = async (data: CrearYEnviarInformeJuridicoRequest) => {
     try {
-      if (editMode) {
-        await updateInforme(data)
-      } else {
-        await createNewInforme(data)
-      }
+      await createAndSendInforme(data)
       setDialogOpen(false)
-      setEditMode(false)
+
+      // Callback
+      if (onInformeEnviado) {
+        onInformeEnviado()
+      }
     } catch (error) {
-      console.error("Error saving informe:", error)
+      console.error("Error creating and sending informe:", error)
       // Error is already shown in dialog
     }
   }
 
   /**
-   * Handle edit button click
-   */
-  const handleEditClick = () => {
-    setEditMode(true)
-    setDialogOpen(true)
-  }
-
-  /**
-   * Handle send informe
+   * Handle send existing informe (legacy flow - for already created informes)
    */
   const handleSendInforme = async () => {
     if (!canSend) {
@@ -337,54 +322,31 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
           }
           subheader={`Elaborado por: ${extractUserName(informeJuridico.elaborado_por_detalle)}`}
           action={
-            canModify && (
+            canModify && !isEnviado && (
               <Box sx={{ display: "flex", gap: 1 }}>
-                {/* Edit button - visible if not sent */}
-                {!isEnviado && (
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<EditIcon />}
-                    onClick={handleEditClick}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      borderColor: "#4f3ff0",
-                      color: "#4f3ff0",
-                      "&:hover": {
-                        borderColor: "#3a2cc2",
-                        backgroundColor: "rgba(79, 63, 240, 0.04)",
-                      },
-                    }}
-                  >
-                    Editar
-                  </Button>
-                )}
                 {/* Send button - visible if not sent, disabled if missing informe oficial */}
-                {!isEnviado && (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<SendIcon />}
-                    onClick={() => setSendConfirmOpen(true)}
-                    disabled={!canSend}
-                    sx={{
-                      backgroundColor: "#4f3ff0",
-                      "&:hover": { backgroundColor: "#3a2cc2" },
-                      "&.Mui-disabled": {
-                        backgroundColor: "#e0e0e0",
-                        color: "#9e9e9e",
-                      },
-                    }}
-                    title={
-                      !tieneInformeOficial
-                        ? "Debe adjuntar el informe oficial antes de enviar"
-                        : ""
-                    }
-                  >
-                    Enviar Informe
-                  </Button>
-                )}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<SendIcon />}
+                  onClick={() => setSendConfirmOpen(true)}
+                  disabled={!canSend}
+                  sx={{
+                    backgroundColor: "#4f3ff0",
+                    "&:hover": { backgroundColor: "#3a2cc2" },
+                    "&.Mui-disabled": {
+                      backgroundColor: "#e0e0e0",
+                      color: "#9e9e9e",
+                    },
+                  }}
+                  title={
+                    !tieneInformeOficial
+                      ? "Debe adjuntar el informe oficial antes de enviar"
+                      : ""
+                  }
+                >
+                  Enviar Informe
+                </Button>
               </Box>
             )
           }
@@ -517,28 +479,13 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     <Box>
       {hasInforme ? renderInforme() : renderEmpty()}
 
-      {/* Create/Edit Dialog */}
+      {/* Create and Send Dialog (Unified Flow) */}
       <InformeJuridicoDialog
         open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false)
-          setEditMode(false)
-        }}
-        onSubmit={handleSaveInforme}
+        onClose={() => setDialogOpen(false)}
+        onSubmit={handleCreateAndSendInforme}
         isLoading={isLoadingInforme}
         medidaNumero={medidaNumero}
-        editMode={editMode}
-        initialData={
-          editMode && informeJuridico
-            ? {
-                observaciones: informeJuridico.observaciones || "",
-                instituciones_notificadas: informeJuridico.instituciones_notificadas,
-                fecha_notificaciones: informeJuridico.fecha_notificaciones,
-                medio_notificacion: informeJuridico.medio_notificacion,
-                destinatarios: informeJuridico.destinatarios,
-              }
-            : undefined
-        }
       />
 
       {/* Send Confirmation Dialog */}

@@ -19,6 +19,8 @@ import type {
   AdjuntosInformeJuridicoQueryParams,
   UploadAdjuntoInformeJuridicoResponse,
   EnviarInformeJuridicoResponse,
+  CrearYEnviarInformeJuridicoRequest,
+  CrearYEnviarInformeJuridicoResponse,
 } from "../types/informe-juridico-api"
 
 // ============================================================================
@@ -267,6 +269,109 @@ export const enviarInformeJuridico = async (
   } catch (error: any) {
     console.error(`Error enviando informe jurídico for medida ${medidaId}:`, error)
     console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
+// ============================================================================
+// CREAR Y ENVIAR (UNIFIED OPERATION)
+// ============================================================================
+
+/**
+ * Create and send informe jurídico in one atomic operation
+ * POST /api/medidas/{medida_id}/informe-juridico/crear-y-enviar/
+ *
+ * Combina en una sola operación atómica:
+ * 1. Crear el informe jurídico
+ * 2. Subir informe oficial (requerido)
+ * 3. Subir acuses de recibo (opcionales)
+ * 4. Enviar (marcar como enviado, transicionar estado)
+ *
+ * Validaciones:
+ * - Medida debe estar en Estado 4 (PENDIENTE_INFORME_JURIDICO)
+ * - Usuario debe ser Equipo Legal o Admin
+ * - informe_oficial es obligatorio (PDF, max 10MB)
+ * - acuses son opcionales (PDFs, max 10MB cada uno)
+ *
+ * @param medidaId ID de la medida
+ * @param data Datos del informe incluyendo archivos
+ * @returns Informe creado y enviado con estado actualizado de medida
+ */
+export const crearYEnviarInformeJuridico = async (
+  medidaId: number,
+  data: CrearYEnviarInformeJuridicoRequest
+): Promise<CrearYEnviarInformeJuridicoResponse> => {
+  try {
+    console.log(`[crearYEnviarInformeJuridico] Creating and sending informe for medida ${medidaId}`)
+
+    // Validate informe_oficial is provided
+    if (!data.informe_oficial) {
+      throw new Error('El informe oficial es obligatorio')
+    }
+
+    // Validate file types
+    if (data.informe_oficial.type !== 'application/pdf') {
+      throw new Error('El informe oficial debe ser un archivo PDF')
+    }
+
+    // Validate file size (10MB max)
+    const MAX_SIZE = 10 * 1024 * 1024
+    if (data.informe_oficial.size > MAX_SIZE) {
+      throw new Error('El informe oficial excede el tamaño máximo de 10MB')
+    }
+
+    // Validate acuses if provided
+    if (data.acuses && data.acuses.length > 0) {
+      for (const acuse of data.acuses) {
+        if (acuse.type !== 'application/pdf') {
+          throw new Error(`El archivo "${acuse.name}" debe ser PDF`)
+        }
+        if (acuse.size > MAX_SIZE) {
+          throw new Error(`El archivo "${acuse.name}" excede el tamaño máximo de 10MB`)
+        }
+      }
+    }
+
+    // Build FormData
+    const formData = new FormData()
+
+    // Text fields
+    if (data.observaciones) {
+      formData.append('observaciones', data.observaciones)
+    }
+    formData.append('instituciones_notificadas', data.instituciones_notificadas)
+    formData.append('fecha_notificaciones', data.fecha_notificaciones)
+    formData.append('medio_notificacion', data.medio_notificacion)
+    formData.append('destinatarios', data.destinatarios)
+
+    // Required file
+    formData.append('informe_oficial', data.informe_oficial)
+
+    // Optional files
+    if (data.acuses && data.acuses.length > 0) {
+      for (const acuse of data.acuses) {
+        formData.append('acuses[]', acuse)
+      }
+    }
+
+    // Make API call
+    const response = await create<CrearYEnviarInformeJuridicoResponse>(
+      `medidas/${medidaId}/informe-juridico/crear-y-enviar/`,
+      formData,
+      true,
+      'Informe jurídico creado y enviado exitosamente'
+    )
+
+    console.log('[crearYEnviarInformeJuridico] Success:', response)
+
+    return response
+  } catch (error: any) {
+    console.error(`[crearYEnviarInformeJuridico] Error for medida ${medidaId}:`, error)
+    console.error('Error details:', {
       message: error?.message,
       response: error?.response?.data,
       status: error?.response?.status,

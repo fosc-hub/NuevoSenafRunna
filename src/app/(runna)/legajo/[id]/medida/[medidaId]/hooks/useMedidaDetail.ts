@@ -36,10 +36,10 @@ export const useMedidaDetail = (
     const {
         enabled = true,
         refetchInterval = false,
-        staleTime = 1000 * 60 * 5, // 5 minutes - long enough for caching but not too long
+        staleTime = 0, // Always refetch on invalidation to ensure UI reflects latest state
     } = options
 
-    return useQuery<MedidaDetailResponse, Error>({
+    const queryResult = useQuery<MedidaDetailResponse, Error>({
         queryKey: medidaKeys.detail(medidaId),
         queryFn: () => getMedidaDetail(medidaId),
         enabled: enabled && !!medidaId,
@@ -50,6 +50,12 @@ export const useMedidaDetail = (
         // Ensure immediate refetch when invalidated
         refetchOnMount: 'always',
     })
+
+    return {
+        ...queryResult,
+        // Expose refetch for manual triggering after state changes
+        refetch: queryResult.refetch,
+    }
 }
 
 /**

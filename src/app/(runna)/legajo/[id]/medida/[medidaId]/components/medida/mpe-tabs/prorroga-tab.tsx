@@ -30,12 +30,15 @@ interface ProrrogaTabProps {
     persona_apellido: string
     zona_nombre: string
   }
+  /** Callback to refetch medida data from API after state changes */
+  onMedidaRefetch?: () => void
 }
 
 export const ProrrogaTab: React.FC<ProrrogaTabProps> = ({
   medidaData,
   medidaApiData,
   legajoData,
+  onMedidaRefetch,
 }) => {
   return (
     <UnifiedWorkflowTab
@@ -43,6 +46,7 @@ export const ProrrogaTab: React.FC<ProrrogaTabProps> = ({
       medidaApiData={medidaApiData}
       legajoData={legajoData}
       workflowPhase="prorroga"
+      onMedidaRefetch={onMedidaRefetch}
     />
   )
 }

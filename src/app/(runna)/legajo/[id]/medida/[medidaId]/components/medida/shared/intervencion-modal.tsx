@@ -7,7 +7,7 @@
  * Extracted and refactored from RegistroIntervencionModal for reusability.
  *
  * Features:
- * - 4-step wizard workflow (Información Básica → Detalles → Documentos → Configuración)
+ * - 3-step wizard workflow (Información Básica → Detalles → Documentos y Configuración)
  * - Workflow states: BORRADOR → ENVIADO → APROBADO/RECHAZADO
  * - File attachment management
  * - Complete validation and error handling
@@ -26,7 +26,6 @@ import {
     Select,
     FormControl,
     InputLabel,
-    Paper,
     Divider,
     Card,
     RadioGroup,
@@ -38,15 +37,12 @@ import {
     Snackbar,
     Chip,
 } from "@mui/material"
-import { useState, useEffect } from "react"
-import AttachFileIcon from "@mui/icons-material/AttachFile"
-import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import PersonIcon from "@mui/icons-material/Person"
 import BusinessIcon from "@mui/icons-material/Business"
 import DescriptionIcon from "@mui/icons-material/Description"
 import UploadFileIcon from "@mui/icons-material/UploadFile"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
-import SaveIcon from "@mui/icons-material/Save"
 import SendIcon from "@mui/icons-material/Send"
 
 // Import atomic components
@@ -110,6 +106,7 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         validationErrors,
         clearErrors,
         guardarBorrador,
+        guardarYEnviar,
         tiposDispositivo,
         motivos,
         subMotivos,
@@ -176,7 +173,6 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     }, [formData.tipo_dispositivo_id])
 
     const [showSuccessMessage, setShowSuccessMessage] = useState(false)
-    const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
     // Rejection dialog state
     const [rechazarDialogOpen, setRechazarDialogOpen] = useState(false)
@@ -193,15 +189,19 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         severity: 'success'
     })
 
+    // Pending files state (for files selected before intervention is created)
+    const [pendingFiles, setPendingFiles] = useState<File[]>([])
+    const [pendingFileTipos, setPendingFileTipos] = useState<string[]>([])
+
     // ============================================================================
     // EFFECTS
     // ============================================================================
     useEffect(() => {
         if (open) {
             clearErrors()
-            setPendingFiles([])
         }
-    }, [open, clearErrors])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
 
     // Check if legajo data is available
     const hasLegajoData = !!(legajoData?.numero && legajoData?.persona_nombre && legajoData?.persona_apellido)
@@ -224,60 +224,98 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     // ============================================================================
     // HANDLERS - Save & State Transitions
     // ============================================================================
-    const handleSave = async () => {
-        const result = await guardarBorrador()
-        if (result) {
-            setShowSuccessMessage(true)
-            if (onSaved) {
-                onSaved()
-            }
-            // Close after short delay to show success message
-            setTimeout(() => {
-                onClose()
-            }, 1500)
-        }
-    }
 
-    const handleEnviar = async () => {
+    /**
+     * Combined handler: Save intervention + send for approval
+     * Uses guardarYEnviar for new interventions (single API call with files)
+     * Uses guardarBorrador + enviar for existing interventions
+     */
+    const handleSaveAndSend = async () => {
         try {
-            // If no intervencionId, save first
-            if (!intervencionId) {
+            const isNewIntervention = !intervencion && !intervencionId
+
+            if (isNewIntervention) {
+                // NEW INTERVENTION: Use combined endpoint (create + send + files in one call)
                 setSnackbar({
                     open: true,
-                    message: 'Guardando intervención antes de enviar...',
+                    message: 'Creando y enviando intervención...',
                     severity: 'info'
                 })
-                const saved = await guardarBorrador()
-                if (!saved) {
+
+                const result = await guardarYEnviar(
+                    pendingFiles.length > 0 ? pendingFiles : undefined,
+                    pendingFileTipos.length > 0 ? pendingFileTipos : undefined
+                )
+
+                if (result) {
+                    // Clear pending files after successful creation
+                    setPendingFiles([])
+                    setPendingFileTipos([])
+
                     setSnackbar({
                         open: true,
-                        message: 'Debe guardar la intervención antes de enviar a aprobación',
+                        message: 'Intervención creada y enviada a aprobación exitosamente',
+                        severity: 'success'
+                    })
+                    if (onSaved) {
+                        onSaved()
+                    }
+                    setTimeout(() => {
+                        onClose()
+                    }, 1500)
+                } else {
+                    setSnackbar({
+                        open: true,
+                        message: 'Error al crear la intervención',
+                        severity: 'error'
+                    })
+                }
+            } else {
+                // EXISTING INTERVENTION: Use two-step flow (save + send)
+                setSnackbar({
+                    open: true,
+                    message: 'Guardando intervención...',
+                    severity: 'info'
+                })
+
+                const result = await guardarBorrador()
+                if (!result) {
+                    setSnackbar({
+                        open: true,
+                        message: 'Error al guardar la intervención',
                         severity: 'error'
                     })
                     return
                 }
-                // Wait a moment for state to update
-                await new Promise(resolve => setTimeout(resolve, 500))
-            }
 
-            const result = await enviar()
-            if (result) {
                 setSnackbar({
                     open: true,
-                    message: 'Intervención enviada a aprobación exitosamente',
-                    severity: 'success'
+                    message: 'Enviando a aprobación...',
+                    severity: 'info'
                 })
-                if (onSaved) {
-                    onSaved()
+
+                // Small delay to ensure state is updated
+                await new Promise(resolve => setTimeout(resolve, 300))
+
+                const sendResult = await enviar()
+                if (sendResult) {
+                    setSnackbar({
+                        open: true,
+                        message: 'Intervención guardada y enviada a aprobación exitosamente',
+                        severity: 'success'
+                    })
+                    if (onSaved) {
+                        onSaved()
+                    }
+                    setTimeout(() => {
+                        onClose()
+                    }, 1500)
                 }
-                setTimeout(() => {
-                    onClose()
-                }, 1500)
             }
         } catch (error) {
             setSnackbar({
                 open: true,
-                message: 'Error al enviar la intervención',
+                message: 'Error al procesar la intervención',
                 severity: 'error'
             })
         }
@@ -349,24 +387,35 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     // ============================================================================
     // HANDLERS - File Management
     // ============================================================================
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files
-        if (files) {
-            setPendingFiles((prev) => [...prev, ...Array.from(files)])
-        }
-    }
 
-    const handleFileUpload = async (file: File) => {
+    /**
+     * Handle file upload for existing intervention
+     */
+    const handleFileUpload = useCallback(async (file: File) => {
         await uploadAdjuntoFile(file, 'RESPALDO')
-        // Remove from pending after successful upload
-        setPendingFiles((prev) => prev.filter(f => f !== file))
-    }
+    }, [uploadAdjuntoFile])
 
-    const handleRemovePendingFile = (index: number) => {
-        setPendingFiles((prev) => prev.filter((_, i) => i !== index))
-    }
+    /**
+     * Handle adding files to pending queue (before intervention exists)
+     */
+    const handleAddPendingFile = useCallback((file: File, tipo: string = 'RESPALDO') => {
+        setPendingFiles(prev => [...prev, file])
+        setPendingFileTipos(prev => [...prev, tipo])
+    }, [])
 
-    const handleDownloadFile = (file: FileItem) => {
+    /**
+     * Handle removing file from pending queue
+     */
+    const handleRemovePendingFile = useCallback((index: number) => {
+        setPendingFiles(prev => prev.filter((_, i) => i !== index))
+        setPendingFileTipos(prev => prev.filter((_, i) => i !== index))
+    }, [])
+
+    const handleDeleteAdjunto = useCallback((fileId: number | string) => {
+        deleteAdjuntoFile(Number(fileId))
+    }, [deleteAdjuntoFile])
+
+    const handleDownloadFile = useCallback((file: FileItem) => {
         if (file.url) {
             // Use the same base URL approach as axiosInstance
             // NEXT_PUBLIC_API_URL is like: http://localhost:8000/api or https://...railway.app/api
@@ -383,17 +432,17 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
             // Open in new tab to trigger download
             window.open(downloadUrl, '_blank')
         }
-    }
+    }, [])
 
-    // Map adjuntos to FileItem format
-    const mappedAdjuntos: FileItem[] = adjuntos.map(adj => ({
+    // Map adjuntos to FileItem format (memoized to prevent unnecessary re-renders)
+    const mappedAdjuntos: FileItem[] = useMemo(() => adjuntos.map(adj => ({
         id: adj.id,
         nombre: adj.nombre_original,
         tipo: adj.tipo_display || adj.tipo,
         url: adj.url_descarga || adj.archivo,
         fecha_subida: adj.fecha_subida,
         tamano: adj.tamaño_bytes,
-    }))
+    })), [adjuntos])
 
     // ============================================================================
     // STEP CONTENT DEFINITIONS
@@ -704,9 +753,10 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                     </Box>
                 )
 
-            case 2: // Documentos y Archivos - REFACTORED with atomic component
+            case 2: // Documentos y Configuración - MERGED from previous steps 2 and 3
                 return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {/* Documentos y Archivos Section */}
                         <Card elevation={2} sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <UploadFileIcon sx={{ color: 'primary.main', mr: 1 }} />
@@ -715,29 +765,21 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                 </Typography>
                             </Box>
 
-                            {!intervencion && (
-                                <Alert severity="warning" sx={{ mb: 3 }}>
-                                    <Typography variant="body2">
-                                        Primero debe guardar la intervención como borrador para poder subir adjuntos.
-                                    </Typography>
-                                </Alert>
-                            )}
-
-                            {intervencion && (
+                            {/* File Upload Section */}
+                            {intervencion ? (
+                                // EXISTING INTERVENTION: Show uploaded files and allow more uploads
                                 <>
                                     <Alert severity="info" sx={{ mb: 3 }}>
                                         <Typography variant="body2">
                                             Adjunte los documentos relacionados con la intervención (modelos, actas, respaldos, informes).
                                         </Typography>
                                     </Alert>
-
-                                    {/* File Upload Section - REFACTORED with atomic component */}
                                     <FileUploadSection
                                         files={mappedAdjuntos}
                                         isLoading={isLoadingAdjuntos}
                                         onUpload={handleFileUpload}
                                         onDownload={handleDownloadFile}
-                                        onDelete={(fileId) => deleteAdjuntoFile(Number(fileId))}
+                                        onDelete={handleDeleteAdjunto}
                                         allowedTypes=".pdf,.jpg,.jpeg,.png"
                                         maxSizeInMB={10}
                                         disabled={!canEdit}
@@ -747,63 +789,84 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                         emptyMessage="No hay archivos adjuntos aún."
                                         isUploading={isUploadingAdjunto}
                                     />
+                                </>
+                            ) : (
+                                // NEW INTERVENTION: Allow queuing files for upload with creation
+                                <>
+                                    <Alert severity="info" sx={{ mb: 3 }}>
+                                        <Typography variant="body2">
+                                            Seleccione los archivos que desea adjuntar. Se subirán automáticamente al guardar y enviar la intervención.
+                                        </Typography>
+                                    </Alert>
 
-                                    {/* Pending files section - PRESERVED */}
+                                    {/* Pending files list */}
                                     {pendingFiles.length > 0 && (
-                                        <Box sx={{ mb: 3 }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                                                Archivos pendientes de subir ({pendingFiles.length})
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                                Archivos pendientes ({pendingFiles.length}):
                                             </Typography>
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                                                {pendingFiles.map((file, index) => (
-                                                    <Paper
-                                                        key={index}
-                                                        elevation={1}
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'space-between',
-                                                            p: 2,
-                                                            borderRadius: 2,
-                                                            backgroundColor: 'rgba(255, 152, 0, 0.05)',
-                                                            border: '1px solid rgba(255, 152, 0, 0.2)'
-                                                        }}
+                                            {pendingFiles.map((file, index) => (
+                                                <Box
+                                                    key={index}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        p: 1,
+                                                        mb: 1,
+                                                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                                        borderRadius: 1,
+                                                    }}
+                                                >
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <DescriptionIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                                                        <Typography variant="body2">{file.name}</Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                                        </Typography>
+                                                    </Box>
+                                                    <Button
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => handleRemovePendingFile(index)}
                                                     >
-                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                            <AttachFileIcon sx={{ color: 'warning.main', mr: 1 }} />
-                                                            <Box>
-                                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                                    {file.name}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {(file.size / 1024).toFixed(2)} KB • Pendiente
-                                                                </Typography>
-                                                            </Box>
-                                                        </Box>
-                                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
-                                                                onClick={() => handleFileUpload(file)}
-                                                                disabled={isUploadingAdjunto}
-                                                            >
-                                                                Subir
-                                                            </Button>
-                                                        </Box>
-                                                    </Paper>
-                                                ))}
-                                            </Box>
+                                                        Quitar
+                                                    </Button>
+                                                </Box>
+                                            ))}
                                         </Box>
                                     )}
+
+                                    {/* File input */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Button
+                                            variant="outlined"
+                                            component="label"
+                                            startIcon={<UploadFileIcon />}
+                                        >
+                                            Seleccionar archivo
+                                            <input
+                                                type="file"
+                                                hidden
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) {
+                                                        handleAddPendingFile(file, 'RESPALDO')
+                                                        e.target.value = '' // Reset to allow same file selection
+                                                    }
+                                                }}
+                                            />
+                                        </Button>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Formatos: PDF, JPG, PNG (máx. 10MB)
+                                        </Typography>
+                                    </Box>
                                 </>
                             )}
                         </Card>
-                    </Box>
-                )
 
-            case 3: // Configuración Adicional - PRESERVED as-is
-                return (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {/* Configuración Adicional Section */}
                         <Card elevation={2} sx={{ p: 3 }}>
                             <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                                 Configuración Adicional
@@ -827,65 +890,63 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                         <FormControlLabel value="No" control={<Radio />} label="No" disabled={!canEdit} />
                                     </RadioGroup>
                                 </FormControl>
-                                <Alert severity="info" sx={{ mt: 2 }}>
-                                    Los informes ampliatorios se pueden adjuntar en la sección de documentos
-                                </Alert>
                             </Box>
-
-                            <Divider sx={{ my: 3 }} />
 
                             {/* Estado actual y acciones */}
                             {intervencion && (
-                                <Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                                        Estado actual
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                        <Chip
-                                            label={intervencion.estado_display}
-                                            color={
-                                                intervencion.estado === 'APROBADO' ? 'success' :
-                                                intervencion.estado === 'ENVIADO' ? 'info' :
-                                                intervencion.estado === 'RECHAZADO' ? 'error' :
-                                                'default'
-                                            }
-                                            sx={{ fontWeight: 600 }}
-                                        />
-                                        {intervencion.fecha_envio && (
-                                            <Typography variant="caption" color="text.secondary">
-                                                Enviado: {new Date(intervencion.fecha_envio).toLocaleString('es-AR')}
-                                            </Typography>
-                                        )}
-                                    </Box>
-
-                                    {intervencion.observaciones_jz && (
-                                        <Alert severity="warning" sx={{ mb: 2 }}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                                Observaciones del Jefe Zonal:
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                {intervencion.observaciones_jz}
-                                            </Typography>
-                                        </Alert>
-                                    )}
-
-                                    {/* Metadata */}
-                                    <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
-                                        <Typography variant="caption" color="text.secondary" display="block">
-                                            Registrado por: {intervencion.registrado_por_detalle?.nombre_completo || intervencion.registrado_por_detalle?.username || 'N/A'}
+                                <>
+                                    <Divider sx={{ my: 3 }} />
+                                    <Box>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                                            Estado actual
                                         </Typography>
-                                        {intervencion.aprobado_por_detalle && (
-                                            <Typography variant="caption" color="text.secondary" display="block">
-                                                Aprobado por: {intervencion.aprobado_por_detalle.nombre_completo || intervencion.aprobado_por_detalle.username || 'N/A'}
-                                            </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                            <Chip
+                                                label={intervencion.estado_display}
+                                                color={
+                                                    intervencion.estado === 'APROBADO' ? 'success' :
+                                                    intervencion.estado === 'ENVIADO' ? 'info' :
+                                                    intervencion.estado === 'RECHAZADO' ? 'error' :
+                                                    'default'
+                                                }
+                                                sx={{ fontWeight: 600 }}
+                                            />
+                                            {intervencion.fecha_envio && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Enviado: {new Date(intervencion.fecha_envio).toLocaleString('es-AR')}
+                                                </Typography>
+                                            )}
+                                        </Box>
+
+                                        {intervencion.observaciones_jz && (
+                                            <Alert severity="warning" sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                                    Observaciones del Jefe Zonal:
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    {intervencion.observaciones_jz}
+                                                </Typography>
+                                            </Alert>
                                         )}
-                                        {intervencion.rechazado_por_detalle && (
+
+                                        {/* Metadata */}
+                                        <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">
-                                                Rechazado por: {intervencion.rechazado_por_detalle.nombre_completo || intervencion.rechazado_por_detalle.username || 'N/A'}
+                                                Registrado por: {intervencion.registrado_por_detalle?.nombre_completo || intervencion.registrado_por_detalle?.username || 'N/A'}
                                             </Typography>
-                                        )}
+                                            {intervencion.aprobado_por_detalle && (
+                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                    Aprobado por: {intervencion.aprobado_por_detalle.nombre_completo || intervencion.aprobado_por_detalle.username || 'N/A'}
+                                                </Typography>
+                                            )}
+                                            {intervencion.rechazado_por_detalle && (
+                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                    Rechazado por: {intervencion.rechazado_por_detalle.nombre_completo || intervencion.rechazado_por_detalle.username || 'N/A'}
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </Box>
-                                </Box>
+                                </>
                             )}
                         </Card>
                     </Box>
@@ -903,8 +964,7 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     const wizardSteps: WizardStep[] = [
         { label: 'Información Básica', content: getStepContent(0) },
         { label: 'Detalles de Intervención', content: getStepContent(1) },
-        { label: 'Documentos y Archivos', content: getStepContent(2) },
-        { label: 'Configuración Adicional', content: getStepContent(3) },
+        { label: 'Documentos y Configuración', content: getStepContent(2) },
     ]
 
     // Get display name for workflow phase
@@ -942,42 +1002,34 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                 fullWidth={true}
                 showProgress={true}
                 allowStepClick={true}
-                primaryAction={{
-                    label: activeStep === wizardSteps.length - 1 ? "Finalizar" : "Siguiente",
-                    onClick: activeStep === wizardSteps.length - 1 ? handleSave : handleNext,
-                    disabled: isSaving || isLoading,
-                    icon: activeStep === wizardSteps.length - 1 ? <SaveIcon /> : undefined,
-                }}
+                primaryAction={
+                    // Context-aware primary action
+                    activeStep !== wizardSteps.length - 1
+                        ? {
+                            // Not on last step: just "Siguiente"
+                            label: "Siguiente",
+                            onClick: handleNext,
+                            disabled: isLoading,
+                        }
+                        : canAprobarOrRechazar && currentEstado === 'ENVIADO'
+                        ? {
+                            // Reviewing: "Aprobar" as primary action
+                            label: "Aprobar",
+                            onClick: handleAprobar,
+                            disabled: isAprobando || isRechazando || isLoading,
+                            icon: <CheckCircleIcon />,
+                        }
+                        : {
+                            // Creating/Editing: "Guardar y Enviar" as single action
+                            label: "Guardar y Enviar",
+                            onClick: handleSaveAndSend,
+                            disabled: isSaving || isEnviando || isLoading,
+                            icon: <SendIcon />,
+                        }
+                }
                 secondaryActions={[
-                    // Save button (always available when canEdit)
-                    ...(canEdit ? [{
-                        label: intervencionId ? "Actualizar" : "Guardar Borrador",
-                        onClick: handleSave,
-                        disabled: isSaving || isLoading,
-                        icon: <SaveIcon />,
-                        variant: "outlined" as const,
-                        color: "primary" as const,
-                    }] : []),
-                    // Enviar button (BORRADOR state)
-                    ...(!intervencion || (canEnviar && currentEstado === 'BORRADOR') ? [{
-                        label: "Enviar a Aprobación",
-                        onClick: handleEnviar,
-                        disabled: isEnviando || isSaving || isLoading,
-                        icon: <SendIcon />,
-                        variant: "contained" as const,
-                        color: "primary" as const,
-                    }] : []),
-                    // Aprobar button (ENVIADO state)
-                    ...(canAprobarOrRechazar && currentEstado === 'ENVIADO' ? [{
-                        label: "Aprobar",
-                        onClick: handleAprobar,
-                        disabled: isAprobando || isRechazando || isLoading,
-                        icon: <CheckCircleIcon />,
-                        variant: "contained" as const,
-                        color: "success" as const,
-                    }] : []),
-                    // Rechazar button (ENVIADO state)
-                    ...(canAprobarOrRechazar && currentEstado === 'ENVIADO' ? [{
+                    // Rechazar button (only for reviewers in ENVIADO state)
+                    ...(canAprobarOrRechazar && currentEstado === 'ENVIADO' && activeStep === wizardSteps.length - 1 ? [{
                         label: "Rechazar",
                         onClick: handleRechazarClick,
                         disabled: isAprobando || isRechazando || isLoading,

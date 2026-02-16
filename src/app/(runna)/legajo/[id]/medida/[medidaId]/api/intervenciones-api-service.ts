@@ -252,6 +252,228 @@ export const deleteIntervencion = async (
 }
 
 // ============================================================================
+// COMBINED OPERATIONS (Enhanced UX)
+// ============================================================================
+
+/**
+ * Response type for crear-y-enviar endpoint
+ */
+export interface CrearYEnviarResponse extends IntervencionResponse {
+  medida_workflow: {
+    id: number
+    numero_medida: string
+    tipo_medida: string
+    etapa_actual_detalle: {
+      id: number
+      nombre: string
+      estado: string
+      estado_display: string
+    }
+    workflow_position: {
+      step: number
+      step_name: string
+      step_label: string
+      next_step: string | null
+      progress_percentage: number
+    }
+  }
+  mensaje: string
+}
+
+/**
+ * Request type for crear-y-enviar endpoint
+ */
+export interface CrearYEnviarRequest {
+  fecha_intervencion: string
+  motivo_id: number
+  sub_motivo_id?: number | null
+  categoria_intervencion_id: number
+  intervencion_especifica: string
+  descripcion_detallada?: string | null
+  motivo_vulneraciones?: string | null
+  tipo_dispositivo_id?: number | null
+  subtipo_dispositivo?: string | null
+  requiere_informes_ampliatorios?: boolean
+}
+
+/**
+ * Create intervention AND send to approval in one request
+ * POST /api/medidas/{medida_id}/intervenciones/crear-y-enviar/
+ *
+ * Optionally accepts files via multipart/form-data
+ *
+ * @param medidaId ID de la medida
+ * @param data Datos de la intervención
+ * @param archivos Optional array of files to attach
+ * @param tipos Optional array of file types (ACTA, RESPALDO, INFORME, MODELO)
+ * @returns Intervención creada y enviada con workflow state completo
+ */
+export const crearYEnviarIntervencion = async (
+  medidaId: number,
+  data: CrearYEnviarRequest,
+  archivos?: File[],
+  tipos?: string[]
+): Promise<CrearYEnviarResponse> => {
+  try {
+    console.log(`Creating and sending intervención for medida ${medidaId}:`, data)
+
+    // If files are provided, use multipart/form-data
+    if (archivos && archivos.length > 0) {
+      const formData = new FormData()
+
+      // Add all form fields
+      formData.append('fecha_intervencion', data.fecha_intervencion)
+      formData.append('motivo_id', String(data.motivo_id))
+      formData.append('categoria_intervencion_id', String(data.categoria_intervencion_id))
+      formData.append('intervencion_especifica', data.intervencion_especifica)
+
+      if (data.sub_motivo_id) {
+        formData.append('sub_motivo_id', String(data.sub_motivo_id))
+      }
+      if (data.descripcion_detallada) {
+        formData.append('descripcion_detallada', data.descripcion_detallada)
+      }
+      if (data.motivo_vulneraciones) {
+        formData.append('motivo_vulneraciones', data.motivo_vulneraciones)
+      }
+      if (data.tipo_dispositivo_id) {
+        formData.append('tipo_dispositivo_id', String(data.tipo_dispositivo_id))
+      }
+      if (data.subtipo_dispositivo) {
+        formData.append('subtipo_dispositivo', data.subtipo_dispositivo)
+      }
+      formData.append('requiere_informes_ampliatorios', String(data.requiere_informes_ampliatorios ?? false))
+
+      // Add files
+      archivos.forEach((file) => {
+        formData.append('archivos[]', file)
+      })
+
+      // Add file types
+      if (tipos) {
+        tipos.forEach((tipo) => {
+          formData.append('tipos[]', tipo)
+        })
+      }
+
+      const { data: response } = await axiosInstance.post<CrearYEnviarResponse>(
+        `medidas/${medidaId}/intervenciones/crear-y-enviar/`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
+
+      console.log("Intervención created and sent successfully:", response)
+      toast.success(response.mensaje || 'Intervención creada y enviada exitosamente')
+
+      return response
+    } else {
+      // No files, use JSON
+      const { data: response } = await axiosInstance.post<CrearYEnviarResponse>(
+        `medidas/${medidaId}/intervenciones/crear-y-enviar/`,
+        data
+      )
+
+      console.log("Intervención created and sent successfully:", response)
+      toast.success(response.mensaje || 'Intervención creada y enviada exitosamente')
+
+      return response
+    }
+  } catch (error: any) {
+    console.error(`Error creating and sending intervención for medida ${medidaId}:`, error)
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
+/**
+ * Batch upload response type
+ */
+export interface BatchUploadResponse {
+  total: number
+  exitosos: number
+  fallidos: number
+  resultados: Array<{
+    success: boolean
+    adjunto?: AdjuntoIntervencion
+    filename: string
+    error?: string
+  }>
+}
+
+/**
+ * Upload multiple files to an intervención at once
+ * POST /api/medidas/{medida_id}/intervenciones/{id}/adjuntos/batch/
+ *
+ * @param medidaId ID de la medida
+ * @param intervencionId ID de la intervención
+ * @param archivos Array of files to upload
+ * @param tipos Array of file types (must match archivos length)
+ * @returns Batch upload result with individual file statuses
+ */
+export const uploadAdjuntosBatch = async (
+  medidaId: number,
+  intervencionId: number,
+  archivos: File[],
+  tipos: string[]
+): Promise<BatchUploadResponse> => {
+  try {
+    console.log(
+      `Batch uploading ${archivos.length} adjuntos: medida ${medidaId}, intervención ${intervencionId}`
+    )
+
+    const formData = new FormData()
+
+    archivos.forEach((file) => {
+      formData.append('archivos[]', file)
+    })
+
+    tipos.forEach((tipo) => {
+      formData.append('tipos[]', tipo)
+    })
+
+    const { data: response } = await axiosInstance.post<BatchUploadResponse>(
+      `medidas/${medidaId}/intervenciones/${intervencionId}/adjuntos/batch/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+
+    console.log("Batch upload completed:", response)
+
+    if (response.exitosos > 0) {
+      toast.success(`${response.exitosos} archivo(s) subido(s) exitosamente`)
+    }
+    if (response.fallidos > 0) {
+      toast.warning(`${response.fallidos} archivo(s) fallaron al subir`)
+    }
+
+    return response
+  } catch (error: any) {
+    console.error(
+      `Error batch uploading adjuntos: medida ${medidaId}, intervención ${intervencionId}`,
+      error
+    )
+    console.error("Error details:", {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    })
+    throw error
+  }
+}
+
+// ============================================================================
 // STATE TRANSITIONS (MED-02b)
 // ============================================================================
 

@@ -5,24 +5,17 @@
  * Componente para gestionar y visualizar adjuntos de Informe Jurídico
  *
  * Características:
- * - Lista de adjuntos (INFORME oficial + ACUSES de recibo)
- * - Download de archivos PDF
- * - Eliminación de adjuntos (solo si informe no enviado)
- * - Vista previa de documentos
- * - Upload de nuevos adjuntos (informe oficial + acuses)
+ * - Drag-and-drop file upload with visual feedback
+ * - Card-based file list with visual type distinction
+ * - Download y eliminación de archivos
  * - Validación de archivos (PDF, máx 10MB)
  * - Distinción visual entre informe oficial y acuses de recibo
  */
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import {
   Box,
   Typography,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Button,
   Paper,
@@ -39,16 +32,22 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Card,
+  CardContent,
+  Avatar,
+  Grid,
+  Divider,
 } from "@mui/material"
 import {
   PictureAsPdf as PdfIcon,
   Download as DownloadIcon,
   Delete as DeleteIcon,
-  AttachFile as AttachFileIcon,
   CloudUpload as UploadIcon,
   Description as DescriptionIcon,
   CheckCircle as CheckCircleIcon,
-  Assignment as AssignmentIcon,
+  Receipt as ReceiptIcon,
+  Gavel as GavelIcon,
+  Add as AddIcon,
 } from "@mui/icons-material"
 import { extractUserName, TIPO_ADJUNTO_LABELS } from "../../types/informe-juridico-api"
 import type {
@@ -78,6 +77,12 @@ interface AdjuntosInformeJuridicoProps {
 }
 
 // ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -101,6 +106,10 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
   const [tipoAdjunto, setTipoAdjunto] = useState<TipoAdjuntoInformeJuridico>("ACUSE")
   const [descripcion, setDescripcion] = useState("")
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  // Refs
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Derived state
   const hasAdjuntos = adjuntos.length > 0
@@ -112,6 +121,19 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
   // ============================================================================
   // HANDLERS
   // ============================================================================
+
+  /**
+   * Validate file
+   */
+  const validateFile = (file: File): string | null => {
+    if (file.type !== "application/pdf") {
+      return "Solo se permiten archivos PDF"
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return "El archivo excede el tamaño máximo de 10MB"
+    }
+    return null
+  }
 
   /**
    * Handle file download
@@ -152,6 +174,47 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
     setUploadDialogOpen(true)
   }
 
+  // Drag-drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (canModify && !isUploading) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    if (!canModify || isUploading) return
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      const file = files[0]
+      const error = validateFile(file)
+      if (error) {
+        setUploadError(error)
+        return
+      }
+      setSelectedFile(file)
+      setTipoAdjunto(tieneInformeOficial ? "ACUSE" : "INFORME")
+      setUploadDialogOpen(true)
+    }
+  }
+
   /**
    * Handle file selection
    */
@@ -160,24 +223,20 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
     if (!files || files.length === 0) return
 
     const file = files[0]
-
-    // Validate file type
-    if (file.type !== "application/pdf") {
-      setUploadError("Solo se permiten archivos PDF")
-      setSelectedFile(null)
-      return
-    }
-
-    // Validate file size (10MB)
-    const MAX_SIZE = 10 * 1024 * 1024
-    if (file.size > MAX_SIZE) {
-      setUploadError("El archivo excede el tamaño máximo de 10MB")
+    const error = validateFile(file)
+    if (error) {
+      setUploadError(error)
       setSelectedFile(null)
       return
     }
 
     setSelectedFile(file)
     setUploadError(null)
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   /**
@@ -242,7 +301,7 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
 
   return (
     <Box>
-      {/* Header with upload button */}
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -251,27 +310,24 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
           mb: 2,
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          Adjuntos ({adjuntos.length})
-        </Typography>
-
-        {canModify && (
-          <Button
-            variant="outlined"
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <DescriptionIcon color="primary" />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Documentos Adjuntos
+          </Typography>
+          <Chip
+            label={`${adjuntos.length} archivo${adjuntos.length !== 1 ? 's' : ''}`}
             size="small"
-            startIcon={<UploadIcon />}
-            onClick={openUploadDialog}
-            disabled={isUploading}
-          >
-            Agregar Adjunto
-          </Button>
-        )}
+            color="default"
+            variant="outlined"
+          />
+        </Box>
       </Box>
 
       {/* Status chips */}
-      <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+      <Box sx={{ display: "flex", gap: 1, mb: 3, flexWrap: "wrap" }}>
         <Chip
-          icon={tieneInformeOficial ? <CheckCircleIcon /> : <DescriptionIcon />}
+          icon={tieneInformeOficial ? <CheckCircleIcon /> : <GavelIcon />}
           label={
             tieneInformeOficial
               ? "Informe Oficial Cargado"
@@ -281,103 +337,211 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
           size="small"
         />
         <Chip
-          icon={<AssignmentIcon />}
+          icon={<ReceiptIcon />}
           label={`${cantidadAcuses} Acuse${cantidadAcuses !== 1 ? "s" : ""} de Recibo`}
-          color="info"
+          color="default"
           variant="outlined"
           size="small"
         />
       </Box>
 
-      {/* Adjuntos list */}
+      {/* Drag-drop upload zone */}
+      {canModify && (
+        <Paper
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+          sx={{
+            border: isDragging ? '2px dashed #4f3ff0' : '2px dashed',
+            borderColor: isDragging ? '#4f3ff0' : 'divider',
+            borderRadius: 2,
+            p: 3,
+            mb: 3,
+            textAlign: 'center',
+            cursor: isUploading ? 'not-allowed' : 'pointer',
+            backgroundColor: isDragging ? 'rgba(79, 63, 240, 0.05)' : 'background.default',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: isUploading ? 'background.default' : 'action.hover',
+              borderColor: isUploading ? 'divider' : '#4f3ff0',
+            },
+          }}
+        >
+          <UploadIcon
+            sx={{
+              fontSize: 40,
+              color: isDragging ? '#4f3ff0' : 'text.secondary',
+              mb: 1,
+            }}
+          />
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {isDragging ? "Suelta el archivo aquí" : "Arrastra y suelta archivos PDF"}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            o haz clic para seleccionar • Máximo 10MB por archivo
+          </Typography>
+          {isUploading && <CircularProgress size={24} sx={{ mt: 2 }} />}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+            disabled={isUploading}
+          />
+        </Paper>
+      )}
+
+      {/* Upload error */}
+      {uploadError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setUploadError(null)}>
+          {uploadError}
+        </Alert>
+      )}
+
+      {/* Card-based file list */}
       {!hasAdjuntos ? (
-        <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-          <Typography variant="body2" color="text.secondary">
-            No hay adjuntos disponibles
+        <Paper variant="outlined" sx={{ p: 4, textAlign: "center" }}>
+          <PdfIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
+          <Typography variant="body1" color="text.secondary" gutterBottom>
+            No hay documentos adjuntos
+          </Typography>
+          <Typography variant="body2" color="text.disabled">
+            {canModify
+              ? "Arrastra archivos PDF o haz clic en el área superior para agregar"
+              : "El equipo legal aún no ha cargado documentos"
+            }
           </Typography>
         </Paper>
       ) : (
-        <Paper variant="outlined">
-          <List disablePadding>
-            {adjuntos.map((adjunto, index) => (
-              <React.Fragment key={adjunto.id}>
-                {index > 0 && <Box sx={{ borderTop: 1, borderColor: "divider" }} />}
-                <ListItem
-                  sx={{
-                    py: 2,
-                    backgroundColor:
-                      adjunto.tipo_adjunto === "INFORME"
-                        ? "rgba(76, 175, 80, 0.05)"
-                        : "transparent",
-                  }}
-                >
-                  <ListItemIcon>
-                    <PdfIcon
-                      color={adjunto.tipo_adjunto === "INFORME" ? "success" : "primary"}
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {adjunto.nombre_original}
-                        </Typography>
-                        <Chip
-                          label={TIPO_ADJUNTO_LABELS[adjunto.tipo_adjunto]}
-                          size="small"
-                          color={adjunto.tipo_adjunto === "INFORME" ? "success" : "default"}
-                          variant="outlined"
-                        />
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          Tamaño: {formatFileSize(adjunto.tamano_bytes)} •
-                          Subido: {formatDate(adjunto.fecha_carga)}
-                        </Typography>
-                        {adjunto.subido_por_detalle && (
-                          <Typography variant="caption" display="block">
-                            Por: {extractUserName(adjunto.subido_por_detalle)}
-                          </Typography>
-                        )}
-                        {adjunto.descripcion && (
-                          <Typography
-                            variant="caption"
-                            display="block"
-                            sx={{ fontStyle: "italic", mt: 0.5 }}
-                          >
-                            {adjunto.descripcion}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
-                  <ListItemSecondaryAction>
+        <Grid container spacing={2}>
+          {/* Informe Oficial Card */}
+          {informeOficial && (
+            <Grid item xs={12}>
+              <Card
+                variant="outlined"
+                sx={{
+                  borderColor: 'success.main',
+                  borderWidth: 2,
+                  bgcolor: 'success.50',
+                }}
+              >
+                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'success.main', width: 48, height: 48 }}>
+                    <GavelIcon />
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        Informe Oficial
+                      </Typography>
+                      <Chip
+                        label="Principal"
+                        size="small"
+                        color="success"
+                      />
+                    </Box>
+                    <Typography variant="body2" noWrap>
+                      {informeOficial.nombre_original}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatFileSize(informeOficial.tamano_bytes)} • {formatDate(informeOficial.fecha_carga)}
+                      {informeOficial.subido_por_detalle && ` • Por: ${extractUserName(informeOficial.subido_por_detalle)}`}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     <Tooltip title="Descargar">
-                      <IconButton edge="end" onClick={() => handleDownload(adjunto)}>
+                      <IconButton onClick={() => handleDownload(informeOficial)} color="primary">
                         <DownloadIcon />
                       </IconButton>
                     </Tooltip>
                     {canModify && (
                       <Tooltip title="Eliminar">
                         <IconButton
-                          edge="end"
-                          onClick={() => handleDelete(adjunto.id)}
+                          onClick={() => handleDelete(informeOficial.id)}
                           disabled={isDeleting}
                           color="error"
-                          sx={{ ml: 1 }}
                         >
                           <DeleteIcon />
                         </IconButton>
                       </Tooltip>
                     )}
-                  </ListItemSecondaryAction>
-                </ListItem>
-              </React.Fragment>
-            ))}
-          </List>
-        </Paper>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Acuses Section */}
+          {acuses.length > 0 && (
+            <>
+              {informeOficial && (
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Acuses de Recibo ({cantidadAcuses})
+                    </Typography>
+                  </Divider>
+                </Grid>
+              )}
+
+              {/* Acuses Cards */}
+              {acuses.map((adjunto) => (
+                <Grid item xs={12} sm={6} key={adjunto.id}>
+                  <Card variant="outlined">
+                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar sx={{ bgcolor: 'grey.200', color: 'grey.700' }}>
+                        <ReceiptIcon />
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                          <Chip
+                            icon={<PdfIcon sx={{ fontSize: 14 }} />}
+                            label="Acuse"
+                            size="small"
+                            variant="outlined"
+                          />
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {adjunto.nombre_original}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatFileSize(adjunto.tamano_bytes)} • {formatDate(adjunto.fecha_carga)}
+                        </Typography>
+                        {adjunto.descripcion && (
+                          <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                            {adjunto.descripcion}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Tooltip title="Descargar">
+                          <IconButton size="small" onClick={() => handleDownload(adjunto)}>
+                            <DownloadIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        {canModify && (
+                          <Tooltip title="Eliminar">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(adjunto.id)}
+                              disabled={isDeleting}
+                              color="error"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </>
+          )}
+        </Grid>
       )}
 
       {/* Upload Dialog */}
@@ -387,7 +551,12 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Agregar Adjunto</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AddIcon color="primary" />
+            Agregar Adjunto
+          </Box>
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             {/* Tipo de adjunto */}
@@ -397,36 +566,70 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
                 value={tipoAdjunto}
                 onChange={(e) => setTipoAdjunto(e.target.value as TipoAdjuntoInformeJuridico)}
                 label="Tipo de Adjunto"
-                disabled={tieneInformeOficial && tipoAdjunto === "INFORME"}
               >
                 <MenuItem value="INFORME" disabled={tieneInformeOficial}>
-                  {TIPO_ADJUNTO_LABELS.INFORME}
-                  {tieneInformeOficial && " (ya cargado)"}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <GavelIcon color={tieneInformeOficial ? 'disabled' : 'success'} fontSize="small" />
+                    {TIPO_ADJUNTO_LABELS.INFORME}
+                    {tieneInformeOficial && " (ya cargado)"}
+                  </Box>
                 </MenuItem>
-                <MenuItem value="ACUSE">{TIPO_ADJUNTO_LABELS.ACUSE}</MenuItem>
+                <MenuItem value="ACUSE">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <ReceiptIcon fontSize="small" />
+                    {TIPO_ADJUNTO_LABELS.ACUSE}
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
 
-            {/* File selector */}
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<AttachFileIcon />}
-              fullWidth
-            >
-              {selectedFile ? selectedFile.name : "Seleccionar Archivo PDF"}
-              <input
-                type="file"
-                hidden
-                accept=".pdf,application/pdf"
-                onChange={handleFileSelect}
-              />
-            </Button>
-
-            {selectedFile && (
-              <Alert severity="info" icon={<PdfIcon />}>
-                {formatFileSize(selectedFile.size)}
-              </Alert>
+            {/* File preview / selector */}
+            {selectedFile ? (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  bgcolor: tipoAdjunto === 'INFORME' ? 'success.50' : 'grey.50',
+                }}
+              >
+                <PdfIcon color="error" sx={{ fontSize: 40 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {selectedFile.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatFileSize(selectedFile.size)}
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={() => {
+                    setSelectedFile(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                  }}
+                  size="small"
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Paper>
+            ) : (
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+                sx={{ py: 2 }}
+              >
+                Seleccionar Archivo PDF
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileSelect}
+                />
+              </Button>
             )}
 
             {/* Descripción (opcional para acuses) */}
@@ -450,7 +653,7 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setUploadDialogOpen(false)} disabled={isUploading}>
             Cancelar
           </Button>
@@ -459,8 +662,12 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
             variant="contained"
             disabled={!selectedFile || isUploading}
             startIcon={isUploading ? <CircularProgress size={16} /> : <UploadIcon />}
+            sx={{
+              backgroundColor: "#4f3ff0",
+              "&:hover": { backgroundColor: "#3a2cc2" },
+            }}
           >
-            {isUploading ? "Subiendo..." : "Subir"}
+            {isUploading ? "Subiendo..." : "Subir Archivo"}
           </Button>
         </DialogActions>
       </Dialog>

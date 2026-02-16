@@ -116,6 +116,8 @@ interface UnifiedActividadesTableProps {
   medidaData?: any
   /** For 'medida' variant: filter by etapa (MPJ phases) */
   filterEtapa?: "APERTURA" | "PROCESO" | "CESE"
+  /** Actors to exclude from the table (e.g., ['EQUIPO_LEGAL'] for separate Kanban) */
+  excludeActors?: string[]
 
   // === Callbacks ===
   /** Called when data should be refreshed */
@@ -140,6 +142,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   planTrabajoId,
   medidaData,
   filterEtapa,
+  excludeActors,
   onRefresh,
   onActividadesUpdate,
   title,
@@ -293,6 +296,11 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   // Apply client-side filtering (for legajo variant which gets data from props)
   const filteredActividades = useMemo(() => {
     let result = actividades
+
+    // Exclude specific actors (e.g., EQUIPO_LEGAL for separate Kanban display)
+    if (excludeActors && excludeActors.length > 0) {
+      result = result.filter((actividad) => !excludeActors.includes(actividad.actor))
+    }
 
     // Actor visibility filtering
     if (!canSeeAllActors && allowedActors.length > 0) {

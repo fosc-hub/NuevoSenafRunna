@@ -7,6 +7,7 @@ import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
 import { InformesMensualesTable } from "./informes-mensuales-table"
 import { HistorialTab } from "./historial/historial-tab"
+import { InformesControlLegalidadKanban } from "../legal-control"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPJTabsProps {
@@ -114,6 +115,15 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
                     />
                 )}
             </Box>
+
+            {/* Informes para control de legalidad (Kanban) */}
+            {planTrabajoId && (
+                <InformesControlLegalidadKanban
+                    planTrabajoId={planTrabajoId}
+                    legajoId={medidaApiData?.legajo}
+                    medidaId={medidaApiData?.id}
+                />
+            )}
 
             {/* Informes Mensuales Table */}
             {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}

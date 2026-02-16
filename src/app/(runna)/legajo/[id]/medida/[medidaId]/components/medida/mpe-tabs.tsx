@@ -11,6 +11,7 @@ import { CeseTab } from "./mpe-tabs/cese-tab"
 import { InformesMensualesTable } from "./informes-mensuales-table"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
 import { HistorialTab } from "./historial/historial-tab"
+import { InformesControlLegalidadKanban } from "../legal-control"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPETabsProps {
@@ -98,6 +99,15 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                     </Paper>
                 )}
             </Box>
+
+            {/* Informes para control de legalidad (Kanban) */}
+            {planTrabajoId && (
+                <InformesControlLegalidadKanban
+                    planTrabajoId={planTrabajoId}
+                    legajoId={medidaApiData?.legajo}
+                    medidaId={medidaApiData?.id}
+                />
+            )}
 
             {/* Informes Mensuales Table */}
             {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}

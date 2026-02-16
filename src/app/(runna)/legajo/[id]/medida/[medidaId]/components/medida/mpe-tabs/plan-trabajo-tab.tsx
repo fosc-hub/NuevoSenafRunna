@@ -16,6 +16,7 @@ export const PlanTrabajoTab: React.FC<PlanTrabajoTabProps> = ({ medidaData, plan
       planTrabajoId={planTrabajoId}
       medidaData={medidaData}
       filterEtapa={filterEtapa}
+      excludeActors={['EQUIPO_LEGAL']}
       showWrapper={false}
     />
   )

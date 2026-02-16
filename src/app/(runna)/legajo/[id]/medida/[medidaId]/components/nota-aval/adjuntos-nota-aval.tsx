@@ -5,37 +5,35 @@
  * Componente para gestionar y visualizar adjuntos de Nota de Aval
  *
  * Características:
- * - Lista de adjuntos con información detallada
+ * - Drag-drop upload zone
+ * - Card-based file display (responsive grid)
+ * - Enhanced empty state with illustration
  * - Download de archivos PDF
  * - Eliminación de adjuntos (solo Director o Superusuario)
- * - Vista previa de documentos
- * - Upload de nuevos adjuntos
  * - Validación de archivos (PDF, máx 10MB)
  */
 
-import React from "react"
+import React, { useState, useRef } from "react"
 import {
   Box,
   Typography,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
-  Button,
   Paper,
   Tooltip,
   CircularProgress,
   Alert,
   Chip,
+  Card,
+  CardContent,
+  Avatar,
+  Grid,
 } from "@mui/material"
 import {
   PictureAsPdf as PdfIcon,
   Download as DownloadIcon,
   Delete as DeleteIcon,
   AttachFile as AttachFileIcon,
-  CloudUpload as UploadIcon,
+  CloudUpload as CloudUploadIcon,
 } from "@mui/icons-material"
 import { useNotaAvalAdjuntos } from "../../hooks/useNotaAvalAdjuntos"
 import { extractUserName } from "../../types/nota-aval-api"
@@ -61,9 +59,18 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   medidaId,
   canDelete = false,
   canUpload = false,
+  // showUploadButton is kept for API compatibility but drag-drop zone replaces it
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   showUploadButton = false,
   dense = false,
 }) => {
+  // ============================================================================
+  // STATE
+  // ============================================================================
+
+  const [isDragging, setIsDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
   // ============================================================================
   // HOOKS
   // ============================================================================
@@ -93,7 +100,6 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
    * Handle file download
    */
   const handleDownload = (adjunto: AdjuntoNotaAval) => {
-    // Open in new tab or download
     window.open(adjunto.archivo, "_blank")
   }
 
@@ -103,7 +109,6 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   const handleDelete = async (adjuntoId: number) => {
     if (!canDelete) return
 
-    // Show confirmation
     if (
       !confirm(
         "¿Está seguro que desea eliminar este adjunto? Esta acción no se puede deshacer."
@@ -130,7 +135,6 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
 
     const file = files[0]
 
-    // Validate file
     const validation = validateFileBeforeUpload(file)
     if (!validation.valid) {
       alert(validation.error)
@@ -143,8 +147,50 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
       console.error("Error uploading file:", error)
     }
 
-    // Reset input
     event.target.value = ""
+  }
+
+  /**
+   * Handle drag over
+   */
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!canUpload) return
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  /**
+   * Handle drag leave
+   */
+  const handleDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  /**
+   * Handle drop
+   */
+  const handleDrop = async (e: React.DragEvent) => {
+    if (!canUpload) return
+    e.preventDefault()
+    setIsDragging(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+
+    // Upload first valid file
+    for (const file of files) {
+      const validation = validateFileBeforeUpload(file)
+      if (validation.valid) {
+        try {
+          await uploadFile(file)
+        } catch (error) {
+          console.error("Error uploading file:", error)
+        }
+        break // Only upload one file at a time
+      } else {
+        alert(validation.error)
+      }
+    }
   }
 
   /**
@@ -186,20 +232,6 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   }
 
   // ============================================================================
-  // EMPTY STATE
-  // ============================================================================
-
-  if (!hasAdjuntos && !showUploadButton) {
-    return (
-      <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-        <Typography variant="body2" color="text.secondary">
-          No hay adjuntos disponibles
-        </Typography>
-      </Paper>
-    )
-  }
-
-  // ============================================================================
   // MAIN RENDER
   // ============================================================================
 
@@ -211,7 +243,7 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 1,
+          mb: 2,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -222,110 +254,151 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
             <Chip label={adjuntosCount} size="small" color="primary" />
           )}
         </Box>
-
-        {/* UPLOAD BUTTON */}
-        {showUploadButton && canUpload && (
-          <Button
-            component="label"
-            size="small"
-            startIcon={isUploading ? <CircularProgress size={16} /> : <UploadIcon />}
-            disabled={isUploading}
-            sx={{ textTransform: "none" }}
-          >
-            Subir archivo
-            <input
-              type="file"
-              hidden
-              accept={allowedExtensions.join(",")}
-              onChange={handleFileUpload}
-              disabled={isUploading}
-            />
-          </Button>
-        )}
       </Box>
 
-      {/* INFO TEXT */}
+      {/* DRAG & DROP UPLOAD ZONE */}
       {canUpload && (
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-          Solo archivos PDF, tamaño máximo {formatFileSize(maxSizeBytes)}
-        </Typography>
+        <Paper
+          variant="outlined"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          sx={{
+            p: 3,
+            mb: 2,
+            textAlign: "center",
+            border: "2px dashed",
+            borderColor: isDragging ? "primary.main" : "grey.300",
+            bgcolor: isDragging ? "action.hover" : "background.default",
+            cursor: isUploading ? "default" : "pointer",
+            transition: "all 0.2s ease",
+            opacity: isUploading ? 0.7 : 1,
+            "&:hover": {
+              borderColor: isUploading ? "grey.300" : "primary.light",
+              bgcolor: isUploading ? "background.default" : "action.hover",
+            },
+          }}
+        >
+          {isUploading ? (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+              <CircularProgress size={40} />
+              <Typography variant="body2" color="text.secondary">
+                Subiendo {uploadProgress?.fileName}... {uploadProgress?.progress}%
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <CloudUploadIcon
+                sx={{
+                  fontSize: 40,
+                  color: isDragging ? "primary.main" : "text.secondary",
+                  mb: 1,
+                }}
+              />
+              <Typography variant="body2" color={isDragging ? "primary.main" : "text.secondary"}>
+                {isDragging ? "Suelta el archivo aquí" : "Arrastra archivos o haz clic para seleccionar"}
+              </Typography>
+              <Typography variant="caption" color="text.disabled">
+                PDF, máximo {formatFileSize(maxSizeBytes)}
+              </Typography>
+            </>
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            hidden
+            accept={allowedExtensions.join(",")}
+            onChange={handleFileUpload}
+            disabled={isUploading}
+          />
+        </Paper>
       )}
 
-      {/* UPLOAD PROGRESS */}
-      {uploadProgress && uploadProgress.isUploading && (
-        <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            Subiendo {uploadProgress.fileName}... {uploadProgress.progress}%
-          </Typography>
-        </Alert>
-      )}
-
-      {/* ADJUNTOS LIST */}
+      {/* ADJUNTOS LIST - Card based */}
       {hasAdjuntos ? (
-        <List dense={dense} sx={{ py: 0 }}>
+        <Grid container spacing={2}>
           {adjuntos?.map((adjunto) => (
-            <Paper
-              key={adjunto.id}
-              variant="outlined"
-              sx={{
-                mb: 1,
-                "&:last-child": { mb: 0 },
-                "&:hover": { bgcolor: "action.hover" },
-              }}
-            >
-              <ListItem>
-                {/* ICON */}
-                <ListItemIcon>
-                  <PdfIcon color="error" />
-                </ListItemIcon>
+            <Grid item xs={12} sm={dense ? 12 : 6} key={adjunto.id}>
+              <Card
+                variant="outlined"
+                sx={{
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    boxShadow: 1,
+                  },
+                }}
+              >
+                <CardContent
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    py: dense ? 1 : 1.5,
+                    px: 2,
+                    "&:last-child": { pb: dense ? 1 : 1.5 },
+                  }}
+                >
+                  {/* ICON */}
+                  <Avatar
+                    sx={{
+                      bgcolor: "error.lighter",
+                      width: dense ? 36 : 40,
+                      height: dense ? 36 : 40,
+                    }}
+                  >
+                    <PdfIcon sx={{ color: "error.main", fontSize: dense ? 20 : 24 }} />
+                  </Avatar>
 
-                {/* TEXT */}
-                <ListItemText
-                  primary={adjunto.nombre_archivo}
-                  secondary={
-                    <>
+                  {/* TEXT */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={500}
+                      noWrap
+                      title={adjunto.nombre_archivo}
+                    >
+                      {adjunto.nombre_archivo}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap display="block">
                       {formatFileSize(adjunto.tamano_bytes)}
                       {" • "}
                       {formatDate(adjunto.fecha_carga)}
-                      {adjunto.subido_por_detalle && (
+                      {adjunto.subido_por_detalle && !dense && (
                         <>
                           {" • "}
                           {extractUserName(adjunto.subido_por_detalle)}
                         </>
                       )}
-                    </>
-                  }
-                  primaryTypographyProps={{
-                    sx: { wordBreak: "break-word" },
-                  }}
-                  secondaryTypographyProps={{
-                    variant: "caption",
-                  }}
-                />
+                    </Typography>
+                  </Box>
 
-                {/* ACTIONS */}
-                <ListItemSecondaryAction>
+                  {/* ACTIONS */}
                   <Box sx={{ display: "flex", gap: 0.5 }}>
-                    {/* Download Button */}
                     <Tooltip title="Descargar">
                       <IconButton
-                        edge="end"
-                        onClick={() => handleDownload(adjunto)}
                         size="small"
+                        onClick={() => handleDownload(adjunto)}
+                        sx={{
+                          color: "text.secondary",
+                          "&:hover": { color: "primary.main" },
+                        }}
                       >
                         <DownloadIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
-                    {/* Delete Button */}
                     {canDelete && (
                       <Tooltip title="Eliminar">
                         <IconButton
-                          edge="end"
+                          size="small"
                           onClick={() => handleDelete(adjunto.id)}
                           disabled={isDeleting}
-                          size="small"
-                          color="error"
+                          sx={{
+                            color: "text.secondary",
+                            "&:hover": { color: "error.main" },
+                          }}
                         >
                           {isDeleting ? (
                             <CircularProgress size={16} />
@@ -336,23 +409,24 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
                       </Tooltip>
                     )}
                   </Box>
-                </ListItemSecondaryAction>
-              </ListItem>
-            </Paper>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </List>
+        </Grid>
       ) : (
-        <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-          <AttachFileIcon color="disabled" sx={{ fontSize: 40, mb: 1 }} />
-          <Typography variant="body2" color="text.secondary">
-            No hay adjuntos disponibles
+        /* EMPTY STATE */
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <AttachFileIcon sx={{ fontSize: 56, color: "text.disabled", mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Sin documentos adjuntos
           </Typography>
-          {canUpload && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-              Puede subir documentos usando el botón de arriba
-            </Typography>
-          )}
-        </Paper>
+          <Typography variant="body2" color="text.disabled">
+            {canUpload
+              ? "Arrastra archivos aquí o usa el área de arriba para subir documentos"
+              : "No hay documentos disponibles para esta nota de aval"}
+          </Typography>
+        </Box>
       )}
     </Box>
   )

@@ -44,6 +44,7 @@ import DescriptionIcon from "@mui/icons-material/Description"
 import UploadFileIcon from "@mui/icons-material/UploadFile"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import SendIcon from "@mui/icons-material/Send"
+import SaveIcon from "@mui/icons-material/Save"
 
 // Import atomic components
 import { WizardModal, type WizardStep } from "./wizard-modal"
@@ -321,6 +322,47 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         }
     }
 
+    /**
+     * Handler: Save draft only (no send)
+     * Allows editing and saving without sending for approval
+     */
+    const handleSaveDraft = async () => {
+        try {
+            setSnackbar({
+                open: true,
+                message: 'Guardando borrador...',
+                severity: 'info'
+            })
+
+            const result = await guardarBorrador()
+            if (result) {
+                setSnackbar({
+                    open: true,
+                    message: 'Borrador guardado exitosamente',
+                    severity: 'success'
+                })
+                if (onSaved) {
+                    onSaved()
+                }
+                setTimeout(() => {
+                    onClose()
+                }, 1500)
+            } else {
+                setSnackbar({
+                    open: true,
+                    message: 'Error al guardar el borrador',
+                    severity: 'error'
+                })
+            }
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: 'Error al guardar el borrador',
+                severity: 'error'
+            })
+        }
+    }
+
     const handleAprobar = async () => {
         try {
             const result = await aprobar()
@@ -518,11 +560,6 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                             </MenuItem>
                                         ))}
                                     </Select>
-                                    {intervencion?.tipo_dispositivo_detalle && (
-                                        <FormHelperText>
-                                            Actual: {intervencion.tipo_dispositivo_detalle.nombre}
-                                        </FormHelperText>
-                                    )}
                                 </FormControl>
 
                                 <FormControl fullWidth>
@@ -647,9 +684,6 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                     {validationErrors.motivo_id && (
                                         <FormHelperText>{validationErrors.motivo_id}</FormHelperText>
                                     )}
-                                    {intervencion?.motivo_detalle && (
-                                        <FormHelperText>Actual: {intervencion.motivo_detalle.nombre}</FormHelperText>
-                                    )}
                                 </FormControl>
 
                                 <FormControl fullWidth>
@@ -670,9 +704,6 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                     {!formData.motivo_id && (
                                         <FormHelperText>Seleccione primero un motivo</FormHelperText>
                                     )}
-                                    {intervencion?.sub_motivo_detalle && (
-                                        <FormHelperText>Actual: {intervencion.sub_motivo_detalle.nombre}</FormHelperText>
-                                    )}
                                 </FormControl>
 
                                 <FormControl fullWidth required error={!!validationErrors.categoria_intervencion_id}>
@@ -692,9 +723,6 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                     </Select>
                                     {validationErrors.categoria_intervencion_id && (
                                         <FormHelperText>{validationErrors.categoria_intervencion_id}</FormHelperText>
-                                    )}
-                                    {intervencion?.categoria_intervencion_detalle && (
-                                        <FormHelperText>Actual: {intervencion.categoria_intervencion_detalle.nombre}</FormHelperText>
                                     )}
                                 </FormControl>
 
@@ -1028,6 +1056,15 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                         }
                 }
                 secondaryActions={[
+                    // Guardar Borrador button (for editing without sending)
+                    ...(canEdit && activeStep === wizardSteps.length - 1 && !(canAprobarOrRechazar && currentEstado === 'ENVIADO') ? [{
+                        label: "Guardar Borrador",
+                        onClick: handleSaveDraft,
+                        disabled: isSaving || isLoading,
+                        variant: "outlined" as const,
+                        color: "primary" as const,
+                        icon: <SaveIcon />,
+                    }] : []),
                     // Rechazar button (only for reviewers in ENVIADO state)
                     ...(canAprobarOrRechazar && currentEstado === 'ENVIADO' && activeStep === wizardSteps.length - 1 ? [{
                         label: "Rechazar",

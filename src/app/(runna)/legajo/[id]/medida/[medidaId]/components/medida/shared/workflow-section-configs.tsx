@@ -117,7 +117,7 @@ export const intervencionSectionConfig: SectionConfig = {
         condition: (item) => item.estado === "ENVIADO",
         requiresRole: "JZ",
         requiresInput: {
-          field: "observaciones_jz",
+          field: "observaciones",
           label: "Motivo del rechazo",
           type: "textarea",
           required: true,

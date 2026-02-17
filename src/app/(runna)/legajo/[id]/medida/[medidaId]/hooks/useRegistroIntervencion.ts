@@ -224,14 +224,15 @@ export const useRegistroIntervencion = ({
       setIntervencion(data)
 
       // Populate form data with loaded intervención
+      // Extract IDs from detail objects as fallback (API returns *_detalle with nested id)
       setFormData({
         medida: data.medida,
         fecha_intervencion: data.fecha_intervencion,
-        tipo_dispositivo_id: data.tipo_dispositivo_id || null,
+        tipo_dispositivo_id: data.tipo_dispositivo_id ?? data.tipo_dispositivo_detalle?.id ?? null,
         subtipo_dispositivo: data.subtipo_dispositivo || "",
-        motivo_id: data.motivo_id,
-        sub_motivo_id: data.sub_motivo_id || null,
-        categoria_intervencion_id: data.categoria_intervencion_id,
+        motivo_id: data.motivo_id ?? data.motivo_detalle?.id,
+        sub_motivo_id: data.sub_motivo_id ?? data.sub_motivo_detalle?.id ?? null,
+        categoria_intervencion_id: data.categoria_intervencion_id ?? data.categoria_intervencion_detalle?.id,
         intervencion_especifica: data.intervencion_especifica,
         descripcion_detallada: data.descripcion_detallada || "",
         motivo_vulneraciones: data.motivo_vulneraciones || "",
@@ -670,7 +671,7 @@ export const useRegistroIntervencion = ({
 
     try {
       const response = await rechazarIntervencion(medidaId, effectiveId, {
-        observaciones_jz: observaciones,
+        observaciones: observaciones,
       })
 
       // Response IS the intervention data directly (not nested under .intervencion)
@@ -966,15 +967,15 @@ export const useRegistroIntervencion = ({
 
   /**
    * Check if intervención can be edited
-   * Only BORRADOR can be edited
+   * BORRADOR and RECHAZADO can be edited
    */
-  const canEdit = !intervencion || intervencion.estado === "BORRADOR"
+  const canEdit = !intervencion || intervencion.estado === "BORRADOR" || intervencion.estado === "RECHAZADO"
 
   /**
    * Check if intervención can be sent
-   * Only BORRADOR can be sent
+   * BORRADOR and RECHAZADO can be sent (re-sent after corrections)
    */
-  const canEnviar = intervencion?.estado === "BORRADOR"
+  const canEnviar = intervencion?.estado === "BORRADOR" || intervencion?.estado === "RECHAZADO"
 
   /**
    * Check if intervención can be approved/rejected

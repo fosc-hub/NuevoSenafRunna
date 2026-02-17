@@ -74,6 +74,13 @@ interface NotaAvalSectionProps {
   userLevel?: number // Nivel del usuario actual (3 o 4 para Director)
   isSuperuser?: boolean // Si el usuario es superusuario (tiene acceso completo)
   onNotaAvalCreated?: () => void // Callback al crear una nota de aval exitosamente
+  /**
+   * Initial data from unified etapa endpoint.
+   * When provided, the hook skips API calls and uses this data instead.
+   * Optimizes performance by reusing data fetched via:
+   * GET /api/medidas/{id}/etapa/{tipo_etapa}/
+   */
+  initialData?: import("../../types/nota-aval-api").NotaAvalBasicResponse[]
 }
 
 // ============================================================================
@@ -95,8 +102,15 @@ const canManageNotaAval = (userLevel?: number, isSuperuser?: boolean): boolean =
 
 /**
  * Check if medida is in PENDIENTE_NOTA_AVAL state
+ * Handles both string and object formats (V1 legacy and V2 API responses)
  */
-const isPendingNotaAval = (estadoActual?: string): boolean => {
+const isPendingNotaAval = (estadoActual?: EstadoEtapa | string | { codigo?: string }): boolean => {
+  if (!estadoActual) return false
+  // Handle object with codigo property (V2 API response)
+  if (typeof estadoActual === 'object' && 'codigo' in estadoActual) {
+    return estadoActual.codigo === "PENDIENTE_NOTA_AVAL"
+  }
+  // Handle string (V1 legacy or extracted codigo)
   return estadoActual === "PENDIENTE_NOTA_AVAL"
 }
 
@@ -126,6 +140,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
   userLevel,
   isSuperuser,
   onNotaAvalCreated,
+  initialData,
 }) => {
   // ============================================================================
   // STATE
@@ -146,14 +161,15 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
     notasAvalCount,
     mostRecentNotaAval,
     refetchNotasAval,
-  } = useNotaAval(medidaId)
+  } = useNotaAval(medidaId, { initialData })
 
   // ============================================================================
   // DERIVED STATE
   // ============================================================================
 
   const hasPermission = canManageNotaAval(userLevel, isSuperuser)
-  const canEmitNotaAval = hasPermission && isPendingNotaAval(estadoActual)
+  const isPending = isPendingNotaAval(estadoActual)
+  const canEmitNotaAval = hasPermission && isPending
   const shouldShowEmitButton = canEmitNotaAval
 
   // ============================================================================

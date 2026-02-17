@@ -57,6 +57,7 @@ import type { EstadoEtapa } from "@/app/(runna)/legajo-mesa/types/medida-api"
 import type {
   CreateRatificacionJudicialRequest,
   UpdateRatificacionJudicialRequest,
+  RatificacionJudicial,
 } from "../../types/ratificacion-judicial-api"
 import { DecisionJudicial } from "../../types/ratificacion-judicial-api"
 
@@ -75,6 +76,13 @@ interface RatificacionJudicialSectionProps {
   isJZ?: boolean // Si el usuario es Jefe de Zona (nivel 3+)
   isSuperuser?: boolean // Si el usuario es superusuario
   onRatificacionRegistrada?: () => void // Callback al registrar ratificación exitosamente
+  /**
+   * Initial data from unified etapa endpoint.
+   * When provided, the hook skips API calls and uses this data instead.
+   * Optimizes performance by reusing data fetched via:
+   * GET /api/medidas/{id}/etapa/{tipo_etapa}/
+   */
+  initialData?: RatificacionJudicial[]
 }
 
 // ============================================================================
@@ -168,6 +176,7 @@ export const RatificacionJudicialSection: React.FC<
   isJZ,
   isSuperuser,
   onRatificacionRegistrada,
+  initialData,
 }) => {
   // ============================================================================
   // STATE
@@ -195,7 +204,7 @@ export const RatificacionJudicialSection: React.FC<
     createRatificacion,
     updateRatificacion,
     refetch,
-  } = useRatificacionJudicial({ medidaId })
+  } = useRatificacionJudicial({ medidaId, initialData })
 
   // ============================================================================
   // PERMISSIONS

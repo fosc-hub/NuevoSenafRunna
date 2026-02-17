@@ -40,6 +40,13 @@ interface UseInformeJuridicoOptions {
   medidaId: number
   autoLoad?: boolean // Auto-load on mount (default: true)
   loadAdjuntos?: boolean // Auto-load adjuntos with informe (default: true)
+  /**
+   * Initial data from unified etapa endpoint.
+   * When provided, skips the API call and uses this data instead.
+   * This optimizes performance by using data already fetched via:
+   * GET /api/medidas/{id}/etapa/{tipo_etapa}/
+   */
+  initialData?: InformeJuridicoBasicResponse[]
 }
 
 interface UseInformeJuridicoReturn {
@@ -89,23 +96,30 @@ interface UseInformeJuridicoReturn {
 export const useInformeJuridico = (
   options: UseInformeJuridicoOptions
 ): UseInformeJuridicoReturn => {
-  const { medidaId, autoLoad = true, loadAdjuntos = true } = options
+  const { medidaId, autoLoad = true, loadAdjuntos = true, initialData } = options
 
   // Query client for cache invalidation
   const queryClient = useQueryClient()
+
+  // Check if we have initial data from unified endpoint
+  const hasInitialData = initialData !== undefined && initialData.length > 0
 
   // ============================================================================
   // STATE
   // ============================================================================
 
   // Informe Jurídico state
-  const [informeJuridico, setInformeJuridico] = useState<InformeJuridicoResponse | null>(null)
-  const [informes, setInformes] = useState<InformeJuridicoBasicResponse[]>([])
+  // When initialData provided, use first informe as initial state
+  const initialInforme = hasInitialData ? (initialData[0] as unknown as InformeJuridicoResponse) : null
+  const [informeJuridico, setInformeJuridico] = useState<InformeJuridicoResponse | null>(initialInforme)
+  const [informes, setInformes] = useState<InformeJuridicoBasicResponse[]>(initialData ?? [])
   const [isLoadingInforme, setIsLoadingInforme] = useState(false)
   const [informeError, setInformeError] = useState<string | null>(null)
 
-  // Adjuntos state
-  const [adjuntos, setAdjuntos] = useState<AdjuntoInformeJuridico[]>([])
+  // Adjuntos state - extract from initialData if available
+  // Note: InformeJuridicoBasicResponse from unified endpoint may have adjuntos embedded
+  const initialAdjuntos = hasInitialData && (initialData[0] as any)?.adjuntos ? (initialData[0] as any).adjuntos : []
+  const [adjuntos, setAdjuntos] = useState<AdjuntoInformeJuridico[]>(initialAdjuntos)
   const [isLoadingAdjuntos, setIsLoadingAdjuntos] = useState(false)
   const [adjuntosError, setAdjuntosError] = useState<string | null>(null)
 
@@ -503,12 +517,19 @@ export const useInformeJuridico = (
 
   /**
    * Auto-load on mount if enabled
+   * OPTIMIZATION: Skip API call if initialData is provided from unified endpoint
    */
   useEffect(() => {
+    // Skip fetch if we already have initialData from unified endpoint
+    if (hasInitialData) {
+      console.log('[useInformeJuridico] Using initialData from unified endpoint, skipping fetch')
+      return
+    }
+
     if (autoLoad && medidaId) {
       fetchInforme()
     }
-  }, [medidaId, autoLoad, fetchInforme])
+  }, [medidaId, autoLoad, fetchInforme, hasInitialData])
 
   // ============================================================================
   // RETURN

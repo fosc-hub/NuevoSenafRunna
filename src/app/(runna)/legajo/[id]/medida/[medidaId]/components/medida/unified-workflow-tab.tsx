@@ -41,9 +41,6 @@ import {
   isInformeJuridicoCompleted,
   isRatificacionCompleted,
 } from "../../utils/step-completion"
-import { getMostRecentNotaAval } from "../../api/nota-aval-api-service"
-import { hasInformeJuridico } from "../../api/informe-juridico-api-service"
-import { getRatificacionActiva } from "../../api/ratificacion-judicial-api-service"
 import { createEtapa } from "../../api/etapa-api-service"
 import { getEtapaDetail, type EtapaDetailResponse } from "../../api/etapa-detail-api-service"
 import { workflowPhaseToTipoEtapa } from "../../utils/workflow-tipo-mapper"
@@ -105,13 +102,24 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
 }) => {
   // ========== User Permissions ==========
   const { user } = useUser()
-  const isSuperuser = user?.is_superuser || false
-  const isDirector = user?.zonas?.some((z) => z.director) || false
-  const userLevel = isDirector ? 3 : undefined
+  // Superuser check: is_superuser OR is_staff OR admin/superuser group
+  const isSuperuserViaFlag = user?.is_superuser || user?.is_staff || false
+  const isSuperuserViaGroup = user?.groups?.some(
+    (g: any) => ["superuser", "superusuario", "admin", "administrador", "administrators"].includes(g.name.toLowerCase())
+  ) || false
+  const isSuperuser = isSuperuserViaFlag || isSuperuserViaGroup
+  // Check Director via zonas OR via group membership
+  const isDirectorViaZona = user?.zonas?.some((z) => z.director) || false
+  const isDirectorViaGroup = user?.groups?.some(
+    (g: any) => ["director", "directores", "director zona", "director de zona"].includes(g.name.toLowerCase())
+  ) || false
+  const isDirector = isDirectorViaZona || isDirectorViaGroup
+  // userLevel: 3 = Director, 4 = Director Regional/Superior/Superuser
+  const userLevel = isSuperuser ? 4 : (isDirector ? 3 : undefined)
   const isJZ = user?.zonas?.some((z) => z.jefe) || false
   const isEquipoLegal = user?.groups?.some(
     (g: any) => ["legal", "legales", "equipo legal"].includes(g.name.toLowerCase())
-  ) || false
+  ) || user?.legal || false
 
   // ========== V2 Etapa Filtering ==========
   /**
@@ -181,14 +189,20 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
    * CRITICAL FIX: Use estado from the SPECIFIC etapa being viewed, not the current medida estado
    *
    * Previously: Used medidaData.estado (always the current active etapa's estado)
-   * Now: Use etapaActualForThisTab.estado (the estado of THIS specific etapa)
+   * Now: Use etapaDetail.etapa.estado_actual?.codigo (V2 API response)
+   * Fallback: etapaActualForThisTab?.estado (legacy V1 field)
    *
    * This ensures:
    * - Apertura tab shows Apertura's estado (even if it's no longer active)
    * - Innovación tab shows Innovación's estado
    * - Each tab has independent workflow progress
+   * - Works with both V2 (estado_actual.codigo) and V1 (estado) API responses
    */
-  const estadoActual = etapaActualForThisTab?.estado || medidaData.estado || ""
+  const estadoActual = etapaDetail?.etapa.estado_actual?.codigo
+    || etapaActualForThisTab?.estado
+    || medidaData.estado
+    || ""
+
 
   // Prepare data for AperturaSection
   const aperturaData = {
@@ -384,6 +398,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             userLevel={userLevel}
             isSuperuser={isSuperuser}
             onNotaAvalCreated={refreshWorkflowData}
+            initialData={etapaDetail?.etapa.documentos.notas_aval}
           />
         </WorkflowStepContent>
       ),
@@ -412,6 +427,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             isSuperuser={isSuperuser}
             estadoActual={estadoActual}
             onInformeEnviado={refreshWorkflowData}
+            initialData={etapaDetail?.etapa.documentos.informes_juridicos}
           />
         </WorkflowStepContent>
       ),
@@ -441,6 +457,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             isSuperuser={isSuperuser}
             estadoActual={estadoActual}
             onRatificacionRegistrada={refreshWorkflowData}
+            initialData={etapaDetail?.etapa.documentos.ratificaciones}
           />
         </WorkflowStepContent>
       ),

@@ -49,6 +49,13 @@ interface UseNotaAvalOptions {
   enabled?: boolean
   refetchOnMount?: boolean
   refetchOnWindowFocus?: boolean
+  /**
+   * Initial data from unified etapa endpoint.
+   * When provided, skips the API call and uses this data instead.
+   * This optimizes performance by using data already fetched via:
+   * GET /api/medidas/{id}/etapa/{tipo_etapa}/
+   */
+  initialData?: NotaAvalBasicResponse[]
 }
 
 interface UseCreateNotaAvalOptions {
@@ -64,13 +71,17 @@ interface UseCreateNotaAvalOptions {
  * Hook principal para gestión de Notas de Aval
  *
  * @param medidaId ID de la medida
- * @param options Opciones de configuración
+ * @param options Opciones de configuración (includes initialData from unified endpoint)
  * @returns Query data, mutations y utilidades
  */
 export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) => {
   const queryClient = useQueryClient()
 
+  // Check if we have initial data from unified endpoint
+  const hasInitialData = options.initialData !== undefined
+
   // Query: Get list of notas de aval
+  // OPTIMIZATION: Skip API call if initialData is provided
   const {
     data: notasAval,
     isLoading: isLoadingNotasAval,
@@ -79,13 +90,21 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
   } = useQuery<NotaAvalBasicResponse[], Error>({
     queryKey: notaAvalKeys.list(medidaId),
     queryFn: () => getNotasAvalByMedida(medidaId, { ordering: '-fecha_emision' }),
-    enabled: options.enabled !== false,
+    // Disable query if initialData provided - we already have the data
+    enabled: options.enabled !== false && !hasInitialData,
     refetchOnMount: options.refetchOnMount ?? true,
     refetchOnWindowFocus: options.refetchOnWindowFocus ?? false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // Use initialData when provided
+    initialData: options.initialData,
   })
 
   // Query: Get most recent nota de aval
+  // OPTIMIZATION: Skip API call if initialData is provided - derive from initialData
+  const mostRecentFromInitial = hasInitialData && options.initialData && options.initialData.length > 0
+    ? options.initialData[0] // Already sorted by -fecha_emision
+    : null
+
   const {
     data: mostRecentNotaAval,
     isLoading: isLoadingRecentNotaAval,
@@ -93,10 +112,12 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
   } = useQuery<NotaAvalBasicResponse | null, Error>({
     queryKey: notaAvalKeys.recent(medidaId),
     queryFn: () => getMostRecentNotaAval(medidaId),
-    enabled: options.enabled !== false,
+    // Disable query if initialData provided
+    enabled: options.enabled !== false && !hasInitialData,
     refetchOnMount: options.refetchOnMount ?? true,
     refetchOnWindowFocus: options.refetchOnWindowFocus ?? false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    initialData: mostRecentFromInitial,
   })
 
   // Mutation: Create nota de aval

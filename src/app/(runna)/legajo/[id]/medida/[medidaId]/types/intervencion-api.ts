@@ -344,7 +344,7 @@ export interface AprobarIntervencionResponse extends Omit<IntervencionResponse, 
  * Estado 2 → Estado 1 (ENVIADO → RECHAZADO → BORRADOR)
  */
 export interface RechazarIntervencionRequest {
-  observaciones_jz: string // Obligatorio: motivo del rechazo
+  observaciones: string // Obligatorio: motivo del rechazo (API expects 'observaciones', not 'observaciones_jz')
 }
 
 /**

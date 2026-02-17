@@ -69,7 +69,7 @@ export interface QueryParams {
 export interface StateActionService {
   enviar?: (medidaId: number, itemId: number) => Promise<WorkflowItem>
   aprobar?: (medidaId: number, itemId: number) => Promise<WorkflowItem>
-  rechazar?: (medidaId: number, itemId: number, reason: string | { observaciones_jz: string }) => Promise<WorkflowItem>
+  rechazar?: (medidaId: number, itemId: number, reason: string | { observaciones: string }) => Promise<WorkflowItem>
 }
 
 export interface WorkflowApiService {

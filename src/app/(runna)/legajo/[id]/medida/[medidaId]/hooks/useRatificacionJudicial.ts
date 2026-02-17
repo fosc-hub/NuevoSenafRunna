@@ -44,6 +44,13 @@ import { medidaKeys } from './useMedidaDetail'
 interface UseRatificacionJudicialParams {
   medidaId: number
   autoFetch?: boolean // Auto-fetch on mount (default: true)
+  /**
+   * Initial data from unified etapa endpoint.
+   * When provided, skips the API call and uses this data instead.
+   * This optimizes performance by using data already fetched via:
+   * GET /api/medidas/{id}/etapa/{tipo_etapa}/
+   */
+  initialData?: RatificacionJudicial[]
 }
 
 interface UseRatificacionJudicialReturn {
@@ -85,16 +92,21 @@ interface UseRatificacionJudicialReturn {
 export function useRatificacionJudicial({
   medidaId,
   autoFetch = true,
+  initialData,
 }: UseRatificacionJudicialParams): UseRatificacionJudicialReturn {
   // Query client for cache invalidation
   const queryClient = useQueryClient()
+
+  // Check if we have initial data from unified endpoint
+  const hasInitialData = initialData !== undefined && initialData.length > 0
+  const initialRatificacion = hasInitialData ? initialData[0] : null
 
   // ============================================================================
   // STATE
   // ============================================================================
 
   const [ratificacion, setRatificacion] = useState<RatificacionJudicial | null>(
-    null
+    initialRatificacion
   )
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
@@ -167,12 +179,19 @@ export function useRatificacionJudicial({
 
   /**
    * Auto-fetch on mount
+   * OPTIMIZATION: Skip API call if initialData is provided from unified endpoint
    */
   useEffect(() => {
+    // Skip fetch if we already have initialData from unified endpoint
+    if (hasInitialData) {
+      console.log('[useRatificacionJudicial] Using initialData from unified endpoint, skipping fetch')
+      return
+    }
+
     if (autoFetch && medidaId) {
       fetchRatificacion()
     }
-  }, [medidaId, autoFetch, fetchRatificacion])
+  }, [medidaId, autoFetch, fetchRatificacion, hasInitialData])
 
   // ============================================================================
   // COMPUTED PROPERTIES

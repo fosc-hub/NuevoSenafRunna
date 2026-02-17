@@ -59,7 +59,7 @@ import {
   MEDIO_NOTIFICACION_LABELS,
   canModificarInforme,
 } from "../../types/informe-juridico-api"
-import type { MedioNotificacion } from "../../types/informe-juridico-api"
+import type { MedioNotificacion, InformeJuridicoBasicResponse } from "../../types/informe-juridico-api"
 import type { EstadoEtapa } from "@/app/(runna)/legajo-mesa/types/medida-api"
 import type { CrearYEnviarInformeJuridicoRequest } from "../../types/informe-juridico-api"
 import { SectionCard } from "./shared/section-card"
@@ -77,6 +77,13 @@ interface InformeJuridicoSectionProps {
   isEquipoLegal?: boolean // Si el usuario es Equipo Legal (nivel 3 o 4 con flag legal=true)
   isSuperuser?: boolean // Si el usuario es superusuario (tiene acceso completo)
   onInformeEnviado?: () => void // Callback al enviar informe exitosamente
+  /**
+   * Initial data from unified etapa endpoint.
+   * When provided, the hook skips API calls and uses this data instead.
+   * Optimizes performance by reusing data fetched via:
+   * GET /api/medidas/{id}/etapa/{tipo_etapa}/
+   */
+  initialData?: InformeJuridicoBasicResponse[]
 }
 
 // ============================================================================
@@ -156,6 +163,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
   isEquipoLegal,
   isSuperuser,
   onInformeEnviado,
+  initialData,
 }) => {
   // ============================================================================
   // STATE
@@ -185,7 +193,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     deleteAdjunto,
     sendInforme,
     refetchInforme,
-  } = useInformeJuridico({ medidaId })
+  } = useInformeJuridico({ medidaId, initialData })
 
   // ============================================================================
   // PERMISSIONS

@@ -41,6 +41,12 @@ interface UseInformeJuridicoOptions {
   autoLoad?: boolean // Auto-load on mount (default: true)
   loadAdjuntos?: boolean // Auto-load adjuntos with informe (default: true)
   /**
+   * Etapa ID for state isolation.
+   * When provided, state resets when switching between etapas.
+   * Prevents data mixing between Apertura, Prórroga, etc.
+   */
+  etapaId?: number
+  /**
    * Initial data from unified etapa endpoint.
    * When provided, skips the API call and uses this data instead.
    * This optimizes performance by using data already fetched via:
@@ -96,13 +102,15 @@ interface UseInformeJuridicoReturn {
 export const useInformeJuridico = (
   options: UseInformeJuridicoOptions
 ): UseInformeJuridicoReturn => {
-  const { medidaId, autoLoad = true, loadAdjuntos = true, initialData } = options
+  const { medidaId, autoLoad = true, loadAdjuntos = true, etapaId, initialData } = options
 
   // Query client for cache invalidation
   const queryClient = useQueryClient()
 
   // Check if we have initial data from unified endpoint
   const hasInitialData = initialData !== undefined && initialData.length > 0
+  // Check if initialData was provided (even if empty) - used to skip auto-fetch
+  const initialDataProvided = initialData !== undefined
 
   // ============================================================================
   // STATE
@@ -516,20 +524,41 @@ export const useInformeJuridico = (
   // ============================================================================
 
   /**
-   * Auto-load on mount if enabled
-   * OPTIMIZATION: Skip API call if initialData is provided from unified endpoint
+   * Reset state when etapaId or initialData changes
+   * This ensures data isolation between different etapas (Apertura, Prórroga, etc.)
    */
   useEffect(() => {
-    // Skip fetch if we already have initialData from unified endpoint
-    if (hasInitialData) {
-      console.log('[useInformeJuridico] Using initialData from unified endpoint, skipping fetch')
+    if (initialData !== undefined) {
+      const newInforme = initialData.length > 0 ? (initialData[0] as unknown as InformeJuridicoResponse) : null
+      const newAdjuntos = initialData.length > 0 && (initialData[0] as any)?.adjuntos ? (initialData[0] as any).adjuntos : []
+
+      setInformeJuridico(newInforme)
+      setInformes(initialData)
+      setAdjuntos(newAdjuntos)
+      setInformeError(null)
+      setAdjuntosError(null)
+
+      console.log('[useInformeJuridico] State reset for etapa:', etapaId, 'with', initialData.length, 'informes')
+    }
+  }, [etapaId, initialData])
+
+  /**
+   * Auto-load on mount if enabled
+   * OPTIMIZATION: Skip API call if initialData is provided from unified endpoint
+   * Note: We skip even if initialData is empty array - this means the etapa has no informes
+   */
+  useEffect(() => {
+    // Skip fetch if initialData was provided (even if empty array)
+    // This prevents fetching informes from other etapas
+    if (initialDataProvided) {
+      console.log('[useInformeJuridico] Using initialData from unified endpoint, skipping fetch. Has data:', hasInitialData)
       return
     }
 
     if (autoLoad && medidaId) {
       fetchInforme()
     }
-  }, [medidaId, autoLoad, fetchInforme, hasInitialData])
+  }, [medidaId, autoLoad, fetchInforme, initialDataProvided, hasInitialData])
 
   // ============================================================================
   // RETURN

@@ -204,7 +204,7 @@ export const RatificacionJudicialSection: React.FC<
     createRatificacion,
     updateRatificacion,
     refetch,
-  } = useRatificacionJudicial({ medidaId, initialData })
+  } = useRatificacionJudicial({ medidaId, etapaId, initialData })
 
   // ============================================================================
   // PERMISSIONS

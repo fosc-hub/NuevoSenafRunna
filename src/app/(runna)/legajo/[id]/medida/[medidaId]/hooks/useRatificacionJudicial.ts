@@ -45,6 +45,12 @@ interface UseRatificacionJudicialParams {
   medidaId: number
   autoFetch?: boolean // Auto-fetch on mount (default: true)
   /**
+   * Etapa ID for state isolation.
+   * When provided, state resets when switching between etapas.
+   * Prevents data mixing between Apertura, Prórroga, etc.
+   */
+  etapaId?: number
+  /**
    * Initial data from unified etapa endpoint.
    * When provided, skips the API call and uses this data instead.
    * This optimizes performance by using data already fetched via:
@@ -92,6 +98,7 @@ interface UseRatificacionJudicialReturn {
 export function useRatificacionJudicial({
   medidaId,
   autoFetch = true,
+  etapaId,
   initialData,
 }: UseRatificacionJudicialParams): UseRatificacionJudicialReturn {
   // Query client for cache invalidation
@@ -99,6 +106,8 @@ export function useRatificacionJudicial({
 
   // Check if we have initial data from unified endpoint
   const hasInitialData = initialData !== undefined && initialData.length > 0
+  // Check if initialData was provided (even if empty) - used to skip auto-fetch
+  const initialDataProvided = initialData !== undefined
   const initialRatificacion = hasInitialData ? initialData[0] : null
 
   // ============================================================================
@@ -116,6 +125,25 @@ export function useRatificacionJudicial({
   )
   const [isLoadingHistorial, setIsLoadingHistorial] = useState<boolean>(false)
   const [historialError, setHistorialError] = useState<string | null>(null)
+
+  // ============================================================================
+  // ETAPA ISOLATION EFFECT
+  // ============================================================================
+
+  /**
+   * Reset state when etapaId or initialData changes
+   * This ensures data isolation between different etapas (Apertura, Prórroga, etc.)
+   */
+  useEffect(() => {
+    if (initialData !== undefined) {
+      const newRatificacion = initialData.length > 0 ? initialData[0] : null
+      setRatificacion(newRatificacion)
+      setError(null)
+      setHistorial(null)
+      setHistorialError(null)
+      console.log('[useRatificacionJudicial] State reset for etapa:', etapaId, 'with', initialData.length, 'ratificaciones')
+    }
+  }, [etapaId, initialData])
 
   // ============================================================================
   // FETCH FUNCTIONS
@@ -180,18 +208,20 @@ export function useRatificacionJudicial({
   /**
    * Auto-fetch on mount
    * OPTIMIZATION: Skip API call if initialData is provided from unified endpoint
+   * Note: We skip even if initialData is empty array - this means the etapa has no ratificaciones
    */
   useEffect(() => {
-    // Skip fetch if we already have initialData from unified endpoint
-    if (hasInitialData) {
-      console.log('[useRatificacionJudicial] Using initialData from unified endpoint, skipping fetch')
+    // Skip fetch if initialData was provided (even if empty array)
+    // This prevents fetching ratificaciones from other etapas
+    if (initialDataProvided) {
+      console.log('[useRatificacionJudicial] Using initialData from unified endpoint, skipping fetch. Has data:', hasInitialData)
       return
     }
 
     if (autoFetch && medidaId) {
       fetchRatificacion()
     }
-  }, [medidaId, autoFetch, fetchRatificacion, hasInitialData])
+  }, [medidaId, autoFetch, fetchRatificacion, initialDataProvided, hasInitialData])
 
   // ============================================================================
   // COMPUTED PROPERTIES

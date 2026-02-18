@@ -75,6 +75,11 @@ interface NotaAvalSectionProps {
   isSuperuser?: boolean // Si el usuario es superusuario (tiene acceso completo)
   onNotaAvalCreated?: () => void // Callback al crear una nota de aval exitosamente
   /**
+   * Etapa ID for cache isolation.
+   * Prevents data mixing between different etapas (Apertura, Prórroga, etc.)
+   */
+  etapaId?: number
+  /**
    * Initial data from unified etapa endpoint.
    * When provided, the hook skips API calls and uses this data instead.
    * Optimizes performance by reusing data fetched via:
@@ -140,6 +145,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
   userLevel,
   isSuperuser,
   onNotaAvalCreated,
+  etapaId,
   initialData,
 }) => {
   // ============================================================================
@@ -161,7 +167,7 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
     notasAvalCount,
     mostRecentNotaAval,
     refetchNotasAval,
-  } = useNotaAval(medidaId, { initialData })
+  } = useNotaAval(medidaId, { initialData, etapaId })
 
   // ============================================================================
   // DERIVED STATE
@@ -185,7 +191,9 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
   }
 
   const handleNotaAvalCreated = () => {
-    refetchNotasAval()
+    // Don't call refetchNotasAval() directly - it fetches ALL notas without etapa filtering
+    // Instead, rely on onNotaAvalCreated which refreshes the unified etapaDetail endpoint
+    // This ensures we only get notas for this specific etapa via initialData
     onNotaAvalCreated?.()
     setDialogOpen(false)
   }
@@ -235,9 +243,10 @@ export const NotaAvalSection: React.FC<NotaAvalSectionProps> = ({
   // MAIN RENDER
   // ============================================================================
 
-  // Determine status chip
+  // Determine status chip - check both fue_aprobado flag AND decision field
+  const isAprobado = mostRecentNotaAval?.fue_aprobado || mostRecentNotaAval?.decision === "APROBADO"
   const statusChip = hasNotasAval
-    ? mostRecentNotaAval?.fue_aprobado
+    ? isAprobado
       ? { label: "Aprobado", color: "success" as const }
       : { label: "Observado", color: "warning" as const }
     : isPendingNotaAval(estadoActual)

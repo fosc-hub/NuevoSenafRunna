@@ -78,6 +78,11 @@ interface InformeJuridicoSectionProps {
   isSuperuser?: boolean // Si el usuario es superusuario (tiene acceso completo)
   onInformeEnviado?: () => void // Callback al enviar informe exitosamente
   /**
+   * Etapa ID for state isolation.
+   * Prevents data mixing between different etapas (Apertura, Prórroga, etc.)
+   */
+  etapaId?: number
+  /**
    * Initial data from unified etapa endpoint.
    * When provided, the hook skips API calls and uses this data instead.
    * Optimizes performance by reusing data fetched via:
@@ -163,6 +168,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
   isEquipoLegal,
   isSuperuser,
   onInformeEnviado,
+  etapaId,
   initialData,
 }) => {
   // ============================================================================
@@ -193,7 +199,7 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     deleteAdjunto,
     sendInforme,
     refetchInforme,
-  } = useInformeJuridico({ medidaId, initialData })
+  } = useInformeJuridico({ medidaId, etapaId, initialData })
 
   // ============================================================================
   // PERMISSIONS

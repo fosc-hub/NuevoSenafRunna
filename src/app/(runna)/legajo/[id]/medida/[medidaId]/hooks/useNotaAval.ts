@@ -34,11 +34,11 @@ import { medidaKeys } from './useMedidaDetail'
 export const notaAvalKeys = {
   all: ['nota-aval'] as const,
   lists: () => [...notaAvalKeys.all, 'list'] as const,
-  list: (medidaId: number) => [...notaAvalKeys.lists(), medidaId] as const,
+  list: (medidaId: number, etapaId?: number) => [...notaAvalKeys.lists(), medidaId, etapaId ?? 'all'] as const,
   details: () => [...notaAvalKeys.all, 'detail'] as const,
   detail: (medidaId: number, notaAvalId: number) =>
     [...notaAvalKeys.details(), medidaId, notaAvalId] as const,
-  recent: (medidaId: number) => [...notaAvalKeys.all, 'recent', medidaId] as const,
+  recent: (medidaId: number, etapaId?: number) => [...notaAvalKeys.all, 'recent', medidaId, etapaId ?? 'all'] as const,
 }
 
 // ============================================================================
@@ -56,6 +56,12 @@ interface UseNotaAvalOptions {
    * GET /api/medidas/{id}/etapa/{tipo_etapa}/
    */
   initialData?: NotaAvalBasicResponse[]
+  /**
+   * Etapa ID for cache isolation.
+   * When provided, the cache key includes this ID to prevent
+   * data mixing between different etapas (Apertura, Prórroga, etc.)
+   */
+  etapaId?: number
 }
 
 interface UseCreateNotaAvalOptions {
@@ -78,23 +84,43 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
   const queryClient = useQueryClient()
 
   // Check if we have initial data from unified endpoint
+  // CRITICAL: This determines whether we fetch from API or use the provided data
   const hasInitialData = options.initialData !== undefined
+
+  // Debug logging for data isolation
+  console.log('[useNotaAval] Init:', {
+    medidaId,
+    etapaId: options.etapaId,
+    hasInitialData,
+    initialDataLength: options.initialData?.length ?? 'undefined',
+    enabled: options.enabled !== false && !hasInitialData,
+  })
 
   // Query: Get list of notas de aval
   // OPTIMIZATION: Skip API call if initialData is provided
+  // Use etapaId in cache key to prevent data mixing between etapas
   const {
     data: notasAval,
     isLoading: isLoadingNotasAval,
     error: notasAvalError,
     refetch: refetchNotasAval,
   } = useQuery<NotaAvalBasicResponse[], Error>({
-    queryKey: notaAvalKeys.list(medidaId),
-    queryFn: () => getNotasAvalByMedida(medidaId, { ordering: '-fecha_emision' }),
+    queryKey: notaAvalKeys.list(medidaId, options.etapaId),
+    queryFn: () => {
+      // Extra safeguard: Don't fetch if initialData was provided
+      if (hasInitialData) {
+        console.warn('[useNotaAval] queryFn called but initialData was provided - returning initialData')
+        return Promise.resolve(options.initialData ?? [])
+      }
+      console.log('[useNotaAval] Fetching notas from API (no initialData provided)')
+      return getNotasAvalByMedida(medidaId, { ordering: '-fecha_emision' })
+    },
     // Disable query if initialData provided - we already have the data
     enabled: options.enabled !== false && !hasInitialData,
-    refetchOnMount: options.refetchOnMount ?? true,
+    // Also disable refetchOnMount when initialData is provided
+    refetchOnMount: hasInitialData ? false : (options.refetchOnMount ?? true),
     refetchOnWindowFocus: options.refetchOnWindowFocus ?? false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: hasInitialData ? Infinity : (5 * 60 * 1000), // Never stale if initialData provided
     // Use initialData when provided
     initialData: options.initialData,
   })
@@ -110,13 +136,21 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
     isLoading: isLoadingRecentNotaAval,
     error: recentNotaAvalError,
   } = useQuery<NotaAvalBasicResponse | null, Error>({
-    queryKey: notaAvalKeys.recent(medidaId),
-    queryFn: () => getMostRecentNotaAval(medidaId),
+    queryKey: notaAvalKeys.recent(medidaId, options.etapaId),
+    queryFn: () => {
+      // Extra safeguard: Don't fetch if initialData was provided
+      if (hasInitialData) {
+        console.warn('[useNotaAval] mostRecent queryFn called but initialData was provided')
+        return Promise.resolve(mostRecentFromInitial)
+      }
+      return getMostRecentNotaAval(medidaId)
+    },
     // Disable query if initialData provided
     enabled: options.enabled !== false && !hasInitialData,
-    refetchOnMount: options.refetchOnMount ?? true,
+    // Also disable refetchOnMount when initialData is provided
+    refetchOnMount: hasInitialData ? false : (options.refetchOnMount ?? true),
     refetchOnWindowFocus: options.refetchOnWindowFocus ?? false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: hasInitialData ? Infinity : (5 * 60 * 1000), // Never stale if initialData provided
     initialData: mostRecentFromInitial,
   })
 
@@ -128,16 +162,13 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
   >({
     mutationFn: (data: CreateNotaAvalRequest) => createNotaAval(medidaId, data),
     onSuccess: async (data) => {
-      // Invalidate queries to refetch updated data
-      await queryClient.invalidateQueries({
-        queryKey: notaAvalKeys.list(medidaId),
-        refetchType: 'active'
-      })
-      await queryClient.invalidateQueries({
-        queryKey: notaAvalKeys.recent(medidaId),
-        refetchType: 'active'
-      })
-      // Also invalidate medida detail to update estado immediately
+      // NOTE: We intentionally do NOT invalidate notaAvalKeys.list or notaAvalKeys.recent here
+      // because:
+      // 1. These queries fetch ALL notas for the medida without etapa filtering
+      // 2. We rely on the unified etapa endpoint (via initialData prop) for etapa-specific data
+      // 3. The parent component's onNotaAvalCreated callback refreshes the unified endpoint
+      //
+      // We only invalidate medida detail to update estado immediately
       await queryClient.invalidateQueries({
         queryKey: medidaKeys.detail(medidaId),
         refetchType: 'active'

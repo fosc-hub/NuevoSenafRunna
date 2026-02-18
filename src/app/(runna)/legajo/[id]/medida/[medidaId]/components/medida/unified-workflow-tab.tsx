@@ -398,6 +398,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             userLevel={userLevel}
             isSuperuser={isSuperuser}
             onNotaAvalCreated={refreshWorkflowData}
+            etapaId={etapaDetail?.etapa.id}
             initialData={etapaDetail?.etapa.documentos.notas_aval}
           />
         </WorkflowStepContent>
@@ -427,6 +428,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             isSuperuser={isSuperuser}
             estadoActual={estadoActual}
             onInformeEnviado={refreshWorkflowData}
+            etapaId={etapaDetail?.etapa.id}
             initialData={etapaDetail?.etapa.documentos.informes_juridicos}
           />
         </WorkflowStepContent>

@@ -168,7 +168,7 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
         canTransfer={permissions.canTransfer}
         onTransferir={(equipoDestinoId, responsableNuevoId, motivo) =>
           actions.transferir(actividad.id, {
-            equipo_destino: equipoDestinoId,
+            zona_destino: equipoDestinoId,
             responsable_nuevo: responsableNuevoId,
             motivo
           })

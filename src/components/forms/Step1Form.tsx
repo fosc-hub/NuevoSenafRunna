@@ -33,18 +33,7 @@ import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
 
-// Hardcoded options for CARGA_OFICIOS dropdowns (REG-01 GAP-06)
-const TIPOS_OFICIO_MOCK = [
-  { id: 1, nombre: "Oficio Judicial" },
-  { id: 2, nombre: "Exhorto" },
-  { id: 3, nombre: "Oficios Varios" },
-]
-
-const TIPOS_MEDIDA_MOCK = [
-  { key: "MPI", value: "Medida de Protección Integral" },
-  { key: "MPE", value: "Medida de Protección Excepcional" },
-  { key: "MPJ", value: "Medida Penal Juvenil" },
-]
+// NOTE: CARGA_OFICIOS dropdowns have been moved to the specialized CargaOficiosForm component
 
 
 // Componente para la sección de archivos adjuntos
@@ -499,7 +488,7 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
 
   const selectedMotivo = useWatch({ control, name: "motivo_ingreso" })
   const selectedBloqueRemitente = useWatch({ control, name: "bloque_datos_remitente" })
-  const selectedObjetivoDemanda = useWatch({ control, name: "objetivo_de_demanda" })
+  // NOTE: objetivo_de_demanda is now selected in Step 0 (ObjetivoSelectionStep)
 
   const createNewUser = useWatch({
     control,
@@ -876,101 +865,8 @@ const Step1Form: React.FC<{ control: Control<FormData>; readOnly?: boolean; id?:
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <Controller
-                name="objetivo_de_demanda"
-                rules={{ required: "Este campo es obligatorio" }}
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <Autocomplete
-                      disabled={readOnly}
-                      options={dropdownData.objetivo_de_demanda_choices || []}
-                      getOptionLabel={(option: any) => option.value || ""}
-                      value={(dropdownData.objetivo_de_demanda_choices || []).find((item: any) => item.key === field.value) || null}
-                      onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Objetivo de demanda"
-                          required
-                          error={!!error}
-                          helperText={error?.message}
-                          size="medium"
-                        />
-                      )}
-                      size="medium"
-                    />
-                  </FormControl>
-                )}
-              />
-            </Grid>
-
-            {/* Conditional fields when "Carga de Oficios" is selected */}
-            {selectedObjetivoDemanda === "CARGA_OFICIOS" && (
-              <>
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="tipo_oficio"
-                    rules={{ required: "Este campo es obligatorio cuando se selecciona Carga de Oficios" }}
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <FormControl fullWidth error={!!error}>
-                        <Autocomplete
-                          disabled={readOnly}
-                          options={dropdownData?.tipo_oficio || TIPOS_OFICIO_MOCK}
-                          getOptionLabel={(option: any) => option.nombre || ""}
-                          value={(dropdownData?.tipo_oficio || TIPOS_OFICIO_MOCK).find((item: any) => item.id === field.value) || null}
-                          onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Tipo de Oficio"
-                              required
-                              error={!!error}
-                              helperText={error?.message}
-                              size="medium"
-                            />
-                          )}
-                          size="medium"
-                        />
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="tipo_medida"
-                    rules={{ required: "Este campo es obligatorio cuando se selecciona Carga de Oficios" }}
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <FormControl fullWidth error={!!error}>
-                        <Autocomplete
-                          disabled={readOnly}
-                          options={dropdownData?.tipo_medida_choices || TIPOS_MEDIDA_MOCK}
-                          getOptionLabel={(option: any) => option.value || ""}
-                          value={(dropdownData?.tipo_medida_choices || TIPOS_MEDIDA_MOCK).find((item: any) => item.key === field.value) || null}
-                          onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
-                          isOptionEqualToValue={(option, value) => option.key === value.key}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Tipo de medida"
-                              required
-                              error={!!error}
-                              helperText={error?.message}
-                              size="medium"
-                            />
-                          )}
-                          size="medium"
-                        />
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-              </>
-            )}
+            {/* NOTE: objetivo_de_demanda is now selected in Step 0 (ObjetivoSelectionStep) */}
+            {/* CARGA_OFICIOS has its own specialized form (CargaOficiosForm) */}
           </Grid>
         </FormSection>
 

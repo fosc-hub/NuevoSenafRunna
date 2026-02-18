@@ -128,6 +128,15 @@ export interface VinculoFormData {
   };
 }
 
+// Form variant for conditional rendering
+export type FormVariant = 'STANDARD' | 'CARGA_OFICIOS'
+
+// Objetivo de demanda options
+export type ObjetivoDemanda = 'PROTECCION' | 'PETICION_DE_INFORME' | 'CARGA_OFICIOS'
+
+// Circuito type for CARGA_OFICIOS
+export type CircuitoType = 'MPI' | 'MPE' | 'MPJ'
+
 export interface FormData {
   presuntos_delitos: null
   motivo_ingreso: any
@@ -177,13 +186,36 @@ export interface FormData {
   createNewUsuarioExterno: boolean;
   // CARGA_OFICIOS fields (REG-01 GAP-06)
   tipo_oficio?: number | string;              // FK to TTipoOficio
-  tipo_medida?: string;                        // MPI | MPE | MPJ
-  numero_expediente?: string;                  // Número de expediente judicial
-  caratula?: string;                           // Carátula del expediente
-  plazo_dias?: number;                         // Plazo en días para responder
+  tipo_medida?: string;                        // MPI | MPE | MPJ (legacy)
+  tipo_medida_evaluado?: CircuitoType | null;  // New: Circuito selector
+  numero_expediente?: string;                  // Número de expediente judicial (SAC)
+  caratula?: string;                           // Carátula del expediente (Autos Caratulados)
+  plazo_dias?: number | null;                  // Plazo en días para responder
   fecha_vencimiento_oficio?: string | null;    // Fecha vencimiento (YYYY-MM-DD)
+  // CARGA_OFICIOS categorization fields
+  categoria_informacion_judicial?: number | null;
+  tipo_informacion_judicial?: number | null;
   // REG-01: Vínculos para crear junto con la demanda
   vinculos?: VinculoFormData[];
+}
+
+// Categoria de información judicial from API
+export interface CategoriaInformacionJudicial {
+  id: number
+  nombre: string
+  descripcion?: string
+  esta_activo: boolean
+  orden?: number
+}
+
+// Tipo de información judicial from API - filtered by categoria
+export interface TipoInformacionJudicial {
+  id: number
+  nombre: string
+  descripcion?: string
+  categoria: number // FK to CategoriaInformacionJudicial
+  esta_activo: boolean
+  orden?: number
 }
 
 export interface DropdownData {
@@ -232,6 +264,9 @@ export interface DropdownData {
   // CARGA_OFICIOS dropdown fields (REG-01 GAP-06)
   tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number }>;
   tipo_medida_choices?: DropdownOption[];  // MPI, MPE, MPJ
+  // CARGA_OFICIOS categorization dropdowns
+  categoria_informacion_judicial?: CategoriaInformacionJudicial[];
+  tipo_informacion_judicial?: TipoInformacionJudicial[];
   // REG-01: Tipos de vínculo para dropdown
   tipos_vinculo?: Array<{
     id: number;

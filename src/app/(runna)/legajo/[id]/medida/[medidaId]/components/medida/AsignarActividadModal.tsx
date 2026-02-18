@@ -191,7 +191,7 @@ const AsignarActividadModal: React.FC<AsignarActividadModalProps> = ({
   const { submit: submitTransferir, isLoading: isLoadingTransferir } = useFormSubmission({
     onSubmit: async () => {
       await actividadService.transferir(actividadId!, {
-        equipo_destino: selectedEquipoDestino!,
+        zona_destino: selectedEquipoDestino!,
         responsable_nuevo_id: selectedResponsableNuevo || undefined,
         motivo: comentariosTransferencia,
       })

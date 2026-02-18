@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import {
   Box,
@@ -27,14 +27,24 @@ import { es } from "date-fns/locale"
 import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
+import ObjetivoSelectionStep from "./steps/ObjetivoSelectionStep"
+import { CargaOficiosForm } from "./carga-oficios"
 import { submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
+import type { FormVariant, ObjetivoDemanda } from "./carga-oficios/types/carga-oficios.types"
 import { useDraftStore } from "./utils/userDraftStore"
 import { fetchDropdownData } from "./utils/fetchFormCase"
 import VinculosManager from "./components/VinculosManager"
 import FormSection from "./components/form-section"
 
-const steps = [
+// Step 0: Objetivo Selection
+const objetivoStep = {
+  label: "Objetivo",
+  description: "Seleccione el objetivo de la demanda",
+}
+
+// Standard flow steps (after Step 0)
+const standardSteps = [
   {
     label: "Información General",
     description: "Datos básicos de la demanda",
@@ -48,6 +58,25 @@ const steps = [
     description: "Información de menores en el grupo familiar",
   },
 ]
+
+// CARGA_OFICIOS flow steps (after Step 0)
+const cargaOficiosSteps = [
+  {
+    label: "Información Judicial",
+    description: "Datos del oficio judicial",
+  },
+]
+
+/**
+ * Get steps array based on form variant
+ */
+const getSteps = (formVariant: FormVariant) => {
+  if (formVariant === "CARGA_OFICIOS") {
+    return [objetivoStep, ...cargaOficiosSteps]
+  }
+  return [objetivoStep, ...standardSteps]
+}
+
 
 interface MultiStepFormProps {
   initialData?: FormData
@@ -85,9 +114,16 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   demandaId,
 }) => {
   const [activeStep, setActiveStep] = useState(0)
+  const [formVariant, setFormVariant] = useState<FormVariant>("STANDARD")
+  const [selectedObjetivo, setSelectedObjetivo] = useState<ObjetivoDemanda | null>(
+    initialData?.objetivo_de_demanda as ObjetivoDemanda | null
+  )
   const formId = form || "new"
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+
+  // Get current steps based on form variant
+  const currentSteps = useMemo(() => getSteps(formVariant), [formVariant])
 
   // Get draft store functions
   const { saveDraft, getDraft, clearDraft } = useDraftStore()
@@ -155,7 +191,32 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
     },
   })
 
+  /**
+   * Handle objetivo selection from Step 0
+   * Sets the form variant and objetivo_de_demanda field
+   */
+  const handleObjetivoSelect = (objetivo: ObjetivoDemanda, variant: FormVariant) => {
+    setSelectedObjetivo(objetivo)
+    setFormVariant(variant)
+    // Set the objetivo_de_demanda in the form
+    methods.setValue("objetivo_de_demanda", objetivo)
+  }
+
   const handleNext = async () => {
+    // If on Step 0 (Objetivo selection), validate objetivo is selected
+    if (activeStep === 0) {
+      if (!selectedObjetivo) {
+        toast.error("Por favor, seleccione un objetivo antes de continuar.")
+        return
+      }
+      // Save draft and proceed
+      if (!isReadOnly) {
+        saveDraft(formId, methods.getValues())
+      }
+      setActiveStep(1)
+      return
+    }
+
     // If in read-only mode, just navigate without validation
     if (isReadOnly) {
       setActiveStep((prevActiveStep) => prevActiveStep + 1)
@@ -178,6 +239,13 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
     if (!isReadOnly) {
       saveDraft(formId, methods.getValues())
     }
+
+    // If going back to Step 0, reset formVariant to allow re-selection
+    if (activeStep === 1) {
+      // Don't reset formVariant here to keep the UI consistent
+      // User can still change objetivo in Step 0 if they go back
+    }
+
     setActiveStep((prevActiveStep) => prevActiveStep - 1)
   }
 
@@ -352,7 +420,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
           <Box sx={{ width: "100%", mb: 1 }}>
             <LinearProgress
               variant="determinate"
-              value={(activeStep / (steps.length - 1)) * 100}
+              value={(activeStep / (currentSteps.length - 1)) * 100}
               sx={{ height: 6, borderRadius: 3 }}
             />
           </Box>
@@ -375,7 +443,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
               },
             }}
           >
-            {steps.map((step, index) => (
+            {currentSteps.map((step, index) => (
               <Step key={step.label} sx={{ cursor: "pointer" }} onClick={() => handleStepClick(index)}>
                 <StepLabel>
                   {step.label}
@@ -430,9 +498,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
           </Alert>
         )}
 
-        {/* REG-01: Global VinculosManager - accessible from all steps */}
+        {/* REG-01: Global VinculosManager - accessible from all steps (only for standard flow) */}
         {/* Hide VinculosManager when viewing/editing existing demanda (id exists) - use Conexiones tab instead */}
-        {dropdownData && !id && (
+        {/* Also hide for CARGA_OFICIOS flow as it doesn't need vinculos */}
+        {dropdownData && !id && formVariant === "STANDARD" && activeStep > 0 && (
           <Box sx={{ px: 3, pt: 3 }} data-section="vinculos">
             <FormSection title="Vínculos con Legajos y Medidas" collapsible={true} defaultExpanded={false}>
               <VinculosManager dropdownData={dropdownData} readOnly={isReadOnly} />
@@ -443,15 +512,34 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
         <Box sx={{ p: 3 }}>
           {dropdownData && (
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-              {activeStep === 0 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
-              {activeStep === 1 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
-              {activeStep === 2 && (
-                <Step3Form
-                  dropdownData={dropdownData}
-                  adultosConvivientes={methods.watch("adultosConvivientes") || []}
-                  readOnly={isReadOnly}
-                  id={demandaId}
+              {/* Step 0: Objetivo Selection (always shown first) */}
+              {activeStep === 0 && (
+                <ObjetivoSelectionStep
+                  selected={selectedObjetivo}
+                  onSelect={handleObjetivoSelect}
+                  disabled={isReadOnly}
                 />
+              )}
+
+              {/* Standard Flow: Steps 1-3 */}
+              {formVariant === "STANDARD" && activeStep > 0 && (
+                <>
+                  {activeStep === 1 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
+                  {activeStep === 2 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
+                  {activeStep === 3 && (
+                    <Step3Form
+                      dropdownData={dropdownData}
+                      adultosConvivientes={methods.watch("adultosConvivientes") || []}
+                      readOnly={isReadOnly}
+                      id={demandaId}
+                    />
+                  )}
+                </>
+              )}
+
+              {/* CARGA_OFICIOS Flow: Step 1 only */}
+              {formVariant === "CARGA_OFICIOS" && activeStep === 1 && (
+                <CargaOficiosForm dropdownData={dropdownData} readOnly={isReadOnly} />
               )}
             </LocalizationProvider>
           )}
@@ -484,10 +572,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
           <Button
             variant="contained"
             color="primary"
-            onClick={activeStep === steps.length - 1 ? (isReadOnly ? () => {} : handleFinalSubmit) : handleNext}
+            onClick={activeStep === currentSteps.length - 1 ? (isReadOnly ? () => {} : handleFinalSubmit) : handleNext}
             type="button"
-            endIcon={activeStep === steps.length - 1 ? <Send /> : <NavigateNext />}
-            disabled={(activeStep === steps.length - 1 && isReadOnly) || (!isReadOnly && mutation.isPending)}
+            endIcon={activeStep === currentSteps.length - 1 ? <Send /> : <NavigateNext />}
+            disabled={(activeStep === currentSteps.length - 1 && isReadOnly) || (!isReadOnly && mutation.isPending)}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -495,7 +583,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
               boxShadow: 2,
             }}
           >
-            {activeStep === steps.length - 1
+            {activeStep === currentSteps.length - 1
               ? isReadOnly
                 ? "Finalizar"
                 : mutation.isPending

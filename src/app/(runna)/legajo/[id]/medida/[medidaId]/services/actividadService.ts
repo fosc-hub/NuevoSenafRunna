@@ -234,15 +234,17 @@ export const actividadService = {
   },
 
   /**
-   * Transfer activity to another team
+   * Transfer activity to another zone/team
    * Endpoint: POST /api/actividades/{id}/transferir/
    *
    * Permission: JZ (nivel 3), Director (nivel 4) only
    * Changes activity's team and optionally assigns new responsible user.
    * Creates immutable transfer record in history.
    *
+   * API v13: Use zona_destino (simpler, recommended) instead of equipo_destino
+   *
    * @param id - Activity ID
-   * @param data - Transfer request (equipo_destino_id, optional responsable_nuevo_id, motivo min 10 chars)
+   * @param data - Transfer request (zona_destino, optional responsable_nuevo_id, motivo min 15 chars)
    * @returns Created transfer record
    */
   async transferir(id: number, data: TransferirRequest): Promise<TTransferenciaActividad> {

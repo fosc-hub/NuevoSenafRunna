@@ -541,11 +541,12 @@ export interface ReabrirRequest {
 }
 
 /**
- * Request to transfer activity to another team
+ * Request to transfer activity to another team/zone
  * Endpoint: POST /api/actividades/{id}/transferir/
+ * API v13: Use zona_destino (simpler, recommended) instead of equipo_destino
  */
 export interface TransferirRequest {
-  equipo_destino: number
+  zona_destino: number // Zone ID to transfer to
   responsable_nuevo_id?: number // Optional: new responsible user
   motivo: string // Required, min 15 characters
 }
@@ -713,15 +714,17 @@ export interface BulkUpdateActividadesRequest {
  *
  * Two modes supported:
  * 1. Transfer to user: responsable_nuevo required
- * 2. Transfer to team: equipo_destino required, responsable_nuevo optional
+ * 2. Transfer to zone: zona_destino required, responsable_nuevo optional
+ *
+ * API v13: Use zona_destino (simpler, recommended) instead of equipo_destino
  */
 export interface BulkTransferActividadesRequest {
   /** Array of activity IDs to transfer */
   actividad_ids: number[]
-  /** ID of the new responsible user (required for user transfer, optional for team transfer) */
+  /** ID of the new responsible user (required for user transfer, optional for zone transfer) */
   responsable_nuevo?: number
-  /** ID of the destination team/zona (for team transfer) */
-  equipo_destino?: number
+  /** ID of the destination zone (for zone transfer) */
+  zona_destino?: number
   /** Reason for the transfer (required, min 15 characters) */
   motivo: string
 }

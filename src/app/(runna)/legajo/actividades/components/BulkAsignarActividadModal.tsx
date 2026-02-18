@@ -206,7 +206,7 @@ const BulkAsignarActividadModal: React.FC<BulkAsignarActividadModalProps> = ({
     try {
       const result = await actividadService.bulkTransfer({
         actividad_ids: actividadIds,
-        equipo_destino: selectedEquipoDestino,
+        zona_destino: selectedEquipoDestino,
         responsable_nuevo: selectedResponsableEquipo || undefined,
         motivo: motivoTransferenciaEquipo,
       })

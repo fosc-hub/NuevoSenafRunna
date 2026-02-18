@@ -1,13 +1,15 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   Box,
   Paper,
   Typography,
   Badge,
   Skeleton,
-  alpha
+  alpha,
+  Checkbox,
+  Tooltip
 } from '@mui/material'
 import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -21,6 +23,14 @@ interface KanbanColumnProps {
   actividades: TActividadPlanTrabajo[]
   loading?: boolean
   onCardClick: (actividad: TActividadPlanTrabajo) => void
+  /** Whether selection mode is enabled */
+  selectionEnabled?: boolean
+  /** Set of selected activity IDs */
+  selectedIds?: Set<number>
+  /** Callback when an activity's selection changes */
+  onSelectionChange?: (actividad: TActividadPlanTrabajo, selected: boolean) => void
+  /** Callback when select all is clicked for this column */
+  onSelectAll?: (actividades: TActividadPlanTrabajo[], selected: boolean) => void
 }
 
 // Map icon names to components
@@ -34,10 +44,28 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   config,
   actividades,
   loading = false,
-  onCardClick
+  onCardClick,
+  selectionEnabled = false,
+  selectedIds = new Set(),
+  onSelectionChange,
+  onSelectAll
 }) => {
   const IconComponent = iconComponents[config.iconName]
   const count = actividades.length
+
+  // Calculate if all items in this column are selected
+  const allSelected = useMemo(() => {
+    return count > 0 && actividades.every(a => selectedIds.has(a.id))
+  }, [actividades, selectedIds, count])
+
+  const someSelected = useMemo(() => {
+    return actividades.some(a => selectedIds.has(a.id)) && !allSelected
+  }, [actividades, selectedIds, allSelected])
+
+  const handleSelectAllClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelectAll?.(actividades, !allSelected)
+  }
 
   return (
     <Paper
@@ -65,6 +93,22 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {selectionEnabled && count > 0 && (
+            <Tooltip title={allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}>
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected}
+                onClick={handleSelectAllClick}
+                size="small"
+                sx={{
+                  p: 0,
+                  color: config.color,
+                  '&.Mui-checked': { color: config.color },
+                  '&.MuiCheckbox-indeterminate': { color: config.color }
+                }}
+              />
+            </Tooltip>
+          )}
           <IconComponent sx={{ color: config.color, fontSize: 22 }} />
           <Typography
             variant="subtitle1"
@@ -149,6 +193,9 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               key={actividad.id}
               actividad={actividad}
               onClick={onCardClick}
+              selectionEnabled={selectionEnabled}
+              isSelected={selectedIds.has(actividad.id)}
+              onSelectionChange={onSelectionChange}
             />
           ))
         )}

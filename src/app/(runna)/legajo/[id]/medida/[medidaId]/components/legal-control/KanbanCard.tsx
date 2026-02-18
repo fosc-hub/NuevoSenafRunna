@@ -8,10 +8,10 @@ import {
   Chip,
   Avatar,
   Tooltip,
-  alpha
+  alpha,
+  Checkbox
 } from '@mui/material'
 import GavelIcon from '@mui/icons-material/Gavel'
-import PersonIcon from '@mui/icons-material/Person'
 import FolderIcon from '@mui/icons-material/Folder'
 import type { TActividadPlanTrabajo } from '../../types/actividades'
 import { DeadlineIndicator } from '../medida/DeadlineIndicator'
@@ -19,6 +19,12 @@ import { DeadlineIndicator } from '../medida/DeadlineIndicator'
 interface KanbanCardProps {
   actividad: TActividadPlanTrabajo
   onClick: (actividad: TActividadPlanTrabajo) => void
+  /** Whether selection mode is enabled */
+  selectionEnabled?: boolean
+  /** Whether this card is selected */
+  isSelected?: boolean
+  /** Callback when selection changes */
+  onSelectionChange?: (actividad: TActividadPlanTrabajo, selected: boolean) => void
 }
 
 // Helper function to get initials from a full name
@@ -71,21 +77,41 @@ const getEstadoChipConfig = (estado: string) => {
   return configs[estado] || { label: estado, color: '#757575', bgColor: 'rgba(117, 117, 117, 0.1)' }
 }
 
-export const KanbanCard: React.FC<KanbanCardProps> = ({ actividad, onClick }) => {
+export const KanbanCard: React.FC<KanbanCardProps> = ({
+  actividad,
+  onClick,
+  selectionEnabled = false,
+  isSelected = false,
+  onSelectionChange
+}) => {
   const estadoConfig = getEstadoChipConfig(actividad.estado)
   const responsableNombre = getFullName(actividad.responsable_principal_info)
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelectionChange?.(actividad, !isSelected)
+  }
+
+  const handleCardClick = () => {
+    if (selectionEnabled) {
+      onSelectionChange?.(actividad, !isSelected)
+    } else {
+      onClick(actividad)
+    }
+  }
 
   return (
     <Paper
       elevation={0}
-      onClick={() => onClick(actividad)}
+      onClick={handleCardClick}
       sx={{
         p: 2,
         cursor: 'pointer',
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: isSelected ? 'primary.main' : 'divider',
         borderRadius: 2,
-        backgroundColor: 'background.paper',
+        backgroundColor: isSelected ? alpha('#9c27b0', 0.05) : 'background.paper',
+        borderLeft: isSelected ? '4px solid #9c27b0' : '4px solid transparent',
         transition: 'all 0.2s ease-in-out',
         '&:hover': {
           borderColor: 'primary.main',
@@ -94,9 +120,22 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ actividad, onClick }) =>
         }
       }}
     >
-      {/* Header: Activity type name */}
+      {/* Header: Activity type name with optional checkbox */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+          {selectionEnabled && (
+            <Checkbox
+              checked={isSelected}
+              onClick={handleCheckboxClick}
+              size="small"
+              color="primary"
+              sx={{
+                p: 0,
+                flexShrink: 0,
+                '&.Mui-checked': { color: '#9c27b0' }
+              }}
+            />
+          )}
           <GavelIcon sx={{ color: '#7b1fa2', fontSize: 18, flexShrink: 0 }} />
           <Typography
             variant="body2"

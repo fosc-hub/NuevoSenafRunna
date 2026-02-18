@@ -163,6 +163,27 @@ export interface TMedidaInfo {
 }
 
 /**
+ * User responsible for a zone
+ * Added in API v13 for zonas_info nested field
+ */
+export interface UserResponsableZona {
+  id: number
+  username: string
+  nombre_completo: string
+}
+
+/**
+ * Zone info nested in activity response
+ * Added in API v13 - PLTM Zonas Anidadas
+ */
+export interface ZonaInfo {
+  id: number
+  nombre: string
+  tipo_responsabilidad: 'TRABAJO' | 'CENTRO_VIDA' | 'JUDICIAL'
+  user_responsable: UserResponsableZona | null
+}
+
+/**
  * TActividadPlanTrabajo - Activity instance in a work plan
  *
  * Source: RUNNA API (9).yaml lines 10307-10514
@@ -189,6 +210,13 @@ export interface TActividadPlanTrabajo {
    * Added in API v12 for global activities listing
    */
   medida_info?: TMedidaInfo
+
+  /**
+   * Zonas info (readonly, nested from legajo relationship)
+   * Added in API v13 - PLTM Zonas Anidadas
+   * Contains active zones assigned to the legajo
+   */
+  zonas_info?: ZonaInfo[]
 
   // Type & Classification
   /** FK to activity type catalog */
@@ -610,6 +638,41 @@ export const getActorIcon = (actor: ActorEnum): string => {
     'ADULTOS_INSTITUCION': 'Business'
   }
   return icons[actor] || 'Group'
+}
+
+// ============================================================================
+// V13: Zone Types and Utilities (PLTM Zonas Anidadas)
+// ============================================================================
+
+/**
+ * Zone type enum - Type of zone responsibility
+ */
+export type ZonaTipoResponsabilidad = 'TRABAJO' | 'CENTRO_VIDA' | 'JUDICIAL'
+
+/**
+ * Zone type display labels
+ * Maps zone tipo_responsabilidad values to human-readable Spanish labels
+ */
+export const ZONA_TIPO_LABELS: Record<ZonaTipoResponsabilidad, string> = {
+  TRABAJO: 'Zona de Trabajo',
+  CENTRO_VIDA: 'Centro de Vida',
+  JUDICIAL: 'Zona Judicial'
+}
+
+/**
+ * Zone type color mapping for consistent UI representation
+ * Returns Material-UI compatible color hex codes
+ *
+ * @param tipo - The zone tipo_responsabilidad value
+ * @returns Hex color code for the zone type
+ */
+export const getZonaTipoColor = (tipo: ZonaTipoResponsabilidad | string): string => {
+  const colors: Record<string, string> = {
+    'TRABAJO': '#1565c0',       // blue - work zone
+    'CENTRO_VIDA': '#2e7d32',   // green - center of life
+    'JUDICIAL': '#6a1b9a'       // purple - judicial
+  }
+  return colors[tipo] || '#757575' // gray fallback
 }
 
 // ============================================================================

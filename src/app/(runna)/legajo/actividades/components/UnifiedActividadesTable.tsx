@@ -46,6 +46,7 @@ import PendingIcon from "@mui/icons-material/Pending"
 import PlayCircleIcon from "@mui/icons-material/PlayCircle"
 import ErrorIcon from "@mui/icons-material/Error"
 import TimelineIcon from "@mui/icons-material/Timeline"
+import LocationOnIcon from "@mui/icons-material/LocationOn"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/utils/auth/userZustand"
@@ -56,7 +57,7 @@ import { actividadService } from "../../[id]/medida/[medidaId]/services/activida
 
 // Import types
 import type { TActividadPlanTrabajo, ActividadFilters } from "../../[id]/medida/[medidaId]/types/actividades"
-import { getActorColor, ACTOR_LABELS } from "../../[id]/medida/[medidaId]/types/actividades"
+import { getActorColor, ACTOR_LABELS, ZONA_TIPO_LABELS, getZonaTipoColor } from "../../[id]/medida/[medidaId]/types/actividades"
 import { extractArray } from "@/hooks/useApiQuery"
 import { useApiQuery } from "@/hooks/useApiQuery"
 
@@ -620,6 +621,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
       // Data columns - context-specific
       showNnyaLegajo: variant === "global",
       showFechaPlanificacion: true, // Show for all variants
+      showZonas: variant === "global", // Show zonas column for global activities (PLTM Zonas Anidadas)
 
       // Global-specific features
       showAcuseRecibo: variant === "global",
@@ -927,6 +929,9 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
               <TableCell sx={{ fontWeight: 600, color: "white", fontSize: "0.875rem" }}>NNyA / Legajo</TableCell>
             )}
             <TableCell sx={{ fontWeight: 600, color: "white", fontSize: "0.875rem" }}>Equipo</TableCell>
+            {features.showZonas && (
+              <TableCell sx={{ fontWeight: 600, color: "white", fontSize: "0.875rem" }}>Zonas</TableCell>
+            )}
             <TableCell sx={{ fontWeight: 600, color: "white", fontSize: "0.875rem" }}>Responsables</TableCell>
             {features.showFechaPlanificacion && (
               <TableCell sx={{ fontWeight: 600, color: "white", fontSize: "0.875rem" }}>Fecha Plan.</TableCell>
@@ -941,7 +946,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
         <TableBody>
           {paginatedActividades.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={features.showNnyaLegajo ? 9 : features.showFechaPlanificacion ? 8 : 7} align="center">
+              <TableCell colSpan={features.showNnyaLegajo ? (features.showZonas ? 10 : 9) : features.showFechaPlanificacion ? 8 : 7} align="center">
                 <Box sx={{ py: 8, textAlign: "center" }}>
                   <FilterListIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -1077,6 +1082,49 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                       sx={{ backgroundColor: getActorColor(actividad.actor), color: "white", fontSize: "0.7rem", fontWeight: 500 }}
                     />
                   </TableCell>
+
+                  {/* Zonas */}
+                  {features.showZonas && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      {actividad.zonas_info && actividad.zonas_info.length > 0 ? (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                          {actividad.zonas_info.map((zona) => (
+                            <Tooltip
+                              key={zona.id}
+                              title={
+                                <Box>
+                                  <Typography variant="body2" fontWeight={500}>{zona.nombre}</Typography>
+                                  <Typography variant="caption">
+                                    {ZONA_TIPO_LABELS[zona.tipo_responsabilidad] || zona.tipo_responsabilidad}
+                                  </Typography>
+                                  {zona.user_responsable && (
+                                    <Typography variant="caption" display="block">
+                                      Responsable: {zona.user_responsable.nombre_completo}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              }
+                            >
+                              <Chip
+                                icon={<LocationOnIcon sx={{ fontSize: 14 }} />}
+                                label={zona.nombre}
+                                size="small"
+                                sx={{
+                                  backgroundColor: `${getZonaTipoColor(zona.tipo_responsabilidad)}15`,
+                                  color: getZonaTipoColor(zona.tipo_responsabilidad),
+                                  fontSize: "0.65rem",
+                                  height: 22,
+                                  "& .MuiChip-icon": { color: "inherit" }
+                                }}
+                              />
+                            </Tooltip>
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">Sin zonas</Typography>
+                      )}
+                    </TableCell>
+                  )}
 
                   {/* Responsables */}
                   <TableCell onClick={(e) => e.stopPropagation()}>

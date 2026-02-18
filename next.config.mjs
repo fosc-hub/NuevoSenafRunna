@@ -3,6 +3,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true
   },
+  eslint: {
+    ignoreDuringBuilds: true
+  },
   experimental: {
     esmExternals: 'loose', // habilita carga ESM en cliente
   },

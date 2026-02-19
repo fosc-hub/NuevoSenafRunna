@@ -547,9 +547,13 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           <>
             <MPEHeader
               medidaData={medidaData}
+              medidaId={medidaApiData?.id}
+              estadoVigencia={medidaApiData?.estado_vigencia}
+              etapaActual={medidaApiData?.etapa_actual}
               demandaData={demandaData}
               estados={medidaData.estados}
               progreso={medidaData.progreso}
+              onMedidaRefetch={refetchMedida}
             />
             <MPETabs
               medidaData={{
@@ -610,7 +614,15 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           </>
         ) : (
           <>
-            <MedidaHeader medidaData={medidaData} isActive={activeStep !== 2} onViewPersonalData={handleViewPersonalData} />
+            <MedidaHeader
+              medidaData={medidaData}
+              medidaId={medidaApiData?.id}
+              estadoVigencia={medidaApiData?.estado_vigencia}
+              etapaActual={medidaApiData?.etapa_actual}
+              isActive={activeStep !== 2}
+              onViewPersonalData={handleViewPersonalData}
+              onMedidaRefetch={refetchMedida}
+            />
 
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
               Etapas de la medida

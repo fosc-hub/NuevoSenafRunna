@@ -3,8 +3,13 @@
 import type React from "react"
 import { Box, Chip, Grid, Typography, Button, Paper, useTheme, Dialog, DialogTitle, DialogContent, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
+import CancelIcon from "@mui/icons-material/Cancel"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { ResidenciasTab } from "./mpe-tabs/residencias-tab"
 import { useState } from "react"
+import { useUser } from "@/utils/auth/userZustand"
+import { useCeseMedida } from "../../hooks/useCeseMedida"
+import { CeseMedidaModal } from "./cese-medida-modal"
 
 interface MPEHeaderProps {
     medidaData: {
@@ -33,6 +38,15 @@ interface MPEHeaderProps {
         tipo_dispositivo_mpe?: string
         subtipo_dispositivo_mpe?: string
     }
+    /** Medida ID for API calls */
+    medidaId?: number
+    /** Estado de vigencia (VIGENTE, CERRADA, etc.) */
+    estadoVigencia?: string
+    /** Etapa actual de la medida */
+    etapaActual?: {
+        tipo_etapa?: string
+        estado?: string
+    }
     demandaData?: any // Full demanda data from the full-detail endpoint
     estados: {
         inicial: boolean
@@ -51,13 +65,52 @@ interface MPEHeaderProps {
         total: number
     }
     onFieldChange?: (field: string, value: string) => void
+    /** Callback to refresh medida data after cese */
+    onMedidaRefetch?: () => void
 }
 
-export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, estados, progreso, onFieldChange }) => {
+export const MPEHeader: React.FC<MPEHeaderProps> = ({
+    medidaData,
+    medidaId,
+    estadoVigencia,
+    etapaActual,
+    demandaData,
+    estados,
+    progreso,
+    onFieldChange,
+    onMedidaRefetch,
+}) => {
     const theme = useTheme();
     const [residenciasModalOpen, setResidenciasModalOpen] = useState(false);
+    const [ceseModalOpen, setCeseModalOpen] = useState(false);
     const [tipoDispositivoMPE, setTipoDispositivoMPE] = useState(medidaData.tipo_dispositivo_mpe || '');
     const [subtipoDispositivoMPE, setSubtipoDispositivoMPE] = useState(medidaData.subtipo_dispositivo_mpe || '');
+
+    // Get user data for permission check
+    const { user } = useUser();
+    const isSuperuser = user?.is_superuser || false;
+    const isJZ = user?.zonas?.some(z => z.jefe) || false;
+    const canCesarMedida = isSuperuser || isJZ;
+
+    // Determine if medida is in CESE etapa (for Flow B)
+    const esEtapaCese = etapaActual?.tipo_etapa === 'CESE';
+
+    // Determine if cese button should be visible
+    const showCeseButton = estadoVigencia === 'VIGENTE' && canCesarMedida && medidaId;
+
+    // Cese medida hook
+    const { solicitarCese, isSolicitandoCese } = useCeseMedida({
+        medidaId: medidaId || 0,
+        onSuccess: () => {
+            setCeseModalOpen(false);
+            onMedidaRefetch?.();
+        },
+    });
+
+    // Handle cese confirmation
+    const handleCeseConfirm = async (observaciones: string, cancelarActividades: boolean) => {
+        await solicitarCese(observaciones, cancelarActividades);
+    };
 
     const handleTipoDispositivoMPEChange = (value: string) => {
         console.log('MPE Tipo changed to:', value);
@@ -572,21 +625,42 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, e
                     </Box>
                 </Box>
 
-                {/* Action Button */}
-                <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    onClick={() => setResidenciasModalOpen(true)}
-                    sx={{
-                        py: 1.5,
-                        borderRadius: 2,
-                        fontWeight: 600,
-                        fontSize: "1rem"
-                    }}
-                >
-                    SEGUIMIENTO EN DISPOSITIVO
-                </Button>
+                {/* Action Buttons */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        onClick={() => setResidenciasModalOpen(true)}
+                        sx={{
+                            py: 1.5,
+                            borderRadius: 2,
+                            fontWeight: 600,
+                            fontSize: "1rem"
+                        }}
+                    >
+                        SEGUIMIENTO EN DISPOSITIVO
+                    </Button>
+
+                    {/* Cese Button - Dynamic based on etapa */}
+                    {showCeseButton && (
+                        <Button
+                            variant="contained"
+                            color={esEtapaCese ? "error" : "warning"}
+                            fullWidth
+                            startIcon={esEtapaCese ? <CheckCircleIcon /> : <CancelIcon />}
+                            onClick={() => setCeseModalOpen(true)}
+                            sx={{
+                                py: 1.5,
+                                borderRadius: 2,
+                                fontWeight: 600,
+                                fontSize: "1rem"
+                            }}
+                        >
+                            {esEtapaCese ? "CONFIRMAR CESE" : "SOLICITAR CESE"}
+                        </Button>
+                    )}
+                </Box>
             </Box>
 
             {/* Residencias Modal */}
@@ -630,6 +704,18 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({ medidaData, demandaData, e
                     />
                 </DialogContent>
             </Dialog>
+
+            {/* Cese Medida Modal */}
+            {medidaId && (
+                <CeseMedidaModal
+                    open={ceseModalOpen}
+                    onClose={() => setCeseModalOpen(false)}
+                    tipoMedida="MPE"
+                    esEtapaCese={esEtapaCese}
+                    onConfirm={handleCeseConfirm}
+                    isLoading={isSolicitandoCese}
+                />
+            )}
         </Paper>
     )
 } 

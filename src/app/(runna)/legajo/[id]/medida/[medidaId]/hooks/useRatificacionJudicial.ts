@@ -287,10 +287,21 @@ export function useRatificacionJudicial({
         // Re-fetch para asegurar datos actualizados
         await fetchRatificacion()
 
-        toast.success('Ratificación Judicial creada exitosamente', {
-          position: 'top-center',
-          autoClose: 3000,
-        })
+        // Check if cese was completed via ratification (MPE in CESE etapa)
+        if (newRatificacion.cese_completado) {
+          toast.success(
+            '✅ Medida cerrada exitosamente mediante ratificación judicial. Se ha creado la etapa POST_CESE.',
+            {
+              position: 'top-center',
+              autoClose: 6000,
+            }
+          )
+        } else {
+          toast.success('Ratificación Judicial creada exitosamente', {
+            position: 'top-center',
+            autoClose: 3000,
+          })
+        }
       } catch (err: any) {
         const errorMessage =
           err.message || "Error al crear ratificación judicial"
@@ -350,10 +361,21 @@ export function useRatificacionJudicial({
         // Re-fetch para asegurar datos actualizados
         await fetchRatificacion()
 
-        toast.success('Ratificación Judicial actualizada exitosamente', {
-          position: 'top-center',
-          autoClose: 3000,
-        })
+        // Check if cese was completed via ratification (MPE in CESE etapa)
+        if (updatedRatificacion.cese_completado) {
+          toast.success(
+            '✅ Medida cerrada exitosamente mediante ratificación judicial. Se ha creado la etapa POST_CESE.',
+            {
+              position: 'top-center',
+              autoClose: 6000,
+            }
+          )
+        } else {
+          toast.success('Ratificación Judicial actualizada exitosamente', {
+            position: 'top-center',
+            autoClose: 3000,
+          })
+        }
       } catch (err: any) {
         const errorMessage =
           err.message || "Error al actualizar ratificación judicial"

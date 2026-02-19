@@ -152,19 +152,77 @@ export interface AutorizarAdmisionResponse {
 // ============================================
 
 /**
+ * Miembro del grupo conviviente (LEG-01 enhanced response)
+ */
+export interface GrupoConvivienteMiembro {
+  persona_id: number
+  nombre: string  // "Nombre Apellido"
+  dni: number | null
+  vinculo: string | null  // "Madre", "Padre", "Hermano", etc.
+}
+
+/**
+ * Legajo info in persona encontrada (LEG-01 enhanced response)
+ */
+export interface LegajoBasicInfo {
+  id: number
+  numero: string
+}
+
+/**
+ * Persona encontrada from enhanced API response (LEG-01)
+ * POST /api/demanda-busqueda-vinculacion/ - personas_encontradas field
+ */
+export interface PersonaEncontrada {
+  id: number
+  nombre: string
+  apellido: string
+  dni: number | null
+  fecha_nacimiento: string | null  // ISO format: "YYYY-MM-DD"
+  nnya: boolean
+  demandas_ids: number[]           // IDs de demandas vinculadas (puede estar vacío)
+  medidas_ids: number[]            // IDs de medidas del legajo (puede estar vacío)
+  legajo: LegajoBasicInfo | null   // null si no tiene legajo
+  grupo_conviviente: GrupoConvivienteMiembro[]
+}
+
+/**
+ * API Response from POST /api/demanda-busqueda-vinculacion/ (LEG-01 enhanced)
+ */
+export interface BusquedaVinculacionResponse {
+  demanda_ids: number[]
+  nnya_ids: number[]
+  match_descriptions: string[]
+  legajos: Array<{
+    id: number
+    numero: string
+    fecha_apertura: string
+    nnya: number | { id: number }
+  }>
+  personas_relacionadas: any[]
+  personas_encontradas: PersonaEncontrada[]  // New field from LEG-01
+}
+
+/**
  * NNyA search result (for duplicate detection)
+ * Updated to include enhanced information from LEG-01
  */
 export interface BusquedaNnyaResult {
   id: number
   nombre: string
   apellido: string
-  dni: number
-  fecha_nacimiento: string
+  dni: number | null
+  fecha_nacimiento: string | null
+  nnya: boolean
   legajo_existente?: {
     id: number
     numero: string
-    fecha_apertura: string
+    fecha_apertura?: string
   }
+  // Enhanced fields from LEG-01
+  demandas_ids: number[]
+  medidas_ids: number[]
+  grupo_conviviente: GrupoConvivienteMiembro[]
 }
 
 // ============================================

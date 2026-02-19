@@ -98,6 +98,18 @@ export interface RatificacionJudicial {
   fecha_registro: string // ISO datetime
   fecha_modificacion: string // ISO datetime
   adjuntos: RatificacionAdjunto[] // readOnly - populated separately
+
+  // Cese-related fields (populated when ratification triggers automatic cese)
+  /** True if ratification caused automatic medida closure (MPE in CESE etapa) */
+  cese_completado?: boolean
+  /** POST_CESE etapa info when cese was completed via ratification */
+  etapa_post_cese?: {
+    id: number
+    tipo_etapa: 'POST_CESE'
+    fecha_inicio: string
+  }
+  /** Medida estado after cese (CERRADA) */
+  medida_estado?: 'CERRADA'
 }
 
 /**

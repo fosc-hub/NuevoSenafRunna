@@ -44,6 +44,7 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Description as DescriptionIcon,
+  TaskAlt as TaskAltIcon,
 } from "@mui/icons-material"
 import { useRatificacionJudicial } from "../../hooks/useRatificacionJudicial"
 import { RatificacionJudicialDialog } from "../dialogs/ratificacion-judicial-dialog"
@@ -493,8 +494,36 @@ export const RatificacionJudicialSection: React.FC<
               />
             </Grid>
 
+            {/* Cese Completado Alert - when ratification triggers automatic closure */}
+            {ratificacion?.cese_completado && (
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Alert
+                  severity="info"
+                  icon={<TaskAltIcon />}
+                  sx={{
+                    backgroundColor: 'rgba(2, 136, 209, 0.1)',
+                    border: '1px solid rgba(2, 136, 209, 0.3)',
+                  }}
+                >
+                  <Typography variant="body2">
+                    <strong>Medida Cerrada Automaticamente</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    La ratificacion judicial ha provocado el cierre automatico de la medida.
+                    Se ha creado la etapa POST_CESE para el seguimiento correspondiente.
+                  </Typography>
+                  {ratificacion?.etapa_post_cese && (
+                    <Typography variant="body2" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                      Etapa POST_CESE creada el: {new Date(ratificacion.etapa_post_cese.fecha_inicio).toLocaleDateString('es-AR')}
+                    </Typography>
+                  )}
+                </Alert>
+              </Grid>
+            )}
+
             {/* Estado Final Alert */}
-            {isRatificada && (
+            {isRatificada && !ratificacion?.cese_completado && (
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
                 <Alert severity="success" icon={<CheckCircleIcon />}>

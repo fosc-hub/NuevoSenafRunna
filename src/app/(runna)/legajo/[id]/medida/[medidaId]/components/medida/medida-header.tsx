@@ -4,6 +4,10 @@ import type React from "react"
 import { useState } from "react"
 import { Box, Chip, Grid, Typography, Button, Paper, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import CancelIcon from "@mui/icons-material/Cancel"
+import { useUser } from "@/utils/auth/userZustand"
+import { useCeseMedida } from "../../hooks/useCeseMedida"
+import { CeseMedidaModal } from "./cese-medida-modal"
 
 interface MedidaHeaderProps {
   medidaData: {
@@ -30,16 +34,61 @@ interface MedidaHeaderProps {
     tipo_medida_mpj?: string
     subtipo_medida_mpj?: string
   }
+  /** Medida ID for API calls */
+  medidaId?: number
+  /** Estado de vigencia (VIGENTE, CERRADA, etc.) */
+  estadoVigencia?: string
+  /** Etapa actual de la medida */
+  etapaActual?: {
+    tipo_etapa?: string
+    estado?: string
+  }
   isActive: boolean
   onViewPersonalData?: () => void
   onFieldChange?: (field: string, value: string) => void
+  /** Callback to refresh medida data after cese */
+  onMedidaRefetch?: () => void
 }
 
-export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive, onViewPersonalData, onFieldChange }) => {
+export const MedidaHeader: React.FC<MedidaHeaderProps> = ({
+  medidaData,
+  medidaId,
+  estadoVigencia,
+  etapaActual,
+  isActive,
+  onViewPersonalData,
+  onFieldChange,
+  onMedidaRefetch,
+}) => {
   const [tipoMedidaMPJ, setTipoMedidaMPJ] = useState(medidaData.tipo_medida_mpj || '')
   const [subtipoMedidaMPJ, setSubtipoMedidaMPJ] = useState(medidaData.subtipo_medida_mpj || '')
+  const [ceseModalOpen, setCeseModalOpen] = useState(false)
 
   const isMPJ = medidaData.tipo === 'MPJ'
+  const isMPI = medidaData.tipo === 'MPI'
+
+  // Get user data for permission check
+  const { user } = useUser()
+  const isSuperuser = user?.is_superuser || false
+  const isJZ = user?.zonas?.some(z => z.jefe) || false
+  const canCesarMedida = isSuperuser || isJZ
+
+  // Determine if cese button should be visible
+  const showCeseButton = isMPI && estadoVigencia === 'VIGENTE' && canCesarMedida && medidaId
+
+  // Cese medida hook
+  const { cesarMPI, isCesandoMPI } = useCeseMedida({
+    medidaId: medidaId || 0,
+    onSuccess: () => {
+      setCeseModalOpen(false)
+      onMedidaRefetch?.()
+    },
+  })
+
+  // Handle cese confirmation
+  const handleCeseConfirm = async (observaciones: string, cancelarActividades: boolean) => {
+    await cesarMPI(observaciones, cancelarActividades)
+  }
 
   // Generate subtipo options for MPJ based on tipo
   const getSubtipoOptionsMPJ = () => {
@@ -127,6 +176,23 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
                   variant="outlined"
                   sx={{ fontWeight: 500 }}
                 />
+              )}
+              {/* Cesar Medida Button - MPI only */}
+              {showCeseButton && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  startIcon={<CancelIcon />}
+                  onClick={() => setCeseModalOpen(true)}
+                  sx={{
+                    ml: 2,
+                    textTransform: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  Cesar Medida
+                </Button>
               )}
             </Box>
           </Grid>
@@ -283,6 +349,17 @@ export const MedidaHeader: React.FC<MedidaHeaderProps> = ({ medidaData, isActive
           </Grid>
         </Grid>
       </Box>
+
+      {/* Cese Medida Modal */}
+      {medidaId && (
+        <CeseMedidaModal
+          open={ceseModalOpen}
+          onClose={() => setCeseModalOpen(false)}
+          tipoMedida="MPI"
+          onConfirm={handleCeseConfirm}
+          isLoading={isCesandoMPI}
+        />
+      )}
     </Paper>
   )
 }

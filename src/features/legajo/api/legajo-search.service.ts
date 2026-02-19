@@ -1,91 +1,96 @@
 /**
  * API Service for NNyA Search (LEG-01 Integration)
  * Endpoint: POST /api/demanda-busqueda-vinculacion/
+ *
+ * Updated: Uses personas_encontradas field for enriched data
+ * - No longer requires separate API calls for persona details
+ * - Includes demandas, medidas, legajo, and grupo conviviente info
  */
 
-import { create, get } from '@/app/api/apiService'
-import type { BusquedaNnyaResult } from '../types/legajo-creation.types'
+import { create } from '@/app/api/apiService'
+import type {
+  BusquedaNnyaResult,
+  BusquedaVinculacionResponse,
+  PersonaEncontrada,
+} from '../types/legajo-creation.types'
+
+/**
+ * Transform PersonaEncontrada to BusquedaNnyaResult
+ * Maps the enhanced API response to our internal type
+ */
+const mapPersonaToResult = (persona: PersonaEncontrada): BusquedaNnyaResult => ({
+  id: persona.id,
+  nombre: persona.nombre,
+  apellido: persona.apellido,
+  dni: persona.dni,
+  fecha_nacimiento: persona.fecha_nacimiento,
+  nnya: persona.nnya,
+  legajo_existente: persona.legajo
+    ? {
+        id: persona.legajo.id,
+        numero: persona.legajo.numero,
+      }
+    : undefined,
+  demandas_ids: persona.demandas_ids || [],
+  medidas_ids: persona.medidas_ids || [],
+  grupo_conviviente: persona.grupo_conviviente || [],
+})
 
 /**
  * Search NNyA by DNI to detect duplicates (LEG-01)
  * POST /api/demanda-busqueda-vinculacion/
  *
+ * Uses personas_encontradas field for enriched data including:
+ * - Existing legajo info
+ * - Linked demandas IDs
+ * - Active medidas IDs
+ * - Grupo conviviente members
+ *
  * @param dni - DNI to search for
- * @returns Array of matching NNyA with legajo information
+ * @returns Array of matching NNyA with enriched information
  */
 export const buscarNnyaPorDni = async (dni: string): Promise<BusquedaNnyaResult[]> => {
   try {
-    console.log(`Searching NNyA by DNI: ${dni}`)
+    console.log(`[LEG-01] Searching NNyA by DNI: ${dni}`)
 
-    // According to API, this endpoint searches for matches
-    const response = await create<any>('demanda-busqueda-vinculacion', {
+    const response = await create<BusquedaVinculacionResponse>('demanda-busqueda-vinculacion', {
       dni: dni,
     })
 
-    console.log('Search response:', response)
+    console.log('[LEG-01] Search response:', response)
 
-    // Parse response according to backend structure
-    // Response format: { demanda_ids: [], match_descriptions: [], legajos: [] }
-    const legajos = response.legajos || []
+    // Use personas_encontradas as the primary data source (LEG-01 enhancement)
+    const personasEncontradas = response.personas_encontradas || []
 
-    if (legajos.length === 0) {
-      console.log('No existing legajos found for this DNI')
+    if (personasEncontradas.length === 0) {
+      console.log('[LEG-01] No personas found for this DNI')
       return []
     }
 
-    // Fetch full persona details for each nnya ID found in legajos
-    const personaPromises = legajos.map(async (legajo: any) => {
-      const nnyaId = typeof legajo.nnya === 'number' ? legajo.nnya : legajo.nnya?.id
+    // Map personas_encontradas to our internal type
+    const results = personasEncontradas.map(mapPersonaToResult)
 
-      try {
-        // Fetch full persona details from /api/persona/{id}/
-        const persona = await get<any>(`persona/${nnyaId}/`)
-
-        return {
-          id: persona.id,
-          nombre: persona.nombre,
-          apellido: persona.apellido,
-          dni: persona.dni,
-          fecha_nacimiento: persona.fecha_nacimiento,
-          legajo_existente: {
-            id: legajo.id,
-            numero: legajo.numero,
-            fecha_apertura: legajo.fecha_apertura,
-          },
-        } as BusquedaNnyaResult
-      } catch (error) {
-        console.error(`Error fetching persona ${nnyaId}:`, error)
-        // Fallback to minimal data if persona fetch fails
-        return {
-          id: nnyaId,
-          nombre: 'Desconocido',
-          apellido: 'Desconocido',
-          dni: 0,
-          fecha_nacimiento: '',
-          legajo_existente: {
-            id: legajo.id,
-            numero: legajo.numero,
-            fecha_apertura: legajo.fecha_apertura,
-          },
-        } as BusquedaNnyaResult
-      }
+    console.log(`[LEG-01] Found ${results.length} matching NNyA(s)`)
+    results.forEach((r) => {
+      console.log(
+        `  - ${r.nombre} ${r.apellido}: ` +
+          `legajo=${r.legajo_existente?.numero || 'ninguno'}, ` +
+          `demandas=${r.demandas_ids.length}, ` +
+          `medidas=${r.medidas_ids.length}, ` +
+          `grupo=${r.grupo_conviviente.length}`
+      )
     })
 
-    const mappedResults = await Promise.all(personaPromises)
-
-    console.log(`Found ${mappedResults.length} matching NNyA(s) with existing legajos`)
-
-    return mappedResults
+    return results
   } catch (error: any) {
-    console.error('Error searching NNyA by DNI:', error)
-    console.error('Error details:', {
+    console.error('[LEG-01] Error searching NNyA by DNI:', error)
+    console.error('[LEG-01] Error details:', {
       message: error?.message,
       response: error?.response?.data,
       status: error?.response?.status,
     })
 
-    // Don't show error toast for search - return empty array
-    // This allows the UI to show "no results" message
+    // Return empty array on error - allows UI to show "no results"
     return []
   }
 }
@@ -94,94 +99,99 @@ export const buscarNnyaPorDni = async (dni: string): Promise<BusquedaNnyaResult[
  * Search NNyA by name and surname
  * POST /api/demanda-busqueda-vinculacion/
  *
+ * Uses nombre_y_apellido field for flexible name matching
+ *
  * @param nombre - First name to search
  * @param apellido - Last name to search
- * @returns Array of matching NNyA with legajo information
+ * @returns Array of matching NNyA with enriched information
  */
 export const buscarNnyaPorNombre = async (
   nombre: string,
   apellido: string
 ): Promise<BusquedaNnyaResult[]> => {
-  try {
-    console.log(`Searching NNyA by name: ${nombre} ${apellido}`)
+  // Combine nombre and apellido for nombre_y_apellido field
+  const nombreCompleto = [nombre, apellido].filter(Boolean).join(' ').trim()
 
-    const response = await create<any>('demanda-busqueda-vinculacion', {
-      nombre: nombre,
-      apellido: apellido,
+  if (!nombreCompleto) {
+    return []
+  }
+
+  try {
+    console.log(`[LEG-01] Searching NNyA by name: ${nombreCompleto}`)
+
+    // Use nombre_y_apellido for flexible matching (LEG-01 backend format)
+    const response = await create<BusquedaVinculacionResponse>('demanda-busqueda-vinculacion', {
+      nombre_y_apellido: nombreCompleto,
     })
 
-    console.log('Search response:', response)
+    console.log('[LEG-01] Search response:', response)
 
-    // Parse response (same structure as DNI search)
-    // Response format: { demanda_ids: [], match_descriptions: [], legajos: [] }
-    const legajos = response.legajos || []
+    // Use personas_encontradas as the primary data source
+    const personasEncontradas = response.personas_encontradas || []
 
-    if (legajos.length === 0) {
-      console.log('No existing legajos found for this name')
+    if (personasEncontradas.length === 0) {
+      console.log('[LEG-01] No personas found for this name')
       return []
     }
 
-    // Fetch full persona details for each nnya ID found in legajos
-    const personaPromises = legajos.map(async (legajo: any) => {
-      const nnyaId = typeof legajo.nnya === 'number' ? legajo.nnya : legajo.nnya?.id
+    // Map personas_encontradas to our internal type
+    const results = personasEncontradas.map(mapPersonaToResult)
 
-      try {
-        // Fetch full persona details from /api/persona/{id}/
-        const persona = await get<any>(`persona/${nnyaId}/`)
+    console.log(`[LEG-01] Found ${results.length} matching NNyA(s)`)
 
-        return {
-          id: persona.id,
-          nombre: persona.nombre,
-          apellido: persona.apellido,
-          dni: persona.dni,
-          fecha_nacimiento: persona.fecha_nacimiento,
-          legajo_existente: {
-            id: legajo.id,
-            numero: legajo.numero,
-            fecha_apertura: legajo.fecha_apertura,
-          },
-        } as BusquedaNnyaResult
-      } catch (error) {
-        console.error(`Error fetching persona ${nnyaId}:`, error)
-        // Fallback to minimal data if persona fetch fails
-        return {
-          id: nnyaId,
-          nombre: 'Desconocido',
-          apellido: 'Desconocido',
-          dni: 0,
-          fecha_nacimiento: '',
-          legajo_existente: {
-            id: legajo.id,
-            numero: legajo.numero,
-            fecha_apertura: legajo.fecha_apertura,
-          },
-        } as BusquedaNnyaResult
-      }
-    })
-
-    const mappedResults = await Promise.all(personaPromises)
-
-    console.log(`Found ${mappedResults.length} matching NNyA(s) with existing legajos`)
-
-    return mappedResults
+    return results
   } catch (error: any) {
-    console.error('Error searching NNyA by name:', error)
-    console.error('Error details:', {
+    console.error('[LEG-01] Error searching NNyA by name:', error)
+    console.error('[LEG-01] Error details:', {
       message: error?.message,
       response: error?.response?.data,
       status: error?.response?.status,
     })
 
-    // Return empty array on error
     return []
   }
 }
 
 /**
- * Combined search - tries both DNI and name search
+ * Search NNyA by nombre_y_apellido (combined field)
+ * POST /api/demanda-busqueda-vinculacion/
+ *
+ * Uses the nombre_y_apellido field for flexible name matching
+ *
+ * @param nombreCompleto - Full name to search
+ * @returns Array of matching NNyA with enriched information
+ */
+export const buscarNnyaPorNombreCompleto = async (
+  nombreCompleto: string
+): Promise<BusquedaNnyaResult[]> => {
+  try {
+    console.log(`[LEG-01] Searching NNyA by full name: ${nombreCompleto}`)
+
+    const response = await create<BusquedaVinculacionResponse>('demanda-busqueda-vinculacion', {
+      nombre_y_apellido: nombreCompleto,
+    })
+
+    console.log('[LEG-01] Search response:', response)
+
+    const personasEncontradas = response.personas_encontradas || []
+
+    if (personasEncontradas.length === 0) {
+      console.log('[LEG-01] No personas found for this full name')
+      return []
+    }
+
+    return personasEncontradas.map(mapPersonaToResult)
+  } catch (error: any) {
+    console.error('[LEG-01] Error searching NNyA by full name:', error)
+    return []
+  }
+}
+
+/**
+ * Combined search - auto-detects search type
  *
  * @param searchTerm - Term to search (can be DNI or name)
- * @returns Array of matching NNyA
+ * @returns Array of matching NNyA with enriched information
  */
 export const buscarNnya = async (searchTerm: string): Promise<BusquedaNnyaResult[]> => {
   const trimmed = searchTerm.trim()
@@ -191,14 +201,6 @@ export const buscarNnya = async (searchTerm: string): Promise<BusquedaNnyaResult
     return buscarNnyaPorDni(trimmed)
   }
 
-  // Otherwise, try to split name and search
-  const parts = trimmed.split(/\s+/)
-  if (parts.length >= 2) {
-    const nombre = parts.slice(0, -1).join(' ')
-    const apellido = parts[parts.length - 1]
-    return buscarNnyaPorNombre(nombre, apellido)
-  }
-
-  // If single word, search as apellido
-  return buscarNnyaPorNombre('', trimmed)
+  // Use nombre_y_apellido for flexible name matching
+  return buscarNnyaPorNombreCompleto(trimmed)
 }

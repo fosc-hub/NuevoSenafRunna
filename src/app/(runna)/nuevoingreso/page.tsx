@@ -257,7 +257,7 @@ const Home: React.FC = () => {
       {/* Success Modal - shows after demanda creation */}
       <DemandaSuccessModal
         open={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
+        onClose={handleNavigateToMesaEntrada}
         data={createdDemandaData}
         onNavigateToDemanda={handleNavigateToDemanda}
         onNavigateToMesaEntrada={handleNavigateToMesaEntrada}

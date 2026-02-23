@@ -267,6 +267,8 @@ export interface DropdownData {
   // CARGA_OFICIOS categorization dropdowns
   categoria_informacion_judicial?: CategoriaInformacionJudicial[];
   tipo_informacion_judicial?: TipoInformacionJudicial[];
+  // CARGA_OFICIOS departamento judicial
+  departamento_judicial_choices?: Array<{ key: string; value: string }>;
   // REG-01: Tipos de vínculo para dropdown
   tipos_vinculo?: Array<{
     id: number;

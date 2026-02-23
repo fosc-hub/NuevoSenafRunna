@@ -1,89 +1,134 @@
 "use client"
 
 /**
- * OrganoJudicialSection - Órgano Judicial section with placeholder fields
+ * OrganoJudicialSection - Origen del Oficio section
  *
- * Contains fields that are not yet implemented in the backend:
- * - Tipo de Órgano
- * - Departamento Judicial
- * - Órgano Judicial
- * - Delitos (multi-select)
- *
- * All fields are disabled and show "Próximamente" tooltips.
+ * Contains fields for:
+ * - Tipo de Organismo (bloque_datos_remitente) - OBLIGATORIO
+ * - Organismo (institucion/tipo_institucion_demanda) - OBLIGATORIO, filtered by Tipo
+ * - Departamento Judicial (CAPITAL | INTERIOR)
  */
 
 import type React from "react"
-import { Box, Grid, Typography, Paper, alpha } from "@mui/material"
-import { Info as InfoIcon } from "@mui/icons-material"
-import {
-  PlaceholderAutocomplete,
-  PlaceholderMultiSelect,
-} from "./PlaceholderField"
-import type { OrganoJudicialSectionProps } from "../types/carga-oficios.types"
+import { useMemo } from "react"
+import { Box, Grid, TextField, Autocomplete } from "@mui/material"
+import { Controller, useFormContext } from "react-hook-form"
+import type { OrganoJudicialSectionProps, CargaOficiosFormData } from "../types/carga-oficios.types"
 
 const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
-  // readOnly prop is reserved for future use when backend implements these fields
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  bloquesRemitente,
+  tipoInstitucionDemanda,
+  departamentoJudicialChoices,
   readOnly = false,
 }) => {
+  const { control, watch, setValue } = useFormContext<CargaOficiosFormData>()
+
+  // Watch the selected bloque_datos_remitente to filter instituciones
+  const watchedBloqueRemitente = watch("bloque_datos_remitente")
+
+  // Filter instituciones by selected bloque_datos_remitente
+  const filteredInstituciones = useMemo(() => {
+    if (!watchedBloqueRemitente) return tipoInstitucionDemanda
+    return tipoInstitucionDemanda.filter(
+      (inst) => inst.bloque_datos_remitente === watchedBloqueRemitente
+    )
+  }, [watchedBloqueRemitente, tipoInstitucionDemanda])
+
   return (
     <Box>
-      {/* Info banner about upcoming features */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          mb: 3,
-          bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-          borderRadius: 1,
-          border: "1px solid",
-          borderColor: (theme) => alpha(theme.palette.info.main, 0.3),
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 2,
-        }}
-      >
-        <InfoIcon sx={{ color: "info.main", fontSize: 20, mt: 0.25 }} />
-        <Box>
-          <Typography variant="subtitle2" sx={{ color: "info.main", fontWeight: 600, mb: 0.5 }}>
-            Campos en desarrollo
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Los siguientes campos estarán disponibles próximamente cuando se complete la
-            integración con el sistema judicial. Por ahora, puede continuar con los demás campos
-            del formulario.
-          </Typography>
-        </Box>
-      </Paper>
-
       <Grid container spacing={3}>
-        {/* Row 1: Tipo de Órgano + Departamento Judicial */}
+        {/* Row 1: Tipo de Organismo + Departamento Judicial */}
         <Grid item xs={12} md={6}>
-          <PlaceholderAutocomplete
-            label="Tipo de Órgano"
-            tooltip="Selección del tipo de órgano judicial (Juzgado, Fiscalía, etc.)"
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <PlaceholderAutocomplete
-            label="Departamento Judicial"
-            tooltip="Circunscripción judicial correspondiente al caso"
+          <Controller
+            name="bloque_datos_remitente"
+            control={control}
+            rules={{ required: "El tipo de organismo es obligatorio" }}
+            render={({ field, fieldState: { error } }) => (
+              <Autocomplete
+                disabled={readOnly}
+                options={bloquesRemitente}
+                getOptionLabel={(option) => option.nombre || ""}
+                value={bloquesRemitente.find((b) => b.id === field.value) || null}
+                onChange={(_, newValue) => {
+                  field.onChange(newValue ? newValue.id : null)
+                  // Clear institucion when tipo changes
+                  setValue("institucion", null)
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Tipo de Organismo *"
+                    required
+                    error={!!error}
+                    helperText={error?.message}
+                    placeholder="Seleccione el tipo de organismo"
+                  />
+                )}
+              />
+            )}
           />
         </Grid>
 
-        {/* Row 2: Órgano Judicial (full width) */}
-        <Grid item xs={12}>
-          <PlaceholderAutocomplete
-            label="Órgano Judicial"
-            tooltip="Órgano judicial específico que emite el oficio"
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="departamento_judicial"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <Autocomplete
+                disabled={readOnly}
+                options={departamentoJudicialChoices}
+                getOptionLabel={(option) => option.value || ""}
+                value={departamentoJudicialChoices.find((d) => d.key === field.value) || null}
+                onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Departamento Judicial"
+                    error={!!error}
+                    helperText={error?.message}
+                    placeholder="Capital o Interior"
+                  />
+                )}
+              />
+            )}
           />
         </Grid>
 
-        {/* Row 3: Delitos (multi-select) */}
+        {/* Row 2: Organismo (filtered by Tipo de Organismo) */}
         <Grid item xs={12}>
-          <PlaceholderMultiSelect
-            label="Delitos"
-            tooltip="Delitos relacionados con el caso (selección múltiple)"
+          <Controller
+            name="institucion"
+            control={control}
+            rules={{ required: "El organismo es obligatorio" }}
+            render={({ field, fieldState: { error } }) => (
+              <Autocomplete
+                disabled={readOnly || !watchedBloqueRemitente}
+                options={filteredInstituciones}
+                getOptionLabel={(option) => option.nombre || ""}
+                value={filteredInstituciones.find((i) => i.id === field.value) || null}
+                onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Organismo *"
+                    required
+                    error={!!error}
+                    helperText={
+                      error?.message ||
+                      (!watchedBloqueRemitente
+                        ? "Primero seleccione un Tipo de Organismo"
+                        : `${filteredInstituciones.length} organismos disponibles`)
+                    }
+                    placeholder="Seleccione el organismo"
+                  />
+                )}
+                noOptionsText={
+                  !watchedBloqueRemitente
+                    ? "Seleccione primero un Tipo de Organismo"
+                    : "No hay organismos para este tipo"
+                }
+              />
+            )}
           />
         </Grid>
       </Grid>

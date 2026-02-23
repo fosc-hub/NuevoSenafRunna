@@ -113,21 +113,25 @@ export interface DemandaCreatedResponse {
 }
 
 /**
+ * Helper to check if a vinculo_demanda represents a NNyA (child)
+ * Includes: NNYA, NNYA_PRINCIPAL, NNYA_SECUNDARIO, and any other NNYA_ variants
+ */
+const isNnyaVinculo = (vinculo: string): boolean => {
+  return vinculo === "NNYA" || vinculo.startsWith("NNYA_")
+}
+
+/**
  * Helper to get the count of NNyA (children) from the personas list
  */
 export const getNnyaCount = (response: DemandaCreatedResponse): number => {
-  return response.demanda_personas.filter(
-    (dp) => dp.vinculo_demanda === "NNYA_PRINCIPAL" || dp.vinculo_demanda === "NNYA"
-  ).length
+  return response.demanda_personas.filter((dp) => isNnyaVinculo(dp.vinculo_demanda)).length
 }
 
 /**
  * Helper to get the count of adults from the personas list
  */
 export const getAdultosCount = (response: DemandaCreatedResponse): number => {
-  return response.demanda_personas.filter(
-    (dp) => dp.vinculo_demanda !== "NNYA_PRINCIPAL" && dp.vinculo_demanda !== "NNYA"
-  ).length
+  return response.demanda_personas.filter((dp) => !isNnyaVinculo(dp.vinculo_demanda)).length
 }
 
 /**

@@ -407,31 +407,37 @@ function createCleanAdultoData(adulto: AdultoData, existingIds?: any): any {
  * Follows the guidelines from nested-fields-prompt.md
  */
 export function submitCleanFormData(formData: FormData, existingData?: any): any {
+  // For CARGA_OFICIOS, institucion is not needed
+  const isCargaOficios = formData.objetivo_de_demanda === 'CARGA_OFICIOS'
+
   const transformedData = {
     fecha_oficio_documento: formData.fecha_oficio_documento,
     fecha_ingreso_senaf: formData.fecha_ingreso_senaf,
     bloque_datos_remitente: formData.bloque_datos_remitente,
-    tipo_institucion: formData.tipo_institucion,
-    institucion: {
-      nombre: (() => {
-        // Handle various possible structures for institucion field
-        if (typeof formData.institucion === 'string') {
-          return formData.institucion
-        } else if (typeof formData.institucion === 'object' && formData.institucion !== null) {
-          // Check for double nesting first
-          if (typeof formData.institucion.nombre === 'object' && formData.institucion.nombre?.nombre) {
-            console.warn('⚠️ Double nesting detected in formData.institucion.nombre.nombre, fixing automatically')
-            return formData.institucion.nombre.nombre
-          }
-          // Normal object structure
-          if (typeof formData.institucion.nombre === 'string') {
-            return formData.institucion.nombre
-          }
-        }
-        return ''
-      })(),
+    // Only include tipo_institucion and institucion for non-CARGA_OFICIOS
+    ...(!isCargaOficios && {
       tipo_institucion: formData.tipo_institucion,
-    },
+      institucion: {
+        nombre: (() => {
+          // Handle various possible structures for institucion field
+          if (typeof formData.institucion === 'string') {
+            return formData.institucion
+          } else if (typeof formData.institucion === 'object' && formData.institucion !== null) {
+            // Check for double nesting first
+            if (typeof formData.institucion.nombre === 'object' && formData.institucion.nombre?.nombre) {
+              console.warn('⚠️ Double nesting detected in formData.institucion.nombre.nombre, fixing automatically')
+              return formData.institucion.nombre.nombre
+            }
+            // Normal object structure
+            if (typeof formData.institucion.nombre === 'string') {
+              return formData.institucion.nombre
+            }
+          }
+          return ''
+        })(),
+        tipo_institucion: formData.tipo_institucion,
+      },
+    }),
     ambito_vulneracion: formData.ambito_vulneracion,
     etiqueta: formData.etiqueta,
     envio_de_respuesta: formData.envio_de_respuesta,
@@ -439,17 +445,33 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
     submotivo_ingreso: formData.submotivo_ingreso,
     objetivo_de_demanda: formData.objetivo_de_demanda,
     observaciones: formData.observaciones || null,
-    localizacion: formData.localizacion,
+    // Only include localizacion if it has meaningful data
+    // For CARGA_OFICIOS, localizacion is optional
+    ...(() => {
+      const loc = formData.localizacion
+      if (!loc) return {}
+      // Check if localizacion has any meaningful values
+      const hasData = loc.calle || loc.casa_nro || loc.localidad || loc.referencia_geo ||
+                      loc.barrio || loc.cpc || loc.tipo_calle || loc.piso_depto ||
+                      loc.lote || loc.mza || loc.geolocalizacion
+      if (!hasData) return {}
+      return { localizacion: loc }
+    })(),
 
     // CARGA_OFICIOS specific fields (REG-01 GAP-06)
-    // Backend expects tipo_medida_evaluado, not tipo_medida
     ...(formData.objetivo_de_demanda === 'CARGA_OFICIOS' && {
-      tipo_oficio: formData.tipo_oficio,
-      tipo_medida_evaluado: formData.tipo_medida,
+      tipo_medida_evaluado: formData.tipo_medida_evaluado,
+      categoria_informacion_judicial: formData.categoria_informacion_judicial,
+      tipo_informacion_judicial: formData.tipo_informacion_judicial,
+      // tipo_oficio is a separate FK to TTipoOficio - only send if explicitly set
+      ...(formData.tipo_oficio ? { tipo_oficio: formData.tipo_oficio } : {}),
       numero_expediente: formData.numero_expediente || null,
-      caratula: formData.caratula || null,
+      autocaratulado: formData.caratula || null,
+      presuntos_delitos: formData.presuntos_delitos || null,
+      descripcion: formData.descripcion || null,
       plazo_dias: formData.plazo_dias ? Number(formData.plazo_dias) : null,
       fecha_vencimiento_oficio: formData.fecha_vencimiento_oficio || null,
+      departamento_judicial: formData.departamento_judicial || null,
     }),
 
     relacion_demanda: {

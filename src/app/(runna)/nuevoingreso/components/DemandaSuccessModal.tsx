@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import {
   Box,
   Typography,
@@ -24,6 +24,7 @@ import type { DemandaCreatedResponse } from "../types/demanda-response"
 import { getNnyaCount, getAdultosCount, OBJETIVO_LABELS } from "../types/demanda-response"
 import { UnifiedActividadesTable } from "@/app/(runna)/legajo/actividades/components/UnifiedActividadesTable"
 import type { TActividadPlanTrabajo } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/types/actividades"
+import { LegalActividadesKanbanInline } from "./LegalActividadesKanbanInline"
 
 interface DemandaSuccessModalProps {
   open: boolean
@@ -54,9 +55,38 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
     }
   }, [data])
 
-  // Handle updates from the table (e.g., bulk assign)
+  // Handle updates from the table (e.g., bulk assign) - only for non-EQUIPO_LEGAL activities
   const handleActividadesUpdate = useCallback((updatedActividades: TActividadPlanTrabajo[]) => {
-    setLocalActividades(updatedActividades)
+    setLocalActividades((prev) => {
+      // Keep EQUIPO_LEGAL activities unchanged, replace others with updated ones
+      const legalActividades = prev.filter((a) => a.actor === "EQUIPO_LEGAL")
+      return [...legalActividades, ...updatedActividades]
+    })
+  }, [])
+
+  // Separate EQUIPO_LEGAL activities for Kanban display
+  const { legalActividades, otherActividades } = useMemo(() => {
+    const legal: TActividadPlanTrabajo[] = []
+    const other: TActividadPlanTrabajo[] = []
+
+    localActividades.forEach((actividad) => {
+      if (actividad.actor === "EQUIPO_LEGAL") {
+        legal.push(actividad)
+      } else {
+        other.push(actividad)
+      }
+    })
+
+    return { legalActividades: legal, otherActividades: other }
+  }, [localActividades])
+
+  // Handle updates from the legal kanban
+  const handleLegalActividadesUpdate = useCallback((updatedActividades: TActividadPlanTrabajo[]) => {
+    setLocalActividades((prev) => {
+      // Replace legal activities with updated ones, keep other activities unchanged
+      const nonLegalActividades = prev.filter((a) => a.actor !== "EQUIPO_LEGAL")
+      return [...nonLegalActividades, ...updatedActividades]
+    })
   }, [])
 
   if (!data) return null
@@ -65,6 +95,8 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
   const nnyaCount = getNnyaCount(data)
   const adultosCount = getAdultosCount(data)
   const hasPlanTrabajo = localActividades.length > 0
+  const hasLegalActividades = legalActividades.length > 0
+  const hasOtherActividades = otherActividades.length > 0
 
   return (
     <BaseModal
@@ -307,12 +339,24 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
               Las siguientes actividades fueron creadas automaticamente como parte del plan de trabajo.
               Puede asignar responsables y gestionar las actividades desde esta vista.
             </Typography>
-            <UnifiedActividadesTable
-              variant="legajo"
-              actividades={localActividades}
-              onActividadesUpdate={handleActividadesUpdate}
-              showWrapper={false}
-            />
+
+            {/* EQUIPO_LEGAL activities in Kanban format */}
+            {hasLegalActividades && (
+              <LegalActividadesKanbanInline
+                actividades={legalActividades}
+                onActividadesUpdate={handleLegalActividadesUpdate}
+              />
+            )}
+
+            {/* Other activities in table format */}
+            {hasOtherActividades && (
+              <UnifiedActividadesTable
+                variant="legajo"
+                actividades={otherActividades}
+                onActividadesUpdate={handleActividadesUpdate}
+                showWrapper={false}
+              />
+            )}
           </Box>
         </>
       )}

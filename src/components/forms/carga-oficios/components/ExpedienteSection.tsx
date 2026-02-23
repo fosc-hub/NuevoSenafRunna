@@ -4,11 +4,12 @@
  * ExpedienteSection - Case file details section
  *
  * Contains fields for case/expediente information:
- * - Nro. Oficio Web (placeholder - backend gap)
- * - Plazo de Respuesta (days)
- * - Expediente (SAC number)
- * - Autos Caratulados
- * - Descripción Detallada
+ * - Número de Oficio Web (opcional)
+ * - SAC (opcional)
+ * - Plazo de Respuesta (días)
+ * - Autos Caratulados (OBLIGATORIO)
+ * - Presuntos Delitos (OBLIGATORIO) - tags separados por coma
+ * - Descripción Detallada (OBLIGATORIO)
  */
 
 import type React from "react"
@@ -18,9 +19,9 @@ import {
   Numbers as NumbersIcon,
   Schedule as ScheduleIcon,
   Gavel as GavelIcon,
+  LocalOffer as TagIcon,
 } from "@mui/icons-material"
 import { Controller, useFormContext } from "react-hook-form"
-import PlaceholderField from "./PlaceholderField"
 import type { ExpedienteSectionProps, CargaOficiosFormData } from "../types/carga-oficios.types"
 
 const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false, errors }) => {
@@ -29,11 +30,60 @@ const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false,
   return (
     <Box>
       <Grid container spacing={3}>
-        {/* Row 1: Nro. Oficio Web (placeholder) + Plazo + Expediente SAC */}
+        {/* Row 1: Nro. Oficio Web + SAC + Plazo */}
         <Grid item xs={12} md={4}>
-          <PlaceholderField
-            label="Nro. Oficio Web"
-            tooltip="Número de oficio del sistema web judicial"
+          <Controller
+            name="nro_oficio_web"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                value={field.value || ""}
+                label="Nro. Oficio Web"
+                fullWidth
+                disabled={readOnly}
+                error={!!error || !!errors?.nro_oficio_web}
+                helperText={error?.message || errors?.nro_oficio_web}
+                placeholder="Ej: 12345"
+                InputProps={{
+                  readOnly,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <NumbersIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                  sx: { fontFamily: "monospace" },
+                }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Controller
+            name="numero_expediente"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                value={field.value || ""}
+                label="SAC"
+                fullWidth
+                disabled={readOnly}
+                error={!!error || !!errors?.numero_expediente}
+                helperText={error?.message || errors?.numero_expediente}
+                placeholder="Ej: 3462384"
+                InputProps={{
+                  readOnly,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <NumbersIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                  sx: { fontFamily: "monospace" },
+                }}
+              />
+            )}
           />
         </Grid>
 
@@ -72,39 +122,6 @@ const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false,
           />
         </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Controller
-            name="numero_expediente"
-            control={control}
-            rules={{
-              pattern: {
-                value: /^[0-9]+$/,
-                message: "Solo se permiten números",
-              },
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                label="Expediente (SAC)"
-                fullWidth
-                disabled={readOnly}
-                error={!!error || !!errors?.numero_expediente}
-                helperText={error?.message || errors?.numero_expediente}
-                placeholder="Ej: 3462384"
-                InputProps={{
-                  readOnly,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <NumbersIcon sx={{ color: "text.secondary", fontSize: 20 }} />
-                    </InputAdornment>
-                  ),
-                  sx: { fontFamily: "monospace" },
-                }}
-              />
-            )}
-          />
-        </Grid>
-
         {/* Row 2: Autos Caratulados (full width) */}
         <Grid item xs={12}>
           <Controller
@@ -116,7 +133,7 @@ const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false,
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Autos Caratulados"
+                label="Autos Caratulados *"
                 fullWidth
                 required
                 disabled={readOnly}
@@ -136,16 +153,56 @@ const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false,
           />
         </Grid>
 
-        {/* Row 3: Descripción Detallada (full width, multiline) */}
+        {/* Row 3: Presuntos Delitos (tags) */}
+        <Grid item xs={12}>
+          <Controller
+            name="presuntos_delitos"
+            control={control}
+            rules={{
+              required: "Los presuntos delitos son obligatorios",
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                value={field.value || ""}
+                label="Presuntos Delitos *"
+                fullWidth
+                required
+                disabled={readOnly}
+                error={!!error || !!errors?.presuntos_delitos}
+                helperText={
+                  error?.message ||
+                  errors?.presuntos_delitos ||
+                  "Ingrese cada delito separado por coma. Ej: Robo, Hurto, Lesiones"
+                }
+                placeholder="Robo, Hurto, Lesiones..."
+                InputProps={{
+                  readOnly,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <TagIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* Row 4: Descripción Detallada (full width, multiline) */}
         <Grid item xs={12}>
           <Controller
             name="descripcion"
             control={control}
+            rules={{
+              required: "La descripción es obligatoria",
+            }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Descripción Detallada"
+                label="Descripción Detallada *"
                 fullWidth
+                required
                 multiline
                 rows={4}
                 disabled={readOnly}

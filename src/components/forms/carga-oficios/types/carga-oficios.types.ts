@@ -70,41 +70,50 @@ export interface TipoInformacionJudicial {
 }
 
 // =============================================================================
-// Órgano Judicial Types (Placeholders - Backend Gap)
+// Dropdown Option Types
 // =============================================================================
 
-/** Tipo de órgano judicial - placeholder until backend implements */
-export interface TipoOrganoJudicial {
+/** Bloque datos remitente - Tipo de Organismo */
+export interface BloqueDatosRemitente {
   id: number
   nombre: string
-  descripcion?: string
 }
 
-/** Departamento judicial - placeholder until backend implements */
-export interface DepartamentoJudicial {
+/** Tipo institucion demanda - Organismo */
+export interface TipoInstitucionDemanda {
   id: number
   nombre: string
-  circunscripcion?: string
+  bloque_datos_remitente: number
 }
 
-/** Órgano judicial - placeholder until backend implements */
-export interface OrganoJudicial {
-  id: number
-  nombre: string
-  tipo_organo?: number
-  departamento?: number
-}
-
-/** Delito for multi-select - placeholder until backend implements */
-export interface Delito {
-  id: number
-  nombre: string
-  codigo?: string
+/** Departamento judicial choices */
+export interface DepartamentoJudicialChoice {
+  key: string // CAPITAL | INTERIOR
+  value: string
 }
 
 // =============================================================================
 // Form Data Types
 // =============================================================================
+
+/** Vinculo form data for linking to legajos/medidas */
+export interface VinculoFormData {
+  legajo: number | null
+  medida: number | null
+  tipo_vinculo: number | null
+  justificacion: string
+  legajo_info?: {
+    id: number
+    numero: string
+    nnya_nombre: string
+    medidas_activas: Array<{
+      id: number
+      numero_medida: string
+      tipo_medida: string
+      estado_vigencia: string
+    }>
+  }
+}
 
 /** CARGA_OFICIOS specific form data */
 export interface CargaOficiosFormData {
@@ -114,41 +123,46 @@ export interface CargaOficiosFormData {
   // === Clasificación Section ===
   tipo_medida_evaluado: CircuitoType | null
   fecha_oficio_documento: string | null // YYYY-MM-DD format
+  fecha_ingreso_senaf: string | null // YYYY-MM-DD format - Fecha que llega a SENAF (OBLIGATORIO)
   categoria_informacion_judicial: number | null
   tipo_informacion_judicial: number | null
+  tipo_oficio: number | null // FK to TTipoOficio - Required for activity creation
 
-  // === Órgano Judicial Section (Placeholders) ===
-  tipo_organo_judicial?: number | null // Backend gap - placeholder
-  departamento_judicial?: number | null // Backend gap - placeholder
-  organo_judicial?: number | null // Backend gap - placeholder
-  delitos?: number[] // Backend gap - placeholder (multi-select)
+  // === Origen del Oficio Section ===
+  bloque_datos_remitente: number | null // Tipo de Organismo (OBLIGATORIO)
+  institucion: number | null // Organismo - filtered by bloque_datos_remitente (OBLIGATORIO)
+  departamento_judicial: string | null // CAPITAL | INTERIOR
 
   // === Expediente Section ===
-  numero_expediente: string // SAC number
-  caratula: string // Autos caratulados
+  numero_expediente?: string // SAC number (opcional)
+  nro_oficio_web?: string // Número de oficio web (opcional)
+  caratula: string // Autos caratulados (OBLIGATORIO)
   plazo_dias: number | null
-  descripcion: string
+  descripcion: string // (OBLIGATORIO)
+  presuntos_delitos: string // Tags separados por coma (OBLIGATORIO)
 
-  // === Adjuntos Section ===
-  adjuntos: Array<File | { archivo: string; id?: number; nombre?: string }>
-  nro_oficio_web?: string // Backend gap - placeholder
-  sticker_suac?: string // Backend gap - placeholder
-
-  // === Standard demanda fields needed for submission ===
-  fecha_ingreso_senaf?: string | null
-  localizacion?: {
+  // === Localización Section ===
+  localizacion: {
     calle: string
-    localidad: string
+    localidad: number | string | null
     tipo_calle?: string
     casa_nro?: string
     piso_depto?: string
     lote?: string
     mza?: string
     referencia_geo?: string
-    barrio?: string
-    cpc?: string
+    barrio?: number | string | null
+    cpc?: number | string | null
     geolocalizacion?: string
   } | null
+
+  // === Vínculos Section ===
+  vinculos: VinculoFormData[]
+
+  // === Adjuntos Section ===
+  adjuntos: Array<File | { archivo: string; id?: number; nombre?: string }>
+
+  // === Standard demanda fields needed for submission ===
   zona?: number | null
   observaciones?: string
 }
@@ -166,17 +180,28 @@ export interface CargaOficiosDropdownData {
   // CARGA_OFICIOS specific
   categoria_informacion_judicial: CategoriaInformacionJudicial[]
   tipo_informacion_judicial: TipoInformacionJudicial[]
-  tipo_oficio?: Array<{ id: number; nombre: string }>
+  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number }>
 
-  // Placeholders (will be empty until backend implements)
-  tipo_organo_judicial?: TipoOrganoJudicial[]
-  departamento_judicial?: DepartamentoJudicial[]
-  organo_judicial?: OrganoJudicial[]
-  delitos?: Delito[]
+  // Origen del Oficio dropdowns
+  bloques_datos_remitente: Array<{ id: number; nombre: string }> // Tipo de Organismo
+  tipo_institucion_demanda: Array<{ id: number; nombre: string; bloque_datos_remitente: number }> // Organismo
+  departamento_judicial_choices: Array<{ key: string; value: string }> // CAPITAL | INTERIOR
 
-  // Standard dropdowns needed
+  // Vínculos dropdown
+  tipos_vinculo?: Array<{
+    id: number
+    codigo: string
+    nombre: string
+    descripcion: string
+    activo: boolean
+  }>
+
+  // Standard dropdowns needed for localización
   zonas?: Array<{ id: number; nombre: string }>
   localidad?: Array<{ id: number; nombre: string }>
+  barrio?: Array<{ id: number; nombre: string; localidad?: number }>
+  cpc?: Array<{ id: number; nombre: string; localidad?: number }>
+  tipo_calle_choices?: Array<{ key: string; value: string }>
 }
 
 // =============================================================================
@@ -213,6 +238,9 @@ export interface PlaceholderFieldProps {
 }
 
 export interface OrganoJudicialSectionProps {
+  bloquesRemitente: Array<{ id: number; nombre: string }>
+  tipoInstitucionDemanda: Array<{ id: number; nombre: string; bloque_datos_remitente: number }>
+  departamentoJudicialChoices: Array<{ key: string; value: string }>
   readOnly?: boolean
 }
 
@@ -220,10 +248,22 @@ export interface ExpedienteSectionProps {
   readOnly?: boolean
   errors?: {
     numero_expediente?: string
+    nro_oficio_web?: string
     caratula?: string
     plazo_dias?: string
     descripcion?: string
+    presuntos_delitos?: string
   }
+}
+
+export interface LocalizacionOficioSectionProps {
+  dropdownData: {
+    localidad?: Array<{ id: number; nombre: string }>
+    barrio?: Array<{ id: number; nombre: string; localidad?: number }>
+    cpc?: Array<{ id: number; nombre: string; localidad?: number }>
+    tipo_calle_choices?: Array<{ key: string; value: string }>
+  }
+  readOnly?: boolean
 }
 
 export interface AdjuntosSectionProps {
@@ -248,12 +288,18 @@ export interface CargaOficiosFormProps {
 export interface CargaOficiosValidationErrors {
   tipo_medida_evaluado?: string
   fecha_oficio_documento?: string
+  fecha_ingreso_senaf?: string
   categoria_informacion_judicial?: string
   tipo_informacion_judicial?: string
+  bloque_datos_remitente?: string
+  institucion?: string
+  departamento_judicial?: string
   numero_expediente?: string
   caratula?: string
   plazo_dias?: string
   descripcion?: string
+  presuntos_delitos?: string
+  localizacion?: string
 }
 
 // =============================================================================

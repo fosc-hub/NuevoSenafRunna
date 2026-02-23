@@ -4,10 +4,11 @@
  * CargaOficiosForm - Main form container for CARGA_OFICIOS judicial documents
  *
  * A single scrollable form with multiple sections:
- * 1. Clasificación - Circuito toggle, Fecha, Categoría/Tipo dropdowns
- * 2. Órgano Judicial - Placeholder fields for tipo/depto/organo/delitos
- * 3. Expediente - SAC, Autos, Plazo, Descripción
- * 4. Adjuntos - FileUploadSection + Sticker SUAC placeholder
+ * 1. Clasificación - Circuito, Fechas (oficio/ingreso SENAF), Categoría/Tipo
+ * 2. Origen del Oficio - Tipo Organismo, Organismo, Departamento Judicial
+ * 3. Expediente - SAC, Nro Oficio, Autos, Plazo, Presuntos Delitos, Descripción
+ * 4. Localización - Dirección del NNyA
+ * 5. Adjuntos - FileUploadSection
  */
 
 import type React from "react"
@@ -19,6 +20,8 @@ import {
   Grid,
   Alert,
   Skeleton,
+  Autocomplete,
+  TextField,
 } from "@mui/material"
 import {
   Category as CategoryIcon,
@@ -26,6 +29,8 @@ import {
   Description as DescriptionIcon,
   AttachFile as AttachFileIcon,
   Gavel as GavelIcon,
+  LocationOn as LocationIcon,
+  Link as LinkIcon,
 } from "@mui/icons-material"
 import { Controller, useFormContext } from "react-hook-form"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
@@ -36,7 +41,9 @@ import CircuitoSelector from "./components/CircuitoSelector"
 import CategoriaInfoSection from "./components/CategoriaInfoSection"
 import OrganoJudicialSection from "./components/OrganoJudicialSection"
 import ExpedienteSection from "./components/ExpedienteSection"
+import LocalizacionOficioSection from "./components/LocalizacionOficioSection"
 import AdjuntosSection from "./components/AdjuntosSection"
+import VinculosManager from "../components/VinculosManager"
 
 // Hooks
 import { useCargaOficiosDropdowns } from "./hooks/useCargaOficiosDropdowns"
@@ -120,14 +127,17 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
 }) => {
   const { control, watch, setValue } = useFormContext<CargaOficiosFormData>()
 
-  // Fetch CARGA_OFICIOS specific dropdowns
+  // Get CARGA_OFICIOS specific dropdowns from main dropdownData
   const {
     categorias,
     tipos,
     isLoading: isLoadingDropdowns,
     isError: isDropdownError,
     getTiposByCategoria,
-  } = useCargaOficiosDropdowns()
+  } = useCargaOficiosDropdowns({
+    categorias: dropdownData.categoria_informacion_judicial || [],
+    tipos: dropdownData.tipo_informacion_judicial || [],
+  })
 
   // Watch form values
   const watchedCircuito = watch("tipo_medida_evaluado")
@@ -222,7 +232,7 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
               rules={{ required: "La fecha del oficio es obligatoria" }}
               render={({ field, fieldState: { error } }) => (
                 <DatePicker
-                  label="Fecha del Oficio"
+                  label="Fecha del Oficio *"
                   disabled={readOnly}
                   value={parseDateSafely(field.value)}
                   onChange={(date) => field.onChange(formatDateSafely(date))}
@@ -232,6 +242,32 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
                       required: true,
                       error: !!error,
                       helperText: error?.message,
+                      size: "medium",
+                    },
+                  }}
+                />
+              )}
+            />
+          </Grid>
+
+          {/* Fecha Ingreso SENAF */}
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="fecha_ingreso_senaf"
+              control={control}
+              rules={{ required: "La fecha de ingreso a SENAF es obligatoria" }}
+              render={({ field, fieldState: { error } }) => (
+                <DatePicker
+                  label="Fecha Ingreso SENAF *"
+                  disabled={readOnly}
+                  value={parseDateSafely(field.value)}
+                  onChange={(date) => field.onChange(formatDateSafely(date))}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      required: true,
+                      error: !!error,
+                      helperText: error?.message || "Fecha en que el oficio llega a SENAF",
                       size: "medium",
                     },
                   }}
@@ -252,12 +288,63 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
               readOnly={readOnly}
             />
           </Grid>
+
+          {/* Tipo de Oficio - Required for activity creation */}
+          <Grid item xs={12}>
+            <Controller
+              name="tipo_oficio"
+              control={control}
+              rules={{ required: "El tipo de oficio es obligatorio" }}
+              render={({ field, fieldState: { error } }) => (
+                <Autocomplete
+                  disabled={readOnly}
+                  options={dropdownData.tipo_oficio || []}
+                  getOptionLabel={(option) => option.nombre || ""}
+                  value={(dropdownData.tipo_oficio || []).find((t) => t.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                  isOptionEqualToValue={(option, value) => option.id === value?.id}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Tipo de Oficio *"
+                      required
+                      error={!!error}
+                      helperText={error?.message || "Seleccione el tipo de oficio judicial"}
+                      placeholder="Seleccione el tipo de oficio"
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} sx={{ py: 1.5, px: 2 }}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {option.nombre}
+                        </Typography>
+                        {option.descripcion && (
+                          <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                            {option.descripcion}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+                />
+              )}
+            />
+          </Grid>
         </Grid>
       </FormSection>
 
-      {/* Section 2: Órgano Judicial (Placeholders) */}
-      <FormSection title="Información del Órgano Judicial" icon={AccountBalanceIcon}>
-        <OrganoJudicialSection readOnly={readOnly} />
+      {/* Section 2: Origen del Oficio */}
+      <FormSection title="Origen del Oficio" icon={AccountBalanceIcon}>
+        <OrganoJudicialSection
+          bloquesRemitente={dropdownData.bloques_datos_remitente || []}
+          tipoInstitucionDemanda={dropdownData.tipo_institucion_demanda || []}
+          departamentoJudicialChoices={dropdownData.departamento_judicial_choices || [
+            { key: "CAPITAL", value: "Capital" },
+            { key: "INTERIOR", value: "Interior" },
+          ]}
+          readOnly={readOnly}
+        />
       </FormSection>
 
       {/* Section 3: Detalles del Expediente */}
@@ -265,7 +352,28 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
         <ExpedienteSection readOnly={readOnly} />
       </FormSection>
 
-      {/* Section 4: Adjuntos */}
+      {/* Section 4: Localización del NNyA */}
+      <FormSection title="Localización del NNyA" icon={LocationIcon}>
+        <LocalizacionOficioSection
+          dropdownData={{
+            localidad: dropdownData.localidad,
+            barrio: dropdownData.barrio,
+            cpc: dropdownData.cpc,
+            tipo_calle_choices: dropdownData.tipo_calle_choices,
+          }}
+          readOnly={readOnly}
+        />
+      </FormSection>
+
+      {/* Section 5: Vínculos con Legajos y Medidas */}
+      <FormSection title="Vínculos con Legajos y Medidas" icon={LinkIcon}>
+        <VinculosManager
+          dropdownData={dropdownData}
+          readOnly={readOnly}
+        />
+      </FormSection>
+
+      {/* Section 6: Adjuntos */}
       <FormSection title="Documentos Adjuntos" icon={AttachFileIcon}>
         <AdjuntosSection
           files={adjuntosManager.files}

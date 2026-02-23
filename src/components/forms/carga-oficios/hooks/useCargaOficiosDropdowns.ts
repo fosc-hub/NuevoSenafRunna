@@ -1,26 +1,31 @@
 "use client"
 
 /**
- * useCargaOficiosDropdowns - Hook for fetching and filtering CARGA_OFICIOS dropdown data
+ * useCargaOficiosDropdowns - Hook for managing CARGA_OFICIOS dropdown data
  *
- * Fetches categoria_informacion_judicial and tipo_informacion_judicial from the API
- * and provides filtered tipos based on selected categoria.
+ * Uses categoria_informacion_judicial and tipo_informacion_judicial from the
+ * main dropdowns endpoint (passed as props) and provides filtered tipos based
+ * on selected categoria.
  */
 
 import { useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { get } from "@/app/api/apiService"
 import type {
   CategoriaInformacionJudicial,
   TipoInformacionJudicial,
 } from "../types/carga-oficios.types"
+
+interface UseCargaOficiosDropdownsOptions {
+  /** Array of categorias from main dropdowns endpoint */
+  categorias?: CategoriaInformacionJudicial[]
+  /** Array of tipos from main dropdowns endpoint */
+  tipos?: TipoInformacionJudicial[]
+}
 
 interface UseCargaOficiosDropdownsResult {
   categorias: CategoriaInformacionJudicial[]
   tipos: TipoInformacionJudicial[]
   isLoading: boolean
   isError: boolean
-  error: Error | null
 
   /** Get tipos filtered by categoria ID */
   getTiposByCategoria: (categoriaId: number | null) => TipoInformacionJudicial[]
@@ -33,75 +38,25 @@ interface UseCargaOficiosDropdownsResult {
 }
 
 /**
- * Hook to fetch and manage CARGA_OFICIOS dropdown data
+ * Hook to manage CARGA_OFICIOS dropdown data
  *
- * @param enabled - Whether to enable the query (default: true)
+ * @param options - Dropdown data from main dropdowns endpoint
  * @returns Dropdown data with helper functions
  */
-export const useCargaOficiosDropdowns = (enabled = true): UseCargaOficiosDropdownsResult => {
-  // Fetch categoria_informacion_judicial
-  const {
-    data: categoriasData,
-    isLoading: isLoadingCategorias,
-    isError: isErrorCategorias,
-    error: errorCategorias,
-  } = useQuery<CategoriaInformacionJudicial[]>({
-    queryKey: ["categoria-informacion-judicial"],
-    queryFn: async () => {
-      try {
-        const response = await get<CategoriaInformacionJudicial[] | { results: CategoriaInformacionJudicial[] }>(
-          "categoria-informacion-judicial/"
-        )
-        // Handle paginated response
-        if (response && "results" in response) {
-          return response.results
-        }
-        return response || []
-      } catch (error) {
-        console.warn("Could not fetch categoria_informacion_judicial:", error)
-        return []
-      }
-    },
-    enabled,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  })
-
-  // Fetch tipo_informacion_judicial
-  const {
-    data: tiposData,
-    isLoading: isLoadingTipos,
-    isError: isErrorTipos,
-    error: errorTipos,
-  } = useQuery<TipoInformacionJudicial[]>({
-    queryKey: ["tipo-informacion-judicial"],
-    queryFn: async () => {
-      try {
-        const response = await get<TipoInformacionJudicial[] | { results: TipoInformacionJudicial[] }>(
-          "tipo-informacion-judicial/"
-        )
-        // Handle paginated response
-        if (response && "results" in response) {
-          return response.results
-        }
-        return response || []
-      } catch (error) {
-        console.warn("Could not fetch tipo_informacion_judicial:", error)
-        return []
-      }
-    },
-    enabled,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  })
+export const useCargaOficiosDropdowns = (
+  options: UseCargaOficiosDropdownsOptions = {}
+): UseCargaOficiosDropdownsResult => {
+  const { categorias: rawCategorias = [], tipos: rawTipos = [] } = options
 
   // Filter only active categorias
   const categorias = useMemo(() => {
-    return (categoriasData || []).filter((c) => c.esta_activo)
-  }, [categoriasData])
+    return rawCategorias.filter((c) => c.esta_activo !== false)
+  }, [rawCategorias])
 
   // Filter only active tipos
   const tipos = useMemo(() => {
-    return (tiposData || []).filter((t) => t.esta_activo)
-  }, [tiposData])
+    return rawTipos.filter((t) => t.esta_activo !== false)
+  }, [rawTipos])
 
   // Get tipos filtered by categoria
   const getTiposByCategoria = useMemo(() => {
@@ -127,12 +82,15 @@ export const useCargaOficiosDropdowns = (enabled = true): UseCargaOficiosDropdow
     }
   }, [tipos])
 
+  // isLoading/isError are determined by whether data was provided
+  const isLoading = rawCategorias.length === 0 && rawTipos.length === 0
+  const isError = false
+
   return {
     categorias,
     tipos,
-    isLoading: isLoadingCategorias || isLoadingTipos,
-    isError: isErrorCategorias || isErrorTipos,
-    error: errorCategorias || errorTipos || null,
+    isLoading: false, // Data comes from parent, loading is handled there
+    isError,
     getTiposByCategoria,
     getCategoriaById,
     getTipoById,

@@ -68,6 +68,7 @@ const ORIGEN_OPTIONS = [
   { value: 'DEMANDA_PI', label: 'Demanda - Petición de Informe' },
   { value: 'DEMANDA_OFICIO', label: 'Demanda - Carga de Oficios' },
   { value: 'OFICIO', label: 'Oficio Judicial' },
+  { value: 'AUTO_RECURSIVA', label: 'Automática Recursiva' },
 ]
 
 // Actor options

@@ -47,6 +47,7 @@ import PlayCircleIcon from "@mui/icons-material/PlayCircle"
 import ErrorIcon from "@mui/icons-material/Error"
 import TimelineIcon from "@mui/icons-material/Timeline"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
+import RepeatIcon from "@mui/icons-material/Repeat"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/utils/auth/userZustand"
@@ -1024,6 +1025,40 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                         )}
                         {actividad.es_borrador && (
                           <Chip label="BORRADOR" size="small" variant="outlined" color="warning" sx={{ fontWeight: 500, fontSize: "0.65rem" }} />
+                        )}
+                        {/* Recursive Activity Indicator - Sprint 3 */}
+                        {actividad.tipo_actividad_info?.es_recursiva && (
+                          <Tooltip
+                            title={
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>
+                                  Actividad Recursiva
+                                </Typography>
+                                <Typography variant="caption">
+                                  Se crea automáticamente cada {actividad.tipo_actividad_info.periodo_recursion_dias} días
+                                </Typography>
+                                {actividad.origen === "AUTO_RECURSIVA" && (
+                                  <Typography variant="caption" display="block" sx={{ mt: 0.5, fontStyle: "italic" }}>
+                                    Creada automáticamente por el sistema
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                          >
+                            <Chip
+                              icon={<RepeatIcon sx={{ fontSize: 14 }} />}
+                              label={actividad.origen === "AUTO_RECURSIVA" ? "AUTO" : `${actividad.tipo_actividad_info.periodo_recursion_dias}d`}
+                              size="small"
+                              variant="outlined"
+                              color="secondary"
+                              sx={{
+                                fontSize: "0.65rem",
+                                height: 20,
+                                backgroundColor: actividad.origen === "AUTO_RECURSIVA" ? "rgba(156, 39, 176, 0.1)" : "transparent",
+                                "& .MuiChip-icon": { color: "inherit" }
+                              }}
+                            />
+                          </Tooltip>
                         )}
                         {actividad.adjuntos && actividad.adjuntos.length > 0 && (
                           <Tooltip title={`${actividad.adjuntos.length} archivos`}>

@@ -104,6 +104,21 @@ export interface TTipoActividad {
 
   /** V3.0: Display name for actor (readonly) */
   actor_display: string
+
+  /**
+   * Sprint 3: Actividades Recursivas
+   * If true, activities of this type are created automatically at regular intervals
+   * by the crear_actividades_recursivas management command
+   */
+  es_recursiva: boolean
+
+  /**
+   * Sprint 3: Actividades Recursivas
+   * Period in days for creating the next activity of this type
+   * Required and must be > 0 when es_recursiva=True
+   * Must be null when es_recursiva=False
+   */
+  periodo_recursion_dias: number | null
 }
 
 // Attachment
@@ -267,8 +282,11 @@ export interface TActividadPlanTrabajo {
   referentes_externos: string | null
 
   // Origin
-  /** Activity origin */
-  origen: 'MANUAL' | 'DEMANDA_PI' | 'DEMANDA_OFICIO' | 'OFICIO'
+  /**
+   * Activity origin
+   * AUTO_RECURSIVA: Created automatically by crear_actividades_recursivas command (Sprint 3)
+   */
+  origen: 'MANUAL' | 'DEMANDA_PI' | 'DEMANDA_OFICIO' | 'OFICIO' | 'AUTO_RECURSIVA'
 
   /** Display name for origen (readonly) */
   origen_display: string
@@ -639,6 +657,51 @@ export const getActorIcon = (actor: ActorEnum): string => {
     'ADULTOS_INSTITUCION': 'Business'
   }
   return icons[actor] || 'Group'
+}
+
+// ============================================================================
+// Sprint 3: Origin Types and Utilities (Actividades Recursivas)
+// ============================================================================
+
+/**
+ * Origin enum - Source of activity creation
+ * Sprint 3: Added AUTO_RECURSIVA for recurring activities
+ */
+export type OrigenEnum =
+  | 'MANUAL'
+  | 'DEMANDA_PI'
+  | 'DEMANDA_OFICIO'
+  | 'OFICIO'
+  | 'AUTO_RECURSIVA'
+
+/**
+ * Origin display labels
+ * Maps origin enum values to human-readable Spanish labels
+ */
+export const ORIGEN_LABELS: Record<OrigenEnum, string> = {
+  MANUAL: 'Creación Manual',
+  DEMANDA_PI: 'Demanda - Petición de Informe',
+  DEMANDA_OFICIO: 'Demanda - Carga de Oficios',
+  OFICIO: 'Oficio Judicial',
+  AUTO_RECURSIVA: 'Automática Recursiva'
+}
+
+/**
+ * Origin color mapping for consistent UI representation
+ * Returns Material-UI compatible color hex codes
+ *
+ * @param origen - The origin enum value
+ * @returns Hex color code for the origin
+ */
+export const getOrigenColor = (origen: OrigenEnum | string): string => {
+  const colors: Record<string, string> = {
+    'MANUAL': '#757575',         // gray - manual creation
+    'DEMANDA_PI': '#1976d2',     // blue - demand petition
+    'DEMANDA_OFICIO': '#0288d1', // light blue - demand office
+    'OFICIO': '#7b1fa2',         // purple - judicial office
+    'AUTO_RECURSIVA': '#9c27b0'  // deep purple - automatic recursive
+  }
+  return colors[origen] || '#757575' // gray fallback
 }
 
 // ============================================================================

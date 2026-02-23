@@ -1360,6 +1360,7 @@ const DemandaTableContent: React.FC = () => {
         open={isAsignarModalOpen}
         onClose={handleCloseAsignarModal}
         demandaId={selectedDemandaIdForAssignment}
+        onSuccess={refetch}
       />
     </>
   )

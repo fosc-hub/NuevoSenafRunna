@@ -37,6 +37,7 @@ interface AsignarModalProps {
   open: boolean
   onClose: () => void
   demandaId: number | null
+  onSuccess?: () => void
 }
 
 interface Zona {
@@ -83,7 +84,7 @@ interface DemandaZona {
   objetivo?: string
 }
 
-const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId }) => {
+const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, onSuccess }) => {
   const [value, setValue] = useState(0)
   const [selectedZona, setSelectedZona] = useState<number | null>(null)
   const [comentarios, setComentarios] = useState("")
@@ -229,6 +230,8 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId })
       // Recargar los datos para obtener la última asignación
       await refetchMainData()
       setComentarios("")
+      // Notificar al componente padre para refrescar la bandeja
+      onSuccess?.()
     } catch (error) {
       console.error("Error assigning demanda:", error)
       toast.error("Error al asignar la demanda")

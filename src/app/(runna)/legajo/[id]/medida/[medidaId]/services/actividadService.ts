@@ -25,7 +25,11 @@ import type {
   // Bulk operations
   BulkUpdateActividadesRequest,
   BulkTransferActividadesRequest,
-  BulkOperationResponse
+  BulkOperationResponse,
+  // Sprint 2: Lectura Multi-Usuario
+  LecturasResponse,
+  LeidaPorMiResponse,
+  MarcarLeidaResponse
 } from '../types/actividades'
 
 export const actividadService = {
@@ -319,5 +323,49 @@ export const actividadService = {
    */
   async bulkTransfer(data: BulkTransferActividadesRequest): Promise<BulkOperationResponse> {
     return create<BulkOperationResponse>('actividades/bulk-transferir/', data, true, 'Actividades transferidas exitosamente')
+  },
+
+  // ============================================================================
+  // SPRINT 2: Sistema de Lectura Multi-Usuario
+  // Endpoints: POST /api/actividades/{id}/marcar-leida/
+  //            GET  /api/actividades/{id}/lecturas/
+  //            GET  /api/actividades/{id}/leida-por-mi/
+  // ============================================================================
+
+  /**
+   * Mark activity as read by current user
+   * Endpoint: POST /api/actividades/{id}/marcar-leida/
+   *
+   * Behavior:
+   * - First read: Creates new TLecturaActividad record (HTTP 201)
+   * - Already read: Updates fecha_lectura timestamp (HTTP 200)
+   *
+   * @param id - Activity ID
+   * @returns Lectura record with created flag
+   */
+  async marcarLeida(id: number): Promise<MarcarLeidaResponse> {
+    return create<MarcarLeidaResponse>(`actividades/${id}/marcar-leida/`, {}, false)
+  },
+
+  /**
+   * Get list of users who have read the activity
+   * Endpoint: GET /api/actividades/{id}/lecturas/
+   *
+   * @param id - Activity ID
+   * @returns List of readers with timestamps
+   */
+  async getLecturas(id: number): Promise<LecturasResponse> {
+    return get<LecturasResponse>(`actividades/${id}/lecturas/`)
+  },
+
+  /**
+   * Check if current user has read the activity
+   * Endpoint: GET /api/actividades/{id}/leida-por-mi/
+   *
+   * @param id - Activity ID
+   * @returns Read status and timestamp (null if not read)
+   */
+  async getLeidaPorMi(id: number): Promise<LeidaPorMiResponse> {
+    return get<LeidaPorMiResponse>(`actividades/${id}/leida-por-mi/`)
   }
 }

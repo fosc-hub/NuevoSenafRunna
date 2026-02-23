@@ -48,7 +48,9 @@ import ErrorIcon from "@mui/icons-material/Error"
 import TimelineIcon from "@mui/icons-material/Timeline"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import RepeatIcon from "@mui/icons-material/Repeat"
-import { useQuery, keepPreviousData } from "@tanstack/react-query"
+import FiberNewIcon from "@mui/icons-material/FiberNew"
+import MarkEmailUnreadIcon from "@mui/icons-material/MarkEmailUnread"
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/utils/auth/userZustand"
 
@@ -151,6 +153,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   showWrapper = true,
 }) => {
   const router = useRouter()
+  const queryClient = useQueryClient()
   useUser() // For auth context
   const { actorFilter, allowedActors, isActorAllowed, canSeeAllActors } = useActorVisibility()
 
@@ -183,21 +186,12 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   const [planAccionModalOpen, setPlanAccionModalOpen] = useState(false)
   const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
 
-  // Acuse de Recibo (global variant only)
+  // Acuse de Recibo / Lectura Multi-Usuario (global variant)
   const [pendingAcuseActividad, setPendingAcuseActividad] = useState<TActividadPlanTrabajo | null>(null)
-  const [acknowledgedIds, setAcknowledgedIds] = useState<Set<number>>(() => {
-    if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("acknowledgedActividades")
-      if (stored) {
-        try {
-          return new Set(JSON.parse(stored))
-        } catch {
-          return new Set()
-        }
-      }
-    }
-    return new Set()
-  })
+
+  // Sprint 2: Multi-user read tracking - local cache of read activity IDs
+  // This is populated from API responses and updated optimistically on marcarLeida
+  const [readActivityIds, setReadActivityIds] = useState<Set<number>>(new Set())
 
   // ============================================================================
   // DATA FETCHING
@@ -395,6 +389,71 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
     return filteredActividades.slice(start, start + rowsPerPage)
   }, [filteredActividades, page, rowsPerPage, variant])
 
+  // ============================================================================
+  // SPRINT 2: Lectura Multi-Usuario
+  // ============================================================================
+
+  // Mutation to mark activity as read
+  const marcarLeidaMutation = useMutation({
+    mutationFn: (actividadId: number) => actividadService.marcarLeida(actividadId),
+    onSuccess: (data) => {
+      // Update local cache optimistically
+      setReadActivityIds((prev) => new Set([...prev, data.actividad]))
+      // Invalidate queries to refresh data if needed
+      queryClient.invalidateQueries({ queryKey: ["actividad-lectura"] })
+    },
+  })
+
+  // Get IDs of currently displayed activities for batch read status check
+  const actividadIdsForLectura = useMemo(() => {
+    return paginatedActividades.map((a) => a.id)
+  }, [paginatedActividades])
+
+  // Query to check which activities the current user has read
+  // Batches individual leida-por-mi calls for efficiency
+  const { data: lecturaStatusMap } = useQuery({
+    queryKey: ["actividad-lectura-batch", actividadIdsForLectura],
+    queryFn: async () => {
+      if (actividadIdsForLectura.length === 0) return {}
+      // Fetch read status for each activity in parallel
+      const results = await Promise.all(
+        actividadIdsForLectura.map(async (id) => {
+          try {
+            const response = await actividadService.getLeidaPorMi(id)
+            return { id, leida: response.leida }
+          } catch {
+            return { id, leida: false }
+          }
+        })
+      )
+      // Convert to map for O(1) lookup
+      return results.reduce((acc, { id, leida }) => {
+        acc[id] = leida
+        return acc
+      }, {} as Record<number, boolean>)
+    },
+    enabled: variant === "global" && actividadIdsForLectura.length > 0,
+    staleTime: 30 * 1000, // 30 seconds - balance between freshness and API calls
+  })
+
+  // Sync API lectura status with local state
+  React.useEffect(() => {
+    if (lecturaStatusMap) {
+      const readIds = Object.entries(lecturaStatusMap)
+        .filter(([_, leida]) => leida)
+        .map(([id]) => Number(id))
+      setReadActivityIds((prev) => new Set([...prev, ...readIds]))
+    }
+  }, [lecturaStatusMap])
+
+  // Helper function to check if activity has been read by current user
+  const isActivityRead = useCallback(
+    (actividadId: number) => {
+      return readActivityIds.has(actividadId)
+    },
+    [readActivityIds]
+  )
+
   // Statistics
   const statistics = useMemo(() => {
     const sourceData = variant === "global" ? actividades : filteredActividades
@@ -439,7 +498,8 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
         (filters as GlobalActividadFilters).fecha_hasta ||
         (filters as GlobalActividadFilters).vencida ||
         (filters as GlobalActividadFilters).pendiente_visado ||
-        (filters as GlobalActividadFilters).es_borrador
+        (filters as GlobalActividadFilters).es_borrador ||
+        (filters as GlobalActividadFilters).sin_leer // Sprint 2: Lectura Multi-Usuario
     )
   }, [filters])
 
@@ -485,6 +545,9 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
       pendiente_visado: undefined,
       es_borrador: undefined,
       dias_restantes_max: undefined,
+      // Sprint 2: Lectura Multi-Usuario
+      sin_leer: undefined,
+      leida_por_mi: undefined,
     })
     setPage(0)
   }, [])
@@ -514,9 +577,13 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   }, [])
 
   const handleViewDetail = useCallback((actividad: TActividadPlanTrabajo) => {
+    // Sprint 2: Auto-mark as read when viewing detail (global variant)
+    if (variant === "global" && !isActivityRead(actividad.id)) {
+      marcarLeidaMutation.mutate(actividad.id)
+    }
     setSelectedActividad(actividad)
     setDetailModalOpen(true)
-  }, [])
+  }, [variant, isActivityRead, marcarLeidaMutation])
 
   const handleEdit = useCallback((actividad: TActividadPlanTrabajo) => {
     setSelectedActividad(actividad)
@@ -546,30 +613,26 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
 
   const handleRequestAcuse = useCallback(
     (actividad: TActividadPlanTrabajo) => {
-      if (acknowledgedIds.has(actividad.id)) {
+      // Sprint 2: Use backend-based read status
+      if (isActivityRead(actividad.id)) {
         handleViewDetail(actividad)
       } else {
         setPendingAcuseActividad(actividad)
       }
     },
-    [acknowledgedIds, handleViewDetail]
+    [isActivityRead, handleViewDetail]
   )
 
   const handleConfirmAcuse = useCallback(() => {
     if (pendingAcuseActividad) {
-      const newAcknowledged = new Set(acknowledgedIds)
-      newAcknowledged.add(pendingAcuseActividad.id)
-      setAcknowledgedIds(newAcknowledged)
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("acknowledgedActividades", JSON.stringify([...newAcknowledged]))
-      }
+      // Sprint 2: Mark as read via backend API
+      marcarLeidaMutation.mutate(pendingAcuseActividad.id)
 
       setSelectedActividad(pendingAcuseActividad)
       setDetailModalOpen(true)
       setPendingAcuseActividad(null)
     }
-  }, [pendingAcuseActividad, acknowledgedIds])
+  }, [pendingAcuseActividad, marcarLeidaMutation])
 
   const handleRowClick = useCallback(
     (actividad: TActividadPlanTrabajo) => {
@@ -967,7 +1030,9 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
             paginatedActividades.map((actividad) => {
               const estadoConfig = getEstadoColor(actividad.estado)
               const isSelected = selectedIds.has(actividad.id)
-              const isAcknowledged = acknowledgedIds.has(actividad.id)
+              // Sprint 2: Use backend-based read status
+              const isRead = variant === "global" ? isActivityRead(actividad.id) : true
+              const isUnread = variant === "global" && !isRead
 
               return (
                 <TableRow
@@ -978,6 +1043,8 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                   sx={{
                     backgroundColor: isSelected
                       ? "rgba(156, 39, 176, 0.08)"
+                      : isUnread
+                      ? "rgba(25, 118, 210, 0.04)" // Light blue for unread
                       : actividad.esta_vencida && actividad.estado === "PENDIENTE"
                       ? "rgba(211, 47, 47, 0.05)"
                       : actividad.es_borrador
@@ -985,6 +1052,8 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                       : "transparent",
                     borderLeft: isSelected
                       ? "4px solid #9c27b0"
+                      : isUnread
+                      ? "4px solid #1976d2" // Blue left border for unread
                       : actividad.esta_vencida && actividad.estado === "PENDIENTE"
                       ? "4px solid #d32f2f"
                       : actividad.es_borrador
@@ -992,6 +1061,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                       : "4px solid transparent",
                     transition: "all 0.2s",
                     cursor: variant === "global" ? "pointer" : "default",
+                    fontWeight: isUnread ? 600 : 400, // Bold text for unread
                   }}
                 >
                   {/* Checkbox */}
@@ -1020,6 +1090,16 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                         )}
                       </Box>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-end" }}>
+                        {/* Sprint 2: Unread badge for global variant */}
+                        {isUnread && (
+                          <Chip
+                            icon={<FiberNewIcon sx={{ fontSize: 14 }} />}
+                            label="Nueva"
+                            size="small"
+                            color="primary"
+                            sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }}
+                          />
+                        )}
                         {actividad.esta_vencida && actividad.estado === "PENDIENTE" && (
                           <Chip label="VENCIDA" size="small" color="error" sx={{ fontWeight: 600, fontSize: "0.65rem" }} />
                         )}
@@ -1198,10 +1278,10 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                   {/* Acciones */}
                   <TableCell sx={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
                     <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center", flexWrap: "wrap" }}>
-                      {/* Acuse de Recibo / View */}
+                      {/* Acuse de Recibo / View - Sprint 2: Uses isRead from backend */}
                       {features.showAcuseRecibo ? (
-                        isAcknowledged ? (
-                          <Tooltip title="Ver detalle (ya confirmado)">
+                        isRead ? (
+                          <Tooltip title="Ver detalle (ya leída)">
                             <IconButton
                               size="small"
                               onClick={() => handleViewDetail(actividad)}
@@ -1216,18 +1296,18 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                             </IconButton>
                           </Tooltip>
                         ) : (
-                          <Tooltip title="Acuse de Recibo - Confirmar para ver">
+                          <Tooltip title="Marcar como leída y ver detalle">
                             <IconButton
                               size="small"
                               onClick={() => handleRequestAcuse(actividad)}
                               sx={{
-                                backgroundColor: "rgba(255, 152, 0, 0.1)",
-                                color: "warning.main",
-                                "&:hover": { backgroundColor: "rgba(255, 152, 0, 0.2)", transform: "scale(1.1)" },
+                                backgroundColor: "rgba(25, 118, 210, 0.1)",
+                                color: "primary.main",
+                                "&:hover": { backgroundColor: "rgba(25, 118, 210, 0.2)", transform: "scale(1.1)" },
                                 transition: "all 0.2s",
                               }}
                             >
-                              <ReceiptLongIcon fontSize="small" />
+                              <MarkEmailUnreadIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )

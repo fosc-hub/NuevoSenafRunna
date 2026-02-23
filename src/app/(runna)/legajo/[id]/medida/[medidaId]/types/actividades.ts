@@ -813,3 +813,55 @@ export interface BulkOperationResponse {
     error: string
   }>
 }
+
+// ============================================================================
+// SPRINT 2: Sistema de Lectura Multi-Usuario
+// Modelo: TLecturaActividad
+// Endpoints:
+//   POST /api/actividades/{id}/marcar-leida/
+//   GET  /api/actividades/{id}/lecturas/
+//   GET  /api/actividades/{id}/leida-por-mi/
+//   GET  /api/actividades/?sin_leer=true
+// ============================================================================
+
+/**
+ * Reader info for activity readings list
+ * Endpoint: GET /api/actividades/{id}/lecturas/
+ */
+export interface TLecturaLector {
+  usuario_id: number
+  username: string
+  nombre_completo: string
+  fecha_lectura: string
+}
+
+/**
+ * Response for activity readings list
+ * Endpoint: GET /api/actividades/{id}/lecturas/
+ */
+export interface LecturasResponse {
+  lectores: TLecturaLector[]
+  total: number
+}
+
+/**
+ * Response for checking if current user read activity
+ * Endpoint: GET /api/actividades/{id}/leida-por-mi/
+ */
+export interface LeidaPorMiResponse {
+  leida: boolean
+  fecha_lectura: string | null
+}
+
+/**
+ * Response for marking activity as read
+ * Endpoint: POST /api/actividades/{id}/marcar-leida/
+ */
+export interface MarcarLeidaResponse {
+  id: number
+  actividad: number
+  usuario: number
+  fecha_lectura: string
+  created: boolean
+  message: string
+}

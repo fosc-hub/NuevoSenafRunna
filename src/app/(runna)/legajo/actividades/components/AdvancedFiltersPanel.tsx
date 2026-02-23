@@ -34,6 +34,7 @@ import FolderIcon from '@mui/icons-material/Folder'
 import ChildCareIcon from '@mui/icons-material/ChildCare'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import CategoryIcon from '@mui/icons-material/Category'
+import MarkEmailUnreadIcon from '@mui/icons-material/MarkEmailUnread'
 import { useCatalogData, extractArray } from '@/hooks/useApiQuery'
 import type { GlobalActividadFilters } from '../services/globalActividadService'
 import type { TTipoActividad } from '../../[id]/medida/[medidaId]/types/actividades'
@@ -198,6 +199,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
     filters.pendiente_visado,
     filters.es_borrador,
     filters.dias_restantes_max,
+    filters.sin_leer, // Sprint 2: Lectura Multi-Usuario
   ].filter(Boolean).length
 
   const getUserDisplayName = (user: Usuario) => {
@@ -599,6 +601,27 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
               </Grid>
               <Grid item xs={12} sm={6} md={9}>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', pt: 1 }}>
+                  {/* Sprint 2: Sin leer filter - only for global variant */}
+                  {variant === 'global' && (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={filters.sin_leer === true}
+                          onChange={(e) =>
+                            onFilterChange('sin_leer', e.target.checked ? true : undefined)
+                          }
+                          color="primary"
+                          icon={<MarkEmailUnreadIcon />}
+                          checkedIcon={<MarkEmailUnreadIcon />}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>
+                          Solo sin leer
+                        </Typography>
+                      }
+                    />
+                  )}
                   <FormControlLabel
                     control={
                       <Checkbox

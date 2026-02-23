@@ -83,6 +83,12 @@ export interface GlobalActividadFilters {
   /** Legacy: Filter for overdue activities (deprecated, use vencida) */
   vencidas?: string
 
+  // ===== Sprint 2: Lectura Multi-Usuario =====
+  /** Filter for activities NOT read by current user (true = only unread) */
+  sin_leer?: boolean
+  /** Filter for activities read by current user (true = only read) */
+  leida_por_mi?: boolean
+
   // ===== Date Range Filters =====
   /** Activity planned date from */
   fecha_desde?: string

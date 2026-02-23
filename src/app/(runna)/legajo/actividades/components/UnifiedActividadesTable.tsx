@@ -186,12 +186,12 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   const [planAccionModalOpen, setPlanAccionModalOpen] = useState(false)
   const [selectedActividad, setSelectedActividad] = useState<TActividadPlanTrabajo | null>(null)
 
-  // Acuse de Recibo / Lectura Multi-Usuario (global variant)
+  // Acuse de Recibo / Lectura Multi-Usuario
   const [pendingAcuseActividad, setPendingAcuseActividad] = useState<TActividadPlanTrabajo | null>(null)
 
-  // Sprint 2: Multi-user read tracking - local cache of read activity IDs
-  // This is populated from API responses and updated optimistically on marcarLeida
-  const [readActivityIds, setReadActivityIds] = useState<Set<number>>(new Set())
+  // Sprint 2: Track locally marked-as-read IDs for optimistic UI updates
+  // Used to show immediate feedback before query invalidation refreshes data
+  const [optimisticReadIds, setOptimisticReadIds] = useState<Set<number>>(new Set())
 
   // ============================================================================
   // DATA FETCHING
@@ -391,67 +391,39 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
 
   // ============================================================================
   // SPRINT 2: Lectura Multi-Usuario
+  // Uses leida_por_mi field from activity response (backend prefetched)
   // ============================================================================
 
   // Mutation to mark activity as read
   const marcarLeidaMutation = useMutation({
     mutationFn: (actividadId: number) => actividadService.marcarLeida(actividadId),
     onSuccess: (data) => {
-      // Update local cache optimistically
-      setReadActivityIds((prev) => new Set([...prev, data.actividad]))
-      // Invalidate queries to refresh data if needed
-      queryClient.invalidateQueries({ queryKey: ["actividad-lectura"] })
+      // Optimistic update for immediate UI feedback
+      setOptimisticReadIds((prev) => new Set([...prev, data.actividad]))
+      // Invalidate queries to refresh data with updated leida_por_mi
+      queryClient.invalidateQueries({ queryKey: ["global-actividades"] })
+      // Invalidate medida-specific queries (prefix match)
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0]
+          return typeof key === "string" && key.startsWith("actividades-plan")
+        },
+      })
+      // For legajo variant (prop-based), call onRefresh to notify parent
+      onRefresh?.()
     },
   })
-
-  // Get IDs of currently displayed activities for batch read status check
-  const actividadIdsForLectura = useMemo(() => {
-    return paginatedActividades.map((a) => a.id)
-  }, [paginatedActividades])
-
-  // Query to check which activities the current user has read
-  // Batches individual leida-por-mi calls for efficiency
-  const { data: lecturaStatusMap } = useQuery({
-    queryKey: ["actividad-lectura-batch", actividadIdsForLectura],
-    queryFn: async () => {
-      if (actividadIdsForLectura.length === 0) return {}
-      // Fetch read status for each activity in parallel
-      const results = await Promise.all(
-        actividadIdsForLectura.map(async (id) => {
-          try {
-            const response = await actividadService.getLeidaPorMi(id)
-            return { id, leida: response.leida }
-          } catch {
-            return { id, leida: false }
-          }
-        })
-      )
-      // Convert to map for O(1) lookup
-      return results.reduce((acc, { id, leida }) => {
-        acc[id] = leida
-        return acc
-      }, {} as Record<number, boolean>)
-    },
-    enabled: variant === "global" && actividadIdsForLectura.length > 0,
-    staleTime: 30 * 1000, // 30 seconds - balance between freshness and API calls
-  })
-
-  // Sync API lectura status with local state
-  React.useEffect(() => {
-    if (lecturaStatusMap) {
-      const readIds = Object.entries(lecturaStatusMap)
-        .filter(([_, leida]) => leida)
-        .map(([id]) => Number(id))
-      setReadActivityIds((prev) => new Set([...prev, ...readIds]))
-    }
-  }, [lecturaStatusMap])
 
   // Helper function to check if activity has been read by current user
+  // Uses leida_por_mi from API response, with optimistic fallback
   const isActivityRead = useCallback(
-    (actividadId: number) => {
-      return readActivityIds.has(actividadId)
+    (actividad: TActividadPlanTrabajo) => {
+      // Check optimistic state first (for immediate feedback after marking as read)
+      if (optimisticReadIds.has(actividad.id)) return true
+      // Then check the backend-provided field
+      return actividad.leida_por_mi === true
     },
-    [readActivityIds]
+    [optimisticReadIds]
   )
 
   // Statistics
@@ -577,13 +549,13 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   }, [])
 
   const handleViewDetail = useCallback((actividad: TActividadPlanTrabajo) => {
-    // Sprint 2: Auto-mark as read when viewing detail (global variant)
-    if (variant === "global" && !isActivityRead(actividad.id)) {
+    // Sprint 2: Auto-mark as read when viewing detail (all variants)
+    if (!isActivityRead(actividad)) {
       marcarLeidaMutation.mutate(actividad.id)
     }
     setSelectedActividad(actividad)
     setDetailModalOpen(true)
-  }, [variant, isActivityRead, marcarLeidaMutation])
+  }, [isActivityRead, marcarLeidaMutation])
 
   const handleEdit = useCallback((actividad: TActividadPlanTrabajo) => {
     setSelectedActividad(actividad)
@@ -613,8 +585,8 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
 
   const handleRequestAcuse = useCallback(
     (actividad: TActividadPlanTrabajo) => {
-      // Sprint 2: Use backend-based read status
-      if (isActivityRead(actividad.id)) {
+      // Sprint 2: Use backend-based read status (leida_por_mi field)
+      if (isActivityRead(actividad)) {
         handleViewDetail(actividad)
       } else {
         setPendingAcuseActividad(actividad)
@@ -636,11 +608,10 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
 
   const handleRowClick = useCallback(
     (actividad: TActividadPlanTrabajo) => {
-      if (variant === "global") {
-        handleRequestAcuse(actividad)
-      }
+      // All variants: Use Acuse de Recibo flow for unread activities
+      handleRequestAcuse(actividad)
     },
-    [variant, handleRequestAcuse]
+    [handleRequestAcuse]
   )
 
   const handleBulkSuccess = useCallback((updatedActividades?: TActividadPlanTrabajo[]) => {
@@ -687,8 +658,8 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
       showFechaPlanificacion: true, // Show for all variants
       showZonas: variant === "global", // Show zonas column for global activities (PLTM Zonas Anidadas)
 
-      // Global-specific features
-      showAcuseRecibo: variant === "global",
+      // Acuse de Recibo - enabled for ALL variants
+      showAcuseRecibo: true,
       showGoToLegajo: variant === "global",
       showRefreshButton: variant === "global" || variant === "medida",
 
@@ -1030,9 +1001,9 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
             paginatedActividades.map((actividad) => {
               const estadoConfig = getEstadoColor(actividad.estado)
               const isSelected = selectedIds.has(actividad.id)
-              // Sprint 2: Use backend-based read status
-              const isRead = variant === "global" ? isActivityRead(actividad.id) : true
-              const isUnread = variant === "global" && !isRead
+              // Sprint 2: Use leida_por_mi from API response (all variants)
+              const isRead = isActivityRead(actividad)
+              const isUnread = !isRead
 
               return (
                 <TableRow
@@ -1060,7 +1031,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                       ? "4px solid #ed6c02"
                       : "4px solid transparent",
                     transition: "all 0.2s",
-                    cursor: variant === "global" ? "pointer" : "default",
+                    cursor: "pointer", // All variants: clickable rows open detail modal
                     fontWeight: isUnread ? 600 : 400, // Bold text for unread
                   }}
                 >

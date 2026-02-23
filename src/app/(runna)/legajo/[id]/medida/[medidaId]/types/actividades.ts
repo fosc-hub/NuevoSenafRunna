@@ -341,6 +341,13 @@ export interface TActividadPlanTrabajo {
   /** Remaining days until deadline */
   dias_restantes: number
 
+  // Sprint 2: Multi-user read tracking (computed per-user, readonly)
+  /** Whether the current user has read this activity */
+  leida_por_mi?: boolean
+
+  /** Timestamp when current user read this activity (null if not read) */
+  fecha_lectura?: string | null
+
   // Attachments
   /** List of attachments (readonly) */
   adjuntos: TAdjuntoActividad[]

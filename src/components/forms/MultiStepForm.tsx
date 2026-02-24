@@ -77,6 +77,16 @@ const getSteps = (formVariant: FormVariant) => {
   return [objetivoStep, ...standardSteps]
 }
 
+/**
+ * Derive FormVariant from ObjetivoDemanda
+ */
+const getFormVariantFromObjetivo = (objetivo: ObjetivoDemanda | null | undefined): FormVariant => {
+  if (objetivo === "CARGA_OFICIOS") {
+    return "CARGA_OFICIOS"
+  }
+  return "STANDARD"
+}
+
 
 interface MultiStepFormProps {
   initialData?: FormData
@@ -114,7 +124,9 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   demandaId,
 }) => {
   const [activeStep, setActiveStep] = useState(0)
-  const [formVariant, setFormVariant] = useState<FormVariant>("STANDARD")
+  const [formVariant, setFormVariant] = useState<FormVariant>(
+    getFormVariantFromObjetivo(initialData?.objetivo_de_demanda as ObjetivoDemanda | undefined)
+  )
   const [selectedObjetivo, setSelectedObjetivo] = useState<ObjetivoDemanda | null>(
     initialData?.objetivo_de_demanda as ObjetivoDemanda | null
   )

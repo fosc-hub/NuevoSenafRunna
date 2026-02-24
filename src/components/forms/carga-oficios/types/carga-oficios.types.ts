@@ -180,7 +180,7 @@ export interface CargaOficiosDropdownData {
   // CARGA_OFICIOS specific
   categoria_informacion_judicial: CategoriaInformacionJudicial[]
   tipo_informacion_judicial: TipoInformacionJudicial[]
-  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number }>
+  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number; categoria?: number }>
 
   // Origen del Oficio dropdowns
   bloques_datos_remitente: Array<{ id: number; nombre: string }> // Tipo de Organismo
@@ -218,16 +218,16 @@ export interface CircuitoSelectorProps {
 
 export interface CategoriaInfoSectionProps {
   categorias: CategoriaInformacionJudicial[]
-  tipos: TipoInformacionJudicial[]
   selectedCategoria: number | null
-  selectedTipo: number | null
   onCategoriaChange: (categoriaId: number | null) => void
-  onTipoChange: (tipoId: number | null) => void
   readOnly?: boolean
   errors?: {
     categoria?: string
-    tipo?: string
   }
+  // Deprecated props - kept for backward compatibility but no longer used
+  tipos?: TipoInformacionJudicial[]
+  selectedTipo?: number | null
+  onTipoChange?: (tipoId: number | null) => void
 }
 
 export interface PlaceholderFieldProps {

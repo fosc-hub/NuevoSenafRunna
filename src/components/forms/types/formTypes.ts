@@ -262,7 +262,7 @@ export interface DropdownData {
   ultimo_cursado_choices: any
   tipo_escuela_choices: any
   // CARGA_OFICIOS dropdown fields (REG-01 GAP-06)
-  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number }>;
+  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number; categoria?: number }>;
   tipo_medida_choices?: DropdownOption[];  // MPI, MPE, MPJ
   // CARGA_OFICIOS categorization dropdowns
   categoria_informacion_judicial?: CategoriaInformacionJudicial[];

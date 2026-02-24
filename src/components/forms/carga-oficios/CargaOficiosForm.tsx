@@ -12,7 +12,7 @@
  */
 
 import type React from "react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import {
   Box,
   Paper,
@@ -142,8 +142,25 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
   // Watch form values
   const watchedCircuito = watch("tipo_medida_evaluado")
   const watchedCategoria = watch("categoria_informacion_judicial")
-  const watchedTipo = watch("tipo_informacion_judicial")
   const watchedAdjuntos = watch("adjuntos") || []
+
+  // Track previous categoria to detect changes
+  const prevCategoriaRef = useRef(watchedCategoria)
+
+  // Filter tipo_oficio by selected categoria
+  const filteredTipoOficio = useMemo(() => {
+    if (!watchedCategoria) return []
+    return (dropdownData.tipo_oficio || []).filter((t) => t.categoria === watchedCategoria)
+  }, [watchedCategoria, dropdownData.tipo_oficio])
+
+  // Clear tipo_oficio when categoria changes
+  useEffect(() => {
+    if (prevCategoriaRef.current !== watchedCategoria && prevCategoriaRef.current !== undefined) {
+      // Categoria changed, clear tipo_oficio
+      setValue("tipo_oficio", null)
+    }
+    prevCategoriaRef.current = watchedCategoria
+  }, [watchedCategoria, setValue])
 
   // Adjuntos manager
   const adjuntosManager = useAdjuntosManager({
@@ -276,31 +293,28 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
             />
           </Grid>
 
-          {/* Categoría and Tipo dropdowns */}
-          <Grid item xs={12}>
+          {/* Categoría dropdown */}
+          <Grid item xs={12} md={6}>
             <CategoriaInfoSection
               categorias={categorias}
-              tipos={tipos}
               selectedCategoria={watchedCategoria}
-              selectedTipo={watchedTipo}
               onCategoriaChange={(value) => setValue("categoria_informacion_judicial", value)}
-              onTipoChange={(value) => setValue("tipo_informacion_judicial", value)}
               readOnly={readOnly}
             />
           </Grid>
 
-          {/* Tipo de Oficio - Required for activity creation */}
-          <Grid item xs={12}>
+          {/* Tipo de Oficio - Filtered by selected categoria */}
+          <Grid item xs={12} md={6}>
             <Controller
               name="tipo_oficio"
               control={control}
               rules={{ required: "El tipo de oficio es obligatorio" }}
               render={({ field, fieldState: { error } }) => (
                 <Autocomplete
-                  disabled={readOnly}
-                  options={dropdownData.tipo_oficio || []}
+                  disabled={readOnly || !watchedCategoria}
+                  options={filteredTipoOficio}
                   getOptionLabel={(option) => option.nombre || ""}
-                  value={(dropdownData.tipo_oficio || []).find((t) => t.id === field.value) || null}
+                  value={filteredTipoOficio.find((t) => t.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
                   isOptionEqualToValue={(option, value) => option.id === value?.id}
                   renderInput={(params) => (
@@ -309,7 +323,12 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
                       label="Tipo de Oficio *"
                       required
                       error={!!error}
-                      helperText={error?.message || "Seleccione el tipo de oficio judicial"}
+                      helperText={
+                        error?.message ||
+                        (!watchedCategoria
+                          ? "Seleccione primero una categoría"
+                          : "Seleccione el tipo de oficio judicial")
+                      }
                       placeholder="Seleccione el tipo de oficio"
                     />
                   )}
@@ -327,6 +346,11 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
                       </Box>
                     </Box>
                   )}
+                  noOptionsText={
+                    watchedCategoria
+                      ? "No se encontraron tipos de oficio para esta categoría"
+                      : "Seleccione una categoría primero"
+                  }
                 />
               )}
             />

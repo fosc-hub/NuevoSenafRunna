@@ -169,6 +169,27 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
 
     // Adjuntos (attachments)
     adjuntos: apiData.adjuntos || [],
+
+    // Vinculos mapping from API response
+    // Vinculos can point to different destino types: medida, legajo, demanda
+    vinculos: (apiData.vinculos || []).map((vinculo: any) => ({
+      legajo: vinculo.legajo_origen || null,
+      medida: vinculo.tipo_destino === "medida" ? vinculo.destino_info?.id : null,
+      tipo_vinculo: vinculo.tipo_vinculo?.id || null,
+      justificacion: vinculo.justificacion || "",
+      // UI helper fields for display
+      legajo_info: {
+        id: vinculo.legajo_origen,
+        numero: vinculo.legajo_origen_numero || "",
+        nnya_nombre: vinculo.legajo_origen_numero || "",
+        medidas_activas: vinculo.tipo_destino === "medida" && vinculo.destino_info ? [{
+          id: vinculo.destino_info.id,
+          numero_medida: vinculo.destino_info.numero || "",
+          tipo_medida: vinculo.destino_info.tipo_medida || "",
+          estado_vigencia: "VIGENTE",
+        }] : [],
+      },
+    })),
   }
 }
 

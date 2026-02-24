@@ -41,12 +41,12 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
 }) => {
   const router = useRouter()
 
-  // Fetch medidas using TanStack Query
+  // Fetch medidas using TanStack Query (all medidas, not just VIGENTE)
   const { data: medidasData, isLoading, error: queryError } = useApiQuery<MedidaBasicResponse[]>(
     `legajo/${legajoData.legajo.id}/medidas`,
-    { estado_vigencia: "VIGENTE", _refresh: refreshTrigger },
+    { _refresh: refreshTrigger },
     {
-      queryFn: () => getMedidasByLegajo(legajoData.legajo.id, { estado_vigencia: "VIGENTE" }),
+      queryFn: () => getMedidasByLegajo(legajoData.legajo.id, {}),
       enabled: !!legajoData.legajo.id,
     }
   )
@@ -167,7 +167,7 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
     <SectionCard
       title="Registro de medidas tomadas"
       chips={[{
-        label: `${medidas.length} activa${medidas.length !== 1 ? "s" : ""}`,
+        label: `${medidas.length} medida${medidas.length !== 1 ? "s" : ""}`,
         color: "primary"
       }]}
       headerActions={

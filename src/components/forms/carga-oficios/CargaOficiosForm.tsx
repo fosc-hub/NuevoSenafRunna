@@ -128,15 +128,13 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
   const { control, watch, setValue } = useFormContext<CargaOficiosFormData>()
 
   // Get CARGA_OFICIOS specific dropdowns from main dropdownData
+  // Note: tipo_informacion_judicial is deprecated - we use tipo_oficio filtered by categoria instead
   const {
     categorias,
-    tipos,
     isLoading: isLoadingDropdowns,
     isError: isDropdownError,
-    getTiposByCategoria,
   } = useCargaOficiosDropdowns({
     categorias: dropdownData.categoria_informacion_judicial || [],
-    tipos: dropdownData.tipo_informacion_judicial || [],
   })
 
   // Watch form values
@@ -184,11 +182,6 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
       // This would require reinitializing the adjuntos manager
     }
   }, [watchedAdjuntos])
-
-  // Filtered tipos based on selected categoria
-  const filteredTipos = useMemo(() => {
-    return getTiposByCategoria(watchedCategoria)
-  }, [watchedCategoria, getTiposByCategoria])
 
   if (isLoadingDropdowns) {
     return <LoadingSkeleton />

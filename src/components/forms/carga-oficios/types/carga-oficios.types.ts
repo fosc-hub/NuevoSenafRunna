@@ -125,7 +125,8 @@ export interface CargaOficiosFormData {
   fecha_oficio_documento: string | null // YYYY-MM-DD format
   fecha_ingreso_senaf: string | null // YYYY-MM-DD format - Fecha que llega a SENAF (OBLIGATORIO)
   categoria_informacion_judicial: number | null
-  tipo_informacion_judicial: number | null
+  /** @deprecated No longer used - always null. Use tipo_oficio instead which is filtered by categoria */
+  tipo_informacion_judicial?: null
   tipo_oficio: number | null // FK to TTipoOficio - Required for activity creation
 
   // === Origen del Oficio Section ===
@@ -179,8 +180,10 @@ export interface CargaOficiosDropdownData {
 
   // CARGA_OFICIOS specific
   categoria_informacion_judicial: CategoriaInformacionJudicial[]
-  tipo_informacion_judicial: TipoInformacionJudicial[]
-  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number; categoria?: number }>
+  /** @deprecated No longer used. Use tipo_oficio filtered by categoria instead */
+  tipo_informacion_judicial?: TipoInformacionJudicial[]
+  // Note: API returns categoria as nested object {id, nombre}, not just ID
+  tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number; categoria?: number | { id: number; nombre: string } }>
 
   // Origen del Oficio dropdowns
   bloques_datos_remitente: Array<{ id: number; nombre: string }> // Tipo de Organismo
@@ -290,6 +293,7 @@ export interface CargaOficiosValidationErrors {
   fecha_oficio_documento?: string
   fecha_ingreso_senaf?: string
   categoria_informacion_judicial?: string
+  /** @deprecated No longer validated - field is deprecated */
   tipo_informacion_judicial?: string
   bloque_datos_remitente?: string
   institucion?: string

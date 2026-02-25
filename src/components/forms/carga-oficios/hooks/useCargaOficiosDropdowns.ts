@@ -3,9 +3,10 @@
 /**
  * useCargaOficiosDropdowns - Hook for managing CARGA_OFICIOS dropdown data
  *
- * Uses categoria_informacion_judicial and tipo_informacion_judicial from the
- * main dropdowns endpoint (passed as props) and provides filtered tipos based
- * on selected categoria.
+ * Uses categoria_informacion_judicial from the main dropdowns endpoint.
+ *
+ * @deprecated tipo_informacion_judicial is deprecated - use tipo_oficio filtered by categoria instead.
+ * The tipos-related functionality in this hook is kept for backward compatibility but should not be used.
  */
 
 import { useMemo } from "react"
@@ -17,23 +18,24 @@ import type {
 interface UseCargaOficiosDropdownsOptions {
   /** Array of categorias from main dropdowns endpoint */
   categorias?: CategoriaInformacionJudicial[]
-  /** Array of tipos from main dropdowns endpoint */
+  /** @deprecated Use tipo_oficio from dropdownData instead, filtered by categoria */
   tipos?: TipoInformacionJudicial[]
 }
 
 interface UseCargaOficiosDropdownsResult {
   categorias: CategoriaInformacionJudicial[]
+  /** @deprecated Use tipo_oficio from dropdownData instead */
   tipos: TipoInformacionJudicial[]
   isLoading: boolean
   isError: boolean
 
-  /** Get tipos filtered by categoria ID */
+  /** @deprecated Use filteredTipoOficio from CargaOficiosForm instead */
   getTiposByCategoria: (categoriaId: number | null) => TipoInformacionJudicial[]
 
   /** Get a specific categoria by ID */
   getCategoriaById: (id: number | null) => CategoriaInformacionJudicial | undefined
 
-  /** Get a specific tipo by ID */
+  /** @deprecated Use tipo_oficio from dropdownData instead */
   getTipoById: (id: number | null) => TipoInformacionJudicial | undefined
 }
 

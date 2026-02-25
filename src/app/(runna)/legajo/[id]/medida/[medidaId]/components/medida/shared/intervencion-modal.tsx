@@ -16,7 +16,6 @@
  * @see useRegistroIntervencion - Business logic hook (preserved as-is)
  */
 
-import type React from "react"
 import {
     Box,
     Typography,
@@ -28,6 +27,8 @@ import {
     InputLabel,
     Divider,
     Card,
+    CardHeader,
+    CardContent,
     RadioGroup,
     FormControlLabel,
     Radio,
@@ -36,8 +37,11 @@ import {
     FormHelperText,
     Snackbar,
     Chip,
+    Paper,
+    Avatar,
+    IconButton,
 } from "@mui/material"
-import { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import PersonIcon from "@mui/icons-material/Person"
 import BusinessIcon from "@mui/icons-material/Business"
 import DescriptionIcon from "@mui/icons-material/Description"
@@ -45,6 +49,11 @@ import UploadFileIcon from "@mui/icons-material/UploadFile"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import SendIcon from "@mui/icons-material/Send"
 import SaveIcon from "@mui/icons-material/Save"
+import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import DownloadIcon from "@mui/icons-material/Download"
+import DeleteIcon from "@mui/icons-material/Delete"
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf"
+import AttachFileIcon from "@mui/icons-material/AttachFile"
 
 // Import atomic components
 import { WizardModal, type WizardStep } from "./wizard-modal"
@@ -194,6 +203,12 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [pendingFileTipos, setPendingFileTipos] = useState<string[]>([])
 
+    // Mandatory document state (Informe Obligatorio)
+    const [informeObligatorio, setInformeObligatorio] = useState<File | null>(null)
+    const [informeObligatorioError, setInformeObligatorioError] = useState<string | null>(null)
+    const [isDraggingInformeObligatorio, setIsDraggingInformeObligatorio] = useState(false)
+    const informeObligatorioInputRef = useRef<HTMLInputElement>(null)
+
     // ============================================================================
     // EFFECTS
     // ============================================================================
@@ -233,6 +248,21 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
      */
     const handleSaveAndSend = async () => {
         try {
+            // Validate mandatory document
+            if (!informeObligatorio) {
+                setInformeObligatorioError('El Informe Obligatorio es requerido para enviar la intervención')
+                setSnackbar({
+                    open: true,
+                    message: 'Debe adjuntar el Informe Obligatorio antes de guardar y enviar',
+                    severity: 'error'
+                })
+                // Navigate to step 3 (Documentos) if not already there
+                if (activeStep !== 2) {
+                    setActiveStep(2)
+                }
+                return
+            }
+
             const isNewIntervention = !intervencion && !intervencionId
 
             if (isNewIntervention) {
@@ -243,15 +273,21 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                     severity: 'info'
                 })
 
+                // Combine informeObligatorio with pending files
+                const allFiles = [informeObligatorio, ...pendingFiles]
+                const allFileTipos = ['INFORME', ...pendingFileTipos]
+
                 const result = await guardarYEnviar(
-                    pendingFiles.length > 0 ? pendingFiles : undefined,
-                    pendingFileTipos.length > 0 ? pendingFileTipos : undefined
+                    allFiles.length > 0 ? allFiles : undefined,
+                    allFileTipos.length > 0 ? allFileTipos : undefined
                 )
 
                 if (result) {
-                    // Clear pending files after successful creation
+                    // Clear pending files and mandatory document after successful creation
                     setPendingFiles([])
                     setPendingFileTipos([])
+                    setInformeObligatorio(null)
+                    setInformeObligatorioError(null)
 
                     setSnackbar({
                         open: true,
@@ -279,6 +315,16 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                     severity: 'info'
                 })
 
+                // Upload informe obligatorio first (if not already uploaded)
+                if (informeObligatorio) {
+                    setSnackbar({
+                        open: true,
+                        message: 'Subiendo informe obligatorio...',
+                        severity: 'info'
+                    })
+                    await uploadAdjuntoFile(informeObligatorio, 'INFORME')
+                }
+
                 const result = await guardarBorrador()
                 if (!result) {
                     setSnackbar({
@@ -300,6 +346,10 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
 
                 const sendResult = await enviar()
                 if (sendResult) {
+                    // Clear mandatory document after successful upload
+                    setInformeObligatorio(null)
+                    setInformeObligatorioError(null)
+
                     setSnackbar({
                         open: true,
                         message: 'Intervención guardada y enviada a aprobación exitosamente',
@@ -485,6 +535,115 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         fecha_subida: adj.fecha_subida,
         tamano: adj.tamaño_bytes,
     })), [adjuntos])
+
+    // ============================================================================
+    // HANDLERS - Informe Obligatorio (Mandatory Document)
+    // ============================================================================
+
+    /**
+     * Format file size for display
+     */
+    const formatFileSize = useCallback((bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+    }, [])
+
+    /**
+     * Validate PDF file
+     */
+    const validatePdfFile = useCallback((file: File): string | null => {
+        if (file.type !== 'application/pdf') {
+            return `"${file.name}" no es un archivo PDF`
+        }
+        if (file.size > 10 * 1024 * 1024) { // 10MB
+            return `"${file.name}" excede el tamaño máximo de 10MB`
+        }
+        return null
+    }, [])
+
+    /**
+     * Handle template download
+     */
+    const handleDownloadTemplate = useCallback(() => {
+        const link = document.createElement('a')
+        link.href = '/templates/informe-obligatorio-template.pdf'
+        link.download = 'plantilla-informe-obligatorio.pdf'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }, [])
+
+    /**
+     * Handle informe obligatorio file selection
+     */
+    const handleInformeObligatorioSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        const error = validatePdfFile(file)
+        if (error) {
+            setInformeObligatorioError(error)
+            return
+        }
+
+        setInformeObligatorio(file)
+        setInformeObligatorioError(null)
+
+        if (informeObligatorioInputRef.current) {
+            informeObligatorioInputRef.current.value = ''
+        }
+    }, [validatePdfFile])
+
+    /**
+     * Handle removing informe obligatorio
+     */
+    const handleRemoveInformeObligatorio = useCallback(() => {
+        setInformeObligatorio(null)
+        setInformeObligatorioError(null)
+    }, [])
+
+    /**
+     * Drag-drop handlers for informe obligatorio
+     */
+    const handleInformeObligatorioDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (canEdit) {
+            setIsDraggingInformeObligatorio(true)
+        }
+    }, [canEdit])
+
+    const handleInformeObligatorioDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDraggingInformeObligatorio(false)
+    }, [])
+
+    const handleInformeObligatorioDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+    }, [])
+
+    const handleInformeObligatorioDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDraggingInformeObligatorio(false)
+
+        if (!canEdit) return
+
+        const files = e.dataTransfer.files
+        if (files && files.length > 0) {
+            const file = files[0]
+            const error = validatePdfFile(file)
+            if (error) {
+                setInformeObligatorioError(error)
+                return
+            }
+            setInformeObligatorio(file)
+            setInformeObligatorioError(null)
+        }
+    }, [canEdit, validatePdfFile])
 
     // ============================================================================
     // STEP CONTENT DEFINITIONS
@@ -784,24 +943,185 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
             case 2: // Documentos y Configuración - MERGED from previous steps 2 and 3
                 return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {/* Documentos y Archivos Section */}
-                        <Card elevation={2} sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                <UploadFileIcon sx={{ color: 'primary.main', mr: 1 }} />
-                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                    Documentos y Archivos
-                                </Typography>
-                            </Box>
-
-                            {/* File Upload Section */}
-                            {intervencion ? (
-                                // EXISTING INTERVENTION: Show uploaded files and allow more uploads
-                                <>
-                                    <Alert severity="info" sx={{ mb: 3 }}>
-                                        <Typography variant="body2">
-                                            Adjunte los documentos relacionados con la intervención (modelos, actas, respaldos, informes).
+                        {/* ============================================================ */}
+                        {/* INFORME OBLIGATORIO SECTION (Required) */}
+                        {/* ============================================================ */}
+                        <Card
+                            variant="outlined"
+                            sx={{
+                                borderColor: informeObligatorioError ? 'error.main' : informeObligatorio ? 'success.main' : 'divider',
+                                borderWidth: informeObligatorio ? 2 : 1,
+                            }}
+                        >
+                            <CardHeader
+                                avatar={
+                                    <Avatar sx={{ bgcolor: informeObligatorio ? 'success.main' : 'primary.main' }}>
+                                        <DescriptionIcon />
+                                    </Avatar>
+                                }
+                                title={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                            Informe Obligatorio
                                         </Typography>
+                                        <Chip label="Requerido" size="small" color="error" variant="outlined" />
+                                    </Box>
+                                }
+                                subheader="Documento oficial requerido para la intervención en formato PDF"
+                                action={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={handleDownloadTemplate}
+                                            sx={{ textTransform: 'none' }}
+                                        >
+                                            Descargar Plantilla
+                                        </Button>
+                                        {informeObligatorio && (
+                                            <Chip
+                                                icon={<CheckCircleIcon />}
+                                                label="Archivo cargado"
+                                                color="success"
+                                                size="small"
+                                            />
+                                        )}
+                                    </Box>
+                                }
+                            />
+                            <CardContent>
+                                {informeObligatorio ? (
+                                    // File is uploaded - show success state
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: 2,
+                                            bgcolor: 'success.50',
+                                            borderColor: 'success.200',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <PictureAsPdfIcon color="error" sx={{ fontSize: 40 }} />
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                                {informeObligatorio.name}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {formatFileSize(informeObligatorio.size)}
+                                            </Typography>
+                                        </Box>
+                                        {canEdit && (
+                                            <IconButton
+                                                onClick={handleRemoveInformeObligatorio}
+                                                color="error"
+                                                title="Eliminar archivo"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        )}
+                                    </Paper>
+                                ) : (
+                                    // No file - show drag-drop zone
+                                    <Paper
+                                        onDragEnter={handleInformeObligatorioDragEnter}
+                                        onDragOver={handleInformeObligatorioDragOver}
+                                        onDragLeave={handleInformeObligatorioDragLeave}
+                                        onDrop={handleInformeObligatorioDrop}
+                                        onClick={() => canEdit && informeObligatorioInputRef.current?.click()}
+                                        sx={{
+                                            border: isDraggingInformeObligatorio ? '2px dashed' : '2px dashed',
+                                            borderColor: isDraggingInformeObligatorio ? 'primary.main' : informeObligatorioError ? 'error.main' : 'divider',
+                                            borderRadius: 2,
+                                            p: 4,
+                                            textAlign: 'center',
+                                            cursor: canEdit ? 'pointer' : 'not-allowed',
+                                            backgroundColor: isDraggingInformeObligatorio ? 'action.hover' : 'background.default',
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                backgroundColor: canEdit ? 'action.hover' : 'background.default',
+                                                borderColor: canEdit ? 'primary.main' : 'divider',
+                                            },
+                                        }}
+                                    >
+                                        <CloudUploadIcon
+                                            sx={{
+                                                fontSize: 48,
+                                                color: isDraggingInformeObligatorio ? 'primary.main' : 'text.secondary',
+                                                mb: 2,
+                                            }}
+                                        />
+                                        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                                            {isDraggingInformeObligatorio ? "Suelta el archivo aquí" : "Arrastra y suelta el informe obligatorio"}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                            o haz clic para seleccionar
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Solo archivos PDF, máximo 10MB
+                                        </Typography>
+                                        <input
+                                            ref={informeObligatorioInputRef}
+                                            type="file"
+                                            accept=".pdf,application/pdf"
+                                            style={{ display: 'none' }}
+                                            onChange={handleInformeObligatorioSelect}
+                                            disabled={!canEdit}
+                                        />
+                                    </Paper>
+                                )}
+
+                                {/* Error message */}
+                                {informeObligatorioError && (
+                                    <Alert severity="error" sx={{ mt: 2 }} onClose={() => setInformeObligatorioError(null)}>
+                                        {informeObligatorioError}
                                     </Alert>
+                                )}
+
+                                {/* Warning if no file */}
+                                {!informeObligatorio && !informeObligatorioError && (
+                                    <Alert severity="warning" sx={{ mt: 2 }}>
+                                        Este documento es obligatorio para guardar y enviar la intervención.
+                                    </Alert>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* ============================================================ */}
+                        {/* DOCUMENTOS ADICIONALES SECTION (Optional) */}
+                        {/* ============================================================ */}
+                        <Card variant="outlined">
+                            <CardHeader
+                                avatar={
+                                    <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                                        <AttachFileIcon />
+                                    </Avatar>
+                                }
+                                title={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                            Documentos Adicionales
+                                        </Typography>
+                                        <Chip label="Opcional" size="small" color="default" variant="outlined" />
+                                    </Box>
+                                }
+                                subheader="Adjunte documentos adicionales si es necesario (modelos, actas, respaldos)"
+                                action={
+                                    (intervencion ? mappedAdjuntos.length : pendingFiles.length) > 0 && (
+                                        <Chip
+                                            label={`${intervencion ? mappedAdjuntos.length : pendingFiles.length} archivo${(intervencion ? mappedAdjuntos.length : pendingFiles.length) !== 1 ? 's' : ''}`}
+                                            color="secondary"
+                                            size="small"
+                                        />
+                                    )
+                                }
+                            />
+                            <CardContent>
+                                {/* File Upload Section */}
+                                {intervencion ? (
+                                    // EXISTING INTERVENTION: Show uploaded files and allow more uploads
                                     <FileUploadSection
                                         files={mappedAdjuntos}
                                         isLoading={isLoadingAdjuntos}
@@ -812,86 +1132,105 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                         maxSizeInMB={10}
                                         disabled={!canEdit}
                                         readOnly={!canEdit}
-                                        title="Archivos subidos"
+                                        title=""
                                         uploadButtonLabel="Seleccionar archivos"
-                                        emptyMessage="No hay archivos adjuntos aún."
+                                        emptyMessage="No hay documentos adicionales adjuntos."
                                         isUploading={isUploadingAdjunto}
+                                        multiple={true}
                                     />
-                                </>
-                            ) : (
-                                // NEW INTERVENTION: Allow queuing files for upload with creation
-                                <>
-                                    <Alert severity="info" sx={{ mb: 3 }}>
-                                        <Typography variant="body2">
-                                            Seleccione los archivos que desea adjuntar. Se subirán automáticamente al guardar y enviar la intervención.
-                                        </Typography>
-                                    </Alert>
-
-                                    {/* Pending files list */}
-                                    {pendingFiles.length > 0 && (
-                                        <Box sx={{ mb: 2 }}>
-                                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                                                Archivos pendientes ({pendingFiles.length}):
-                                            </Typography>
-                                            {pendingFiles.map((file, index) => (
-                                                <Box
-                                                    key={index}
-                                                    sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        p: 1,
-                                                        mb: 1,
-                                                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                                                        borderRadius: 1,
-                                                    }}
-                                                >
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <DescriptionIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                                                        <Typography variant="body2">{file.name}</Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                                                        </Typography>
-                                                    </Box>
-                                                    <Button
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => handleRemovePendingFile(index)}
+                                ) : (
+                                    // NEW INTERVENTION: Allow queuing files for upload with creation
+                                    <>
+                                        {/* Pending files list */}
+                                        {pendingFiles.length > 0 && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                                    Archivos pendientes ({pendingFiles.length}):
+                                                </Typography>
+                                                {pendingFiles.map((file, index) => (
+                                                    <Paper
+                                                        key={index}
+                                                        variant="outlined"
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            p: 1.5,
+                                                            mb: 1,
+                                                            bgcolor: 'grey.50',
+                                                        }}
                                                     >
-                                                        Quitar
-                                                    </Button>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    )}
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <DescriptionIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{file.name}</Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                ({formatFileSize(file.size)})
+                                                            </Typography>
+                                                        </Box>
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => handleRemovePendingFile(index)}
+                                                            title="Quitar archivo"
+                                                        >
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Paper>
+                                                ))}
+                                            </Box>
+                                        )}
 
-                                    {/* File input */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Button
+                                        {/* File input */}
+                                        <Paper
                                             variant="outlined"
                                             component="label"
-                                            startIcon={<UploadFileIcon />}
+                                            sx={{
+                                                border: '2px dashed',
+                                                borderColor: 'divider',
+                                                borderRadius: 2,
+                                                p: 3,
+                                                textAlign: 'center',
+                                                cursor: canEdit ? 'pointer' : 'not-allowed',
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    backgroundColor: canEdit ? 'action.hover' : 'background.default',
+                                                    borderColor: canEdit ? 'secondary.main' : 'divider',
+                                                },
+                                            }}
                                         >
-                                            Seleccionar archivo
+                                            <CloudUploadIcon
+                                                sx={{
+                                                    fontSize: 36,
+                                                    color: 'text.secondary',
+                                                    mb: 1,
+                                                }}
+                                            />
+                                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                                Agregar documentos adicionales
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                PDF, JPG, PNG (máx. 10MB cada uno)
+                                            </Typography>
                                             <input
                                                 type="file"
                                                 hidden
                                                 accept=".pdf,.jpg,.jpeg,.png"
+                                                multiple
+                                                disabled={!canEdit}
                                                 onChange={(e) => {
-                                                    const file = e.target.files?.[0]
-                                                    if (file) {
-                                                        handleAddPendingFile(file, 'RESPALDO')
+                                                    const files = e.target.files
+                                                    if (files) {
+                                                        Array.from(files).forEach(file => {
+                                                            handleAddPendingFile(file, 'RESPALDO')
+                                                        })
                                                         e.target.value = '' // Reset to allow same file selection
                                                     }
                                                 }}
                                             />
-                                        </Button>
-                                        <Typography variant="caption" color="text.secondary">
-                                            Formatos: PDF, JPG, PNG (máx. 10MB)
-                                        </Typography>
-                                    </Box>
-                                </>
-                            )}
+                                        </Paper>
+                                    </>
+                                )}
+                            </CardContent>
                         </Card>
 
                         {/* Configuración Adicional Section */}

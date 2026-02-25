@@ -4,6 +4,8 @@
  */
 
 import { get, create, patch } from "@/app/api/apiService"
+import axiosInstance from "@/app/api/utils/axiosInstance"
+import { toast } from "react-toastify"
 import type {
   DerivacionLegajoRequest,
   AsignacionLegajoRequest,
@@ -46,7 +48,14 @@ export const reasignarLegajo = async (
   legajoId: number,
   data: ReasignacionLegajoRequest
 ): Promise<AsignacionResponse> => {
-  return patch<AsignacionResponse>(`legajo/${legajoId}/reasignar`, legajoId, data, true, 'Responsable reasignado exitosamente')
+  const response = await axiosInstance.patch<AsignacionResponse>(
+    `legajo/${legajoId}/reasignar/`,
+    data
+  )
+
+  toast.success('Responsable reasignado exitosamente')
+
+  return response.data
 }
 
 /**

@@ -148,9 +148,16 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
   const prevCategoriaRef = useRef(watchedCategoria)
 
   // Filter tipo_oficio by selected categoria
+  // Note: API returns categoria as object {id, nombre}, so we compare against categoria.id
   const filteredTipoOficio = useMemo(() => {
     if (!watchedCategoria) return []
-    return (dropdownData.tipo_oficio || []).filter((t) => t.categoria === watchedCategoria)
+    return (dropdownData.tipo_oficio || []).filter((t) => {
+      // Handle both cases: categoria as object or as number (for backward compatibility)
+      const categoriaId = typeof t.categoria === 'object' && t.categoria !== null
+        ? (t.categoria as { id: number }).id
+        : t.categoria
+      return categoriaId === watchedCategoria
+    })
   }, [watchedCategoria, dropdownData.tipo_oficio])
 
   // Clear tipo_oficio when categoria changes

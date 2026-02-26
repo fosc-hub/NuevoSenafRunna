@@ -651,30 +651,36 @@ const DemandaTableContent: React.FC = () => {
         field: "id",
         headerName: "ID",
         width: 100,
-        renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "4px" }}>
-            {params.value}
-            {params.row.hasLegajo && (
-              <Tooltip title={`Legajo: ${params.row.legajoNumero}`}>
-                <Chip
-                  label="📋"
-                  size="small"
-                  color="success"
-                  sx={{
-                    height: "20px",
-                    fontSize: "12px",
-                    "& .MuiChip-label": { px: 0.5 }
-                  }}
-                />
-              </Tooltip>
-            )}
-            {params.row.calificacion === "URGENTE" && (
-              <Tooltip title="Urgente">
-                <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
-              </Tooltip>
-            )}
-          </div>
-        ),
+        renderCell: (params) => {
+          const legajoTooltip = params.row.esLegajoVinculado
+            ? `Legajo vinculado: ${params.row.legajoNumero}`
+            : `Legajo: ${params.row.legajoNumero}`
+
+          return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "4px" }}>
+              {params.value}
+              {params.row.hasLegajo && (
+                <Tooltip title={legajoTooltip}>
+                  <Chip
+                    label="📋"
+                    size="small"
+                    color={params.row.esLegajoVinculado ? "info" : "success"}
+                    sx={{
+                      height: "20px",
+                      fontSize: "12px",
+                      "& .MuiChip-label": { px: 0.5 }
+                    }}
+                  />
+                </Tooltip>
+              )}
+              {params.row.calificacion === "URGENTE" && (
+                <Tooltip title="Urgente">
+                  <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
+                </Tooltip>
+              )}
+            </div>
+          )
+        },
       },
       // SCORE COLUMN - HIDDEN
       // {
@@ -696,16 +702,43 @@ const DemandaTableContent: React.FC = () => {
       {
         field: "nombre",
         headerName: "Nombre",
-        width: 180,
-        renderCell: (params) => (
-          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-            <Tooltip title={`DNI: ${params.row.dni}`}>
-              <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
-                {params.value}
-              </Typography>
-            </Tooltip>
-          </div>
-        ),
+        width: 200,
+        renderCell: (params) => {
+          const tooltipText = params.row.esLegajoVinculado
+            ? `Desde legajo vinculado: ${params.row.legajoNumero}`
+            : `DNI: ${params.row.dni}`
+
+          return (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%", gap: "4px" }}>
+              <Tooltip title={tooltipText}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: params.row.recibido ? "normal" : "bold",
+                    fontStyle: params.row.esLegajoVinculado ? "italic" : "normal",
+                  }}
+                >
+                  {params.value}
+                </Typography>
+              </Tooltip>
+              {params.row.esLegajoVinculado && (
+                <Tooltip title="NNyA desde legajo vinculado">
+                  <Chip
+                    label="🔗"
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                    sx={{
+                      height: "18px",
+                      fontSize: "10px",
+                      "& .MuiChip-label": { px: 0.5 }
+                    }}
+                  />
+                </Tooltip>
+              )}
+            </div>
+          )
+        },
       },
       {
         field: "calificacion",
@@ -963,16 +996,37 @@ const DemandaTableContent: React.FC = () => {
 
   const columns = useMemo(() => getColumns(), [isMobile])
 
+  // Helper para obtener nombre del NNyA (con fallback a legajo vinculado)
+  const getNombreNNyA = (demanda: TDemanda): { nombre: string; esLegajoVinculado: boolean } => {
+    if (demanda.nnya_principal) {
+      return {
+        nombre: `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}`,
+        esLegajoVinculado: false
+      }
+    }
+
+    if (demanda.nnya_nombre_legajo) {
+      return {
+        nombre: `${demanda.nnya_nombre_legajo.nombre} ${demanda.nnya_nombre_legajo.apellido}`,
+        esLegajoVinculado: true
+      }
+    }
+
+    return { nombre: "N/A", esLegajoVinculado: false }
+  }
+
   const rows =
     demandasData?.results.map((demanda: TDemanda) => {
+      const nnyaInfo = getNombreNNyA(demanda)
       return {
         id: demanda.id,
         // score: demanda.demanda_score?.score || "N/A", // HIDDEN
         origen: demanda.bloque_datos_remitente?.nombre || "N/A",
-        nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
+        nombre: nnyaInfo.nombre,
+        esLegajoVinculado: nnyaInfo.esLegajoVinculado,
         dni: demanda.nnya_principal?.dni || "N/A",
-        hasLegajo: !!(demanda.nnya_principal?.legajo),
-        legajoNumero: demanda.nnya_principal?.legajo?.numero || "N/A",
+        hasLegajo: !!(demanda.nnya_principal?.legajo) || !!(demanda.nnya_nombre_legajo),
+        legajoNumero: demanda.nnya_principal?.legajo?.numero || demanda.nnya_nombre_legajo?.legajo_numero || "N/A",
         calificacion: demanda.calificacion?.estado_calificacion || null,
         ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
           day: "2-digit",

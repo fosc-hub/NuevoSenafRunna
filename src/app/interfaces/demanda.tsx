@@ -57,6 +57,17 @@ export interface TNnyaPrincipal {
     nombre: string;
     apellido: string;
     dni: string;
+    legajo?: {
+        numero: string;
+    };
+}
+
+// Nuevo campo para NNyA desde legajo vinculado (usado en demandas CARGA_OFICIOS)
+export interface TNnyaNombreLegajo {
+    nombre: string;
+    apellido: string;
+    legajo_id: number;
+    legajo_numero: string;
 }
 
 export interface TDemandaScore {
@@ -129,7 +140,8 @@ interface TDemandaBase {
 }
 
 export interface TDemanda extends TDemandaBase {
-    nnya_principal: TNnyaPrincipal;
+    nnya_principal: TNnyaPrincipal | null;
+    nnya_nombre_legajo?: TNnyaNombreLegajo | null;
     precalificacion: any;
     calificacion?: TCalificacion;
     estado_demanda: string;

@@ -103,7 +103,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
             medidaId,
             informeCreado.id,
             archivo,
-            "INFORME_TECNICO",
+            "INFORME_CIERRE",
             `Adjunto: ${archivo.name}`
           )
         ))

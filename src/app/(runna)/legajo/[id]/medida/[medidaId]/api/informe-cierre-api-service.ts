@@ -202,7 +202,7 @@ export const uploadAdjuntoInformeCierre = async (
     const formData = new FormData()
     formData.append("archivo", file)
     formData.append("informe_cierre_id", informeCierreId.toString())
-    formData.append("tipo", tipo)
+    formData.append("tipo_adjunto", tipo)
     if (descripcion) {
       formData.append("descripcion", descripcion)
     }
@@ -210,7 +210,7 @@ export const uploadAdjuntoInformeCierre = async (
     // apiService.create() supports FormData automatically
     const response = await create<InformeCierreAdjunto>(
       `medidas/${medidaId}/informe-cierre/adjuntos/`,
-      formData,
+      formData as any,
       true,
       'Adjunto subido exitosamente'
     )
@@ -247,8 +247,8 @@ export const getAdjuntosInformeCierre = async (
       queryParams.informe_cierre_id = String(params.informe_cierre_id)
     }
 
-    if (params.tipo) {
-      queryParams.tipo = params.tipo
+    if (params.tipo_adjunto) {
+      queryParams.tipo_adjunto = params.tipo_adjunto
     }
 
     console.log(`Fetching adjuntos for medida ${medidaId}:`, queryParams)

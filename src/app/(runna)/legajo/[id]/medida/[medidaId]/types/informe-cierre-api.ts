@@ -72,25 +72,17 @@ export const TipoCeseMPELabels: Record<TipoCeseMPE, string> = {
 // ============================================================================
 
 export type TipoInformeCierreAdjunto =
-  | "INFORME_TECNICO"
+  | "INFORME_CIERRE"
   | "EVALUACION"
-  | "ACTA"
   | "OTRO"
 
 export interface InformeCierreAdjunto {
   id: number
-  tipo: TipoInformeCierreAdjunto
-  tipo_display: string
-  nombre_original: string
-  tamaño_bytes: number
-  extension: string
+  tipo_adjunto: TipoInformeCierreAdjunto
+  tipo_adjunto_display: string
+  archivo_nombre: string
+  archivo_url: string
   descripcion?: string
-  url: string
-  subido_por: {
-    id: number
-    nombre_completo: string
-    username: string
-  }
   fecha_subida: string
 }
 
@@ -170,7 +162,7 @@ export interface RechazarCierreRequest {
 
 export interface UploadAdjuntoRequest {
   informe_cierre_id: number
-  tipo: TipoInformeCierreAdjunto
+  tipo_adjunto: TipoInformeCierreAdjunto
   archivo: File
   descripcion?: string
 }
@@ -246,5 +238,5 @@ export interface RechazarCierreResponse {
 
 export interface InformeCierreQueryParams {
   informe_cierre_id?: number
-  tipo?: TipoInformeCierreAdjunto
+  tipo_adjunto?: TipoInformeCierreAdjunto
 }

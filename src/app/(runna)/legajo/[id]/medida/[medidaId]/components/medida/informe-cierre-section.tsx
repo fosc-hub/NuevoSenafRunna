@@ -46,11 +46,14 @@ import ErrorIcon from "@mui/icons-material/Error"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import PersonIcon from "@mui/icons-material/Person"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import DescriptionIcon from "@mui/icons-material/Description"
 import { InformeCierreModal } from "../dialogs/informe-cierre-modal"
 // RechazarCierreModal is deprecated for MPI V2 workflow
 // import { RechazarCierreModal } from "../dialogs/rechazar-cierre-modal"
 import {
   getInformeCierreActivo,
+  getAdjuntosInformeCierre,
   // aprobarCierre is deprecated for MPI V2 workflow
   // aprobarCierre,
 } from "../../api/informe-cierre-api-service"
@@ -111,14 +114,15 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
 
   // ========== Estado Detection ==========
   const etapaActual = medidaApiData.etapa_actual
-  const estado = etapaActual?.estado || ""
+  const estado = (etapaActual?.estado as string) || ""
+  const isClosed = medidaApiData.estado_vigencia === "CERRADA"
   const isEstado3 = estado === "PENDIENTE_DE_INFORME_DE_CIERRE"
-  const isEstado4 = estado === "INFORME_DE_CIERRE_REDACTADO"
+  const isEstado4 = estado === "INFORME_DE_CIERRE_REDACTADO" || (isClosed && !isEstado3)
 
   // ========== Load Informe ==========
   const loadInforme = async () => {
-    if (!isEstado4) {
-      // Only load informe if in Estado 4
+    if (!isEstado4 && !isClosed) {
+      // Only load informe if in Estado 4 or measure is closed
       setInforme(null)
       return
     }
@@ -126,7 +130,25 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
     setIsLoadingInforme(true)
     try {
       const informeActivo = await getInformeCierreActivo(medidaId)
-      setInforme(informeActivo)
+
+      if (informeActivo) {
+        // If the API doesn't return adjuntos in the list, fetch them separately
+        if (!informeActivo.adjuntos || informeActivo.adjuntos.length === 0) {
+          try {
+            const adjuntos = await getAdjuntosInformeCierre(medidaId, {
+              informe_cierre_id: informeActivo.id
+            })
+            informeActivo.adjuntos = adjuntos
+          } catch (error) {
+            console.error("Error loading adjuntos for informe closure:", error)
+            // Still show the informe even if adjuntos fail
+            informeActivo.adjuntos = informeActivo.adjuntos || []
+          }
+        }
+        setInforme(informeActivo)
+      } else {
+        setInforme(null)
+      }
     } catch (error) {
       console.error("Error loading informe cierre:", error)
       showSnackbar("Error al cargar el informe de cierre", "error")
@@ -164,8 +186,8 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
 
   // ========== Render ==========
 
-  // Don't render if not in Estados 3 or 4
-  if (!isEstado3 && !isEstado4) {
+  // Don't render if not in Estados 3 or 4, unless closed
+  if (!isEstado3 && !isEstado4 && !isClosed) {
     return null
   }
 
@@ -178,8 +200,8 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
           action={
             estado === "PENDIENTE_DE_INFORME_DE_CIERRE" ? (
               <Chip label="Estado 3" color="info" size="small" />
-            ) : estado === "INFORME_DE_CIERRE_REDACTADO" ? (
-              <Chip label="Estado 4" color="warning" size="small" />
+            ) : estado === "INFORME_DE_CIERRE_REDACTADO" || isClosed ? (
+              <Chip label={isClosed ? "CERRADA" : "Estado 4"} color={isClosed ? "success" : "warning"} size="small" />
             ) : null
           }
         />
@@ -230,6 +252,31 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
                       />
                     </Stack>
 
+                    {/* Prominent Link to Technical Report if available */}
+                    {informe.adjuntos?.find(a => a.tipo_adjunto === 'INFORME_CIERRE') && (
+                      <Box sx={{ mb: 2 }}>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          size="small"
+                          startIcon={<DescriptionIcon />}
+                          endIcon={<VisibilityIcon />}
+                          component="a"
+                          href={informe.adjuntos.find(a => a.tipo_adjunto === 'INFORME_CIERRE')?.archivo_url}
+                          target="_blank"
+                          sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            bgcolor: 'secondary.main',
+                            '&:hover': { bgcolor: 'secondary.dark' }
+                          }}
+                        >
+                          Ver Informe de Cierre (PDF/Archivo)
+                        </Button>
+                      </Box>
+                    )}
+
                     {/* Tipo de Cese */}
                     {informe.tipo_cese_display && (
                       <Box sx={{ mt: 2 }}>
@@ -279,7 +326,7 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
                           <ListItem
                             key={adjunto.id}
                             component="a"
-                            href={adjunto.url}
+                            href={adjunto.archivo_url}
                             target="_blank"
                             sx={{
                               borderRadius: 1,
@@ -290,12 +337,8 @@ export const InformeCierreSection: React.FC<InformeCierreSectionProps> = ({
                               <AttachFileIcon />
                             </ListItemIcon>
                             <ListItemText
-                              primary={adjunto.nombre_original}
-                              secondary={`${adjunto.tipo_display} - ${(
-                                adjunto.tamaño_bytes /
-                                1024 /
-                                1024
-                              ).toFixed(2)} MB`}
+                              primary={adjunto.archivo_nombre}
+                              secondary={adjunto.tipo_adjunto_display}
                             />
                           </ListItem>
                         ))}

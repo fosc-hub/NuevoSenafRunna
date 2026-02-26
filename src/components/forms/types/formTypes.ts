@@ -194,8 +194,7 @@ export interface FormData {
   fecha_vencimiento_oficio?: string | null;    // Fecha vencimiento (YYYY-MM-DD)
   // CARGA_OFICIOS categorization fields
   categoria_informacion_judicial?: number | null;
-  /** @deprecated Always null - use tipo_oficio instead */
-  tipo_informacion_judicial?: null;
+  tipo_informacion_judicial?: number | null;
   // REG-01: Vínculos para crear junto con la demanda
   vinculos?: VinculoFormData[];
 }
@@ -268,7 +267,6 @@ export interface DropdownData {
   tipo_medida_choices?: DropdownOption[];  // MPI, MPE, MPJ
   // CARGA_OFICIOS categorization dropdowns
   categoria_informacion_judicial?: CategoriaInformacionJudicial[];
-  /** @deprecated Use tipo_oficio filtered by categoria instead */
   tipo_informacion_judicial?: TipoInformacionJudicial[];
   // CARGA_OFICIOS departamento judicial
   departamento_judicial_choices?: Array<{ key: string; value: string }>;

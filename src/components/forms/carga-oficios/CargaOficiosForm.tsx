@@ -128,13 +128,15 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
   const { control, watch, setValue } = useFormContext<CargaOficiosFormData>()
 
   // Get CARGA_OFICIOS specific dropdowns from main dropdownData
-  // Note: tipo_informacion_judicial is deprecated - we use tipo_oficio filtered by categoria instead
   const {
     categorias,
+    tipos,
     isLoading: isLoadingDropdowns,
     isError: isDropdownError,
+    getTiposByCategoria,
   } = useCargaOficiosDropdowns({
     categorias: dropdownData.categoria_informacion_judicial || [],
+    tipos: dropdownData.tipo_informacion_judicial || [],
   })
 
   // Watch form values
@@ -183,6 +185,11 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
     }
   }, [watchedAdjuntos])
 
+  // Filtered tipos based on selected categoria
+  const filteredTipos = useMemo(() => {
+    return getTiposByCategoria(watchedCategoria)
+  }, [watchedCategoria, getTiposByCategoria])
+
   if (isLoadingDropdowns) {
     return <LoadingSkeleton />
   }
@@ -223,8 +230,8 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
       {/* Section 1: Clasificación */}
       <FormSection title="Clasificación de la Medida" icon={CategoryIcon}>
         <Grid container spacing={3}>
-          {/* Circuito Selector */}
-          <Grid item xs={12} md={6}>
+          {/* Circuito Selector - Full Width to separate from dates */}
+          <Grid item xs={12}>
             <Controller
               name="tipo_medida_evaluado"
               control={control}
@@ -241,7 +248,7 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
             />
           </Grid>
 
-          {/* Fecha del Oficio */}
+          {/* Fila de Fechas: Fecha del Oficio y Fecha Ingreso SENAF al mismo nivel */}
           <Grid item xs={12} md={6}>
             <Controller
               name="fecha_oficio_documento"
@@ -267,7 +274,6 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
             />
           </Grid>
 
-          {/* Fecha Ingreso SENAF */}
           <Grid item xs={12} md={6}>
             <Controller
               name="fecha_ingreso_senaf"
@@ -293,7 +299,7 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
             />
           </Grid>
 
-          {/* Categoría dropdown */}
+          {/* Categoría y Tipo de Oficio juntos en la siguiente fila */}
           <Grid item xs={12} md={6}>
             <CategoriaInfoSection
               categorias={categorias}
@@ -303,7 +309,6 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
             />
           </Grid>
 
-          {/* Tipo de Oficio - Filtered by selected categoria */}
           <Grid item xs={12} md={6}>
             <Controller
               name="tipo_oficio"

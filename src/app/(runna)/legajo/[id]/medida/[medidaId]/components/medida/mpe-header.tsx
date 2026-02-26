@@ -5,11 +5,25 @@ import { Box, Chip, Grid, Typography, Button, Paper, useTheme, Dialog, DialogTit
 import CloseIcon from "@mui/icons-material/Close"
 import CancelIcon from "@mui/icons-material/Cancel"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import BusinessIcon from "@mui/icons-material/Business"
+import AssignmentLateIcon from "@mui/icons-material/AssignmentLate"
+import GroupIcon from "@mui/icons-material/Group"
+import EngineeringIcon from "@mui/icons-material/Engineering"
+import HubIcon from "@mui/icons-material/Hub"
+import LocationOnIcon from "@mui/icons-material/LocationOn"
+import HomeIcon from "@mui/icons-material/Home"
+import GavelIcon from "@mui/icons-material/Gavel"
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance"
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import PersonIcon from "@mui/icons-material/Person"
+import AssignmentIcon from "@mui/icons-material/Assignment"
+import WarningIcon from "@mui/icons-material/Warning"
 import { ResidenciasTab } from "./mpe-tabs/residencias-tab"
 import { useState } from "react"
 import { useUser } from "@/utils/auth/userZustand"
 import { useCeseMedida } from "../../hooks/useCeseMedida"
 import { CeseMedidaModal } from "./cese-medida-modal"
+import { Divider, Stack } from "@mui/material"
 
 interface MPEHeaderProps {
     medidaData: {
@@ -283,176 +297,259 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
         return active ? "filled" : "outlined"
     }
 
+    // Helper for info items
+    const InfoItem = ({ icon: Icon, label, value }: any) => (
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mb: 1.5 }}>
+            <Icon sx={{ color: "primary.main", fontSize: "1.1rem", mt: 0.2 }} />
+            <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500, display: "block", lineHeight: 1.2 }}>
+                    {label}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: value ? "text.primary" : "text.disabled" }}>
+                    {value || "No especificado"}
+                </Typography>
+            </Box>
+        </Box>
+    )
+
     return (
         <Paper
-            elevation={2}
+            elevation={3}
             sx={{
                 width: "100%",
                 mb: 4,
-                p: 3,
-                borderRadius: 2,
+                borderRadius: 3,
+                position: "relative",
+                overflow: "hidden",
+                border: "1px solid",
+                borderColor: "divider",
+                "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: "6px",
+                    backgroundColor: estadoVigencia === 'VIGENTE' ? "primary.main" : "text.disabled",
+                    background: estadoVigencia === 'VIGENTE' ? "linear-gradient(to bottom, #2196f3, #1565c0)" : "linear-gradient(to bottom, #9e9e9e, #616161)",
+                },
             }}
         >
-            {/* MPE Title */}
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {medidaData.tipo_display || "MPE"}: {medidaData.numero}
-                </Typography>
-            </Box>
+            {/* Header section with title and badges */}
+            <Box sx={{ p: 2.5, pb: 2, bgcolor: "background.paper", borderBottom: "1px solid", borderColor: "grey.100" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 2 }}>
+                    <Box>
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                            <AssignmentIcon color="primary" sx={{ fontSize: "1.5rem" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
+                                {medidaData.tipo_display || "MPE"} {medidaData.numero}
+                            </Typography>
+                        </Stack>
 
-            {/* Estado de Medida Section */}
-            <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main" }}>
-                        Estado de Medida
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        {medidaData.urgencia && (
+                        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                             <Chip
-                                label={`Urgencia: ${medidaData.urgencia}`}
-                                color="error"
+                                label={estadoVigencia === 'VIGENTE' ? "ACTIVA" : "CERRADA"}
+                                color={estadoVigencia === 'VIGENTE' ? "primary" : "default"}
                                 size="small"
-                                sx={{ fontWeight: 500 }}
+                                variant={estadoVigencia === 'VIGENTE' ? "filled" : "outlined"}
+                                sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
                             />
-                        )}
-                        {medidaData.estado_actual && (
-                            <Chip
-                                label={medidaData.estado_actual}
-                                color="info"
+                            {medidaData.urgencia && (
+                                <Chip
+                                    icon={<WarningIcon style={{ fontSize: '0.8rem', color: 'inherit' }} />}
+                                    label={`Urgencia: ${medidaData.urgencia.toUpperCase()}`}
+                                    color={medidaData.urgencia.toLowerCase().includes('alta') ? "error" : "warning"}
+                                    size="small"
+                                    sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
+                                />
+                            )}
+                            {medidaData.estado_actual && (
+                                <Chip
+                                    label={medidaData.estado_actual}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20, color: "text.secondary" }}
+                                />
+                            )}
+                        </Stack>
+                    </Box>
+
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={() => setResidenciasModalOpen(true)}
+                            sx={{
+                                borderRadius: 2,
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.75rem",
+                                boxShadow: "none",
+                                "&:hover": { boxShadow: "0 2px 8px rgba(33, 150, 243, 0.3)" }
+                            }}
+                        >
+                            Seguimiento Dispositivo
+                        </Button>
+                        {showCeseButton && (
+                            <Button
+                                variant="contained"
+                                color={esEtapaCese ? "error" : "warning"}
                                 size="small"
-                                variant="outlined"
-                                sx={{ fontWeight: 500 }}
-                            />
+                                startIcon={esEtapaCese ? <CheckCircleIcon /> : <CancelIcon />}
+                                onClick={() => setCeseModalOpen(true)}
+                                sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    fontSize: "0.75rem",
+                                    boxShadow: "none",
+                                }}
+                            >
+                                {esEtapaCese ? "Confirmar Cese" : "Solicitar Cese"}
+                            </Button>
                         )}
                     </Box>
                 </Box>
+            </Box>
 
-                {/* Status Chips */}
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
-                    <Chip
-                        label="Inicial"
-                        color={getChipColor(estados.inicial)}
-                        variant={getChipVariant(estados.inicial)}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label="Apertura"
-                        color={getChipColor(estados.apertura)}
-                        variant={getChipVariant(estados.apertura)}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label={`Innovación ${estados.innovacion}`}
-                        color={estados.innovacion > 0 ? "secondary" : "default"}
-                        variant={estados.innovacion > 0 ? "filled" : "outlined"}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label={`Prórroga ${estados.prorroga}`}
-                        color={estados.prorroga > 0 ? "secondary" : "default"}
-                        variant={estados.prorroga > 0 ? "filled" : "outlined"}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label={`Cambio de lugar de resguardo ${estados.cambio_lugar}`}
-                        color={estados.cambio_lugar > 0 ? "secondary" : "default"}
-                        variant={estados.cambio_lugar > 0 ? "filled" : "outlined"}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label="Seguimiento Intervención"
-                        color="success"
-                        variant={estados.seguimiento_intervencion ? "filled" : "outlined"}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label="Cese"
-                        color={getChipColor(estados.cese)}
-                        variant={getChipVariant(estados.cese)}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                    <Chip
-                        label="Post Cese"
-                        color={getChipColor(estados.post_cese)}
-                        variant={getChipVariant(estados.post_cese)}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                    />
-                </Box>
-
-                {/* Information Grid */}
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} md={6}>
-                        <Box sx={{ mb: 1 }}>
-                            <Typography variant="body2" sx={{ color: "primary.main", fontWeight: "bold" }}>
-                                Fecha: {medidaData.fecha}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: "bold", color: "secondary.main" }}>
-                                Juzgado: {medidaData.juzgado}
-                            </Typography>
+            {/* Main Content */}
+            <Box sx={{ p: 2.5, pt: 3 }}>
+                {/* Child Name Section - More Prominent */}
+                <Box sx={{ mb: 3.5, pl: 1 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        <Box
+                            sx={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: "12px",
+                                bgcolor: "primary.light",
+                                color: "primary.main",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                opacity: 0.15
+                            }}
+                        >
+                            <PersonIcon sx={{ fontSize: "2rem" }} />
                         </Box>
-
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strOGA>Fecha:</strOGA> {medidaData.fecha_resguardo}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strOGA>Lugar de resguardo:</strOGA> {medidaData.lugar_resguardo}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strOGA>Origen de la demanda:</strOGA> {medidaData.origen_demanda}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strOGA>Zona Uder de Trabajo:</strOGA> {medidaData.zona_trabajo}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strOGA>Zona Uder centro de vida:</strOGA> {medidaData.zona_centro_vida}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                            <strOGA>Articulación con área local:</strOGA> {medidaData.articulacion_local ? "Sí" : "No"}
-                        </Typography>
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                        <Box sx={{ textAlign: { md: "right" } }}>
-                            <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: "primary.main" }}>
+                        <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", mb: 0.2 }}>
                                 {medidaData.persona.nombre}
                             </Typography>
-                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strOGA>Ubicación del NNyA:</strOGA> {medidaData.ubicacion}
-                            </Typography>
-                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strOGA>Número de Sac:</strOGA> {medidaData.numero_sac}
-                            </Typography>
-                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strOGA>Equipos:</strOGA> {medidaData.equipos}
-                            </Typography>
-                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                <strOGA>Articulación con área local:</strOGA> {medidaData.articulacion_area_local ? "Sí" : "No"}
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, letterSpacing: "0.02em" }}>
+                                Legajo Asociado: <Typography component="span" variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>#{medidaData.persona.id || 'N/A'}</Typography>
                             </Typography>
                         </Box>
+                    </Stack>
+                </Box>
+
+                {/* Status Chips Row */}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3.5, pl: 1 }}>
+                    <Chip label="Inicial" color={getChipColor(estados.inicial)} variant={getChipVariant(estados.inicial)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label="Apertura" color={getChipColor(estados.apertura)} variant={getChipVariant(estados.apertura)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label={`Innovación ${estados.innovacion}`} color={estados.innovacion > 0 ? "secondary" : "default"} variant={estados.innovacion > 0 ? "filled" : "outlined"} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label={`Prórroga ${estados.prorroga}`} color={estados.prorroga > 0 ? "secondary" : "default"} variant={estados.prorroga > 0 ? "filled" : "outlined"} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label={`Resguardo ${estados.cambio_lugar}`} color={estados.cambio_lugar > 0 ? "secondary" : "default"} variant={estados.cambio_lugar > 0 ? "filled" : "outlined"} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label="Seguimiento" color="success" variant={estados.seguimiento_intervencion ? "filled" : "outlined"} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label="Cese" color={getChipColor(estados.cese)} variant={getChipVariant(estados.cese)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label="Post Cese" color={getChipColor(estados.post_cese)} variant={getChipVariant(estados.post_cese)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                </Box>
+
+                <Divider sx={{ mb: 3.5, opacity: 0.6 }} />
+
+                <Grid container spacing={4} sx={{ px: 1, mb: 4 }}>
+                    {/* Column 1: Record Info */}
+                    <Grid item xs={12} md={4}>
+                        <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 800, mb: 2, display: "block", opacity: 0.8 }}>
+                            Detalles de la Medida
+                        </Typography>
+                        <InfoItem icon={CalendarTodayIcon} label="Fecha de Apertura" value={medidaData.fecha_apertura || medidaData.fecha} />
+                        <InfoItem icon={BusinessIcon} label="Origen de la Demanda" value={medidaData.origen_demanda} />
+                        <InfoItem icon={AssignmentLateIcon} label="Zona de Trabajo" value={medidaData.zona_trabajo} />
+                    </Grid>
+
+                    {/* Column 2: Intervention/Teams */}
+                    <Grid item xs={12} md={4}>
+                        <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 800, mb: 2, display: "block", opacity: 0.8 }}>
+                            Equipos e Intervención
+                        </Typography>
+                        <InfoItem icon={EngineeringIcon} label="Equipo Responsable" value={medidaData.equipos} />
+                        <InfoItem icon={HubIcon} label="Zona Centro de Vida" value={medidaData.zona_centro_vida} />
+                        <InfoItem icon={HubIcon} label="Articulación Local" value={medidaData.articulacion_local ? "Sí" : "No"} />
+                    </Grid>
+
+                    {/* Column 3: Location/Legal */}
+                    <Grid item xs={12} md={4}>
+                        <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 800, mb: 2, display: "block", opacity: 0.8 }}>
+                            Ubicación y Resguardo
+                        </Typography>
+                        <InfoItem icon={LocationOnIcon} label="Ubicación del NNyA" value={medidaData.ubicacion} />
+                        <InfoItem icon={HomeIcon} label="Lugar de Resguardo" value={medidaData.lugar_resguardo} />
+                        <InfoItem icon={AccountBalanceIcon} label="Expediente (Nro. SAC)" value={medidaData.numero_sac} />
                     </Grid>
                 </Grid>
 
-                {/* MPE Specific Fields */}
-                <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2, mt: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
-                        Información específica MPE
+                {/* Progress Section - 90 Day Timeline */}
+                <Box sx={{ mb: 4, px: 1 }}>
+                    <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 800, mb: 2, display: "block", opacity: 0.8 }}>
+                        Cronograma de Plazos (90 Días)
                     </Typography>
-                    <Grid container spacing={2}>
+
+                    <Box sx={{
+                        position: 'relative',
+                        backgroundColor: getProgressBackgroundColor(),
+                        borderRadius: 3,
+                        p: 2.5,
+                        border: `1px solid ${getProgressColor()}`,
+                        boxShadow: `0 4px 12px ${getProgressColor()}15`
+                    }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Días Transcurridos</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: getProgressColor() }}>{progress.daysElapsed} <Typography component="span" variant="body2" sx={{ opacity: 0.7 }}>/ 90</Typography></Typography>
+                            </Box>
+                            <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Estado del Plazo</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: getProgressColor() }}>
+                                    {progress.status === 'exceeded' ? 'EXCEDIDO' : `${progress.daysRemaining} DÍAS RESTANTES`}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ height: 12, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 6, overflow: 'hidden', mb: 2 }}>
+                            <Box sx={{
+                                width: `${progress.percentage}%`,
+                                height: '100%',
+                                backgroundColor: getProgressColor(),
+                                borderRadius: 6,
+                                transition: 'width 1s ease-in-out'
+                            }} />
+                        </Box>
+
+                        <Typography variant="body2" sx={{ color: getProgressColor(), fontWeight: 700, fontSize: '0.85rem', textAlign: 'center' }}>
+                            {progress.status === 'exceeded' && '⚠️ El plazo legal de 90 días ha sido superado.'}
+                            {progress.status === 'critical' && '🚨 ALERTA: Plazo crítico para la medida.'}
+                            {progress.status === 'warning' && '⏰ Atención: El plazo está próximo a vencer.'}
+                            {progress.status === 'normal' && '✓ La medida se encuentra dentro de los plazos legales.'}
+                        </Typography>
+                    </Box>
+                </Box>
+
+                {/* MPE Device Selection Section */}
+                <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, color: 'primary.dark', display: "flex", alignItems: "center", gap: 1 }}>
+                        <HomeIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Dispositivo MPE
+                    </Typography>
+                    <Grid container spacing={3}>
                         <Grid item xs={12} md={6}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Tipo de Dispositivo (MPE)</InputLabel>
+                            <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper" }}>
+                                <InputLabel>Tipo de Dispositivo</InputLabel>
                                 <Select
                                     value={tipoDispositivoMPE}
                                     onChange={(e) => handleTipoDispositivoMPEChange(e.target.value)}
-                                    label="Tipo de Dispositivo (MPE)"
+                                    label="Tipo de Dispositivo"
+                                    sx={{ borderRadius: 2 }}
                                 >
                                     <MenuItem value="">Sin especificar</MenuItem>
                                     <MenuItem value="CENTRO_RESIDENCIAL">Centro Cuidado Residencial</MenuItem>
@@ -464,17 +561,14 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
                             </FormControl>
                         </Grid>
                         <Grid item xs={12} md={6}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Subtipo (MPE)</InputLabel>
+                            <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper" }}>
+                                <InputLabel>Institución / Familia (Subtipo)</InputLabel>
                                 <Select
                                     value={subtipoDispositivoMPE}
-                                    onChange={(e) => {
-                                        console.log('Subtipo onChange fired! Event value:', e.target.value);
-                                        handleSubtipoDispositivoMPEChange(e.target.value);
-                                    }}
-                                    onOpen={() => console.log('Subtipo dropdown opened. tipoDispositivoMPE:', tipoDispositivoMPE, 'disabled:', !tipoDispositivoMPE)}
-                                    label="Subtipo (MPE)"
+                                    onChange={(e) => handleSubtipoDispositivoMPEChange(e.target.value)}
+                                    label="Institución / Familia (Subtipo)"
                                     disabled={!tipoDispositivoMPE}
+                                    sx={{ borderRadius: 2 }}
                                 >
                                     <MenuItem key="empty" value="">Sin especificar</MenuItem>
                                     {getSubtipoOptions()}
@@ -482,184 +576,6 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
                             </FormControl>
                         </Grid>
                     </Grid>
-                </Box>
-
-                {/* Progress Section - 90 Day Timeline */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            fontWeight: 600,
-                            mb: 2,
-                            color: getProgressColor(),
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1
-                        }}
-                    >
-                        Progreso de la Medida MPE
-                        <Chip
-                            label={progress.status === 'exceeded' ? 'EXCEDIDO' : progress.status === 'critical' ? 'CRÍTICO' : progress.status === 'warning' ? 'ATENCIÓN' : 'NORMAL'}
-                            size="small"
-                            sx={{
-                                backgroundColor: getProgressColor(),
-                                color: 'white',
-                                fontWeight: 600,
-                                fontSize: '0.75rem'
-                            }}
-                        />
-                    </Typography>
-
-                    {/* Progress Information */}
-                    <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        mb: 2,
-                        flexWrap: 'wrap',
-                        gap: 2
-                    }}>
-                        <Box>
-                            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
-                                Días transcurridos
-                            </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700, color: getProgressColor() }}>
-                                {progress.daysElapsed} <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>de 90</Typography>
-                            </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-                            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
-                                Días restantes
-                            </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700, color: getProgressColor() }}>
-                                {progress.daysRemaining}
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    {/* Modern Progress Bar */}
-                    <Box sx={{
-                        position: 'relative',
-                        backgroundColor: getProgressBackgroundColor(),
-                        borderRadius: 3,
-                        p: 2,
-                        border: `2px solid ${getProgressColor()}`,
-                    }}>
-                        <Box sx={{
-                            position: 'relative',
-                            height: 32,
-                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)'
-                        }}>
-                            {/* Progress Fill */}
-                            <Box
-                                sx={{
-                                    position: 'absolute',
-                                    left: 0,
-                                    top: 0,
-                                    bottom: 0,
-                                    width: `${progress.percentage}%`,
-                                    backgroundColor: getProgressColor(),
-                                    transition: 'width 0.5s ease-in-out',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    paddingRight: 2,
-                                    background: `linear-gradient(90deg, ${getProgressColor()} 0%, ${getProgressColor()}dd 100%)`,
-                                    boxShadow: `0 0 10px ${getProgressColor()}44`,
-                                }}
-                            >
-                                {progress.percentage > 10 && (
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            fontWeight: 700,
-                                            color: 'white',
-                                            fontSize: '0.9rem',
-                                            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                                        }}
-                                    >
-                                        {Math.round(progress.percentage)}%
-                                    </Typography>
-                                )}
-                            </Box>
-
-                            {/* Percentage outside bar if too small */}
-                            {progress.percentage <= 10 && (
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        position: 'absolute',
-                                        right: 8,
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        fontWeight: 700,
-                                        color: getProgressColor(),
-                                        fontSize: '0.9rem'
-                                    }}
-                                >
-                                    {Math.round(progress.percentage)}%
-                                </Typography>
-                            )}
-                        </Box>
-
-                        {/* Status Message */}
-                        <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'center' }}>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: getProgressColor(),
-                                    fontWeight: 600,
-                                    fontSize: '0.875rem',
-                                    textAlign: 'center'
-                                }}
-                            >
-                                {progress.status === 'exceeded' && '⚠️ El plazo de 90 días ha sido excedido'}
-                                {progress.status === 'critical' && '🚨 Quedan menos de 15 días para completar la medida'}
-                                {progress.status === 'warning' && '⏰ Quedan menos de 30 días - Acción requerida pronto'}
-                                {progress.status === 'normal' && '✓ La medida se encuentra dentro del plazo establecido'}
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Box>
-
-                {/* Action Buttons */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        fullWidth
-                        onClick={() => setResidenciasModalOpen(true)}
-                        sx={{
-                            py: 1.5,
-                            borderRadius: 2,
-                            fontWeight: 600,
-                            fontSize: "1rem"
-                        }}
-                    >
-                        SEGUIMIENTO EN DISPOSITIVO
-                    </Button>
-
-                    {/* Cese Button - Dynamic based on etapa */}
-                    {showCeseButton && (
-                        <Button
-                            variant="contained"
-                            color={esEtapaCese ? "error" : "warning"}
-                            fullWidth
-                            startIcon={esEtapaCese ? <CheckCircleIcon /> : <CancelIcon />}
-                            onClick={() => setCeseModalOpen(true)}
-                            sx={{
-                                py: 1.5,
-                                borderRadius: 2,
-                                fontWeight: 600,
-                                fontSize: "1rem"
-                            }}
-                        >
-                            {esEtapaCese ? "CONFIRMAR CESE" : "SOLICITAR CESE"}
-                        </Button>
-                    )}
                 </Box>
             </Box>
 

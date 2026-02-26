@@ -368,48 +368,52 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     if (!informeJuridico) return null
 
     return (
-      <Timeline position="alternate" sx={{ p: 0, m: 0 }}>
+      <Timeline position="right" sx={{ p: 0, m: 0, [`& .MuiTimelineItem-root:before`]: { display: 'none' } }}>
         {/* Created */}
-        <TimelineItem>
+        <TimelineItem sx={{ minHeight: '60px' }}>
           <TimelineSeparator>
-            <TimelineDot color="success">
-              <CreateIcon fontSize="small" />
+            <TimelineDot color="success" sx={{ m: 1 }}>
+              <CreateIcon sx={{ fontSize: 16 }} />
             </TimelineDot>
             <TimelineConnector />
           </TimelineSeparator>
-          <TimelineContent>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              Informe Creado
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {formatDateTime(informeJuridico.fecha_creacion || informeJuridico.fecha_notificaciones)}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+          <TimelineContent sx={{ py: '6px', px: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                Informe Creado
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatDateTime(informeJuridico.fecha_creacion || informeJuridico.fecha_notificaciones)}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" display="block">
               Por: {extractUserName(informeJuridico.elaborado_por_detalle)}
             </Typography>
           </TimelineContent>
         </TimelineItem>
 
         {/* Sent */}
-        <TimelineItem>
+        <TimelineItem sx={{ minHeight: '40px' }}>
           <TimelineSeparator>
-            <TimelineDot color={isEnviado ? "success" : "grey"} variant={isEnviado ? "filled" : "outlined"}>
-              <SendIcon fontSize="small" />
+            <TimelineDot color={isEnviado ? "success" : "grey"} variant={isEnviado ? "filled" : "outlined"} sx={{ m: 1 }}>
+              <SendIcon sx={{ fontSize: 16 }} />
             </TimelineDot>
           </TimelineSeparator>
-          <TimelineContent>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: isEnviado ? "text.primary" : "text.disabled" }}>
-              Informe Enviado
-            </Typography>
-            {isEnviado && informeJuridico.fecha_envio ? (
-              <Typography variant="caption" color="text.secondary">
-                {formatDateTime(informeJuridico.fecha_envio)}
+          <TimelineContent sx={{ py: '6px', px: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isEnviado ? "text.primary" : "text.disabled" }}>
+                Informe Enviado
               </Typography>
-            ) : (
-              <Typography variant="caption" color="text.disabled">
-                Pendiente
-              </Typography>
-            )}
+              {isEnviado && informeJuridico.fecha_envio ? (
+                <Typography variant="caption" color="text.secondary">
+                  {formatDateTime(informeJuridico.fecha_envio)}
+                </Typography>
+              ) : (
+                <Typography variant="caption" color="text.disabled">
+                  Pendiente
+                </Typography>
+              )}
+            </Box>
           </TimelineContent>
         </TimelineItem>
       </Timeline>
@@ -423,83 +427,85 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
     if (!informeJuridico) return null
 
     return (
-      <Grid container spacing={2}>
-        {/* Instituciones Notificadas */}
-        <Grid item xs={12}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <BusinessIcon color="primary" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Instituciones Notificadas
-              </Typography>
-            </Box>
-            <Typography variant="body1">
-              {informeJuridico.instituciones_notificadas}
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Fecha de Notificaciones */}
-        <Grid item xs={12} md={6}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <CalendarIcon color="primary" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Fecha de Notificaciones
-              </Typography>
-            </Box>
-            <Typography variant="body1">
-              {formatDate(informeJuridico.fecha_notificaciones)}
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Medio de Notificación */}
-        <Grid item xs={12} md={6}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <Box sx={{ color: "primary.main" }}>
-                {MEDIO_ICONS[informeJuridico.medio_notificacion]}
-              </Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Medio de Notificación
-              </Typography>
-            </Box>
-            <Typography variant="body1">
-              {MEDIO_NOTIFICACION_LABELS[informeJuridico.medio_notificacion]}
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Destinatarios */}
-        <Grid item xs={12}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <PeopleIcon color="primary" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Destinatarios
-              </Typography>
-            </Box>
-            <Typography variant="body1">
-              {informeJuridico.destinatarios}
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Observaciones */}
-        {informeJuridico.observaciones && (
+      <Paper variant="outlined" sx={{ p: 2.5, bgcolor: 'rgba(0, 0, 0, 0.01)', borderRadius: 2 }}>
+        <Grid container spacing={3}>
+          {/* Instituciones Notificadas */}
           <Grid item xs={12}>
-            <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Observaciones
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                <BusinessIcon sx={{ fontSize: 18, color: "primary.main" }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Instituciones Notificadas
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, pl: 3 }}>
+                {informeJuridico.instituciones_notificadas}
               </Typography>
-              <Typography variant="body1">
-                {informeJuridico.observaciones}
-              </Typography>
-            </Paper>
+            </Box>
           </Grid>
-        )}
-      </Grid>
+
+          {/* Fecha de Notificaciones */}
+          <Grid item xs={12} md={6}>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                <CalendarIcon sx={{ fontSize: 18, color: "primary.main" }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Fecha Notificaciones
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, pl: 3 }}>
+                {formatDate(informeJuridico.fecha_notificaciones)}
+              </Typography>
+            </Box>
+          </Grid>
+
+          {/* Medio de Notificación */}
+          <Grid item xs={12} md={6}>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                <Box sx={{ color: "primary.main", display: 'flex' }}>
+                  {React.cloneElement(MEDIO_ICONS[informeJuridico.medio_notificacion] as React.ReactElement, { sx: { fontSize: 18 } })}
+                </Box>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Medio Notificación
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, pl: 3 }}>
+                {MEDIO_NOTIFICACION_LABELS[informeJuridico.medio_notificacion]}
+              </Typography>
+            </Box>
+          </Grid>
+
+          {/* Destinatarios */}
+          <Grid item xs={12}>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                <PeopleIcon sx={{ fontSize: 18, color: "primary.main" }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Destinatarios
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, pl: 3 }}>
+                {informeJuridico.destinatarios}
+              </Typography>
+            </Box>
+          </Grid>
+
+          {/* Observaciones */}
+          {informeJuridico.observaciones && (
+            <Grid item xs={12}>
+              <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 1, display: 'block' }}>
+                  Observaciones
+                </Typography>
+                <Typography variant="body2" sx={{ fontStyle: 'italic', pl: 1, color: 'text.secondary' }}>
+                  "{informeJuridico.observaciones}"
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+      </Paper>
     )
   }
 
@@ -554,32 +560,41 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
 
         {/* Timeline for status progression */}
         {isEnviado && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.disabled', letterSpacing: '1px' }}>
               Estado del Informe
             </Typography>
-            {renderTimeline()}
+            <Box sx={{ mt: 1 }}>
+              {renderTimeline()}
+            </Box>
           </Box>
         )}
 
         {/* Notificaciones Institucionales - Info Cards */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.disabled', letterSpacing: '1px' }}>
             Notificaciones Institucionales
           </Typography>
-          {renderInfoCards()}
+          <Box sx={{ mt: 1 }}>
+            {renderInfoCards()}
+          </Box>
         </Box>
 
         {/* Adjuntos */}
-        <AdjuntosInformeJuridico
-          medidaId={medidaId}
-          adjuntos={adjuntos}
-          isLoading={isLoadingAdjuntos}
-          error={adjuntosError}
-          canModify={canModify}
-          onUpload={uploadAdjunto}
-          onDelete={deleteAdjunto}
-        />
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.disabled', letterSpacing: '1px', mb: 1, display: 'block' }}>
+            Documentos Adjuntos
+          </Typography>
+          <AdjuntosInformeJuridico
+            medidaId={medidaId}
+            adjuntos={adjuntos}
+            isLoading={isLoadingAdjuntos}
+            error={adjuntosError}
+            canModify={canModify}
+            onUpload={async (file, tipo, desc) => { await uploadAdjunto(file, tipo, desc) }}
+            onDelete={deleteAdjunto}
+          />
+        </Box>
 
         {/* Estado de Envío - Success Alert */}
         {isEnviado && informeJuridico.fecha_envio && (

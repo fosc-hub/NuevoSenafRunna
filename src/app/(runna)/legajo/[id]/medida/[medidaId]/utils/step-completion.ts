@@ -22,12 +22,19 @@ import type { StepStatus, StepProgress } from "../types/workflow"
 /**
  * Check if Step 1 (Intervención) is completed
  *
- * Step 1 is completed when the estado has moved beyond the approval stage
- * to PENDIENTE_NOTA_AVAL or any later stage
+ * Step 1 (Registro de Intervención) involves:
+ * 1. Técnico registers (Draft/Borrador)
+ * 2. Técnico sends (Sent/Enviado)
+ * 3. Jefe Zonal (JZ) approves (Approved/Aprobado) -> This COMPLETES Step 1
+ * 
+ * Step 1 is completed when the estado is "APROBADO" or anything beyond.
  */
 export function isIntervencionCompleted(estado?: string): boolean {
-  // Estados that indicate Step 1 is completed (we're past approval)
+  // Estados that indicate Step 1 is completed (approved by JZ)
   const completedEstados = [
+    "APROBADO",
+    "PENDIENTE_DE_INFORME_DE_CIERRE",
+    "INFORME_DE_CIERRE_REDACTADO",
     "PENDIENTE_NOTA_AVAL",
     "PENDIENTE_INFORME_JURIDICO",
     "PENDIENTE_RATIFICACION_JUDICIAL",
@@ -50,6 +57,8 @@ export function isNotaAvalCompleted(notaExists: boolean, hasDecision: boolean, e
   // Estados that indicate Step 2 is completed (we're past nota de aval)
   const completedEstados = [
     "PENDIENTE_INFORME_JURIDICO",
+    "PENDIENTE_DE_INFORME_DE_CIERRE",
+    "INFORME_DE_CIERRE_REDACTADO",
     "PENDIENTE_RATIFICACION_JUDICIAL",
     "RATIFICADA",
     "NO_RATIFICADA",
@@ -71,6 +80,8 @@ export function isInformeJuridicoCompleted(informeExists: boolean, estado?: stri
   // Estados that indicate Step 3 is completed (we're past informe juridico)
   const completedEstados = [
     "PENDIENTE_RATIFICACION_JUDICIAL",
+    "PENDIENTE_DE_INFORME_DE_CIERRE",
+    "INFORME_DE_CIERRE_REDACTADO",
     "RATIFICADA",
     "NO_RATIFICADA",
     "VIGENTE",
@@ -92,6 +103,8 @@ export function isRatificacionCompleted(ratificacionExists: boolean, hasPDF: boo
   const completedEstados = [
     "RATIFICADA",
     "NO_RATIFICADA",
+    "PENDIENTE_DE_INFORME_DE_CIERRE",
+    "INFORME_DE_CIERRE_REDACTADO",
     "VIGENTE",
     "CERRADA"
   ]
@@ -122,7 +135,9 @@ export function calculateIntervencionProgress(data: {
 
   // Estado progression: BORRADOR (0%), ENVIADO (+15%), APROBADO (+30%)
   if (data.estado === "ENVIADO") progress += 15
-  if (data.estado === "APROBADO") progress += 30
+  if (data.estado && ["APROBADO", "PENDIENTE_DE_INFORME_DE_CIERRE", "INFORME_DE_CIERRE_REDACTADO", "VIGENTE", "CERRADA", "PENDIENTE_NOTA_AVAL", "PENDIENTE_INFORME_JURIDICO", "PENDIENTE_RATIFICACION_JUDICIAL"].includes(data.estado)) {
+    progress += 30
+  }
 
   return Math.min(progress, 100)
 }

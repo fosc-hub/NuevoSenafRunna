@@ -21,7 +21,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react"
-import { Box, CircularProgress, Button, Alert } from "@mui/material"
+import { Box, CircularProgress, Button, Alert, Typography } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
 import { useUser } from "@/utils/auth/userZustand"
 import { AperturaSection } from "./apertura-section"
@@ -316,8 +316,12 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   const isMPI = medidaData.tipo_medida === "MPI"
   const totalSteps = isMPI ? 3 : 4
 
+  // MPI specific completion logic
+  const mpiStep2Completed = step1Completed // Follow-up is accessible once approved
+  const mpiStep3Completed = estadoActual === "CERRADA" || estadoActual === "INFORME_DE_CIERRE_REDACTADO"
+
   const completedSteps = isMPI
-    ? [step1Completed, step2Completed, step3Completed]
+    ? [step1Completed, mpiStep2Completed, mpiStep3Completed]
     : [step1Completed, step2Completed, step3Completed, step4Completed]
 
   // ========== Progress Calculation ==========
@@ -352,16 +356,16 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
           totalSteps={totalSteps}
           status={determineStepStatus(0, activeStep, step1Completed, true)}
           isFirst={true}
-          isLast={isMPI}
+          isLast={false}
           canContinue={step1Completed}
-          onContinue={isMPI ? undefined : () => setActiveStep(1)}
+          onContinue={() => setActiveStep(1)}
           showNavigation={true}
         >
           <AperturaSection
             data={aperturaData}
             isActive={activeStep === 0}
             isCompleted={step1Completed}
-            onViewForm={() => {}}
+            onViewForm={() => { }}
             medidaId={medidaData.id}
             tipoMedida={medidaData.tipo_medida}
             legajoData={legajoData}
@@ -372,98 +376,174 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         </WorkflowStepContent>
       ),
     },
-    // Steps 2-4 only for MPE and MPJ (not MPI)
-    ...(!isMPI ? [{
-      id: 2,
-      label: getStepName(1),
-      description: getStepDescription(1),
-      status: determineStepStatus(1, activeStep, step2Completed, step1Completed),
-      progress: createStepProgress(step2Progress),
-      content: (
-        <WorkflowStepContent
-          stepNumber={1}
-          totalSteps={totalSteps}
-          status={determineStepStatus(1, activeStep, step2Completed, step1Completed)}
-          isFirst={false}
-          isLast={false}
-          canContinue={step2Completed}
-          onContinue={() => setActiveStep(2)}
-          onBack={() => setActiveStep(0)}
-          showNavigation={true}
-        >
-          <NotaAvalSection
-            medidaId={medidaData.id}
-            medidaNumero={medidaData.numero_medida}
-            estadoActual={estadoActual}
-            userLevel={userLevel}
-            isSuperuser={isSuperuser}
-            onNotaAvalCreated={refreshWorkflowData}
-            etapaId={etapaDetail?.etapa.id}
-            initialData={etapaDetail?.etapa.documentos.notas_aval}
-          />
-        </WorkflowStepContent>
-      ),
-    },
-    {
-      id: 3,
-      label: getStepName(2),
-      description: getStepDescription(2),
-      status: determineStepStatus(2, activeStep, step3Completed, step2Completed),
-      progress: createStepProgress(step3Progress),
-      content: (
-        <WorkflowStepContent
-          stepNumber={2}
-          totalSteps={totalSteps}
-          status={determineStepStatus(2, activeStep, step3Completed, step2Completed)}
-          isFirst={false}
-          isLast={false}
-          canContinue={step3Completed}
-          onContinue={() => setActiveStep(3)}
-          onBack={() => setActiveStep(1)}
-          showNavigation={true}
-        >
-          <InformeJuridicoSection
-            medidaId={medidaData.id}
-            isEquipoLegal={isEquipoLegal}
-            isSuperuser={isSuperuser}
-            estadoActual={estadoActual}
-            onInformeEnviado={refreshWorkflowData}
-            etapaId={etapaDetail?.etapa.id}
-            initialData={etapaDetail?.etapa.documentos.informes_juridicos}
-          />
-        </WorkflowStepContent>
-      ),
-    },
-    {
-      id: 4,
-      label: getStepName(3),
-      description: getStepDescription(3),
-      status: determineStepStatus(3, activeStep, step4Completed, step3Completed),
-      progress: createStepProgress(step4Progress),
-      content: (
-        <WorkflowStepContent
-          stepNumber={3}
-          totalSteps={totalSteps}
-          status={determineStepStatus(3, activeStep, step4Completed, step3Completed)}
-          isFirst={false}
-          isLast={true}
-          canContinue={step4Completed}
-          onBack={() => setActiveStep(2)}
-          showNavigation={true}
-        >
-          <RatificacionJudicialSection
-            medidaId={medidaData.id}
-            etapaId={etapaActualForThisTab?.id}
-            isEquipoLegal={isEquipoLegal}
-            isJZ={isJZ}
-            isSuperuser={isSuperuser}
-            estadoActual={estadoActual}
-            onRatificacionRegistrada={refreshWorkflowData}
-            initialData={etapaDetail?.etapa.documentos.ratificaciones}
-          />
-        </WorkflowStepContent>
-      ),
-    }] : []),
+    // MPI Specific Steps
+    ...(isMPI ? [
+      {
+        id: 2,
+        label: "Seguimiento",
+        description: "Plan de trabajo y seguimiento de la medida",
+        status: determineStepStatus(1, activeStep, mpiStep2Completed, step1Completed),
+        progress: createStepProgress(mpiStep2Completed ? 100 : 0),
+        content: (
+          <WorkflowStepContent
+            stepNumber={1}
+            totalSteps={totalSteps}
+            status={determineStepStatus(1, activeStep, mpiStep2Completed, step1Completed)}
+            isFirst={false}
+            isLast={false}
+            canContinue={step1Completed}
+            onContinue={() => setActiveStep(2)}
+            onBack={() => setActiveStep(0)}
+            showNavigation={true}
+          >
+            <Box sx={{ p: 2 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                La apertura ha sido aprobada. Ahora puede realizar el seguimiento en la sección de "Plan de Trabajo" debajo y luego proceder al cierre de la medida desde el siguiente paso.
+              </Alert>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setActiveStep(2)}
+                disabled={estadoActual !== "PENDIENTE_DE_INFORME_DE_CIERRE" && estadoActual !== "CERRADA"}
+              >
+                Continuar al Informe de Cierre
+              </Button>
+            </Box>
+          </WorkflowStepContent>
+        ),
+      },
+      {
+        id: 3,
+        label: "Cierre de Medida",
+        description: "Registro del informe final y cierre administrativo",
+        status: determineStepStatus(2, activeStep, mpiStep3Completed, mpiStep2Completed),
+        progress: createStepProgress(mpiStep3Completed ? 100 : 0),
+        content: (
+          <WorkflowStepContent
+            stepNumber={2}
+            totalSteps={totalSteps}
+            status={determineStepStatus(2, activeStep, mpiStep3Completed, mpiStep2Completed)}
+            isFirst={false}
+            isLast={true}
+            canContinue={mpiStep3Completed}
+            onBack={() => setActiveStep(1)}
+            showNavigation={true}
+            customGuidance={
+              <Box component="ul" sx={{ pl: 2, mt: 1, mb: 0 }}>
+                <Typography component="li" variant="body2">
+                  <strong>Técnico:</strong> Registrar el Informe de Cierre de la medida
+                </Typography>
+                <Typography component="li" variant="body2">
+                  Seleccionar el Tipo de Cese y fundamentar la decisión
+                </Typography>
+                <Typography component="li" variant="body2">
+                  Adjuntar la documentación de cierre si corresponde
+                </Typography>
+              </Box>
+            }
+          >
+            <InformeCierreSection
+              medidaId={medidaData.id}
+              medidaApiData={medidaApiData}
+              isJZ={isJZ}
+              onRefresh={refreshWorkflowData}
+            />
+          </WorkflowStepContent>
+        ),
+      }
+    ] : [
+      {
+        id: 2,
+        label: getStepName(1),
+        description: getStepDescription(1),
+        status: determineStepStatus(1, activeStep, step2Completed, step1Completed),
+        progress: createStepProgress(step2Progress),
+        content: (
+          <WorkflowStepContent
+            stepNumber={1}
+            totalSteps={totalSteps}
+            status={determineStepStatus(1, activeStep, step2Completed, step1Completed)}
+            isFirst={false}
+            isLast={false}
+            canContinue={step2Completed}
+            onContinue={() => setActiveStep(2)}
+            onBack={() => setActiveStep(0)}
+            showNavigation={true}
+          >
+            <NotaAvalSection
+              medidaId={medidaData.id}
+              medidaNumero={medidaData.numero_medida}
+              estadoActual={estadoActual}
+              userLevel={userLevel}
+              isSuperuser={isSuperuser}
+              onNotaAvalCreated={refreshWorkflowData}
+              etapaId={etapaDetail?.etapa.id}
+              initialData={etapaDetail?.etapa.documentos.notas_aval}
+            />
+          </WorkflowStepContent>
+        ),
+      },
+      {
+        id: 3,
+        label: getStepName(2),
+        description: getStepDescription(2),
+        status: determineStepStatus(2, activeStep, step3Completed, step2Completed),
+        progress: createStepProgress(step3Progress),
+        content: (
+          <WorkflowStepContent
+            stepNumber={2}
+            totalSteps={totalSteps}
+            status={determineStepStatus(2, activeStep, step3Completed, step2Completed)}
+            isFirst={false}
+            isLast={false}
+            canContinue={step3Completed}
+            onContinue={() => setActiveStep(3)}
+            onBack={() => setActiveStep(1)}
+            showNavigation={true}
+          >
+            <InformeJuridicoSection
+              medidaId={medidaData.id}
+              isEquipoLegal={isEquipoLegal}
+              isSuperuser={isSuperuser}
+              estadoActual={estadoActual}
+              onInformeEnviado={refreshWorkflowData}
+              etapaId={etapaDetail?.etapa.id}
+              initialData={etapaDetail?.etapa.documentos.informes_juridicos}
+            />
+          </WorkflowStepContent>
+        ),
+      },
+      {
+        id: 4,
+        label: getStepName(3),
+        description: getStepDescription(3),
+        status: determineStepStatus(3, activeStep, step4Completed, step3Completed),
+        progress: createStepProgress(step4Progress),
+        content: (
+          <WorkflowStepContent
+            stepNumber={3}
+            totalSteps={totalSteps}
+            status={determineStepStatus(3, activeStep, step4Completed, step3Completed)}
+            isFirst={false}
+            isLast={true}
+            canContinue={step4Completed}
+            onBack={() => setActiveStep(2)}
+            showNavigation={true}
+          >
+            <RatificacionJudicialSection
+              medidaId={medidaData.id}
+              etapaId={etapaActualForThisTab?.id}
+              isEquipoLegal={isEquipoLegal}
+              isJZ={isJZ}
+              isSuperuser={isSuperuser}
+              estadoActual={estadoActual}
+              onRatificacionRegistrada={refreshWorkflowData}
+              initialData={etapaDetail?.etapa.documentos.ratificaciones}
+            />
+          </WorkflowStepContent>
+        ),
+      },
+    ]),
   ]
 
   // ========== Auto-navigate to first incomplete step on mount ==========
@@ -646,18 +726,6 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         onStepClick={setActiveStep}
         orientation="horizontal"
       />
-
-      {/* MPI Closure Section (Estados 3-4) - V1 Mode */}
-      {showInformeCierreSection && (
-        <Box sx={{ mt: 3 }}>
-          <InformeCierreSection
-            medidaId={medidaData.id}
-            medidaApiData={medidaApiData}
-            isJZ={isJZ}
-            onRefresh={refreshWorkflowData}
-          />
-        </Box>
-      )}
     </>
   )
 }

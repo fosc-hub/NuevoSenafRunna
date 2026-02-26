@@ -56,6 +56,9 @@ interface WorkflowStepContentProps {
 
   /** Show step navigation buttons */
   showNavigation?: boolean
+
+  /** Custom completion guidance to override the default one */
+  customGuidance?: React.ReactNode
 }
 
 // ============================================================================
@@ -75,6 +78,7 @@ export const WorkflowStepContent: React.FC<WorkflowStepContentProps> = ({
   helpText,
   warningMessage,
   showNavigation = true,
+  customGuidance,
 }) => {
   return (
     <Fade in timeout={500}>
@@ -164,7 +168,7 @@ export const WorkflowStepContent: React.FC<WorkflowStepContentProps> = ({
               <Typography variant="body2">
                 <strong>Para continuar al siguiente paso:</strong>
               </Typography>
-              {getCompletionGuidance(stepNumber)}
+              {customGuidance || getCompletionGuidance(stepNumber)}
             </Alert>
           </Box>
         )}
@@ -183,16 +187,13 @@ function getCompletionGuidance(stepNumber: number): React.ReactNode {
       return (
         <Box component="ul" sx={{ pl: 2, mt: 1, mb: 0 }}>
           <Typography component="li" variant="body2">
-            Complete todos los campos requeridos del formulario
+            <strong>Técnico:</strong> Completar y enviar la intervención para aprobación
           </Typography>
           <Typography component="li" variant="body2">
-            Suba los archivos necesarios (Modelo, Acta, etc.)
+            <strong>Jefe Zonal (JZ):</strong> Revisar y Aprobar la intervención inicial
           </Typography>
           <Typography component="li" variant="body2">
-            Envíe la intervención para aprobación (ET)
-          </Typography>
-          <Typography component="li" variant="body2">
-            Espere la aprobación del Jefe de Zona (JZ)
+            El paso se marca como completado tras la aprobación del JZ
           </Typography>
         </Box>
       )
@@ -201,16 +202,13 @@ function getCompletionGuidance(stepNumber: number): React.ReactNode {
       return (
         <Box component="ul" sx={{ pl: 2, mt: 1, mb: 0 }}>
           <Typography component="li" variant="body2">
-            El Director de Zona debe crear la Aprobación
+            <strong>Director de Zona:</strong> Crear la Aprobación definitiva (Nota de Aval)
           </Typography>
           <Typography component="li" variant="body2">
-            Seleccione una decisión: APROBAR u OBSERVAR
+            Seleccionar decisión (Aprobar/Observar) y adjuntar PDF oficial
           </Typography>
           <Typography component="li" variant="body2">
-            Agregue comentarios (obligatorio)
-          </Typography>
-          <Typography component="li" variant="body2">
-            Suba el archivo PDF de la Aprobación oficial
+            Este paso valida la intervención aprobada previamente por el JZ
           </Typography>
         </Box>
       )

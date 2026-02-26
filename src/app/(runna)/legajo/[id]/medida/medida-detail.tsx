@@ -49,7 +49,8 @@ interface MedidaDetailProps {
  */
 const convertMedidaToMedidaData = (
   medida: MedidaDetailResponse,
-  legajo: LegajoDetailResponse
+  legajo: LegajoDetailResponse,
+  demanda: any = null
 ): MedidaData => {
   // Helper function to safely extract string values
   const extractString = (value: any, fallback: string = ""): string => {
@@ -88,10 +89,10 @@ const convertMedidaToMedidaData = (
     nro_sac: medida.nro_sac || undefined,
     urgencia: medida.urgencia?.nombre || undefined,
     estado_actual: medida.etapa_actual?.estado_display || undefined,
-    origen_demanda: "",
-    motivo: "",
-    actores_intervinientes: "",
-    equipos: "",
+    origen_demanda: demanda?.bloque_datos_remitente_info?.nombre || "",
+    motivo: demanda?.motivo_ingreso_info?.nombre || demanda?.descripcion || "",
+    actores_intervinientes: demanda?.institucion_info?.nombre || "",
+    equipos: legajo.asignaciones_activas?.[0]?.user_responsable?.nombre_completo || "",
     articulacion: "",
     etapas: {
       apertura: {
@@ -286,8 +287,8 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   // Convert medida API data to MedidaData format
   const medidaData = useMemo(() => {
     if (!medidaApiData || !legajoData) return null
-    return convertMedidaToMedidaData(medidaApiData, legajoData)
-  }, [medidaApiData, legajoData])
+    return convertMedidaToMedidaData(medidaApiData, legajoData, demandaData)
+  }, [medidaApiData, legajoData, demandaData])
 
   // Update active step based on medida estado
   useEffect(() => {

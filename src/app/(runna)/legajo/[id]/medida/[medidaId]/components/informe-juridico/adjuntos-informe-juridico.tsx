@@ -307,45 +307,39 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2,
+          mb: 1.5,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <DescriptionIcon color="primary" />
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          <DescriptionIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             Documentos Adjuntos
           </Typography>
-          <Chip
-            label={`${adjuntos.length} archivo${adjuntos.length !== 1 ? 's' : ''}`}
-            size="small"
-            color="default"
-            variant="outlined"
-          />
+          <Typography variant="caption" color="text.secondary">
+            ({adjuntos.length})
+          </Typography>
         </Box>
       </Box>
 
       {/* Status chips */}
-      <Box sx={{ display: "flex", gap: 1, mb: 3, flexWrap: "wrap" }}>
+      <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
         <Chip
-          icon={tieneInformeOficial ? <CheckCircleIcon /> : <GavelIcon />}
-          label={
-            tieneInformeOficial
-              ? "Informe Oficial Cargado"
-              : "Falta Informe Oficial"
-          }
+          icon={tieneInformeOficial ? <CheckCircleIcon sx={{ fontSize: '14px !important' }} /> : <GavelIcon sx={{ fontSize: '14px !important' }} />}
+          label={tieneInformeOficial ? "Informe Cargado" : "Falta Informe"}
           color={tieneInformeOficial ? "success" : "warning"}
           size="small"
+          sx={{ height: 24, fontSize: '0.75rem' }}
         />
         <Chip
-          icon={<ReceiptIcon />}
-          label={`${cantidadAcuses} Acuse${cantidadAcuses !== 1 ? "s" : ""} de Recibo`}
-          color="default"
+          icon={<ReceiptIcon sx={{ fontSize: '14px !important' }} />}
+          label={`${cantidadAcuses} Acuse${cantidadAcuses !== 1 ? "s" : ""}`}
           variant="outlined"
           size="small"
+          sx={{ height: 24, fontSize: '0.75rem' }}
         />
       </Box>
 
-      {/* Drag-drop upload zone */}
+      {/* Compact Drag-drop upload zone */}
       {canModify && (
         <Paper
           onDragEnter={handleDragEnter}
@@ -354,35 +348,36 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
           onDrop={handleDrop}
           onClick={() => !isUploading && fileInputRef.current?.click()}
           sx={{
-            border: isDragging ? '2px dashed #4f3ff0' : '2px dashed',
+            border: '2px dashed',
             borderColor: isDragging ? '#4f3ff0' : 'divider',
             borderRadius: 2,
-            p: 3,
-            mb: 3,
+            p: 2,
+            mb: 2,
             textAlign: 'center',
             cursor: isUploading ? 'not-allowed' : 'pointer',
-            backgroundColor: isDragging ? 'rgba(79, 63, 240, 0.05)' : 'background.default',
+            backgroundColor: isDragging ? 'rgba(79, 63, 240, 0.05)' : 'rgba(0,0,0,0.02)',
             transition: 'all 0.2s ease',
             '&:hover': {
-              backgroundColor: isUploading ? 'background.default' : 'action.hover',
+              backgroundColor: isUploading ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.04)',
               borderColor: isUploading ? 'divider' : '#4f3ff0',
             },
           }}
         >
-          <UploadIcon
-            sx={{
-              fontSize: 40,
-              color: isDragging ? '#4f3ff0' : 'text.secondary',
-              mb: 1,
-            }}
-          />
-          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-            {isDragging ? "Suelta el archivo aquí" : "Arrastra y suelta archivos PDF"}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            o haz clic para seleccionar • Máximo 10MB por archivo
-          </Typography>
-          {isUploading && <CircularProgress size={24} sx={{ mt: 2 }} />}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+            {isUploading ? (
+              <CircularProgress size={20} />
+            ) : (
+              <UploadIcon sx={{ fontSize: 24, color: isDragging ? '#4f3ff0' : 'text.secondary' }} />
+            )}
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {isDragging ? "Suelta aquí" : "Cargar nuevos documentos PDF"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Arrastra y suelta o haz clic para seleccionar (Máx 10MB)
+              </Typography>
+            </Box>
+          </Box>
           <input
             ref={fileInputRef}
             type="file"
@@ -417,60 +412,60 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
         </Paper>
       ) : (
         <Grid container spacing={2}>
-          {/* Informe Oficial Card */}
+          {/* Informe Oficial Card - Compact */}
           {informeOficial && (
             <Grid item xs={12}>
-              <Card
+              <Paper
                 variant="outlined"
                 sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: 1.5,
+                  gap: 2,
                   borderColor: 'success.main',
-                  borderWidth: 2,
+                  borderWidth: 1.5,
                   bgcolor: 'success.50',
+                  borderRadius: 2
                 }}
               >
-                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'success.main', width: 48, height: 48 }}>
-                    <GavelIcon />
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        Informe Oficial
-                      </Typography>
-                      <Chip
-                        label="Principal"
-                        size="small"
-                        color="success"
-                      />
-                    </Box>
-                    <Typography variant="body2" noWrap>
-                      {informeOficial.nombre_original}
+                <Avatar sx={{ bgcolor: 'success.main', width: 36, height: 36 }}>
+                  <GavelIcon sx={{ fontSize: 20 }} />
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
+                      Informe Oficial
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatFileSize(informeOficial.tamano_bytes)} • {formatDate(informeOficial.fecha_carga)}
-                      {informeOficial.subido_por_detalle && ` • Por: ${extractUserName(informeOficial.subido_por_detalle)}`}
-                    </Typography>
+                    <Chip label="Principal" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }} />
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="Descargar">
-                      <IconButton onClick={() => handleDownload(informeOficial)} color="primary">
-                        <DownloadIcon />
+                  <Typography variant="caption" noWrap display="block" sx={{ color: 'text.primary', fontWeight: 500 }}>
+                    {informeOficial.nombre_original}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                    {formatFileSize(informeOficial.tamano_bytes)} • {formatDate(informeOficial.fecha_carga)}
+                    {informeOficial.subido_por_detalle && ` • Por: ${extractUserName(informeOficial.subido_por_detalle)}`}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <Tooltip title="Descargar">
+                    <IconButton size="small" onClick={() => handleDownload(informeOficial)} color="primary">
+                      <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  {canModify && (
+                    <Tooltip title="Eliminar">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(informeOficial.id)}
+                        disabled={isDeleting}
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    {canModify && (
-                      <Tooltip title="Eliminar">
-                        <IconButton
-                          onClick={() => handleDelete(informeOficial.id)}
-                          disabled={isDeleting}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
+                  )}
+                </Box>
+              </Paper>
             </Grid>
           )}
 
@@ -487,56 +482,52 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
                 </Grid>
               )}
 
-              {/* Acuses Cards */}
+              {/* Acuses List - Compact */}
               {acuses.map((adjunto) => (
                 <Grid item xs={12} sm={6} key={adjunto.id}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ bgcolor: 'grey.200', color: 'grey.700' }}>
-                        <ReceiptIcon />
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                          <Chip
-                            icon={<PdfIcon sx={{ fontSize: 14 }} />}
-                            label="Acuse"
-                            size="small"
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
-                          {adjunto.nombre_original}
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      p: 1.25,
+                      gap: 1.5,
+                      borderRadius: 2,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.01)' }
+                    }}
+                  >
+                    <Avatar sx={{ bgcolor: 'grey.100', color: 'grey.600', width: 32, height: 32 }}>
+                      <ReceiptIcon sx={{ fontSize: 18 }} />
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="caption" noWrap display="block" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                        {adjunto.nombre_original}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        {formatFileSize(adjunto.tamano_bytes)} • {formatDate(adjunto.fecha_carga)}
+                      </Typography>
+                      {adjunto.descripcion && (
+                        <Typography variant="caption" noWrap display="block" sx={{ fontStyle: 'italic', color: 'text.disabled', fontSize: '0.65rem' }}>
+                          {adjunto.descripcion}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatFileSize(adjunto.tamano_bytes)} • {formatDate(adjunto.fecha_carga)}
-                        </Typography>
-                        {adjunto.descripcion && (
-                          <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-                            {adjunto.descripcion}
-                          </Typography>
-                        )}
-                      </Box>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        <Tooltip title="Descargar">
-                          <IconButton size="small" onClick={() => handleDownload(adjunto)}>
-                            <DownloadIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {canModify && (
-                          <Tooltip title="Eliminar">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDelete(adjunto.id)}
-                              disabled={isDeleting}
-                              color="error"
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
+                      )}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0 }}>
+                      <IconButton size="small" onClick={() => handleDownload(adjunto)}>
+                        <DownloadIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                      {canModify && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(adjunto.id)}
+                          disabled={isDeleting}
+                          color="error"
+                        >
+                          <DeleteIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      )}
+                    </Box>
+                  </Paper>
                 </Grid>
               ))}
             </>

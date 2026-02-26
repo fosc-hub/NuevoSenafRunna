@@ -29,6 +29,7 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Avatar,
 } from "@mui/material"
 import {
   PictureAsPdf as PdfIcon,
@@ -180,42 +181,47 @@ export const AdjuntosRatificacion: React.FC<AdjuntosRatificacionProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2,
+          mb: 1.5,
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          Documentos Adjuntos ({adjuntos.length})
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <DescriptionIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            Documentos Adjuntos
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            ({adjuntos.length})
+          </Typography>
+        </Box>
       </Box>
 
       {/* Status chips */}
       <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
         <Chip
-          icon={tieneResolucion ? <CheckCircleIcon /> : <DescriptionIcon />}
-          label={
-            tieneResolucion
-              ? "Resolución Judicial Cargada"
-              : "Falta Resolución Judicial"
-          }
+          icon={tieneResolucion ? <CheckCircleIcon sx={{ fontSize: '14px !important' }} /> : <DescriptionIcon sx={{ fontSize: '14px !important' }} />}
+          label={tieneResolucion ? "Resolución Cargada" : "Falta Resolución"}
           color={tieneResolucion ? "success" : "warning"}
           size="small"
+          sx={{ height: 24, fontSize: '0.75rem' }}
         />
         {tieneCedula && (
           <Chip
-            icon={<ArticleIcon />}
-            label="Cédula de Notificación"
+            icon={<ArticleIcon sx={{ fontSize: '14px !important' }} />}
+            label="Cédula"
             color="primary"
             variant="outlined"
             size="small"
+            sx={{ height: 24, fontSize: '0.75rem' }}
           />
         )}
         {tieneAcuse && (
           <Chip
-            icon={<CheckCircleIcon />}
-            label="Acuse de Recibo"
+            icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
+            label="Acuse"
             color="info"
             variant="outlined"
             size="small"
+            sx={{ height: 24, fontSize: '0.75rem' }}
           />
         )}
       </Box>
@@ -231,78 +237,80 @@ export const AdjuntosRatificacion: React.FC<AdjuntosRatificacionProps> = ({
           </Typography>
         </Paper>
       ) : (
-        <Paper variant="outlined">
+        <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 2 }}>
           <List disablePadding>
             {adjuntos.map((adjunto, index) => (
-              <React.Fragment key={adjunto.id}>
-                {index > 0 && <Box sx={{ borderTop: 1, borderColor: "divider" }} />}
-                <ListItem
-                  sx={{
-                    py: 2,
-                    backgroundColor: getAdjuntoBackground(adjunto.tipo_adjunto),
-                  }}
-                >
-                  <ListItemIcon>
-                    {getAdjuntoIcon(adjunto.tipo_adjunto)}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {TIPO_ADJUNTO_LABELS[adjunto.tipo_adjunto]}
+              <ListItem
+                key={adjunto.id}
+                sx={{
+                  py: 1.25,
+                  px: 2,
+                  borderBottom: index < adjuntos.length - 1 ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                  backgroundColor: getAdjuntoBackground(adjunto.tipo_adjunto),
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.01)' }
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Avatar sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: adjunto.tipo_adjunto === TipoAdjuntoRatificacion.RESOLUCION_JUDICIAL ? 'success.50' : 'grey.50',
+                    color: adjunto.tipo_adjunto === TipoAdjuntoRatificacion.RESOLUCION_JUDICIAL ? 'success.main' : 'grey.600'
+                  }}>
+                    {React.cloneElement(getAdjuntoIcon(adjunto.tipo_adjunto) as React.ReactElement, { sx: { fontSize: 18 } })}
+                  </Avatar>
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                        {TIPO_ADJUNTO_LABELS[adjunto.tipo_adjunto]}
+                      </Typography>
+                      {adjunto.tipo_adjunto === TipoAdjuntoRatificacion.RESOLUCION_JUDICIAL && (
+                        <Chip
+                          label="Principal"
+                          size="small"
+                          color="success"
+                          sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }}
+                        />
+                      )}
+                    </Box>
+                  }
+                  secondary={
+                    <Box sx={{ mt: 0.2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                        {formatDate(adjunto.fecha_carga)} • Por: {adjunto.usuario_carga_nombre || extractUserName(String(adjunto.usuario_carga))}
+                      </Typography>
+                      {adjunto.descripcion && (
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          sx={{ fontStyle: "italic", mt: 0.2, color: 'text.disabled', fontSize: '0.65rem' }}
+                        >
+                          {adjunto.descripcion}
                         </Typography>
-                        {adjunto.tipo_adjunto === TipoAdjuntoRatificacion.RESOLUCION_JUDICIAL && (
-                          <Chip
-                            label="Obligatorio"
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                          />
-                        )}
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          Cargado: {formatDate(adjunto.fecha_carga)}
-                        </Typography>
-                        <Typography variant="caption" display="block">
-                          Por: {adjunto.usuario_carga_nombre || extractUserName(String(adjunto.usuario_carga))}
-                        </Typography>
-                        {adjunto.descripcion && (
-                          <Typography
-                            variant="caption"
-                            display="block"
-                            sx={{ fontStyle: "italic", mt: 0.5 }}
-                          >
-                            {adjunto.descripcion}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
-                  <ListItemSecondaryAction>
-                    <Tooltip title="Descargar documento">
-                      <IconButton edge="end" onClick={() => handleDownload(adjunto)}>
-                        <DownloadIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              </React.Fragment>
+                      )}
+                    </Box>
+                  }
+                />
+                <IconButton size="small" onClick={() => handleDownload(adjunto)} color="primary">
+                  <DownloadIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </ListItem>
             ))}
           </List>
         </Paper>
       )}
 
-      {/* Info footer */}
-      <Box sx={{ mt: 2 }}>
-        <Alert severity="info" variant="outlined">
-          <Typography variant="caption">
-            Los adjuntos se cargan durante el registro de la ratificación judicial.
-            Para modificar los adjuntos, contacte al administrador del sistema.
+      {/* Info footer - Compact */}
+      <Box sx={{ mt: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'rgba(2, 136, 209, 0.03)', borderRadius: 1.5, border: '1px solid', borderColor: 'rgba(2, 136, 209, 0.1)' }}>
+          <DescriptionIcon sx={{ fontSize: 16, color: 'info.main' }} />
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+            Los adjuntos no son modificables desde aquí. Contacte al administrador si requiere cambios.
           </Typography>
-        </Alert>
+        </Box>
       </Box>
     </Box>
   )

@@ -30,13 +30,24 @@ export const useUserPermissions = () => {
     const groupNames = groups.map((g) => g.name.toLowerCase())
 
     const isAdmin = user.is_superuser || user.is_staff
-    const isJefeZonal = groupNames.includes("jefe zonal") || groupNames.includes("jz")
+    const isJefeZonal =
+      groupNames.some((n) => n.includes("jefe zonal")) ||
+      groupNames.some((n) => n.includes("jz")) ||
+      groupNames.some((n) => n.includes("jefes zonales"))
     const isDirector =
-      groupNames.includes("director provincial") ||
-      groupNames.includes("director interior") ||
-      groupNames.includes("director")
-    const isLegales = groupNames.includes("legales") || groupNames.includes("equipo legal")
-    const isEquipoTecnico = groupNames.includes("equipo técnico") || groupNames.includes("equipo tecnico")
+      groupNames.some((n) => n.includes("director provincial")) ||
+      groupNames.some((n) => n.includes("director interior")) ||
+      groupNames.some((n) => n.includes("director")) ||
+      groupNames.some((n) => n.includes("directores"))
+    const isLegales =
+      groupNames.some((n) => n.includes("legales")) ||
+      groupNames.some((n) => n.includes("legal")) ||
+      groupNames.some((n) => n.includes("equipo legal")) ||
+      user.zonas?.some((z) => z.legal === true)
+    const isEquipoTecnico =
+      groupNames.some((n) => n.includes("equipo técnico")) ||
+      groupNames.some((n) => n.includes("equipo tecnico")) ||
+      groupNames.some((n) => n.includes("et"))
 
     // Determine user level (1-4)
     // Level 4: Admin

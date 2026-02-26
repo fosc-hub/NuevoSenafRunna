@@ -251,10 +251,7 @@ const LegajoTable: React.FC = () => {
   // Fetch legajos using TanStack Query
   const { data: legajosData, isLoading, refetch } = useApiQuery<PaginatedLegajosResponse>(
     "legajos/",
-    queryParams,
-    {
-      queryFn: () => fetchLegajos(queryParams),
-    }
+    queryParams
   )
 
   const totalCount = legajosData?.count || 0
@@ -321,6 +318,70 @@ const LegajoTable: React.FC = () => {
   const handleNuevoRegistro = () => {
     console.log("Nuevo registro clicked")
   }
+
+  /**
+   * Determina si un legajo debe resaltarse basándose en el rol del usuario y el estado de la medida activa.
+   * Verifica tanto el indicador resumido como la lista completa de medidas activas.
+   */
+  const shouldHighlightLegajo = (row: any) => {
+    const activeMeasures = row.medidas_activas || []
+    const andarivel = row.indicadores?.medida_andarivel
+    const summaryEstado = typeof andarivel === "object" ? andarivel?.etapa_estado : null
+
+    // Recolectar todos los estados presentes en el legajo
+    const allEstados = new Set<string>()
+
+    if (summaryEstado) allEstados.add(String(summaryEstado).toUpperCase())
+
+    activeMeasures.forEach((m: any) => {
+      if (m.estado) allEstados.add(String(m.estado).toUpperCase())
+      if (m.etapa) allEstados.add(String(m.etapa).toUpperCase())
+      if (m.etapa_estado) allEstados.add(String(m.etapa_estado).toUpperCase())
+    })
+
+    const has = (keyword: string) =>
+      Array.from(allEstados).some((s) => s.includes(keyword.toUpperCase()))
+
+    // ── Targets por rol (búsqueda por palabra clave para mayor compatibilidad) ──
+
+    // Técnico
+    const isTecnicoTarget =
+      has("REGISTRO_INTERVENCION") ||
+      has("PENDIENTE") ||
+      has("EN_PROGRESO") ||
+      has("VISADO_APROBADO") ||
+      has("VISADO_CON_OBSERVACION")
+
+    // Jefe Zonal
+    const isJefeZonalTarget =
+      has("APROBACION_REGISTRO") ||
+      has("VISADO_JZ") ||
+      has("REVISION")
+
+    // Director
+    const isDirectorTarget =
+      has("NOTA_AVAL")
+
+    // Legal
+    const isLegalTarget =
+      has("JURIDICO") ||
+      has("RATIFICACION") ||
+      has("PENDIENTE_VISADO") ||
+      has("CIERRE")
+
+    // ── Resaltado según permisos del usuario logueado ────────────────────────────
+
+    const isHighlight =
+      (permissions.isEquipoTecnico && isTecnicoTarget) ||
+      (permissions.isJefeZonal && isJefeZonalTarget) ||
+      (permissions.isDirector && isDirectorTarget) ||
+      (permissions.isLegales && isLegalTarget) ||
+      (permissions.isAdmin && (isTecnicoTarget || isJefeZonalTarget || isDirectorTarget || isLegalTarget))
+
+    return isHighlight
+  }
+
+
 
   const handlePrioridadChange = async (legajoId: number, newValue: string) => {
     console.log(`Updating prioridad for legajo ${legajoId} to ${newValue}`)
@@ -816,7 +877,8 @@ const LegajoTable: React.FC = () => {
         profesional_asignado: userResponsableValue,
         jefe_zonal: jefeZonalValue,
         fecha_apertura: legajo.fecha_apertura,
-        // Add indicadores and oficios for new visual components
+        // Add full measures list and indicators/oficios for better highlighting and visual components
+        medidas_activas: legajo.medidas_activas,
         indicadores: legajo.indicadores,
         oficios: legajo.oficios,
       }
@@ -916,6 +978,9 @@ const LegajoTable: React.FC = () => {
             onRowClick={(params) => {
               handleOpenModal(params.row.id)
             }}
+            getRowClassName={(params) => {
+              return shouldHighlightLegajo(params.row) ? "highlight-pending" : ""
+            }}
             slots={{
               toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} />,
             }}
@@ -935,6 +1000,17 @@ const LegajoTable: React.FC = () => {
                 transition: "background-color 0.2s",
                 "&:hover": {
                   backgroundColor: "rgba(25, 118, 210, 0.04)",
+                },
+              },
+              "& .highlight-pending": {
+                backgroundColor: "rgba(79, 63, 240, 0.1) !important",
+                borderLeft: "6px solid #3f51b5 !important",
+                "& .MuiDataGrid-cell": {
+                  fontWeight: "900 !important",
+                  color: "#1a237e !important",
+                },
+                "&:hover": {
+                  backgroundColor: "rgba(79, 63, 240, 0.15) !important",
                 },
               },
             }}

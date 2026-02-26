@@ -251,8 +251,8 @@ export interface IntervencionResponse {
   fecha_creacion: string // ISO datetime
   fecha_modificacion: string // ISO datetime
 
-  // Adjuntos (MED-02c) - URL o referencia
-  adjuntos: string
+  // Adjuntos (MED-02c)
+  adjuntos: string | null
 }
 
 // ============================================================================

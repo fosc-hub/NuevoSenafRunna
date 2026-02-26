@@ -238,6 +238,7 @@ export const useRegistroIntervencion = ({
         motivo_vulneraciones: data.motivo_vulneraciones || "",
         requiere_informes_ampliatorios: data.requiere_informes_ampliatorios,
       })
+
     } catch (err: any) {
       console.error("Error loading intervención:", err)
       setError(err?.response?.data?.detail || "Error al cargar la intervención")
@@ -741,6 +742,7 @@ export const useRegistroIntervencion = ({
     const effectiveId = intervencionId || intervencion?.id
     if (!effectiveId) return
 
+
     setIsLoadingAdjuntos(true)
 
     try {
@@ -748,7 +750,10 @@ export const useRegistroIntervencion = ({
       setAdjuntos(data)
     } catch (err: any) {
       console.error("Error loading adjuntos:", err)
-      // Don't set global error for adjuntos loading failure
+      // Check for permission errors (Legal users might be blocked from this specific endpoint)
+      if (err?.response?.status === 404 || err?.response?.status === 403) {
+        console.warn("[useRegistroIntervencion] Specific adjuntos-list endpoint blocked, falling back to nested data")
+      }
     } finally {
       setIsLoadingAdjuntos(false)
     }

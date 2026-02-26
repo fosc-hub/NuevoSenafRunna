@@ -8,7 +8,8 @@ import PostAddIcon from "@mui/icons-material/PostAdd"
 import { SectionCard } from "./section-card"
 import { RegistroIntervencionModal } from "./registro-intervencion-modal"
 import { useState, useEffect } from "react"
-import type { IntervencionResponse } from "../../types/intervencion-api"
+import { getAdjuntos } from "../../api/intervenciones-api-service"
+import type { IntervencionResponse, AdjuntoIntervencion } from "../../types/intervencion-api"
 
 interface AperturaSectionProps {
   data: {
@@ -57,6 +58,8 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
 }) => {
   const [registroModalOpen, setRegistroModalOpen] = useState<boolean>(false)
   const [lastIntervencionId, setLastIntervencionId] = useState<number | undefined>(undefined)
+  const [informeObligatorio, setInformeObligatorio] = useState<AdjuntoIntervencion | null>(null)
+  const [isLoadingInforme, setIsLoadingInforme] = useState(false)
 
   // Get display name for current workflow phase
   const getEtapaDisplayName = (phase?: string): string => {
@@ -87,6 +90,33 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
       console.log('[AperturaSection] No interventions found for this etapa')
     }
   }, [intervenciones])
+
+  /**
+   * Fetch attachments for the latest intervention to find the mandatory report
+   */
+  useEffect(() => {
+    const fetchInforme = async () => {
+      if (!lastIntervencionId) {
+        setInformeObligatorio(null)
+        return
+      }
+
+      try {
+        setIsLoadingInforme(true)
+        const adjuntos = await getAdjuntos(medidaId, lastIntervencionId)
+        // Find the "INFORME" type attachment
+        const report = adjuntos.find((a) => a.tipo === 'INFORME')
+        setInformeObligatorio(report || null)
+      } catch (error) {
+        console.error("[AperturaSection] Error fetching adjuntos:", error)
+        setInformeObligatorio(null)
+      } finally {
+        setIsLoadingInforme(false)
+      }
+    }
+
+    fetchInforme()
+  }, [lastIntervencionId, medidaId])
 
   const handleFormularioClick = () => {
     setRegistroModalOpen(true)
@@ -135,44 +165,68 @@ export const AperturaSection: React.FC<AperturaSectionProps> = ({
 
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
-            variant="outlined"
+            variant={lastIntervencionId ? "outlined" : "contained"}
             color="primary"
-            startIcon={<DescriptionIcon />}
+            startIcon={lastIntervencionId ? <DescriptionIcon /> : <PostAddIcon />}
             onClick={handleFormularioClick}
-            disabled={!lastIntervencionId || !hasLegajoData}
-            title={!hasLegajoData ? "Esperando datos del legajo..." : lastIntervencionId ? "Ver última intervención registrada" : "No hay intervenciones"}
+            disabled={!hasLegajoData}
+            title={
+              !hasLegajoData
+                ? "Esperando datos del legajo..."
+                : lastIntervencionId
+                  ? "Editar Intervención de Apertura"
+                  : "Crear nueva intervención de apertura"
+            }
             sx={{
               borderRadius: 8,
               textTransform: "none",
               px: 3,
-              "&:hover": {
-                backgroundColor: "rgba(25, 118, 210, 0.04)",
-              },
+              ...(lastIntervencionId && {
+                "&:hover": {
+                  backgroundColor: "rgba(25, 118, 210, 0.04)",
+                },
+              }),
             }}
           >
-            {lastIntervencionId ? "Ver Última Intervención" : "Sin Intervenciones"}
+            {data.estado === 'PENDIENTE_APROBACION_REGISTRO'
+              ? `Ver y Aprobar ${etapaName}`
+              : lastIntervencionId
+                ? "Ver/Editar Intervención"
+                : "Nueva Intervención"}
           </Button>
 
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<PostAddIcon />}
-            onClick={handleCargarInformesClick}
-            disabled={!hasLegajoData}
-            title={!hasLegajoData ? "Esperando datos del legajo..." : "Crear nueva intervención"}
-            sx={{
-              borderRadius: 8,
-              textTransform: "none",
-              px: 3,
-            }}
-          >
-            Nueva Intervención
-          </Button>
+          {informeObligatorio && (
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<DescriptionIcon />}
+              href={informeObligatorio.url_descarga}
+              target="_blank"
+              title="Descargar/Ver Informe Obligatorio"
+              sx={{
+                borderRadius: 8,
+                textTransform: "none",
+                px: 3,
+                bgcolor: 'secondary.main',
+                '&:hover': {
+                  bgcolor: 'secondary.dark',
+                }
+              }}
+            >
+              Ver Informe Obligatorio (PDF)
+            </Button>
+          )}
+
+          {isLoadingInforme && (
+            <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+              <CircularProgress size={20} />
+            </Box>
+          )}
         </Box>
-      </SectionCard>
+      </SectionCard >
 
       {/* Registro Intervención Modal */}
-      <RegistroIntervencionModal
+      < RegistroIntervencionModal
         open={registroModalOpen}
         onClose={handleModalClose}
         medidaId={medidaId}

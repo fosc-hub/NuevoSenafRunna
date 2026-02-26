@@ -155,7 +155,27 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   const router = useRouter()
   const queryClient = useQueryClient()
   useUser() // For auth context
+  const { user } = useUser()
   const { actorFilter, allowedActors, isActorAllowed, canSeeAllActors } = useActorVisibility()
+
+  // Determine user roles for highlighting
+  const roles = useMemo(() => {
+    if (!user) return { isET: false, isJZ: false, isLegal: false, user_id: null }
+    const groups = user.groups || []
+    const groupNames = groups.map((g) => g.name.toLowerCase())
+    const isJZ = groupNames.includes("jefe zonal") || groupNames.includes("jz")
+    const isDirector =
+      groupNames.includes("director provincial") || groupNames.includes("director interior") || groupNames.includes("director")
+    const isLegal = groupNames.includes("legales") || groupNames.includes("equipo legal") || user.zonas?.some((z) => z.legal === true)
+    const isET = groupNames.includes("equipo técnico") || groupNames.includes("equipo tecnico") || (!isJZ && !isDirector && !isLegal)
+
+    return {
+      isET,
+      isJZ: isJZ || isDirector,
+      isLegal,
+      user_id: user.id
+    }
+  }, [user])
 
   // ============================================================================
   // STATE
@@ -426,6 +446,32 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
     [optimisticReadIds]
   )
 
+  // Helper to determine if an activity should be highlighted for the current user's role
+  const shouldHighlightForRole = useCallback(
+    (actividad: TActividadPlanTrabajo) => {
+      // 1. Técnico: Highlight if assigned (principal or secondary)
+      if (roles.isET) {
+        const isAssigned =
+          actividad.responsable_principal === roles.user_id ||
+          actividad.responsables_secundarios?.includes(roles.user_id as number)
+        return isAssigned && actividad.estado === "PENDIENTE"
+      }
+
+      // 2. Jefe Zonal / Director: Highlight if pending JZ approval
+      if (roles.isJZ) {
+        return actividad.estado === "PENDIENTE_VISADO_JZ"
+      }
+
+      // 3. Legal: Highlight if pending Legal approval
+      if (roles.isLegal) {
+        return actividad.estado === "PENDIENTE_VISADO"
+      }
+
+      return false
+    },
+    [roles]
+  )
+
   // Statistics
   const statistics = useMemo(() => {
     const sourceData = variant === "global" ? actividades : filteredActividades
@@ -456,22 +502,22 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   const hasActiveFilters = useMemo(() => {
     return Boolean(
       filters.search ||
-        filters.estado ||
-        filters.actor ||
-        filters.origen ||
-        (filters as GlobalActividadFilters).nnya_nombre ||
-        (filters as GlobalActividadFilters).nnya_dni ||
-        (filters as GlobalActividadFilters).numero_legajo ||
-        (filters as GlobalActividadFilters).tipo_medida ||
-        (filters as GlobalActividadFilters).responsable ||
-        (filters as GlobalActividadFilters).tipo_actividad ||
-        (filters as GlobalActividadFilters).zona ||
-        (filters as GlobalActividadFilters).fecha_desde ||
-        (filters as GlobalActividadFilters).fecha_hasta ||
-        (filters as GlobalActividadFilters).vencida ||
-        (filters as GlobalActividadFilters).pendiente_visado ||
-        (filters as GlobalActividadFilters).es_borrador ||
-        (filters as GlobalActividadFilters).sin_leer // Sprint 2: Lectura Multi-Usuario
+      filters.estado ||
+      filters.actor ||
+      filters.origen ||
+      (filters as GlobalActividadFilters).nnya_nombre ||
+      (filters as GlobalActividadFilters).nnya_dni ||
+      (filters as GlobalActividadFilters).numero_legajo ||
+      (filters as GlobalActividadFilters).tipo_medida ||
+      (filters as GlobalActividadFilters).responsable ||
+      (filters as GlobalActividadFilters).tipo_actividad ||
+      (filters as GlobalActividadFilters).zona ||
+      (filters as GlobalActividadFilters).fecha_desde ||
+      (filters as GlobalActividadFilters).fecha_hasta ||
+      (filters as GlobalActividadFilters).vencida ||
+      (filters as GlobalActividadFilters).pendiente_visado ||
+      (filters as GlobalActividadFilters).es_borrador ||
+      (filters as GlobalActividadFilters).sin_leer // Sprint 2: Lectura Multi-Usuario
     )
   }, [filters])
 
@@ -988,8 +1034,8 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                     {hasActiveFilters
                       ? "No se encontraron actividades con los filtros aplicados"
                       : variant === "global"
-                      ? "No tienes actividades asignadas"
-                      : "No hay actividades en el plan de trabajo"}
+                        ? "No tienes actividades asignadas"
+                        : "No hay actividades en el plan de trabajo"}
                   </Typography>
                   {hasActiveFilters && (
                     <Chip label="Limpiar filtros" onClick={handleClearFilters} color="primary" variant="outlined" sx={{ mt: 2 }} />
@@ -1004,6 +1050,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
               // Sprint 2: Use leida_por_mi from API response (all variants)
               const isRead = isActivityRead(actividad)
               const isUnread = !isRead
+              const isRoleHighlighted = shouldHighlightForRole(actividad)
 
               return (
                 <TableRow
@@ -1014,25 +1061,29 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                   sx={{
                     backgroundColor: isSelected
                       ? "rgba(156, 39, 176, 0.08)"
-                      : isUnread
-                      ? "rgba(25, 118, 210, 0.04)" // Light blue for unread
-                      : actividad.esta_vencida && actividad.estado === "PENDIENTE"
-                      ? "rgba(211, 47, 47, 0.05)"
-                      : actividad.es_borrador
-                      ? "rgba(237, 108, 2, 0.05)"
-                      : "transparent",
+                      : isRoleHighlighted
+                        ? "rgba(25, 118, 210, 0.06)" // Slightly stronger for role-pending
+                        : isUnread
+                          ? "rgba(25, 118, 210, 0.04)" // Light blue for unread
+                          : actividad.esta_vencida && actividad.estado === "PENDIENTE"
+                            ? "rgba(211, 47, 47, 0.05)"
+                            : actividad.es_borrador
+                              ? "rgba(237, 108, 2, 0.05)"
+                              : "transparent",
                     borderLeft: isSelected
                       ? "4px solid #9c27b0"
-                      : isUnread
-                      ? "4px solid #1976d2" // Blue left border for unread
-                      : actividad.esta_vencida && actividad.estado === "PENDIENTE"
-                      ? "4px solid #d32f2f"
-                      : actividad.es_borrador
-                      ? "4px solid #ed6c02"
-                      : "4px solid transparent",
+                      : isRoleHighlighted
+                        ? "4px solid #3f51b5" // Primary indigo for role-pending
+                        : isUnread
+                          ? "4px solid #1976d2" // Blue left border for unread
+                          : actividad.esta_vencida && actividad.estado === "PENDIENTE"
+                            ? "4px solid #d32f2f"
+                            : actividad.es_borrador
+                              ? "4px solid #ed6c02"
+                              : "4px solid transparent",
                     transition: "all 0.2s",
                     cursor: "pointer", // All variants: clickable rows open detail modal
-                    fontWeight: isUnread ? 600 : 400, // Bold text for unread
+                    fontWeight: isUnread || isRoleHighlighted ? 600 : 400, // Bold text for unread or role-pending
                   }}
                 >
                   {/* Checkbox */}

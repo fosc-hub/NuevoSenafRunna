@@ -37,7 +37,7 @@ interface ActividadesProps {
 // Componente para una fila de actividad con detalles expandibles
 function ActividadRow({ actividad, index }: { actividad: Actividad; index: number }) {
   const [open, setOpen] = useState(false)
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://web-runna-v2legajos.up.railway.app/api"
 
   return (
     <>
@@ -108,7 +108,9 @@ function ActividadRow({ actividad, index }: { actividad: Actividad; index: numbe
                     {actividad.adjuntos.map((adjunto, idx) => {
                       // Extraer el nombre del archivo de la ruta
                       const fileName = adjunto.archivo ? adjunto.archivo.split("/").pop() : `Adjunto ${idx + 1}`
-                      const fileUrl = adjunto.archivo ? `${baseUrl}${adjunto.archivo}` : "#"
+                      // Use relative path for constructing URL to avoid doubling protocol
+                      const apiBase = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl
+                      const fileUrl = adjunto.archivo ? `${apiBase}${adjunto.archivo}` : "#"
 
                       return (
                         <Chip

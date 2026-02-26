@@ -46,7 +46,7 @@ interface AdjuntosTabProps {
 
 // Actualizar la función AdjuntosTab para manejar la nueva estructura de datos
 export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://web-runna-v2legajos.up.railway.app/api"
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   // PDF Viewer hook
@@ -123,9 +123,10 @@ export default function AdjuntosTab({ adjuntos, setAdjuntos }: AdjuntosTabProps)
             const fileName = file.name || getFileName(file.archivo)
             const fileType = file.type || getFileType(fileName)
             // Fix URL construction: check if archivo already has full URL
+            const apiBase = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl
             const fileUrl = file.url || (file.archivo.startsWith("http://") || file.archivo.startsWith("https://")
               ? file.archivo
-              : `${baseUrl}${file.archivo}`)
+              : `${apiBase}${file.archivo}`)
             const fileDate = file.date || ""
 
             return (

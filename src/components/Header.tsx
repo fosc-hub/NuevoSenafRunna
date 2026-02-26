@@ -1,10 +1,16 @@
-import type React from "react"
+import React from "react"
 
 interface HeaderProps {
   type?: "demandas" | "legajos"
 }
 
 const Header: React.FC<HeaderProps> = ({ type }) => {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Determine the header text based on the type prop
   let headerText = "Bienvenido a "
 
@@ -23,15 +29,19 @@ const Header: React.FC<HeaderProps> = ({ type }) => {
         <span className="text-sky-500">Mesa de{headerText.split("Mesa de")[1]}</span>
       </h1>
       <span className="text-gray-500">
-        {new Date().toLocaleDateString("es-AR", {
-          day: "numeric",
-          month: "long",
-        })}{" "}
-        |{" "}
-        {new Date().toLocaleTimeString("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
+        {mounted && (
+          <>
+            {new Date().toLocaleDateString("es-AR", {
+              day: "numeric",
+              month: "long",
+            })}{" "}
+            |{" "}
+            {new Date().toLocaleTimeString("es-AR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </>
+        )}
       </span>
     </div>
   )

@@ -31,7 +31,7 @@ export const subtipoDispositivoService = {
     if (categoria) {
       params.categoria = categoria
     }
-    const response = await axiosInstance.get<TSubtipoDispositivo[]>('/api/subtipos-dispositivo/', { params })
+    const response = await axiosInstance.get<TSubtipoDispositivo[]>('/subtipos-dispositivo/', { params })
     return response.data
   },
 
@@ -43,7 +43,7 @@ export const subtipoDispositivoService = {
    * @returns Single subtipo
    */
   async get(id: number): Promise<TSubtipoDispositivo> {
-    const response = await axiosInstance.get<TSubtipoDispositivo>(`/api/subtipos-dispositivo/${id}/`)
+    const response = await axiosInstance.get<TSubtipoDispositivo>(`/subtipos-dispositivo/${id}/`)
     return response.data
   }
 }

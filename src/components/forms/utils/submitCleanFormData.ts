@@ -462,8 +462,7 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
     ...(formData.objetivo_de_demanda === 'CARGA_OFICIOS' && {
       tipo_medida_evaluado: formData.tipo_medida_evaluado,
       categoria_informacion_judicial: formData.categoria_informacion_judicial,
-      // tipo_informacion_judicial is deprecated - use tipo_oficio value for backend compatibility
-      tipo_informacion_judicial: formData.tipo_oficio || null,
+      // tipo_informacion_judicial is DEPRECATED - no longer sent to backend
       // tipo_oficio is the main field now
       ...(formData.tipo_oficio ? { tipo_oficio: formData.tipo_oficio } : {}),
       numero_expediente: formData.numero_expediente || null,

@@ -41,7 +41,6 @@ import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import axiosInstance from "@/app/api/utils/axiosInstance"
-import { subtipoDispositivoService } from "../../services/subtipoDispositivoService"
 import type { ConfiguracionDispositivoMPE } from "@/app/(runna)/legajo-mesa/types/medida-api"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 
@@ -55,10 +54,17 @@ interface ConfiguracionMPESectionProps {
   onConfigUpdated?: () => void
 }
 
+interface SubtipoDispositivo {
+  id: number
+  nombre: string
+  capacidad_maxima: number | null
+}
+
 interface TipoDispositivo {
   id: number
   nombre: string
   categoria?: string
+  subtipos?: SubtipoDispositivo[] // Nested subtipos from GET /api/tipos-dispositivo/?categoria=MPE
 }
 
 interface UpdateConfiguracionRequest {
@@ -111,7 +117,7 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
   const [selectedSubtipoId, setSelectedSubtipoId] = useState<number | null>(null)
 
-  // Fetch tipos dispositivo filtered by MPE category
+  // Fetch tipos dispositivo filtered by MPE category (includes nested subtipos)
   const {
     data: tiposDispositivo = [],
     isLoading: isLoadingTipos,
@@ -120,16 +126,10 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
     queryFn: getTiposDispositivoMPE,
   })
 
-  // Fetch subtipos based on selected tipo
-  // GET /api/subtipos-dispositivo/?tipo_dispositivo={id}
-  const {
-    data: subtiposDispositivo = [],
-    isLoading: isLoadingSubtipos,
-  } = useQuery({
-    queryKey: ['subtipos-dispositivo', selectedTipoId],
-    queryFn: () => subtipoDispositivoService.list(selectedTipoId || undefined),
-    enabled: !!selectedTipoId,
-  })
+  // Get subtipos from the selected tipo's nested array (no separate API call needed)
+  const selectedTipo = tiposDispositivo.find(t => t.id === selectedTipoId)
+  const subtiposDispositivo = selectedTipo?.subtipos || []
+  const isLoadingSubtipos = false // No separate loading since subtipos come with tipos
 
   // Mutation for updating configuration via intervention PATCH
   const updateMutation = useMutation({

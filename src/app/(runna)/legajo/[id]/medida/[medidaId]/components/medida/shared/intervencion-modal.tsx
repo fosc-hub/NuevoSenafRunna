@@ -66,9 +66,6 @@ import { RejectionDialog } from "./rejection-dialog"
 // Import business logic hook
 import { useRegistroIntervencion } from "../../../hooks/useRegistroIntervencion"
 
-// Import subtipo dispositivo service
-import { subtipoDispositivoService, type TSubtipoDispositivo } from "../../../services/subtipoDispositivoService"
-
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -148,9 +145,11 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     const [activeStep, setActiveStep] = useState(0)
     const [validationError, setValidationError] = useState<string | null>(null)
 
-    // Subtipo dispositivo state (dynamic loading based on tipo_dispositivo)
-    const [subtiposDispositivo, setSubtiposDispositivo] = useState<TSubtipoDispositivo[]>([])
-    const [isLoadingSubtipos, setIsLoadingSubtipos] = useState(false)
+    // Get subtipos from the selected tipo's nested array (no separate API call needed)
+    // tiposDispositivo from hook now includes nested subtipos array
+    const selectedTipoDispositivo = tiposDispositivo.find(t => t.id === formData.tipo_dispositivo_id)
+    const subtiposDispositivo = selectedTipoDispositivo?.subtipos || []
+    const isLoadingSubtipos = false // No separate loading since subtipos come with tipos
 
     // Validate medidaId on mount
     useEffect(() => {
@@ -160,27 +159,6 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
             setValidationError(null)
         }
     }, [open, medidaId])
-
-    // Load subtipos when tipo_dispositivo changes
-    useEffect(() => {
-        const loadSubtipos = async () => {
-            if (formData.tipo_dispositivo_id) {
-                setIsLoadingSubtipos(true)
-                try {
-                    const subtipos = await subtipoDispositivoService.list(formData.tipo_dispositivo_id)
-                    setSubtiposDispositivo(subtipos)
-                } catch (error) {
-                    console.error('Error loading subtipos dispositivo:', error)
-                    setSubtiposDispositivo([])
-                } finally {
-                    setIsLoadingSubtipos(false)
-                }
-            } else {
-                setSubtiposDispositivo([])
-            }
-        }
-        loadSubtipos()
-    }, [formData.tipo_dispositivo_id])
 
     const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 

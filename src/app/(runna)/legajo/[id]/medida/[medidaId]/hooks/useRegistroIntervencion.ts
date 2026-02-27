@@ -25,6 +25,7 @@ import {
   crearYEnviarIntervencion,
   type CrearYEnviarRequest,
   type CrearYEnviarResponse,
+  type TipoDispositivoWithSubtipos,
 } from "../api/intervenciones-api-service"
 import { medidaKeys } from './useMedidaDetail'
 
@@ -143,7 +144,7 @@ export const useRegistroIntervencion = ({
   // ----------------------------------------------------------------------------
   // STATE - Catalogs (tipo_dispositivo, motivo, etc.)
   // ----------------------------------------------------------------------------
-  const [tiposDispositivo, setTiposDispositivo] = useState<TipoDispositivo[]>([])
+  const [tiposDispositivo, setTiposDispositivo] = useState<TipoDispositivoWithSubtipos[]>([])
   const [motivos, setMotivos] = useState<MotivoIntervencion[]>([])
   const [subMotivos, setSubMotivos] = useState<SubMotivoIntervencion[]>([])
   const [categorias, setCategorias] = useState<CategoriaIntervencion[]>([])

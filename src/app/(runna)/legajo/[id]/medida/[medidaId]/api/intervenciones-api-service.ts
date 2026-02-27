@@ -776,23 +776,36 @@ export const getCategorias = async (): Promise<CategoriasResponse> => {
 }
 
 /**
- * Get tipos de dispositivo
- * GET /api/tipos-dispositivos/
- * TODO: Replace with actual endpoint when available
+ * Subtipo dispositivo nested in tipo response
  */
-export const getTiposDispositivo = async (): Promise<TipoDispositivo[]> => {
+export interface SubtipoDispositivoNested {
+  id: number
+  nombre: string
+  capacidad_maxima: number | null
+}
+
+/**
+ * Tipo dispositivo with nested subtipos
+ */
+export interface TipoDispositivoWithSubtipos extends TipoDispositivo {
+  subtipos?: SubtipoDispositivoNested[]
+}
+
+/**
+ * Get tipos de dispositivo with nested subtipos
+ * GET /api/tipos-dispositivo/
+ *
+ * Returns tipos with their subtipos nested, eliminating the need for separate subtipos calls
+ */
+export const getTiposDispositivo = async (): Promise<TipoDispositivoWithSubtipos[]> => {
   try {
-    console.log("Fetching tipos dispositivo")
+    console.log("Fetching tipos dispositivo with nested subtipos")
 
-    // TODO: Replace with actual endpoint
-    // const response = await get<TipoDispositivo[]>("tipos-dispositivos/")
+    const response = await get<TipoDispositivoWithSubtipos[]>("tipos-dispositivo/")
 
-    // Mock data for now
-    return [
-      { id: 1, nombre: "Residencia", activo: true },
-      { id: 2, nombre: "Hogar Convivencial", activo: true },
-      { id: 3, nombre: "Familia Cuidadora", activo: true },
-    ]
+    console.log("Tipos dispositivo retrieved:", response)
+
+    return response
   } catch (error: any) {
     console.error("Error fetching tipos dispositivo:", error)
     throw error

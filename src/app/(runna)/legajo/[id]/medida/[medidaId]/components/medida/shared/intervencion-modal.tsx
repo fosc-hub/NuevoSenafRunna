@@ -718,11 +718,11 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                     <Select
                                         value={formData.tipo_dispositivo_id || ''}
                                         onChange={(e) => {
-                                            const newValue = e.target.value ? Number(e.target.value) : undefined
+                                            const newValue = e.target.value ? Number(e.target.value) : null
                                             updateField('tipo_dispositivo_id', newValue)
                                             // Clear subtipo when tipo changes
                                             if (newValue !== formData.tipo_dispositivo_id) {
-                                                updateField('subtipo_dispositivo', undefined)
+                                                updateField('subtipo_dispositivo_id', null)
                                             }
                                         }}
                                         label="Tipo de dispositivo (opcional)"
@@ -738,28 +738,50 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                 </FormControl>
 
                                 <FormControl fullWidth>
-                                    <InputLabel>Subtipo de dispositivo (opcional)</InputLabel>
+                                    <InputLabel>Institución / Familia (Subtipo)</InputLabel>
                                     <Select
-                                        value={formData.subtipo_dispositivo || ''}
-                                        onChange={(e) => updateField('subtipo_dispositivo', e.target.value || undefined)}
-                                        label="Subtipo de dispositivo (opcional)"
+                                        value={formData.subtipo_dispositivo_id || ''}
+                                        onChange={(e) => updateField('subtipo_dispositivo_id', e.target.value ? Number(e.target.value) : null)}
+                                        label="Institución / Familia (Subtipo)"
                                         disabled={!canEdit || !formData.tipo_dispositivo_id || isLoadingSubtipos}
                                     >
                                         <MenuItem value="">Sin especificar</MenuItem>
                                         {subtiposDispositivo.map((subtipo) => (
                                             <MenuItem key={subtipo.id} value={subtipo.id}>
                                                 {subtipo.nombre}
+                                                {subtipo.capacidad_maxima && ` (Cap. ${subtipo.capacidad_maxima})`}
                                             </MenuItem>
                                         ))}
                                     </Select>
                                     {isLoadingSubtipos && (
-                                        <FormHelperText>Cargando subtipos...</FormHelperText>
+                                        <FormHelperText>Cargando instituciones/familias...</FormHelperText>
                                     )}
                                     {!formData.tipo_dispositivo_id && (
                                         <FormHelperText>Seleccione primero un tipo de dispositivo</FormHelperText>
                                     )}
                                 </FormControl>
                             </Box>
+
+                            {/* Read-only display when approved */}
+                            {!canEdit && intervencion && (
+                                <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                        Configuración de dispositivo registrada:
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap' }}>
+                                        <Chip
+                                            label={`Tipo: ${intervencion.tipo_dispositivo_detalle?.nombre || 'No especificado'}`}
+                                            size="small"
+                                            variant="outlined"
+                                        />
+                                        <Chip
+                                            label={`Institución/Familia: ${intervencion.subtipo_dispositivo_detalle?.nombre || 'No especificado'}`}
+                                            size="small"
+                                            variant="outlined"
+                                        />
+                                    </Box>
+                                </Box>
+                            )}
                         </Card>
 
                         {/* Tipo de Cese Section - Only for CESE workflow phase */}

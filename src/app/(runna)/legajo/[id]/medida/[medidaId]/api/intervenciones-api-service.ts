@@ -292,7 +292,7 @@ export interface CrearYEnviarRequest {
   descripcion_detallada?: string | null
   motivo_vulneraciones?: string | null
   tipo_dispositivo_id?: number | null
-  subtipo_dispositivo?: string | null
+  subtipo_dispositivo_id?: number | null
   requiere_informes_ampliatorios?: boolean
 }
 
@@ -339,8 +339,8 @@ export const crearYEnviarIntervencion = async (
       if (data.tipo_dispositivo_id) {
         formData.append('tipo_dispositivo_id', String(data.tipo_dispositivo_id))
       }
-      if (data.subtipo_dispositivo) {
-        formData.append('subtipo_dispositivo', data.subtipo_dispositivo)
+      if (data.subtipo_dispositivo_id) {
+        formData.append('subtipo_dispositivo_id', String(data.subtipo_dispositivo_id))
       }
       formData.append('requiere_informes_ampliatorios', String(data.requiere_informes_ampliatorios ?? false))
 

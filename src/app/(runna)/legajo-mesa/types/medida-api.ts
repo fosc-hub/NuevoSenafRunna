@@ -124,6 +124,49 @@ export interface MedidaDetailResponse {
   plan_trabajo_id?: number | null // ID del plan de trabajo asociado (MPE/MPJ)
   // MED-01 V2: Fechas adicionales
   fecha_cese_efectivo?: string | null // Fecha de cese efectivo (ISO date string)
+
+  // Configuración de Dispositivo MPE (solo para tipo_medida === 'MPE')
+  configuracion_dispositivo_mpe?: ConfiguracionDispositivoMPE | null
+}
+
+// ============================================================================
+// CONFIGURACIÓN DISPOSITIVO MPE
+// ============================================================================
+
+/**
+ * Tipo de dispositivo MPE
+ */
+export interface TipoDispositivoMPE {
+  id: number
+  nombre: string
+}
+
+/**
+ * Subtipo de dispositivo MPE (institución o familia)
+ */
+export interface SubtipoDispositivoMPE {
+  id: number
+  nombre: string
+  capacidad_maxima?: number | null
+}
+
+/**
+ * Usuario que configuró el dispositivo
+ */
+export interface ConfiguradoPorInfo {
+  id: number
+  nombre: string
+}
+
+/**
+ * Configuración de dispositivo MPE - retornado por GET /api/medidas/{id}/
+ */
+export interface ConfiguracionDispositivoMPE {
+  intervencion_id: number
+  tipo_dispositivo: TipoDispositivoMPE | null
+  subtipo_dispositivo: SubtipoDispositivoMPE | null
+  fecha_configuracion: string | null // ISO datetime
+  configurado_por: ConfiguradoPorInfo | null
 }
 
 // Response de medida básica (en listados)

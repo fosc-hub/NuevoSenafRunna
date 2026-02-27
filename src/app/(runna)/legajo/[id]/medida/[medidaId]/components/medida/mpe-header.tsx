@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Box, Chip, Grid, Typography, Button, Paper, useTheme, Dialog, DialogTitle, DialogContent, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
+import { Box, Chip, Grid, Typography, Button, Paper, useTheme, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import CancelIcon from "@mui/icons-material/Cancel"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
@@ -23,7 +23,9 @@ import { useState } from "react"
 import { useUser } from "@/utils/auth/userZustand"
 import { useCeseMedida } from "../../hooks/useCeseMedida"
 import { CeseMedidaModal } from "./cese-medida-modal"
+import { ConfiguracionMPESection } from "./configuracion-mpe-section"
 import { Divider, Stack } from "@mui/material"
+import type { ConfiguracionDispositivoMPE } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
 interface MPEHeaderProps {
     medidaData: {
@@ -81,6 +83,8 @@ interface MPEHeaderProps {
     onFieldChange?: (field: string, value: string) => void
     /** Callback to refresh medida data after cese */
     onMedidaRefetch?: () => void
+    /** Configuración de dispositivo MPE desde el backend */
+    configuracionDispositivoMpe?: ConfiguracionDispositivoMPE | null
 }
 
 export const MPEHeader: React.FC<MPEHeaderProps> = ({
@@ -93,12 +97,11 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
     progreso,
     onFieldChange,
     onMedidaRefetch,
+    configuracionDispositivoMpe,
 }) => {
     const theme = useTheme();
     const [residenciasModalOpen, setResidenciasModalOpen] = useState(false);
     const [ceseModalOpen, setCeseModalOpen] = useState(false);
-    const [tipoDispositivoMPE, setTipoDispositivoMPE] = useState(medidaData.tipo_dispositivo_mpe || '');
-    const [subtipoDispositivoMPE, setSubtipoDispositivoMPE] = useState(medidaData.subtipo_dispositivo_mpe || '');
 
     // Get user data for permission check
     const { user } = useUser();
@@ -124,74 +127,6 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
     // Handle cese confirmation
     const handleCeseConfirm = async (observaciones: string, cancelarActividades: boolean) => {
         await solicitarCese(observaciones, cancelarActividades);
-    };
-
-    const handleTipoDispositivoMPEChange = (value: string) => {
-        console.log('MPE Tipo changed to:', value);
-        setTipoDispositivoMPE(value);
-        setSubtipoDispositivoMPE(''); // Reset subtipo when tipo changes
-        onFieldChange?.('tipo_dispositivo_mpe', value);
-    };
-
-    const handleSubtipoDispositivoMPEChange = (value: string) => {
-        console.log('MPE Subtipo changed to:', value);
-        setSubtipoDispositivoMPE(value);
-        onFieldChange?.('subtipo_dispositivo_mpe', value);
-    };
-
-    // Log current state for debugging
-    console.log('MPEHeader render - tipoDispositivoMPE:', tipoDispositivoMPE, 'subtipoDispositivoMPE:', subtipoDispositivoMPE);
-
-    // Generate subtipo options based on tipo
-    const getSubtipoOptions = () => {
-        const options: JSX.Element[] = [];
-
-        if (tipoDispositivoMPE === 'CENTRO_RESIDENCIAL') {
-            options.push(
-                <MenuItem key="ACHÁVAL_RODRIGUEZ" value="ACHÁVAL_RODRIGUEZ">Achával Rodriguez</MenuItem>,
-                <MenuItem key="ALFONORNI" value="ALFONORNI">Alfonsina Storni</MenuItem>,
-                <MenuItem key="ANTONIO_VISO" value="ANTONIO_VISO">Antonio Del Viso</MenuItem>,
-                <MenuItem key="ARGÜELLO_INFANCIA" value="ARGÜELLO_INFANCIA">Argüello Infancia</MenuItem>,
-                <MenuItem key="ARGÜELLO_MUJERES" value="ARGÜELLO_MUJERES">Argüello Mujeres</MenuItem>,
-                <MenuItem key="BAIGORRI" value="BAIGORRI">Baigorri</MenuItem>,
-                <MenuItem key="CASA_SUQUÍA" value="CASA_SUQUÍA">Casa Suquía</MenuItem>,
-                <MenuItem key="CHE_GUEVARA" value="CHE_GUEVARA">Che Guevara</MenuItem>,
-                <MenuItem key="EVA_PERÓN" value="EVA_PERÓN">Eva Perón</MenuItem>,
-                <MenuItem key="INFANTOJUVENIL_SF" value="INFANTOJUVENIL_SF">Infanto Juvenil San Francisco</MenuItem>,
-                <MenuItem key="LONIOS" value="LONIOS">Lonios</MenuItem>,
-                <MenuItem key="RÍO_BAMBA" value="RÍO_BAMBA">Río Bamba</MenuItem>,
-                <MenuItem key="INFANTOJUVENIL_RC" value="INFANTOJUVENIL_RC">Infanto Juvenil Río Cuarto</MenuItem>,
-                <MenuItem key="SANTA_CRUZ" value="SANTA_CRUZ">Santa Cruz</MenuItem>,
-                <MenuItem key="FELISA_SOAJE" value="FELISA_SOAJE">Felisa Soaje</MenuItem>,
-                <MenuItem key="WENCESLAO_ESCALANTE" value="WENCESLAO_ESCALANTE">Wenceslao Escalante</MenuItem>
-            );
-        } else if (tipoDispositivoMPE === 'OGA') {
-            options.push(
-                <MenuItem key="SIERRA_DORADA" value="SIERRA_DORADA">Fundación Sierra Dorada San Marcos Sierras</MenuItem>,
-                <MenuItem key="DESDE_CORAZON" value="DESDE_CORAZON">Asociación Civil Hogar De Niños Desde El Corazón</MenuItem>,
-                <MenuItem key="ANGELES_CUSTODIOS" value="ANGELES_CUSTODIOS">Asociación Civil De Los Santos Ángeles Custodios</MenuItem>,
-                <MenuItem key="CIUDAD_NIÑOS" value="CIUDAD_NIÑOS">Fundación San Martín De Porres - Hogar Ciudad De Los Niños</MenuItem>,
-                <MenuItem key="GRANJA_SIQUEM" value="GRANJA_SIQUEM">Asociación Civil Granja Siquem</MenuItem>,
-                <MenuItem key="ANGEL_GUARDA" value="ANGEL_GUARDA">Asociación Civil Nuestra Señora - Hogar De Niños Ángel De La Guarda</MenuItem>,
-                <MenuItem key="BETHEL" value="BETHEL">Asociación Civil Bethel Casas De Dios</MenuItem>,
-                <MenuItem key="MADRE_TERESA" value="MADRE_TERESA">Asociación Civil Hogar De María Madre Teresa De Calcuta</MenuItem>,
-                <MenuItem key="ALDEAS_SOS" value="ALDEAS_SOS">Asociación Civil Aldeas Infantiles S.O.S Argentina</MenuItem>,
-                <MenuItem key="BETHEL_EVANG" value="BETHEL_EVANG">Fundación Evangélica Hogar De Niños Bethel</MenuItem>,
-                <MenuItem key="JOSE_BAINOTTI" value="JOSE_BAINOTTI">Fundación Manos Abiertas Hogar De Niños Jose Bainotti</MenuItem>,
-                <MenuItem key="SAN_JOSE_MALDONADO" value="SAN_JOSE_MALDONADO">Fundación Moviendo Montañas. Casa San José Maldonado</MenuItem>,
-                <MenuItem key="BROCHERO" value="BROCHERO">Fundación Moviendo Montañas. Casa Brochero</MenuItem>,
-                <MenuItem key="NAZARETH" value="NAZARETH">Fundación Moviendo Montañas. Casa Nazareth El Diquecito</MenuItem>,
-                <MenuItem key="CASA_SAN_JOSE" value="CASA_SAN_JOSE">Asociación Civil Dando Se Recibe &quot;Casa San Jose&quot;</MenuItem>,
-                <MenuItem key="CASA_SAN_FRANCISCO" value="CASA_SAN_FRANCISCO">Asociación Civil Dando Se Recibe &quot;Casa San Francisco&quot;</MenuItem>,
-                <MenuItem key="BERTI" value="BERTI">Hogar De Candelaria Berti - Dependencia Municipalidad De Rio III</MenuItem>,
-                <MenuItem key="REMAR" value="REMAR">Asociación Civil Remar Argentina</MenuItem>,
-                <MenuItem key="SAN_ALBERTO" value="SAN_ALBERTO">Instituto De Vida Consagrada Hogar San Alberto</MenuItem>,
-                <MenuItem key="FUSANA" value="FUSANA">Fusana</MenuItem>
-            );
-        }
-
-        console.log('getSubtipoOptions called - tipo:', tipoDispositivoMPE, 'options count:', options.length);
-        return options;
     };
 
     // Calculate progress based on fecha_creacion_raw and 90-day limit
@@ -536,47 +471,14 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
                     </Box>
                 </Box>
 
-                {/* MPE Device Selection Section */}
-                <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200" }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, color: 'primary.dark', display: "flex", alignItems: "center", gap: 1 }}>
-                        <HomeIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Dispositivo MPE
-                    </Typography>
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper" }}>
-                                <InputLabel>Tipo de Dispositivo</InputLabel>
-                                <Select
-                                    value={tipoDispositivoMPE}
-                                    onChange={(e) => handleTipoDispositivoMPEChange(e.target.value)}
-                                    label="Tipo de Dispositivo"
-                                    sx={{ borderRadius: 2 }}
-                                >
-                                    <MenuItem value="">Sin especificar</MenuItem>
-                                    <MenuItem value="CENTRO_RESIDENCIAL">Centro Cuidado Residencial</MenuItem>
-                                    <MenuItem value="OGA">OGA</MenuItem>
-                                    <MenuItem value="FAMILIA_EXTENSA">Familia Extensa</MenuItem>
-                                    <MenuItem value="FAMILIA_COMUNITARIA">Familia Comunitaria</MenuItem>
-                                    <MenuItem value="FAMILIA_ACOGIMIENTO">Familia de Acogimiento</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper" }}>
-                                <InputLabel>Institución / Familia (Subtipo)</InputLabel>
-                                <Select
-                                    value={subtipoDispositivoMPE}
-                                    onChange={(e) => handleSubtipoDispositivoMPEChange(e.target.value)}
-                                    label="Institución / Familia (Subtipo)"
-                                    disabled={!tipoDispositivoMPE}
-                                    sx={{ borderRadius: 2 }}
-                                >
-                                    <MenuItem key="empty" value="">Sin especificar</MenuItem>
-                                    {getSubtipoOptions()}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                    </Grid>
-                </Box>
+                {/* MPE Device Configuration Section */}
+                {medidaId && (
+                    <ConfiguracionMPESection
+                        medidaId={medidaId}
+                        configuracion={configuracionDispositivoMpe}
+                        onConfigUpdated={onMedidaRefetch}
+                    />
+                )}
             </Box>
 
             {/* Residencias Modal */}

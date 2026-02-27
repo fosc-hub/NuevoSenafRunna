@@ -555,6 +555,7 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               estados={medidaData.estados}
               progreso={medidaData.progreso}
               onMedidaRefetch={refetchMedida}
+              configuracionDispositivoMpe={medidaApiData?.configuracion_dispositivo_mpe}
             />
             <MPETabs
               medidaData={{

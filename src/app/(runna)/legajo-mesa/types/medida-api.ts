@@ -167,6 +167,8 @@ export interface ConfiguracionDispositivoMPE {
   subtipo_dispositivo: SubtipoDispositivoMPE | null
   fecha_configuracion: string | null // ISO datetime
   configurado_por: ConfiguradoPorInfo | null
+  tiene_intervencion?: boolean // Indicates if there's an associated intervention
+  endpoint_edicion?: string // New endpoint for independent editing
 }
 
 // Response de medida básica (en listados)

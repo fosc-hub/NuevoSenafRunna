@@ -96,16 +96,62 @@ const getTiposDispositivoMPE = async (): Promise<TipoDispositivo[]> => {
 }
 
 /**
- * Update device configuration via intervention PATCH
- * PATCH /api/medidas/{medida_id}/intervenciones/{intervencion_id}/
+ * Response from the new configuration endpoint
+ */
+interface UpdateConfiguracionResponse {
+  mensaje: string
+  intervencion: {
+    id: number
+    codigo_intervencion: string
+    estado: string
+    tipo_dispositivo: number | null
+    tipo_dispositivo_detalle: TipoDispositivo | null
+    subtipo_dispositivo: number | null
+    subtipo_dispositivo_detalle: SubtipoDispositivo | null
+  }
+  cambios: {
+    tipo_dispositivo?: {
+      anterior: { id: number; nombre: string } | null
+      nuevo: { id: number; nombre: string } | null
+    }
+    subtipo_dispositivo?: {
+      anterior: { id: number; nombre: string } | null
+      nuevo: { id: number; nombre: string } | null
+    }
+  }
+  medida: {
+    id: number
+    numero_medida: string
+    tipo_medida: string
+  }
+}
+
+/**
+ * API Error codes from the new endpoint
+ */
+const ERROR_MESSAGES: Record<string, string> = {
+  TIPO_MEDIDA_INVALIDO: 'Esta medida no es de tipo MPE',
+  DATOS_REQUERIDOS: 'Debe proporcionar al menos un campo para actualizar',
+  TIPO_DISPOSITIVO_INVALIDO: 'El tipo de dispositivo seleccionado no existe o está inactivo',
+  SUBTIPO_DISPOSITIVO_INVALIDO: 'El subtipo de dispositivo seleccionado no existe o está inactivo',
+  SUBTIPO_NO_COINCIDE: 'El subtipo no pertenece al tipo de dispositivo seleccionado',
+  PERMISO_DENEGADO: 'No tiene permisos para modificar este legajo',
+  SIN_INTERVENCION: 'No existe ninguna intervención para esta medida',
+}
+
+/**
+ * Update device configuration via new independent endpoint
+ * PATCH /api/medidas/{medida_id}/intervenciones/configuracion-dispositivo/
+ *
+ * This endpoint allows editing tipo_dispositivo and subtipo_dispositivo
+ * independently of the intervention state (works with BORRADOR, ENVIADO, APROBADO, RECHAZADO)
  */
 const updateConfiguracionMPE = async (
   medidaId: number,
-  intervencionId: number,
   data: UpdateConfiguracionRequest
-): Promise<any> => {
-  const response = await axiosInstance.patch(
-    `/medidas/${medidaId}/intervenciones/${intervencionId}/`,
+): Promise<UpdateConfiguracionResponse> => {
+  const response = await axiosInstance.patch<UpdateConfiguracionResponse>(
+    `/medidas/${medidaId}/intervenciones/configuracion-dispositivo/`,
     data
   )
   return response.data
@@ -157,26 +203,30 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   const subtiposDispositivo = selectedTipo?.subtipos || []
   const isLoadingSubtipos = false // No separate loading since subtipos come with tipos
 
-  // Mutation for updating configuration via intervention PATCH
+  // Mutation for updating configuration via the new independent endpoint
+  // PATCH /api/medidas/{medida_id}/intervenciones/configuracion-dispositivo/
   const updateMutation = useMutation({
     mutationFn: (data: UpdateConfiguracionRequest) => {
-      if (!configuracion?.intervencion_id) {
-        throw new Error('No hay intervención asociada para actualizar')
-      }
-      return updateConfiguracionMPE(medidaId, configuracion.intervencion_id, data)
+      return updateConfiguracionMPE(medidaId, data)
     },
-    onSuccess: () => {
-      toast.success('Configuración de dispositivo actualizada')
+    onSuccess: (response) => {
+      toast.success(response.mensaje || 'Configuración de dispositivo actualizada')
       queryClient.invalidateQueries({ queryKey: ['medidas', 'detail', medidaId] })
+      // Also invalidate historial since changes are tracked there
+      queryClient.invalidateQueries({ queryKey: ['historial-seguimiento', medidaId] })
       setDialogOpen(false)
       onConfigUpdated?.()
     },
     onError: (error: any) => {
       console.error('Error updating configuracion:', error)
-      // Handle validation error when subtipo doesn't belong to tipo
+      const errorCode = error?.response?.data?.error
       const errorDetail = error?.response?.data?.detail
       const errorSubtipo = error?.response?.data?.subtipo_dispositivo_id
-      if (errorSubtipo) {
+
+      // Check for specific error codes from the new endpoint
+      if (errorCode && ERROR_MESSAGES[errorCode]) {
+        toast.error(ERROR_MESSAGES[errorCode])
+      } else if (errorSubtipo) {
         toast.error(`Error de validación: ${errorSubtipo}`)
       } else if (errorDetail) {
         toast.error(errorDetail)
@@ -217,7 +267,9 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   }
 
   // Check if we can save (tipo is required and intervencion must exist)
-  const hasIntervencion = !!configuracion?.intervencion_id
+  // The new endpoint works independently of intervention state but still requires one to exist
+  // Use tiene_intervencion field if available, fallback to checking intervencion_id
+  const hasIntervencion = configuracion?.tiene_intervencion ?? !!configuracion?.intervencion_id
   const canSave = !!selectedTipoId && !updateMutation.isPending && hasIntervencion
 
   // Check if device configuration exists and has tipo_dispositivo set

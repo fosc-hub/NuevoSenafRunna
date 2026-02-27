@@ -165,14 +165,15 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
 
   return (
     <SectionCard
-      title="Registro de medidas tomadas"
+      title="⚖️ Registro de medidas tomadas"
+      highlight={true}
       chips={[{
         label: `${medidas.length} medida${medidas.length !== 1 ? "s" : ""}`,
         color: "primary"
       }]}
       headerActions={
         showAddButton && onAddMedida ? (
-          <Button variant="outlined" startIcon={<AddIcon />} onClick={onAddMedida} size="small">
+          <Button variant="contained" startIcon={<AddIcon />} onClick={onAddMedida} size="small" disableElevation>
             Tomar Medida
           </Button>
         ) : undefined

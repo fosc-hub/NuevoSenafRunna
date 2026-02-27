@@ -94,6 +94,7 @@ export const getSession = async (returnUserData: boolean = false): Promise<strin
 export async function logout() {
     Cookies.remove('refreshToken');
     Cookies.remove('accessToken');
+    Cookies.remove('mock_username');
 }
 
 /**
@@ -104,7 +105,7 @@ export async function logout() {
 export async function refreshToken(): Promise<string | null> {
     try {
         const refreshTokenValue = Cookies.get('refreshToken');
-        
+
         if (!refreshTokenValue) {
             console.warn('No refresh token available');
             return null;
@@ -115,16 +116,16 @@ export async function refreshToken(): Promise<string | null> {
         });
 
         const newAccessToken = response.data.access;
-        
+
         if (newAccessToken) {
             Cookies.set('accessToken', newAccessToken, {
                 secure: true,
                 sameSite: 'lax',
             });
-            
+
             return newAccessToken;
         }
-        
+
         return null;
     } catch (error) {
         console.error('Token refresh failed:', error);

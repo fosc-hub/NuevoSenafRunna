@@ -1,8 +1,8 @@
 import type { FormData } from "../types/formTypes"
 import { create, update } from "@/app/api/apiService"
-import { fetchCaseData } from "../utils/fetch-case-data"
-import { createPatchFromChanges } from "../utils/compareAndPatch"
-import { logPatchData } from "../utils/debug-patch"
+import { fetchCaseData } from "./fetch-case-data"
+import { createPatchFromChanges } from "./compareAndPatch"
+import { logPatchData } from "./debug-patch"
 import { submitCleanFormData } from "./submitCleanFormData"
 import { debugFormDataStructure, debugPatchData, logApiSubmission, validateFormDataStructure } from "./debugFormData"
 

@@ -155,7 +155,7 @@ export interface CreateIntervencionRequest {
 
   // Tipo de dispositivo (opcional)
   tipo_dispositivo_id?: number | null
-  subtipo_dispositivo?: number | null // FK to TSubtipoDispositivo
+  subtipo_dispositivo?: number | string | null // FK to TSubtipoDispositivo or name string
 
   // Tipo de cese (opcional, solo para etapa CESE)
   tipo_cese?: string | null
@@ -214,7 +214,11 @@ export interface IntervencionResponse {
   // Tipo de dispositivo (write + read)
   tipo_dispositivo_id?: number | null // writeOnly - para enviar
   tipo_dispositivo_detalle: { id: number; nombre: string } | null // readOnly - lo que retorna
-  subtipo_dispositivo?: number | null // FK to TSubtipoDispositivo
+  subtipo_dispositivo?: number | string | null // FK to TSubtipoDispositivo or name string
+
+  // Tipo de cese (write + read)
+  tipo_cese: string | null
+  subtipo_cese: string | null
 
   // Motivo (write + read)
   motivo_id: number // writeOnly - para enviar

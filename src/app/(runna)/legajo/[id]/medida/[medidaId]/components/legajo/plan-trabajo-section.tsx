@@ -16,12 +16,14 @@ import {
   Stack,
 } from "@mui/material"
 import WorkIcon from "@mui/icons-material/Work"
+import PersonIcon from "@mui/icons-material/Person"
 import { useQuery } from "@tanstack/react-query"
 import type { LegajoDetailResponse, MedidaInfo } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { globalActividadService } from "@/app/(runna)/legajo/actividades/services/globalActividadService"
 import { UnifiedActividadesTable } from "@/app/(runna)/legajo/actividades/components/UnifiedActividadesTable"
 import { extractArray } from "@/hooks/useApiQuery"
 import type { TActividadPlanTrabajo } from "../../types/actividades"
+import { useUser } from "@/utils/auth/userZustand"
 
 // ============================================================================
 // Filtros de actor disponibles
@@ -68,7 +70,9 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({
   legajoData,
   onRefresh,
 }) => {
+  const { user } = useUser()
   const [actorFilter, setActorFilter] = useState<ActorFilter>("")
+  const [filterByMe, setFilterByMe] = useState<boolean>(false)
 
   // ─── Construir lista completa de medidas (activas + históricas, deduplicadas) ──
   const todasLasMedidas = useMemo<MedidaInfo[]>(() => {
@@ -110,12 +114,13 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({
 
   // ─── Fetch actividades desde la API ─────────────────────────────────────
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["plan-trabajo-legajo", legajoId, medidaId, actorFilter],
+    queryKey: ["plan-trabajo-legajo", legajoId, medidaId, actorFilter, filterByMe, user?.id],
     queryFn: () =>
       globalActividadService.list({
         legajo: legajoId!,
         ...(medidaId ? { medida: medidaId } : {}),
         ...(actorFilter ? { actor: actorFilter } : {}),
+        ...(filterByMe && user?.id ? { responsable: user.id } : {}),
         ordering: "-fecha_planificacion,-fecha_creacion",
         page_size: 200,
       }),
@@ -214,7 +219,7 @@ export const PlanTrabajoSection: React.FC<PlanTrabajoSectionProps> = ({
           )}
 
           {/* Chips de filtro por equipo/actor */}
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", alignItems: "center" }}>
             {ACTOR_CHIP_OPTIONS.map((opt) => (
               <Chip
                 key={opt.value}

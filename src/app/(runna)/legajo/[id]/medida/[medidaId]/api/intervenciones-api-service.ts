@@ -234,7 +234,7 @@ export const deleteIntervencion = async (
     console.log(`Deleting intervención: medida ${medidaId}, intervención ${intervencionId}`)
 
     // Make API call - remove() uses DELETE and adds trailing slash
-    await remove(`medidas/${medidaId}/intervenciones/${intervencionId}`)
+    await remove(`medidas/${medidaId}/intervenciones`, intervencionId)
 
     console.log("Intervención deleted successfully")
   } catch (error: any) {
@@ -292,7 +292,9 @@ export interface CrearYEnviarRequest {
   descripcion_detallada?: string | null
   motivo_vulneraciones?: string | null
   tipo_dispositivo_id?: number | null
-  subtipo_dispositivo?: string | null
+  subtipo_dispositivo?: number | string | null
+  tipo_cese?: string | null
+  subtipo_cese?: string | null
   requiere_informes_ampliatorios?: boolean
 }
 
@@ -340,7 +342,13 @@ export const crearYEnviarIntervencion = async (
         formData.append('tipo_dispositivo_id', String(data.tipo_dispositivo_id))
       }
       if (data.subtipo_dispositivo) {
-        formData.append('subtipo_dispositivo', data.subtipo_dispositivo)
+        formData.append('subtipo_dispositivo', String(data.subtipo_dispositivo))
+      }
+      if (data.tipo_cese) {
+        formData.append('tipo_cese', data.tipo_cese)
+      }
+      if (data.subtipo_cese) {
+        formData.append('subtipo_cese', data.subtipo_cese)
       }
       formData.append('requiere_informes_ampliatorios', String(data.requiere_informes_ampliatorios ?? false))
 
@@ -728,7 +736,7 @@ export const deleteAdjunto = async (
     )
 
     // Make API call
-    await remove(`medidas/${medidaId}/intervenciones/${intervencionId}/adjuntos/${adjuntoId}`)
+    await remove(`medidas/${medidaId}/intervenciones/${intervencionId}/adjuntos`, adjuntoId)
 
     console.log("Adjunto deleted successfully")
   } catch (error: any) {

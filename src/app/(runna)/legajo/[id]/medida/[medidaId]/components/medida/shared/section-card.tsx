@@ -26,6 +26,7 @@ interface SectionCardProps {
     showCheckIcon?: boolean
     headerActions?: React.ReactNode
     children: React.ReactNode
+    highlight?: boolean
 }
 
 export const SectionCard: React.FC<SectionCardProps> = ({
@@ -37,10 +38,24 @@ export const SectionCard: React.FC<SectionCardProps> = ({
     onMessageClick,
     showCheckIcon = false,
     headerActions,
-    children
+    children,
+    highlight = false
 }) => {
     return (
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+        <Paper
+            elevation={highlight ? 4 : 2}
+            sx={{
+                p: 2,
+                borderRadius: 2,
+                position: 'relative',
+                overflow: 'hidden',
+                ...(highlight && {
+                    borderLeft: '6px solid',
+                    borderColor: 'primary.main',
+                    backgroundColor: 'rgba(0, 80, 140, 0.02)',
+                })
+            }}
+        >
             {/* Header */}
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center" }}>

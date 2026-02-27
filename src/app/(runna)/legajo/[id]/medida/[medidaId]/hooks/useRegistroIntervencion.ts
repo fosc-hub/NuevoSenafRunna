@@ -23,6 +23,7 @@ import {
   getTiposDispositivo,
   getCategoriasIntervencion,
   crearYEnviarIntervencion,
+  getIntervencionesByMedida,
   type CrearYEnviarRequest,
   type CrearYEnviarResponse,
 } from "../api/intervenciones-api-service"
@@ -55,7 +56,7 @@ interface IntervencionFormData {
 
   // Tipo de dispositivo (opcional)
   tipo_dispositivo_id?: number | null
-  subtipo_dispositivo?: string
+  subtipo_dispositivo?: number | string | null
 
   // Tipo de cese (solo para etapa CESE)
   tipo_cese?: string | null
@@ -81,6 +82,7 @@ interface UseRegistroIntervencionOptions {
   medidaId: number
   intervencionId?: number // Si se pasa, carga la intervención existente
   autoLoadCatalogs?: boolean // Si true, carga catálogos automáticamente
+  workflowPhase?: 'apertura' | 'innovacion' | 'prorroga' | 'cese'
 }
 
 interface ValidationErrors {
@@ -95,6 +97,7 @@ export const useRegistroIntervencion = ({
   medidaId,
   intervencionId,
   autoLoadCatalogs = true,
+  workflowPhase,
 }: UseRegistroIntervencionOptions) => {
   // Query client for cache invalidation
   const queryClient = useQueryClient()
@@ -164,8 +167,10 @@ export const useRegistroIntervencion = ({
   useEffect(() => {
     if (intervencionId) {
       loadIntervencion()
+    } else if (workflowPhase === 'cese' && medidaId) {
+      loadAperturaData()
     }
-  }, [intervencionId])
+  }, [intervencionId, workflowPhase, medidaId])
 
   /**
    * Load catalogs on mount if autoLoadCatalogs is true
@@ -229,19 +234,56 @@ export const useRegistroIntervencion = ({
         medida: data.medida,
         fecha_intervencion: data.fecha_intervencion,
         tipo_dispositivo_id: data.tipo_dispositivo_id ?? data.tipo_dispositivo_detalle?.id ?? null,
-        subtipo_dispositivo: data.subtipo_dispositivo || "",
+        subtipo_dispositivo: data.subtipo_dispositivo || null,
         motivo_id: data.motivo_id ?? data.motivo_detalle?.id,
         sub_motivo_id: data.sub_motivo_id ?? data.sub_motivo_detalle?.id ?? null,
         categoria_intervencion_id: data.categoria_intervencion_id ?? data.categoria_intervencion_detalle?.id,
         intervencion_especifica: data.intervencion_especifica,
         descripcion_detallada: data.descripcion_detallada || "",
         motivo_vulneraciones: data.motivo_vulneraciones || "",
+        tipo_cese: data.tipo_cese || null,
+        subtipo_cese: data.subtipo_cese || null,
         requiere_informes_ampliatorios: data.requiere_informes_ampliatorios,
       })
 
     } catch (err: any) {
       console.error("Error loading intervención:", err)
       setError(err?.response?.data?.detail || "Error al cargar la intervención")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /**
+   * Load aperture data to pre-fill cese fields
+   */
+  const loadAperturaData = async () => {
+    if (!medidaId) return
+
+    setIsLoading(true)
+    try {
+      // Fetch all interventions for this measure
+      const intervenciones = await getIntervencionesByMedida(medidaId)
+
+      // Find the "Apertura" (usually the oldest one or the first one created)
+      // For now we assume the first one in the list (or we could sort by date)
+      if (intervenciones.length > 0) {
+        // Find by category or just pick the first one if we can't be sure
+        const apertura = intervenciones.find(i => i.categoria_intervencion_detalle?.nombre.toUpperCase().includes('APERTURA'))
+          || intervenciones[0]
+
+        if (apertura) {
+          console.log("Pre-filling from apertura:", apertura)
+          setFormData(prev => ({
+            ...prev,
+            motivo_id: apertura.motivo_id ?? apertura.motivo_detalle?.id,
+            sub_motivo_id: apertura.sub_motivo_id ?? apertura.sub_motivo_detalle?.id,
+            categoria_intervencion_id: apertura.categoria_intervencion_id ?? apertura.categoria_intervencion_detalle?.id,
+          }))
+        }
+      }
+    } catch (err) {
+      console.error("Error loading aperture data for pre-fill:", err)
     } finally {
       setIsLoading(false)
     }
@@ -274,6 +316,8 @@ export const useRegistroIntervencion = ({
         intervencion_especifica: formData.intervencion_especifica,
         descripcion_detallada: formData.descripcion_detallada || null,
         motivo_vulneraciones: formData.motivo_vulneraciones || null,
+        tipo_cese: formData.tipo_cese || null,
+        subtipo_cese: formData.subtipo_cese || null,
         requiere_informes_ampliatorios: formData.requiere_informes_ampliatorios,
       }
 
@@ -355,6 +399,8 @@ export const useRegistroIntervencion = ({
         intervencion_especifica: formData.intervencion_especifica,
         descripcion_detallada: formData.descripcion_detallada || null,
         motivo_vulneraciones: formData.motivo_vulneraciones || null,
+        tipo_cese: formData.tipo_cese,
+        subtipo_cese: formData.subtipo_cese,
         requiere_informes_ampliatorios: formData.requiere_informes_ampliatorios,
       }
 
@@ -452,6 +498,8 @@ export const useRegistroIntervencion = ({
         motivo_vulneraciones: formData.motivo_vulneraciones || null,
         tipo_dispositivo_id: formData.tipo_dispositivo_id || null,
         subtipo_dispositivo: formData.subtipo_dispositivo || null,
+        tipo_cese: formData.tipo_cese || null,
+        subtipo_cese: formData.subtipo_cese || null,
         requiere_informes_ampliatorios: formData.requiere_informes_ampliatorios,
       }
 
@@ -940,6 +988,8 @@ export const useRegistroIntervencion = ({
       intervencion_especifica: "",
       descripcion_detallada: "",
       motivo_vulneraciones: "",
+      tipo_cese: null,
+      subtipo_cese: null,
       requiere_informes_ampliatorios: false,
     })
     setValidationErrors({})

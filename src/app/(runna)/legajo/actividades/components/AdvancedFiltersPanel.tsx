@@ -40,6 +40,7 @@ import type { GlobalActividadFilters } from '../services/globalActividadService'
 import type { TTipoActividad } from '../../[id]/medida/[medidaId]/types/actividades'
 import type { Usuario, Zona } from '@/app/(runna)/legajo-mesa/types/asignacion-types'
 import type { TableVariant } from './UnifiedActividadesTable'
+import { useUser } from '@/utils/auth/userZustand'
 
 // Estado options for multi-select
 const ESTADO_OPTIONS = [
@@ -97,6 +98,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   canSeeAllActors,
   variant = 'global',
 }) => {
+  const { user } = useUser()
   // Determine which sections to show based on variant
   // Only show NNyA & Legajo section for global view since legajo/medida already have this context
   const showNnyaLegajoSection = variant === 'global'
@@ -219,7 +221,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
         {/* Primary Filters - Always Visible */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
           {/* Search */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               size="small"
@@ -242,6 +244,30 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                 ) : null,
               }}
             />
+          </Grid>
+
+          {/* Quick Filter: Mis Actividades */}
+          <Grid item xs={12} sm={6} md={2}>
+            <Button
+              fullWidth
+              variant={filters.responsable === user?.id ? 'contained' : 'outlined'}
+              color="secondary"
+              startIcon={<PersonIcon />}
+              onClick={() => {
+                if (filters.responsable === user?.id) {
+                  onFilterChange('responsable', undefined)
+                } else {
+                  onFilterChange('responsable', user?.id)
+                }
+              }}
+              sx={{
+                height: 40,
+                textTransform: 'none',
+                fontWeight: filters.responsable === user?.id ? 700 : 400
+              }}
+            >
+              Mis Actividades
+            </Button>
           </Grid>
 
           {/* Actor - only show if user can see all actors */}
@@ -283,7 +309,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           </Grid>
 
           {/* Ordering */}
-          <Grid item xs={12} sm={6} md={canSeeAllActors ? 2 : 3}>
+          <Grid item xs={12} sm={6} md={canSeeAllActors ? 1.5 : 2.5}>
             <FormControl fullWidth size="small">
               <InputLabel>Ordenar por</InputLabel>
               <Select
@@ -302,7 +328,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           </Grid>
 
           {/* Advanced Filters Toggle */}
-          <Grid item xs={12} sm={6} md={canSeeAllActors ? 2 : 3}>
+          <Grid item xs={12} sm={6} md={canSeeAllActors ? 1.5 : 2.5}>
             <Button
               type="button"
               fullWidth
@@ -601,27 +627,25 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
               </Grid>
               <Grid item xs={12} sm={6} md={9}>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', pt: 1 }}>
-                  {/* Sprint 2: Sin leer filter - only for global variant */}
-                  {variant === 'global' && (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={filters.sin_leer === true}
-                          onChange={(e) =>
-                            onFilterChange('sin_leer', e.target.checked ? true : undefined)
-                          }
-                          color="primary"
-                          icon={<MarkEmailUnreadIcon />}
-                          checkedIcon={<MarkEmailUnreadIcon />}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>
-                          Solo sin leer
-                        </Typography>
-                      }
-                    />
-                  )}
+                  {/* Solo sin leer checkbox */}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={filters.sin_leer === true}
+                        onChange={(e) =>
+                          onFilterChange('sin_leer', e.target.checked ? true : undefined)
+                        }
+                        color="info"
+                        icon={<MarkEmailUnreadIcon fontSize="small" />}
+                        checkedIcon={<MarkEmailUnreadIcon fontSize="small" />}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="info.main" sx={{ fontWeight: 500 }}>
+                        Solo sin leer
+                      </Typography>
+                    }
+                  />
                   <FormControlLabel
                     control={
                       <Checkbox

@@ -22,8 +22,8 @@ interface FilterState {
 
 interface ButtonsProps {
   isLoading: boolean
-  handleNuevoRegistro: () => void
-  onFilterChange: (filters: FilterState) => void
+  handleNuevoRegistro?: () => void
+  onFilterChange?: (filters: FilterState) => void
   onSearch?: () => void
   onLegajoCreated?: (data: any) => void
 }

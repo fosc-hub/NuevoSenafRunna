@@ -31,6 +31,13 @@ import dynamic from "next/dynamic"
 import { useQueryClient } from "@tanstack/react-query"
 import AsignarLegajoModal from "../components/asignar-legajo-modal"
 import { fetchLegajos, updateLegajoPrioridad } from "../api/legajos-api-service"
+import { extractArray } from "@/hooks/useApiQuery"
+import {
+  shouldHighlightLegajo as shouldHighlightLegajoUtil,
+  UserPermissions,
+  normalizeState,
+  hasKeyword
+} from "@/utils/notification-utils"
 import type { LegajoApiResponse, PaginatedLegajosResponse } from "../types/legajo-api"
 import LegajoButtons from "./legajos-buttons"
 import { exportLegajosToExcel } from "./legajos-service"
@@ -94,6 +101,7 @@ const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
       </Tooltip>
       <IconButton
         size="small"
+        onClick={() => window.location.reload()}
         sx={{
           ml: "auto",
           "&:hover": {
@@ -235,7 +243,6 @@ const LegajoTable: React.FC = () => {
     // Add sorting (multi-column support)
     if (sortModel.length > 0) {
       // Convert GridSortModel to Django ordering format
-      // Multiple columns: "field1,-field2,field3"
       const ordering = sortModel
         .map((sort) => {
           const prefix = sort.sort === "desc" ? "-" : ""
@@ -263,18 +270,15 @@ const LegajoTable: React.FC = () => {
 
   const handleFilterChange = (newFilters: typeof apiFilters) => {
     setApiFilters(newFilters)
-    // Reset to first page when filters change
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
 
   const handleSearch = (searchTerm: string) => {
     setApiFilters((prev) => ({ ...prev, search: searchTerm || null }))
-    // Reset to first page when search changes
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
   }
 
   const handleRemoveFilter = (filterKey: string) => {
-    // Handle composite filters
     if (filterKey === "fecha_apertura") {
       setApiFilters((prev) => ({
         ...prev,
@@ -297,7 +301,7 @@ const LegajoTable: React.FC = () => {
   }
 
   const handleClearAllFilters = () => {
-    const clearedFilters: typeof apiFilters = {
+    setApiFilters({
       zona: null,
       urgencia: null,
       tiene_medidas_activas: null,
@@ -310,127 +314,56 @@ const LegajoTable: React.FC = () => {
       director: null,
       equipo_trabajo: null,
       equipo_centro_vida: null,
-    }
-    setApiFilters(clearedFilters)
+    })
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
-  }
-
-  const handleNuevoRegistro = () => {
-    console.log("Nuevo registro clicked")
   }
 
   /**
    * Determina si un legajo debe resaltarse basándose en el rol del usuario y el estado de la medida activa.
-   * Verifica tanto el indicador resumido como la lista completa de medidas activas.
    */
-  const shouldHighlightLegajo = (row: any) => {
-    const activeMeasures = row.medidas_activas || []
-    const andarivel = row.indicadores?.medida_andarivel
-    const summaryEstado = typeof andarivel === "object" ? andarivel?.etapa_estado : null
+  const shouldHighlightLegajo = (row: any): boolean => {
+    const allStates = row.allStates || []
 
-    // Recolectar todos los estados presentes en el legajo
-    const allEstados = new Set<string>()
+    const userPerms: UserPermissions = {
+      isDirector: permissions.isDirector,
+      isLegales: permissions.isLegales,
+      isEquipoTecnico: permissions.isEquipoTecnico,
+      isJefeZonal: permissions.isJefeZonal,
+      isAdmin: permissions.isAdmin,
+      userId: permissions.user?.id,
+    }
 
-    if (summaryEstado) allEstados.add(String(summaryEstado).toUpperCase())
-
-    activeMeasures.forEach((m: any) => {
-      if (m.estado) allEstados.add(String(m.estado).toUpperCase())
-      if (m.etapa) allEstados.add(String(m.etapa).toUpperCase())
-      if (m.etapa_estado) allEstados.add(String(m.etapa_estado).toUpperCase())
-    })
-
-    const has = (keyword: string) =>
-      Array.from(allEstados).some((s) => s.includes(keyword.toUpperCase()))
-
-    // ── Targets por rol (búsqueda por palabra clave para mayor compatibilidad) ──
-
-    // Técnico
-    const isTecnicoTarget =
-      has("REGISTRO_INTERVENCION") ||
-      has("PENDIENTE") ||
-      has("EN_PROGRESO") ||
-      has("VISADO_APROBADO") ||
-      has("VISADO_CON_OBSERVACION")
-
-    // Jefe Zonal
-    const isJefeZonalTarget =
-      has("APROBACION_REGISTRO") ||
-      has("VISADO_JZ") ||
-      has("REVISION")
-
-    // Director
-    const isDirectorTarget =
-      has("NOTA_AVAL")
-
-    // Legal
-    const isLegalTarget =
-      has("JURIDICO") ||
-      has("RATIFICACION") ||
-      has("PENDIENTE_VISADO") ||
-      has("CIERRE")
-
-    // ── Resaltado según permisos del usuario logueado ────────────────────────────
-
-    const isHighlight =
-      (permissions.isEquipoTecnico && isTecnicoTarget) ||
-      (permissions.isJefeZonal && isJefeZonalTarget) ||
-      (permissions.isDirector && isDirectorTarget) ||
-      (permissions.isLegales && isLegalTarget) ||
-      (permissions.isAdmin && (isTecnicoTarget || isJefeZonalTarget || isDirectorTarget || isLegalTarget))
-
-    return isHighlight
+    return shouldHighlightLegajoUtil(allStates, userPerms)
   }
 
-
-
   const handlePrioridadChange = async (legajoId: number, newValue: string) => {
-    console.log(`Updating prioridad for legajo ${legajoId} to ${newValue}`)
     setIsUpdating(true)
     try {
-      // Call the API to update the prioridad
       const updatedLegajo = await updateLegajoPrioridad(legajoId, newValue as "ALTA" | "MEDIA" | "BAJA")
-
-      // Map urgencia number back to prioridad string for display
       const urgenciaToPrioridadMap: Record<number, "ALTA" | "MEDIA" | "BAJA"> = {
         1: "ALTA",
         2: "MEDIA",
         3: "BAJA",
       }
-
       const prioridadFromResponse = updatedLegajo.urgencia
         ? urgenciaToPrioridadMap[updatedLegajo.urgencia]
-        : newValue as "ALTA" | "MEDIA" | "BAJA"
+        : (newValue as "ALTA" | "MEDIA" | "BAJA")
 
-      // Update the TanStack Query cache with optimistic update
-      queryClient.setQueryData<PaginatedLegajosResponse>(
-        ["legajos/", queryParams],
-        (oldData) => {
-          if (!oldData) return oldData
-
-          const updatedResults = oldData.results.map((legajo) =>
-            legajo.id === legajoId
-              ? { ...legajo, prioridad: prioridadFromResponse, urgencia: updatedLegajo.urgencia }
-              : legajo,
-          )
-
-          return {
-            ...oldData,
-            results: updatedResults,
-          }
-        }
-      )
-
+      queryClient.setQueryData<PaginatedLegajosResponse>(["legajos/", queryParams], (oldData) => {
+        if (!oldData) return oldData
+        const updatedResults = oldData.results.map((legajo) =>
+          legajo.id === legajoId
+            ? { ...legajo, prioridad: prioridadFromResponse, urgencia: updatedLegajo.urgencia }
+            : legajo
+        )
+        return { ...oldData, results: updatedResults }
+      })
       toast.success("Prioridad actualizada con éxito")
     } catch (error) {
-      console.error("Error al actualizar la Prioridad:", error)
       toast.error("Error al actualizar la Prioridad")
     } finally {
       setIsUpdating(false)
     }
-  }
-
-  const formatPrioridadValue = (value: string | undefined | null) => {
-    return value || "Seleccionar"
   }
 
   const handleOpenModal = (legajoId: number) => {
@@ -453,9 +386,48 @@ const LegajoTable: React.FC = () => {
     setIsAsignarModalOpen(false)
   }
 
-  // Define responsive columns based on screen size
   const getColumns = (): GridColDef[] => {
     const baseColumns: GridColDef[] = [
+      {
+        field: "indicadores_alertas",
+        headerName: "Alertas",
+        width: 120,
+        align: "center",
+        renderCell: (params) => {
+          const allStates = params.row.allStates || []
+          const virtualAlerts: any[] = []
+
+          const userPerms: UserPermissions = {
+            isDirector: permissions.isDirector,
+            isLegales: permissions.isLegales,
+            isEquipoTecnico: permissions.isEquipoTecnico,
+            isJefeZonal: permissions.isJefeZonal,
+            isAdmin: permissions.isAdmin,
+            userId: permissions.user?.id,
+          }
+
+          if (userPerms.isDirector && (hasKeyword(allStates, "NOTA_AVAL") || hasKeyword(allStates, "PENDIENTE_NOTA_AVAL"))) {
+            virtualAlerts.push({ tipo: "URGENTE", severidad: "alta", mensaje: "Pendiente Nota de Aval" })
+          }
+          if (userPerms.isLegales && (
+            hasKeyword(allStates, "JURIDICO") ||
+            hasKeyword(allStates, "LEGAL") ||
+            hasKeyword(allStates, "RATIFICACION") ||
+            hasKeyword(allStates, "PENDIENTE_VISADO")
+          )) {
+            virtualAlerts.push({ tipo: "URGENTE", severidad: "alta", mensaje: "Pendiente Informe Jurídico" })
+          }
+
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <AlertasChip
+                alertas={params.row.indicadores?.alertas || []}
+                virtualAlerts={virtualAlerts}
+              />
+            </Box>
+          )
+        },
+      },
       {
         field: "id",
         headerName: "ID",
@@ -469,17 +441,12 @@ const LegajoTable: React.FC = () => {
               </Tooltip>
             )}
           </div>
-        ),
+        )
       },
       {
         field: "numero_legajo",
         headerName: "Nº Legajo",
         width: 120,
-        renderCell: (params) => (
-          <Typography variant="body2" sx={{ fontWeight: "normal" }}>
-            {params.value}
-          </Typography>
-        ),
       },
       {
         field: "nombre",
@@ -487,9 +454,7 @@ const LegajoTable: React.FC = () => {
         width: 180,
         renderCell: (params) => (
           <Tooltip title={`DNI: ${params.row.dni}`}>
-            <Typography variant="body2" sx={{ fontWeight: "normal" }}>
-              {params.value}
-            </Typography>
+            <Typography variant="body2">{params.value}</Typography>
           </Tooltip>
         ),
       },
@@ -498,46 +463,26 @@ const LegajoTable: React.FC = () => {
         headerName: "Prioridad",
         width: 150,
         renderCell: (params) => {
-          const prioridadValue = params.value as "ALTA" | "MEDIA" | "BAJA" | null
-          const colors = getPriorityColor(prioridadValue)
-
+          const colors = getPriorityColor(params.value as any)
           return (
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "center",
-                "& select": {
+            <Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
+              <select
+                value={params.value || ""}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  handlePrioridadChange(params.row.id, e.target.value)
+                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
                   width: "100%",
                   padding: "8px",
                   border: `1px solid ${colors.border}`,
                   borderRadius: "4px",
                   backgroundColor: colors.bg,
                   color: colors.text,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                   cursor: "pointer",
-                  outline: "none",
                   fontSize: "0.875rem",
-                  fontWeight: 500,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: colors.border,
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  },
-                  "&:focus": {
-                    borderColor: colors.border,
-                    boxShadow: `0 0 0 2px ${colors.bg}`,
-                  },
-                },
-              }}
-            >
-              <select
-                value={formatPrioridadValue(params.value)}
-                onChange={(e) => {
-                  e.stopPropagation()
-                  handlePrioridadChange(params.row.id, e.target.value)
                 }}
-                onClick={(e) => e.stopPropagation()}
               >
                 {params.value === null && <option value="">Seleccionar</option>}
                 <option value="ALTA">Alta</option>
@@ -552,25 +497,14 @@ const LegajoTable: React.FC = () => {
         field: "ultimaActualizacion",
         headerName: "Actualización",
         width: 150,
-        renderCell: (params) => (
-          <Typography variant="body2" color="text.secondary">
-            {params.value}
-          </Typography>
-        ),
       },
       {
         field: "medidas_activas_count",
         headerName: "Medidas",
         width: 100,
         align: "center",
-        headerAlign: "center",
         renderCell: (params) => (
-          <Chip
-            label={params.value || 0}
-            size="small"
-            color={params.value > 0 ? "primary" : "default"}
-            sx={{ minWidth: 40 }}
-          />
+          <Chip label={params.value || 0} size="small" color={params.value > 0 ? "primary" : "default"} />
         ),
       },
       {
@@ -578,14 +512,8 @@ const LegajoTable: React.FC = () => {
         headerName: "Actividades",
         width: 110,
         align: "center",
-        headerAlign: "center",
         renderCell: (params) => (
-          <Chip
-            label={params.value || 0}
-            size="small"
-            color={params.value > 0 ? "secondary" : "default"}
-            sx={{ minWidth: 40 }}
-          />
+          <Chip label={params.value || 0} size="small" color={params.value > 0 ? "secondary" : "default"} />
         ),
       },
       {
@@ -593,14 +521,8 @@ const LegajoTable: React.FC = () => {
         headerName: "Oficios",
         width: 100,
         align: "center",
-        headerAlign: "center",
         renderCell: (params) => (
-          <Chip
-            label={params.value || 0}
-            size="small"
-            color={params.value > 0 ? "info" : "default"}
-            sx={{ minWidth: 40 }}
-          />
+          <Chip label={params.value || 0} size="small" color={params.value > 0 ? "info" : "default"} />
         ),
       },
       {
@@ -608,17 +530,13 @@ const LegajoTable: React.FC = () => {
         headerName: "PI",
         width: 80,
         align: "center",
-        headerAlign: "center",
-        renderCell: (params) => (
-          <ChipDemandaPI count={params.row.indicadores?.demanda_pi_count || 0} />
-        ),
+        renderCell: (params) => <ChipDemandaPI count={params.row.indicadores?.demanda_pi_count || 0} />,
       },
       {
         field: "indicadores_oficios_semaforo",
         headerName: "Oficios",
         width: 150,
         align: "center",
-        headerAlign: "center",
         renderCell: (params) => <ChipsOficios oficios={params.row.oficios || []} />,
       },
       {
@@ -633,239 +551,118 @@ const LegajoTable: React.FC = () => {
         width: 200,
         renderCell: (params) => (
           <ContadoresPT
-            actividades={
-              params.row.indicadores?.pt_actividades || {
-                pendientes: 0,
-                en_progreso: 0,
-                vencidas: 0,
-                realizadas: 0,
-              }
-            }
+            actividades={params.row.indicadores?.pt_actividades || { pendientes: 0, en_progreso: 0, vencidas: 0, realizadas: 0 }}
           />
         ),
       },
-      {
-        field: "indicadores_alertas",
-        headerName: "Alertas",
-        width: 80,
-        align: "center",
-        headerAlign: "center",
-        renderCell: (params) => <AlertasChip alertas={params.row.indicadores?.alertas || []} />,
-      },
+
       {
         field: "actions",
         headerName: "Acciones",
         width: 180,
         sortable: false,
-        filterable: false,
         renderCell: (params) => (
           <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            {/* Quick action buttons */}
             <Tooltip title="Ver detalles">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleOpenModal(params.row.id)
-                }}
-                sx={{ color: "primary.main" }}
-              >
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenModal(params.row.id) }} sx={{ color: "primary.main" }}>
                 <Visibility fontSize="small" />
               </IconButton>
             </Tooltip>
-
-            {/* CA-3: Hide "Asignar" button for Level 2 users (Equipo Técnico) */}
             {permissions.canAssign && (
               <Tooltip title="Asignar">
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleOpenAsignarModal(params.row.id)
-                  }}
-                  sx={{ color: "secondary.main" }}
-                >
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenAsignarModal(params.row.id) }} sx={{ color: "secondary.main" }}>
                   <PersonAdd fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
-
-            {/* Action Menu with more options */}
             <ActionMenu
               legajoId={params.row.id}
               demandaId={params.row.indicadores?.demanda_pi_id || null}
               tieneMedidas={params.row.medidas_activas_count > 0}
               tieneOficios={params.row.oficios_count > 0}
-              tienePlanTrabajo={
-                (params.row.indicadores?.pt_actividades?.pendientes || 0) +
-                (params.row.indicadores?.pt_actividades?.en_progreso || 0) +
-                (params.row.indicadores?.pt_actividades?.vencidas || 0) +
-                (params.row.indicadores?.pt_actividades?.realizadas || 0) >
-                0
-              }
+              tienePlanTrabajo={true}
               onViewDetail={handleOpenModal}
               onAssign={handleOpenAsignarModal}
-              userPermissions={{
-                canAssign: permissions.canAssign,
-                canEdit: permissions.canEdit,
-                canSendNotification: permissions.canSendNotification,
-              }}
+              userPermissions={permissions}
             />
           </Box>
         ),
       },
     ]
 
-    // Add more columns for larger screens
     if (!isMobile) {
       const additionalColumns: GridColDef[] = [
-        {
-          field: "zona",
-          headerName: "Zona",
-          width: 130,
-          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
-        },
-        {
-          field: "equipo_trabajo",
-          headerName: "Equipo",
-          width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
-        },
-        {
-          field: "profesional_asignado",
-          headerName: "Profesional",
-          width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value || "Sin asignar"}</Typography>,
-        },
+        { field: "zona", headerName: "Zona", width: 130 },
+        { field: "equipo_trabajo", headerName: "Equipo", width: 150 },
+        { field: "profesional_asignado", headerName: "Profesional", width: 150 },
         {
           field: "fecha_apertura",
           headerName: "Fecha Apertura",
           width: 130,
-          renderCell: (params) => {
-            try {
-              const date = new Date(params.value)
-              return (
-                <Typography variant="body2">
-                  {date.toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </Typography>
-              )
-            } catch {
-              return <Typography variant="body2">{params.value}</Typography>
-            }
-          },
+          renderCell: (params) => (
+            <Typography variant="body2">
+              {params.value ? new Date(params.value).toLocaleDateString("es-AR") : "N/A"}
+            </Typography>
+          ),
         },
       ]
-
-      // CA-2: Only show judicial data columns for users with permission
       if (permissions.canViewJudicialData) {
-        additionalColumns.splice(3, 0, {
-          field: "jefe_zonal",
-          headerName: "Jefe Zonal",
-          width: 150,
-          renderCell: (params) => <Typography variant="body2">{params.value || "N/A"}</Typography>,
-        })
+        additionalColumns.push({ field: "jefe_zonal", headerName: "Jefe Zonal", width: 150 })
       }
-
       baseColumns.push(...additionalColumns)
     }
-
     return baseColumns
   }
 
   const columns = useMemo(() => getColumns(), [isMobile, permissions])
 
-  // Build name mappings for ActiveFiltersBar
   const jefeZonalNames = useMemo(() => {
     const mapping: Record<number, string> = {}
-    filterOptions.jefesZonales.forEach((jefe) => {
-      mapping[jefe.id] = jefe.nombre_completo || jefe.nombre || `ID: ${jefe.id}`
-    })
+    filterOptions.jefesZonales.forEach((j) => { mapping[j.id] = j.nombre_completo || j.nombre || `ID: ${j.id}` })
     return mapping
   }, [filterOptions.jefesZonales])
 
   const directorNames = useMemo(() => {
     const mapping: Record<number, string> = {}
-    filterOptions.directores.forEach((director) => {
-      mapping[director.id] = director.nombre_completo || director.nombre || `ID: ${director.id}`
-    })
+    filterOptions.directores.forEach((d) => { mapping[d.id] = d.nombre_completo || d.nombre || `ID: ${d.id}` })
     return mapping
   }, [filterOptions.directores])
 
   const equipoTrabajoNames = useMemo(() => {
     const mapping: Record<number, string> = {}
-    filterOptions.equiposTrabajo.forEach((equipo) => {
-      mapping[equipo.id] = equipo.nombre || equipo.codigo || `ID: ${equipo.id}`
-    })
+    filterOptions.equiposTrabajo.forEach((e) => { mapping[e.id] = e.nombre || e.codigo || `ID: ${e.id}` })
     return mapping
   }, [filterOptions.equiposTrabajo])
 
   const equipoCentroVidaNames = useMemo(() => {
     const mapping: Record<number, string> = {}
-    filterOptions.equiposCentroVida.forEach((equipo) => {
-      mapping[equipo.id] = equipo.nombre || equipo.codigo || `ID: ${equipo.id}`
-    })
+    filterOptions.equiposCentroVida.forEach((e) => { mapping[e.id] = e.nombre || e.codigo || `ID: ${e.id}` })
     return mapping
   }, [filterOptions.equiposCentroVida])
 
-  const rows =
-    legajosData?.results.map((legajo: LegajoApiResponse) => {
-      // Format fecha_ultima_actualizacion safely
+  const rows = useMemo(() => {
+    return legajosData?.results.map((legajo: LegajoApiResponse) => {
       let ultimaActualizacionFormatted = "N/A"
-      try {
-        if (legajo.fecha_ultima_actualizacion) {
-          const date = new Date(legajo.fecha_ultima_actualizacion)
-          if (!isNaN(date.getTime())) {
-            ultimaActualizacionFormatted = date.toLocaleString("es-AR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          }
+      if (legajo.fecha_ultima_actualizacion) {
+        const date = new Date(legajo.fecha_ultima_actualizacion)
+        if (!isNaN(date.getTime())) {
+          ultimaActualizacionFormatted = date.toLocaleString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
         }
-      } catch (error) {
-        console.error("Error formatting fecha_ultima_actualizacion:", error)
       }
 
-      // Safely extract counts from arrays
       const medidasCount = Array.isArray(legajo.medidas_activas) ? legajo.medidas_activas.length : 0
       const actividadesCount = Array.isArray(legajo.actividades_activas) ? legajo.actividades_activas.length : 0
       const oficiosCount = Array.isArray(legajo.oficios) ? legajo.oficios.length : 0
 
-      // Safely extract string values from fields that might be strings or objects
-      const zonaValue = typeof legajo.zona === "string"
-        ? legajo.zona
-        : legajo.zona && typeof legajo.zona === "object" && (legajo.zona as any).nombre
-          ? (legajo.zona as any).nombre
-          : null
-
-      const equipoTrabajoValue = typeof legajo.equipo_trabajo === "string"
-        ? legajo.equipo_trabajo
-        : legajo.equipo_trabajo && typeof legajo.equipo_trabajo === "object" && (legajo.equipo_trabajo as any).nombre
-          ? (legajo.equipo_trabajo as any).nombre
-          : null
-
-      const userResponsableValue = typeof legajo.user_responsable === "string"
-        ? legajo.user_responsable
-        : legajo.user_responsable && typeof legajo.user_responsable === "object" && (legajo.user_responsable as any).nombre_completo
-          ? (legajo.user_responsable as any).nombre_completo
-          : null
-
-      const jefeZonalValue = typeof legajo.jefe_zonal === "string"
-        ? legajo.jefe_zonal
-        : legajo.jefe_zonal && typeof legajo.jefe_zonal === "object" && (legajo.jefe_zonal as any).nombre_completo
-          ? (legajo.jefe_zonal as any).nombre_completo
-          : null
+      const zonaValue = typeof legajo.zona === "string" ? legajo.zona : (legajo.zona as any)?.nombre || null
+      const equipoTrabajoValue = typeof legajo.equipo_trabajo === "string" ? legajo.equipo_trabajo : (legajo.equipo_trabajo as any)?.nombre || null
+      const userResponsableValue = typeof legajo.user_responsable === "string" ? legajo.user_responsable : (legajo.user_responsable as any)?.nombre_completo || null
+      const jefeZonalValue = typeof legajo.jefe_zonal === "string" ? legajo.jefe_zonal : (legajo.jefe_zonal as any)?.nombre_completo || null
 
       return {
         id: legajo.id,
         numero_legajo: legajo.numero || `L-${legajo.id}`,
-        nombre: legajo.nnya ? legajo.nnya.nombre_completo : "N/A",
+        nombre: legajo.nnya?.nombre_completo || "N/A",
         dni: legajo.nnya?.dni ? String(legajo.nnya.dni) : "N/A",
         prioridad: legajo.prioridad || null,
         ultimaActualizacion: ultimaActualizacionFormatted,
@@ -877,91 +674,83 @@ const LegajoTable: React.FC = () => {
         profesional_asignado: userResponsableValue,
         jefe_zonal: jefeZonalValue,
         fecha_apertura: legajo.fecha_apertura,
-        // Add full measures list and indicators/oficios for better highlighting and visual components
         medidas_activas: legajo.medidas_activas,
         indicadores: legajo.indicadores,
         oficios: legajo.oficios,
+        allStates: (() => {
+          const states = new Set<string>()
+
+          const ESTADO_FIELDS = [
+            "estado",
+            "etapa",
+            "etapa_estado",
+            "estado_etapa",
+            "etapa_nombre",
+            "etapa_actual__estado",
+            "etapa_actual__nombre",
+            "etapa_actual_nombre",
+            "etapa_actual_estado",
+          ] as const
+
+          const andarivel = legajo.indicadores?.medida_andarivel as any
+          if (andarivel?.etapa_estado) {
+            states.add(normalizeState(andarivel.etapa_estado))
+          }
+
+          if (Array.isArray(legajo.medidas_activas)) {
+            legajo.medidas_activas.forEach((m: any) => {
+              // Campos simples de la medida
+              ESTADO_FIELDS.forEach((field) => {
+                if (m[field]) states.add(normalizeState(m[field]))
+              })
+
+              // etapa_actual (objeto único)
+              if (m.etapa_actual?.estado) states.add(normalizeState(m.etapa_actual.estado))
+              if (m.etapa_actual?.nombre) states.add(normalizeState(m.etapa_actual.nombre))
+
+              // ✅ FIX: iterar TODOS los arrays de etapas posibles
+              const arraysDeEtapas = ["etapas", "etapas_activas", "pasos", "historial_etapas"]
+              arraysDeEtapas.forEach((arrayField) => {
+                if (Array.isArray(m[arrayField])) {
+                  m[arrayField].forEach((etapa: any) => {
+                    if (etapa.estado) states.add(normalizeState(etapa.estado))
+                    if (etapa.etapa_estado) states.add(normalizeState(etapa.etapa_estado))
+                    if (etapa.nombre) states.add(normalizeState(etapa.nombre))
+                  })
+                }
+              })
+            })
+          }
+
+          if (process.env.NODE_ENV === "development") {
+            // console.log(`[Legajo ${legajo.id}] allStates:`, Array.from(states))
+          }
+
+          return Array.from(states)
+        })()
       }
     }) || []
+  }, [legajosData])
 
-  // Add this function to handle Excel export
   const handleExportXlsx = () => {
-    // Export to Excel with current table data and filter metadata
-    exportLegajosToExcel(rows, {
-      filters: apiFilters,
-      totalCount: totalCount,
-    })
-
-    // Show success message
-    toast.success("Archivo Excel generado correctamente", {
-      position: "top-center",
-      autoClose: 3000,
-    })
+    exportLegajosToExcel(rows, { filters: apiFilters, totalCount: totalCount })
+    toast.success("Archivo Excel generado correctamente")
   }
 
   return (
     <>
-      <Paper
-        sx={{
-          width: "100%",
-          overflow: "hidden",
-          borderRadius: 2,
-          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-        }}
-      >
+      <Paper sx={{ width: "100%", overflow: "hidden", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.08)" }}>
         <Box sx={{ p: 2, borderBottom: "1px solid #e0e0e0", bgcolor: "#f9f9f9" }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>
-            Gestión de Legajos
-          </Typography>
-
-          {/* Search Bar - LEG-03 CA-1 */}
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>Gestión de Legajos</Typography>
           <Box sx={{ mb: 2 }}>
-            <LegajoSearchBar
-              onSearch={handleSearch}
-              initialValue={apiFilters.search || ""}
-            />
+            <LegajoSearchBar onSearch={handleSearch} initialValue={apiFilters.search || ""} />
           </Box>
-
-          {/* Action Buttons and Filters */}
           <div className="flex gap-4 relative z-10">
-            <LegajoButtons
-              isLoading={isLoading}
-              handleNuevoRegistro={() => { }}
-              onFilterChange={(filters) => {
-                // Handle filter changes if needed
-                console.log('Filter changes:', filters)
-              }}
-              onSearch={() => {
-                // Handle search if needed
-                console.log('Search triggered')
-              }}
-              onLegajoCreated={(data) => {
-                console.log('Legajo created:', data)
-                // Refresh the data
-                loadLegajos()
-              }}
-            />
-            <LegajoFilters
-              onFilterChange={(newFilters) => {
-                setApiFilters((prev) => ({ ...prev, ...newFilters }))
-                setPaginationModel((prev) => ({ ...prev, page: 0 }))
-              }}
-            />
+            <LegajoButtons isLoading={isLoading} handleNuevoRegistro={() => { }} onLegajoCreated={() => loadLegajos()} />
+            <LegajoFilters onFilterChange={(newFilters) => { setApiFilters((prev) => ({ ...prev, ...newFilters })); setPaginationModel((prev) => ({ ...prev, page: 0 })) }} />
           </div>
         </Box>
-
-        {/* Active Filters Bar - LEG-03 CA-5 */}
-        <ActiveFiltersBar
-          filters={apiFilters}
-          totalResults={totalCount}
-          onRemoveFilter={handleRemoveFilter}
-          onClearAll={handleClearAllFilters}
-          jefeZonalNames={jefeZonalNames}
-          directorNames={directorNames}
-          equipoTrabajoNames={equipoTrabajoNames}
-          equipoCentroVidaNames={equipoCentroVidaNames}
-        />
-
+        <ActiveFiltersBar filters={apiFilters} totalResults={totalCount} onRemoveFilter={handleRemoveFilter} onClearAll={handleClearAllFilters} jefeZonalNames={jefeZonalNames} directorNames={directorNames} equipoTrabajoNames={equipoTrabajoNames} equipoCentroVidaNames={equipoCentroVidaNames} />
         <div style={{ height: 600, width: "100%" }}>
           <DataGrid
             rows={rows}
@@ -969,95 +758,32 @@ const LegajoTable: React.FC = () => {
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
             sortModel={sortModel}
-            onSortModelChange={(newModel) => setSortModel(newModel)}
+            onSortModelChange={setSortModel}
             sortingMode="server"
-            pageSizeOptions={[5, 10, 25, 50, 100]}
             rowCount={totalCount}
             paginationMode="server"
             loading={isLoading || isUpdating}
-            onRowClick={(params) => {
-              handleOpenModal(params.row.id)
-            }}
-            getRowClassName={(params) => {
-              return shouldHighlightLegajo(params.row) ? "highlight-pending" : ""
-            }}
-            slots={{
-              toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} />,
-            }}
+            onRowClick={(params) => handleOpenModal(params.row.id)}
+            getRowClassName={(params) => shouldHighlightLegajo(params.row) ? "highlight-pending" : ""}
+            slots={{ toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} /> }}
             sx={{
               cursor: "pointer",
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: "#f5f5f5",
-                borderBottom: "2px solid #e0e0e0",
-              },
-              "& .MuiDataGrid-cell": {
-                padding: "8px 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              },
-              "& .MuiDataGrid-row": {
-                transition: "background-color 0.2s",
-                "&:hover": {
-                  backgroundColor: "rgba(25, 118, 210, 0.04)",
-                },
-              },
+              "& .MuiDataGrid-row:hover": { backgroundColor: "rgba(25, 118, 210, 0.04)" },
               "& .highlight-pending": {
                 backgroundColor: "rgba(79, 63, 240, 0.1) !important",
                 borderLeft: "6px solid #3f51b5 !important",
-                "& .MuiDataGrid-cell": {
-                  fontWeight: "900 !important",
-                  color: "#1a237e !important",
-                },
-                "&:hover": {
-                  backgroundColor: "rgba(79, 63, 240, 0.15) !important",
-                },
+                "& .MuiDataGrid-cell": { fontWeight: "900 !important", color: "#1a237e !important" },
               },
             }}
           />
         </div>
       </Paper>
-      <Modal
-        open={isModalOpen}
-        aria-labelledby="legajo-detail-modal"
-        aria-describedby="legajo-detail-description"
-        onClose={(_event, reason) => {
-          if (reason !== "backdropClick") {
-            handleCloseModal()
-          }
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: { xs: "95%", sm: "90%", md: "80%" },
-            maxWidth: 900,
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: { xs: 2, sm: 4 },
-            maxHeight: "90vh",
-            overflowY: "auto",
-            borderRadius: 2,
-          }}
-        >
-          {selectedLegajoId ? (
-            <LegajoDetail params={{ id: selectedLegajoId.toString() }} onClose={handleCloseModal} />
-          ) : (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-              <CircularProgress />
-            </Box>
-          )}
+      <Modal open={isModalOpen} onClose={handleCloseModal}>
+        <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: { xs: "95%", md: "80%" }, maxWidth: 900, bgcolor: "background.paper", p: 4, maxHeight: "90vh", overflowY: "auto", borderRadius: 2 }}>
+          {selectedLegajoId ? <LegajoDetail params={{ id: selectedLegajoId.toString() }} onClose={handleCloseModal} /> : <CircularProgress />}
         </Box>
       </Modal>
-      <AsignarLegajoModal
-        open={isAsignarModalOpen}
-        onClose={handleCloseAsignarModal}
-        legajoId={selectedLegajoIdForAssignment}
-        onAsignacionComplete={() => loadLegajos()}
-      />
+      <AsignarLegajoModal open={isAsignarModalOpen} onClose={handleCloseAsignarModal} legajoId={selectedLegajoIdForAssignment} onAsignacionComplete={loadLegajos} />
     </>
   )
 }

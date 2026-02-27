@@ -141,9 +141,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             variant="body2"
             fontWeight={600}
             sx={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              lineHeight: 1.2
             }}
           >
             {actividad.tipo_actividad_info?.nombre || 'Actividad'}

@@ -118,6 +118,7 @@ export async function logout() {
   const cookieStore = cookies();
   cookieStore.delete("refreshToken");
   cookieStore.delete("accessToken");
+  cookieStore.delete("mock_username");
 }
 
 /**
@@ -129,7 +130,7 @@ export async function refreshToken(): Promise<string | null> {
   try {
     const cookieStore = cookies();
     const refreshTokenValue = cookieStore.get('refreshToken')?.value;
-    
+
     if (!refreshTokenValue) {
       console.warn('No refresh token available');
       return null;
@@ -140,7 +141,7 @@ export async function refreshToken(): Promise<string | null> {
     });
 
     const newAccessToken = response.data.access;
-    
+
     if (newAccessToken) {
       cookieStore.set('accessToken', newAccessToken, {
         httpOnly: true,
@@ -148,10 +149,10 @@ export async function refreshToken(): Promise<string | null> {
         path: '/',
         secure: true,
       });
-      
+
       return newAccessToken;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Token refresh failed:', error);

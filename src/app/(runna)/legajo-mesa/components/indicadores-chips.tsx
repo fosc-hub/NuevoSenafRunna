@@ -304,14 +304,19 @@ export const ContadoresPT: React.FC<{
 /**
  * Chip de Alertas
  */
-export const AlertasChip: React.FC<{ alertas: Alerta[] }> = ({ alertas }) => {
-  if (alertas.length === 0) {
+export const AlertasChip: React.FC<{
+  alertas: Alerta[],
+  virtualAlerts?: Alerta[]
+}> = ({ alertas, virtualAlerts = [] }) => {
+  const allAlertas = [...alertas, ...virtualAlerts]
+
+  if (allAlertas.length === 0) {
     return null
   }
 
   const tooltipContent = (
     <Box>
-      {alertas.map((alerta, index) => (
+      {allAlertas.map((alerta, index) => (
         <Typography key={index} variant="caption" sx={{ display: "block", mb: 0.5 }}>
           • {alerta.mensaje}
         </Typography>
@@ -322,9 +327,9 @@ export const AlertasChip: React.FC<{ alertas: Alerta[] }> = ({ alertas }) => {
   return (
     <Tooltip title={tooltipContent}>
       <Chip
-        label={alertas.length}
+        label={allAlertas.length}
         size="small"
-        color="warning"
+        color={virtualAlerts.length > 0 ? "error" : "warning"}
         icon={<WarningIcon fontSize="small" />}
         sx={{
           fontWeight: "bold",
@@ -346,7 +351,37 @@ export const AlertasChip: React.FC<{ alertas: Alerta[] }> = ({ alertas }) => {
 /**
  * Componente principal que agrupa todos los indicadores
  */
-export const IndicadoresColumn: React.FC<{ indicadores: IndicadoresLegajo }> = ({ indicadores }) => {
+export const IndicadoresColumn: React.FC<{
+  indicadores: IndicadoresLegajo,
+  medidas_activas?: any[],
+  userPermissions?: any
+}> = ({ indicadores, medidas_activas = [], userPermissions }) => {
+
+  // Generar alertas "virtuales" basadas en el rol y estado de las medidas
+  const virtualAlerts: Alerta[] = []
+
+  if (userPermissions) {
+    const allStates = new Set<string>()
+    if (indicadores.medida_andarivel && typeof indicadores.medida_andarivel === 'object') {
+      if (indicadores.medida_andarivel.etapa_estado) allStates.add(indicadores.medida_andarivel.etapa_estado.toUpperCase())
+    }
+
+    medidas_activas.forEach(m => {
+      if (m.estado) allStates.add(m.estado.toUpperCase())
+      if (m.etapa_estado) allStates.add(m.etapa_estado.toUpperCase())
+    })
+
+    const has = (keyword: string) => Array.from(allStates).some(s => s.includes(keyword.toUpperCase()))
+
+    if (userPermissions.isDirector && (has("NOTA_AVAL") || has("PENDIENTE_NOTA_AVAL"))) {
+      virtualAlerts.push({ tipo: 'URGENTE', severidad: 'alta', mensaje: 'Pendiente Nota de Aval' })
+    }
+
+    if (userPermissions.isLegales && (has("JURIDICO") || has("PENDIENTE_INFORME_JURIDICO"))) {
+      virtualAlerts.push({ tipo: 'URGENTE', severidad: 'alta', mensaje: 'Pendiente Informe Jurídico' })
+    }
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
       {/* Demanda PI */}
@@ -369,7 +404,9 @@ export const IndicadoresColumn: React.FC<{ indicadores: IndicadoresLegajo }> = (
       <ContadoresPT actividades={indicadores.pt_actividades} />
 
       {/* Alertas */}
-      {indicadores.alertas.length > 0 && <AlertasChip alertas={indicadores.alertas} />}
+      {(indicadores.alertas.length > 0 || virtualAlerts.length > 0) && (
+        <AlertasChip alertas={indicadores.alertas} virtualAlerts={virtualAlerts} />
+      )}
     </Box>
   )
 }

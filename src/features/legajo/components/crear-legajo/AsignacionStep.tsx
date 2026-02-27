@@ -18,8 +18,6 @@ import {
   Button,
   Typography,
   Divider,
-  Switch,
-  FormControlLabel,
   CircularProgress,
   Alert,
 } from '@mui/material'
@@ -39,7 +37,6 @@ interface Props {
 }
 
 export default function AsignacionStep({ formData, onComplete, onBack }: Props) {
-  const [includeCentroVida, setIncludeCentroVida] = useState(false)
   const [zonaTrabajo, setZonaTrabajo] = useState<number | null>(null)
   const [zonaCentroVida, setZonaCentroVida] = useState<number | null>(null)
 
@@ -77,14 +74,14 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
   const { data: usuariosCentroVidaData } = useQuery({
     queryKey: ['usuarios', zonaCentroVida],
     queryFn: () => getUsuariosPorZona(zonaCentroVida!),
-    enabled: !!zonaCentroVida && includeCentroVida,
+    enabled: !!zonaCentroVida,
   })
   const usuariosCentroVida = extractArray(usuariosCentroVidaData)
 
   const { data: localesData } = useQuery({
     queryKey: ['locales', zonaCentroVida],
     queryFn: () => getLocalesCentroVida(zonaCentroVida!),
-    enabled: !!zonaCentroVida && includeCentroVida,
+    enabled: !!zonaCentroVida,
   })
   const locales = extractArray(localesData)
 
@@ -94,13 +91,10 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
       urgencia: data.urgencia ? Number(data.urgencia) : null,
       zona_trabajo_id: data.zona_trabajo_id ? Number(data.zona_trabajo_id) : null,
       user_responsable_trabajo_id: data.user_responsable_trabajo_id ? Number(data.user_responsable_trabajo_id) : null,
+      local_centro_vida_id: data.local_centro_vida_id ? Number(data.local_centro_vida_id) : null,
+      zona_centro_vida_id: data.zona_centro_vida_id ? Number(data.zona_centro_vida_id) : null,
+      user_responsable_centro_vida_id: data.user_responsable_centro_vida_id ? Number(data.user_responsable_centro_vida_id) : null,
       origen: 'Creación manual',
-    }
-
-    if (includeCentroVida) {
-      asignacion.local_centro_vida_id = data.local_centro_vida_id ? Number(data.local_centro_vida_id) : null
-      asignacion.zona_centro_vida_id = data.zona_centro_vida_id ? Number(data.zona_centro_vida_id) : null
-      asignacion.user_responsable_centro_vida_id = data.user_responsable_centro_vida_id ? Number(data.user_responsable_centro_vida_id) : null
     }
 
     onComplete(asignacion)
@@ -166,7 +160,7 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
                     label="Zona *"
                     onChange={(e) => {
                       field.onChange(e)
-                      const zonaId = e.target.value as number
+                      const zonaId = e.target.value as unknown as number
                       setZonaTrabajo(zonaId)
                       setValue('user_responsable_trabajo_id', '')
                     }}
@@ -212,104 +206,97 @@ export default function AsignacionStep({ formData, onComplete, onBack }: Props) 
             />
           </Grid>
 
-          {/* Centro de Vida (Optional) */}
+          {/* Centro de Vida (Mandatory) */}
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
-            <FormControlLabel
-              control={
-                <Switch checked={includeCentroVida} onChange={(e) => setIncludeCentroVida(e.target.checked)} />
-              }
-              label="Asignar Centro de Vida (opcional)"
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              Centro de Vida *
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Alert severity="info" sx={{ mb: 1 }}>
+              Los campos de Centro de Vida son obligatorios para la creación del legajo.
+            </Alert>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="zona_centro_vida_id"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <FormControl fullWidth required>
+                  <InputLabel>Zona Centro de Vida *</InputLabel>
+                  <Select
+                    {...field}
+                    label="Zona Centro de Vida *"
+                    onChange={(e) => {
+                      field.onChange(e)
+                      const zonaId = e.target.value as unknown as number
+                      setZonaCentroVida(zonaId)
+                      setValue('local_centro_vida_id', '')
+                      setValue('user_responsable_centro_vida_id', '')
+                    }}
+                  >
+                    {zonas.map((z: any) => (
+                      <MenuItem key={z.id} value={z.id}>
+                        {z.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
             />
           </Grid>
 
-          {includeCentroVida && (
-            <>
-              <Grid item xs={12}>
-                <Alert severity="info">
-                  Si asigna centro de vida, debe completar todos los campos relacionados.
-                </Alert>
-              </Grid>
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="local_centro_vida_id"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <FormControl fullWidth required disabled={!zonaCentroVida}>
+                  <InputLabel>Local *</InputLabel>
+                  <Select {...field} label="Local *">
+                    {locales.length === 0 ? (
+                      <MenuItem disabled>No hay locales en esta zona</MenuItem>
+                    ) : (
+                      locales.map((l: any) => (
+                        <MenuItem key={l.id} value={l.id}>
+                          {l.nombre}
+                        </MenuItem>
+                      ))
+                    )}
+                  </Select>
+                </FormControl>
+              )}
+            />
+          </Grid>
 
-              <Grid item xs={12} sm={4}>
-                <Controller
-                  name="zona_centro_vida_id"
-                  control={control}
-                  rules={{ required: includeCentroVida }}
-                  render={({ field }) => (
-                    <FormControl fullWidth required={includeCentroVida}>
-                      <InputLabel>Zona Centro de Vida</InputLabel>
-                      <Select
-                        {...field}
-                        label="Zona Centro de Vida"
-                        onChange={(e) => {
-                          field.onChange(e)
-                          const zonaId = e.target.value as number
-                          setZonaCentroVida(zonaId)
-                          setValue('local_centro_vida_id', '')
-                          setValue('user_responsable_centro_vida_id', '')
-                        }}
-                      >
-                        {zonas.map((z: any) => (
-                          <MenuItem key={z.id} value={z.id}>
-                            {z.nombre}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <Controller
-                  name="local_centro_vida_id"
-                  control={control}
-                  rules={{ required: includeCentroVida }}
-                  render={({ field }) => (
-                    <FormControl fullWidth required={includeCentroVida} disabled={!zonaCentroVida}>
-                      <InputLabel>Local</InputLabel>
-                      <Select {...field} label="Local">
-                        {locales.length === 0 ? (
-                          <MenuItem disabled>No hay locales en esta zona</MenuItem>
-                        ) : (
-                          locales.map((l: any) => (
-                            <MenuItem key={l.id} value={l.id}>
-                              {l.nombre}
-                            </MenuItem>
-                          ))
-                        )}
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <Controller
-                  name="user_responsable_centro_vida_id"
-                  control={control}
-                  rules={{ required: includeCentroVida }}
-                  render={({ field }) => (
-                    <FormControl fullWidth required={includeCentroVida} disabled={!zonaCentroVida}>
-                      <InputLabel>Responsable</InputLabel>
-                      <Select {...field} label="Responsable">
-                        {usuariosCentroVida.length === 0 ? (
-                          <MenuItem disabled>No hay usuarios en esta zona</MenuItem>
-                        ) : (
-                          usuariosCentroVida.map((u: any) => (
-                            <MenuItem key={u.id} value={u.id}>
-                              {u.nombre_completo || `${u.first_name} ${u.last_name}` || u.username}
-                            </MenuItem>
-                          ))
-                        )}
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-            </>
-          )}
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="user_responsable_centro_vida_id"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <FormControl fullWidth required disabled={!zonaCentroVida}>
+                  <InputLabel>Responsable *</InputLabel>
+                  <Select {...field} label="Responsable *">
+                    {usuariosCentroVida.length === 0 ? (
+                      <MenuItem disabled>No hay usuarios en esta zona</MenuItem>
+                    ) : (
+                      usuariosCentroVida.map((u: any) => (
+                        <MenuItem key={u.id} value={u.id}>
+                          {u.nombre_completo || `${u.first_name} ${u.last_name}` || u.username}
+                        </MenuItem>
+                      ))
+                    )}
+                  </Select>
+                </FormControl>
+              )}
+            />
+          </Grid>
         </Grid>
       )}
 

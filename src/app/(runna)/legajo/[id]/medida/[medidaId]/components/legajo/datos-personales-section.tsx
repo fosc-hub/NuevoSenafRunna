@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Typography, Grid, Divider, Chip, IconButton, Tooltip } from "@mui/material"
+import { Typography, Grid, Divider, Chip, IconButton, Tooltip, Box } from "@mui/material"
 import EditIcon from "@mui/icons-material/Edit"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { useUser } from "@/utils/auth/userZustand"
@@ -36,6 +36,7 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
     enabled: !!personaId && shouldFetchLocalizacion,
   })
 
+  // @ts-ignore - Ignoring complex nested type mismatch from API
   const localizacion: LocalizacionDisplay | null = (() => {
     if (persona?.localizacion) {
       return persona.localizacion
@@ -52,7 +53,7 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
         casa_nro: fetchedLocalizacion.casa_nro,
         piso_depto: fetchedLocalizacion.piso_depto,
         barrio_nombre: fetchedLocalizacion.barrio,
-        localidad_nombre: fetchedLocalizacion.localidad?.nombre || null,
+        localidad_nombre: (fetchedLocalizacion as any).localidad?.nombre || null,
         cpc_nombre: fetchedLocalizacion.cpc,
         referencia_geo: fetchedLocalizacion.referencia_geo,
       }
@@ -105,9 +106,9 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
 
   const direccion = localizacion
     ? [localizacion.tipo_calle, localizacion.calle, localizacion.casa_nro]
-        .filter((value) => value !== null && value !== undefined && value !== "")
-        .join(" ")
-        .trim()
+      .filter((value) => value !== null && value !== undefined && value !== "")
+      .join(" ")
+      .trim()
     : ""
 
   return (
@@ -124,271 +125,96 @@ export const DatosPersonalesSection: React.FC<DatosPersonalesSectionProps> = ({ 
       }
     >
 
-      <Grid container spacing={3}>
-        {/* Información Personal */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
-            Información Personal
-          </Typography>
-
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Nombre completo:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">
-                {persona?.nombre || ""} {persona?.apellido || ""}
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Nombre autopercibido:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{persona?.nombre_autopercibido || "N/A"}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                DNI:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{persona?.dni || "N/A"}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Situación DNI:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{formatSituacionDNI(persona?.situacion_dni)}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Fecha de nacimiento:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{formatFecha(persona?.fecha_nacimiento)}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Edad:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">
-                {persona?.edad_aproximada || persona?.edad_calculada || "N/A"} años
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Género:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{formatGenero(persona?.genero)}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Nacionalidad:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{formatGenero(persona?.nacionalidad)}</Typography>
-            </Grid>
-
-            {persona?.fecha_defuncion && (
-              <>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha de defunción:
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="error.main">
-                    {formatFecha(persona.fecha_defuncion)}
-                  </Typography>
-                </Grid>
-              </>
-            )}
-          </Grid>
-        </Grid>
-
-        {/* Ubicación y Contacto */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
-            Ubicación y Contacto
-          </Typography>
-
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Dirección:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{direccion || "No registrada"}</Typography>
-            </Grid>
-
-            {localizacion?.piso_depto && (
-              <>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Piso/Depto:
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2">{localizacion.piso_depto}</Typography>
-                </Grid>
-              </>
-            )}
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Barrio:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{localizacion?.barrio_nombre || "N/A"}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Localidad:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{localizacion?.localidad_nombre || "N/A"}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                CPC:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{localizacion?.cpc_nombre || "N/A"}</Typography>
-            </Grid>
-
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                Teléfono:
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2">{persona?.telefono || "No registrado"}</Typography>
-            </Grid>
-
-            {localizacion?.referencia_geo && (
-              <>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Referencia:
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2">{localizacion.referencia_geo}</Typography>
-                </Grid>
-              </>
-            )}
-          </Grid>
-        </Grid>
-
-        {/* Información del Legajo */}
+      <Grid container spacing={2}>
+        {/* Información Personal y Ubicación combinadas en 3 columnas */}
         <Grid item xs={12}>
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
-            Información del Legajo
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: "primary.main", fontSize: '0.75rem' }}>
+            Información General y de Ubicación
           </Typography>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Número de legajo:
-              </Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                {legajo?.numero || "N/A"}
-              </Typography>
+          <Grid container spacing={1}>
+            {/* Columna 1 */}
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Nombre completo:</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{persona?.nombre || ""} {persona?.apellido || ""}</Typography>
+              </Box>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">DNI:</Typography>
+                <Typography variant="body2">{persona?.dni || "N/A"}</Typography>
+              </Box>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Fecha de nacimiento:</Typography>
+                <Typography variant="body2">{formatFecha(persona?.fecha_nacimiento)} ({persona?.edad_aproximada || persona?.edad_calculada || "N/A"} años)</Typography>
+              </Box>
             </Grid>
 
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Fecha de apertura:
-              </Typography>
-              <Typography variant="body1">{formatFecha(legajo?.fecha_apertura)}</Typography>
+            {/* Columna 2 */}
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Dirección:</Typography>
+                <Typography variant="body2" sx={{ lineClamp: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{direccion || "No registrada"}</Typography>
+              </Box>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Barrio/Localidad:</Typography>
+                <Typography variant="body2">{localizacion?.barrio_nombre || "N/A"} - {localizacion?.localidad_nombre || "N/A"}</Typography>
+              </Box>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Género/Nacionalidad:</Typography>
+                <Typography variant="body2">{formatGenero((persona as any)?.genero?.nombre || persona?.genero)} / {formatGenero((persona as any)?.nacionalidad?.nombre || persona?.nacionalidad)}</Typography>
+              </Box>
             </Grid>
 
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Días desde apertura:
-              </Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500, color: "primary.main" }}>
-                {calcularDiasDesdeApertura(legajo?.fecha_apertura)} días
-              </Typography>
+            {/* Columna 3 */}
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Situación DNI:</Typography>
+                <Typography variant="body2">{formatSituacionDNI(persona?.situacion_dni)}</Typography>
+              </Box>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" display="block">Teléfono:</Typography>
+                <Typography variant="body2">{persona?.telefono || "No registrado"}</Typography>
+              </Box>
+              {persona?.nombre_autopercibido && persona.nombre_autopercibido !== "N/A" && (
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Nombre autopercibido:</Typography>
+                  <Typography variant="body2">{persona.nombre_autopercibido}</Typography>
+                </Box>
+              )}
             </Grid>
+          </Grid>
+        </Grid>
 
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Estado:
-              </Typography>
-              <Typography variant="body1">
-                {(() => {
-                  // Safely extract estado string from object or string
-                  if (!legajo?.estado) return "N/A"
-                  if (typeof legajo.estado === 'string') return legajo.estado
-                  if (typeof legajo.estado === 'object' && 'estado' in legajo.estado) {
-                    return legajo.estado.estado || "N/A"
-                  }
-                  return "N/A"
-                })()}
-              </Typography>
+        {/* Información del Legajo - Más compacta y horizontal */}
+        <Grid item xs={12}>
+          <Divider sx={{ my: 1 }} />
+          <Grid container spacing={1} alignItems="center">
+            <Grid item xs={6} sm={2}>
+              <Typography variant="caption" color="text.secondary" display="block">Nro Legajo:</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>{legajo?.numero || "N/A"}</Typography>
             </Grid>
-
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Profesional asignado:
-              </Typography>
-              <Typography variant="body1">{asignacion?.user_responsable?.nombre_completo || "Sin asignar"}</Typography>
+            <Grid item xs={6} sm={2}>
+              <Typography variant="caption" color="text.secondary" display="block">Apertura:</Typography>
+              <Typography variant="body2">{formatFecha(legajo?.fecha_apertura)}</Typography>
             </Grid>
-
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Zona asignada:
-              </Typography>
-              <Typography variant="body1">{asignacion?.zona?.nombre || "Sin asignar"}</Typography>
+            <Grid item xs={6} sm={2}>
+              <Typography variant="caption" color="text.secondary" display="block">Días:</Typography>
+              <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>{calcularDiasDesdeApertura(legajo?.fecha_apertura)}</Typography>
             </Grid>
-
-            <Grid item xs={12} md={4}>
-              <Typography variant="body2" color="text.secondary">
-                Urgencia:
-              </Typography>
+            <Grid item xs={6} sm={2}>
+              <Typography variant="caption" color="text.secondary" display="block">Urgencia:</Typography>
               <Chip
                 label={legajo?.urgencia?.nombre || "MEDIA"}
                 color={legajo?.urgencia?.nombre === "ALTA" ? "error" : "default"}
                 size="small"
-                sx={{ fontWeight: 500 }}
+                sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600 }}
               />
             </Grid>
-
-            {persona?.observaciones && (
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Observaciones:
-                </Typography>
-                <Typography variant="body2">{persona.observaciones}</Typography>
-              </Grid>
-            )}
+            <Grid item xs={12} sm={4}>
+              <Typography variant="caption" color="text.secondary" display="block">Profesional / Zona:</Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                {asignacion?.user_responsable?.nombre_completo || "Sin asignar"} - {asignacion?.zona?.nombre || "Sin asignar"}
+              </Typography>
+            </Grid>
           </Grid>
         </Grid>
       </Grid>

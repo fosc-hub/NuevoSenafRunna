@@ -214,7 +214,11 @@ export interface IntervencionResponse {
   // Tipo de dispositivo (write + read)
   tipo_dispositivo_id?: number | null // writeOnly - para enviar
   tipo_dispositivo_detalle: { id: number; nombre: string } | null // readOnly - lo que retorna
-  subtipo_dispositivo_id?: number | null // writeOnly - FK to TSubtipoDispositivo
+  subtipo_dispositivo_id?: number | null // writeOnly - FK to TSubtipoDispositivo or name string
+
+  // Tipo de cese (write + read)
+  tipo_cese: string | null
+  subtipo_cese: string | null
   subtipo_dispositivo_detalle: { id: number; nombre: string; capacidad_maxima?: number | null } | null // readOnly - lo que retorna
 
   // Motivo (write + read)

@@ -63,6 +63,10 @@ import type { TActividadPlanTrabajo, ActividadFilters } from "../../[id]/medida/
 import { getActorColor, ACTOR_LABELS, ZONA_TIPO_LABELS, getZonaTipoColor } from "../../[id]/medida/[medidaId]/types/actividades"
 import { extractArray } from "@/hooks/useApiQuery"
 import { useApiQuery } from "@/hooks/useApiQuery"
+import {
+  shouldNotifyActivity,
+  UserPermissions as NotificationUserPerms
+} from "@/utils/notification-utils"
 
 // Import reusable components
 import { ActividadDetailModal } from "../../[id]/medida/[medidaId]/components/medida/ActividadDetailModal"
@@ -449,27 +453,17 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   // Helper to determine if an activity should be highlighted for the current user's role
   const shouldHighlightForRole = useCallback(
     (actividad: TActividadPlanTrabajo) => {
-      // 1. Técnico: Highlight if assigned (principal or secondary)
-      if (roles.isET) {
-        const isAssigned =
-          actividad.responsable_principal === roles.user_id ||
-          actividad.responsables_secundarios?.includes(roles.user_id as number)
-        return isAssigned && actividad.estado === "PENDIENTE"
+      const userPerms: NotificationUserPerms = {
+        isDirector: !!user?.groups?.some(g => g.name.toLowerCase().includes("director")),
+        isLegales: roles.isLegal,
+        isEquipoTecnico: roles.isET,
+        isJefeZonal: roles.isJZ,
+        isAdmin: !!user?.is_superuser,
+        userId: roles.user_id,
       }
-
-      // 2. Jefe Zonal / Director: Highlight if pending JZ approval
-      if (roles.isJZ) {
-        return actividad.estado === "PENDIENTE_VISADO_JZ"
-      }
-
-      // 3. Legal: Highlight if pending Legal approval
-      if (roles.isLegal) {
-        return actividad.estado === "PENDIENTE_VISADO"
-      }
-
-      return false
+      return shouldNotifyActivity(actividad, userPerms)
     },
-    [roles]
+    [roles, user]
   )
 
   // Statistics
@@ -1062,7 +1056,7 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                     backgroundColor: isSelected
                       ? "rgba(156, 39, 176, 0.08)"
                       : isRoleHighlighted
-                        ? "rgba(25, 118, 210, 0.06)" // Slightly stronger for role-pending
+                        ? "rgba(25, 118, 210, 0.12)" // More visible for role-pending (increased from 0.06)
                         : isUnread
                           ? "rgba(25, 118, 210, 0.04)" // Light blue for unread
                           : actividad.esta_vencida && actividad.estado === "PENDIENTE"

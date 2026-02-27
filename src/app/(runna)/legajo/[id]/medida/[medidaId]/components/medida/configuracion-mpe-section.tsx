@@ -77,14 +77,22 @@ interface UpdateConfiguracionRequest {
 // ============================================================================
 
 /**
- * Fetch tipos de dispositivo filtered by MPE category
- * GET /api/tipos-dispositivo/?categoria=MPE
+ * Fetch tipos de dispositivo
+ * GET /api/tipos-dispositivo/
+ *
+ * Note: Removed categoria=MPE filter as backend may not support this filter
+ * or may not have tipos with this category. All tipos are loaded and can be
+ * filtered client-side if needed.
  */
 const getTiposDispositivoMPE = async (): Promise<TipoDispositivo[]> => {
-  const response = await axiosInstance.get<TipoDispositivo[]>('/tipos-dispositivo/', {
-    params: { categoria: 'MPE' }
-  })
-  return response.data
+  try {
+    const response = await axiosInstance.get<TipoDispositivo[]>('/tipos-dispositivo/')
+    console.log('[ConfiguracionMPE] Tipos dispositivo loaded:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('[ConfiguracionMPE] Error loading tipos dispositivo:', error)
+    throw error
+  }
 }
 
 /**
@@ -117,14 +125,32 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
   const [selectedSubtipoId, setSelectedSubtipoId] = useState<number | null>(null)
 
-  // Fetch tipos dispositivo filtered by MPE category (includes nested subtipos)
+  // Fetch tipos dispositivo (includes nested subtipos)
   const {
     data: tiposDispositivo = [],
     isLoading: isLoadingTipos,
+    error: tiposError,
+    refetch: refetchTipos,
   } = useQuery({
-    queryKey: ['tipos-dispositivo', 'MPE'],
+    queryKey: ['tipos-dispositivo'],
     queryFn: getTiposDispositivoMPE,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
+
+  // Log error for debugging
+  useEffect(() => {
+    if (tiposError) {
+      console.error('[ConfiguracionMPE] Error fetching tipos:', tiposError)
+    }
+  }, [tiposError])
+
+  // Refetch tipos when dialog opens if data is empty
+  useEffect(() => {
+    if (dialogOpen && tiposDispositivo.length === 0 && !isLoadingTipos && !tiposError) {
+      console.log('[ConfiguracionMPE] Dialog opened with empty tipos, refetching...')
+      refetchTipos()
+    }
+  }, [dialogOpen, tiposDispositivo.length, isLoadingTipos, tiposError, refetchTipos])
 
   // Get subtipos from the selected tipo's nested array (no separate API call needed)
   const selectedTipo = tiposDispositivo.find(t => t.id === selectedTipoId)
@@ -194,7 +220,8 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   const hasIntervencion = !!configuracion?.intervencion_id
   const canSave = !!selectedTipoId && !updateMutation.isPending && hasIntervencion
 
-  const isConfigured = configuracion?.tipo_dispositivo !== null
+  // Check if device configuration exists and has tipo_dispositivo set
+  const isConfigured = !!(configuracion?.tipo_dispositivo?.id)
 
   // Get display icon based on tipo
   const getDispositivoIcon = () => {
@@ -354,6 +381,16 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
                     Cargando tipos...
                   </Typography>
                 </Box>
+              )}
+              {tiposError && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                  Error al cargar tipos de dispositivo. Verifique la conexión.
+                </Typography>
+              )}
+              {!isLoadingTipos && !tiposError && tiposDispositivo.length === 0 && (
+                <Typography variant="caption" color="warning.main" sx={{ mt: 0.5 }}>
+                  No hay tipos de dispositivo disponibles
+                </Typography>
               )}
             </FormControl>
 

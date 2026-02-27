@@ -81,6 +81,7 @@ const isDispositivoCambioData = (datos: unknown): datos is DatosEventoDispositiv
 
 /**
  * Renders the device configuration change details in "antes → después" format
+ * Also shows the etapa (stage) where the change was made
  */
 const DispositivoCambioDetails: React.FC<{ datos: DatosEventoDispositivoCambio }> = ({ datos }) => {
   const renderCambio = (
@@ -147,11 +148,26 @@ const DispositivoCambioDetails: React.FC<{ datos: DatosEventoDispositivoCambio }
         borderColor: 'info.main',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-        <SettingsIcon sx={{ fontSize: 14, color: 'info.main' }} />
-        <Typography variant="caption" sx={{ fontWeight: 600, color: 'info.main' }}>
-          Cambios de Configuración
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <SettingsIcon sx={{ fontSize: 14, color: 'info.main' }} />
+          <Typography variant="caption" sx={{ fontWeight: 600, color: 'info.main' }}>
+            Cambios de Configuración
+          </Typography>
+        </Box>
+        {datos.etapa && (
+          <Chip
+            label={`Etapa: ${datos.etapa.nombre}`}
+            size="small"
+            variant="outlined"
+            color="primary"
+            sx={{
+              height: 18,
+              fontSize: '0.65rem',
+              '& .MuiChip-label': { px: 1 },
+            }}
+          />
+        )}
       </Box>
       {renderCambio('Tipo', datos.tipo_dispositivo)}
       {renderCambio('Subtipo', datos.subtipo_dispositivo)}

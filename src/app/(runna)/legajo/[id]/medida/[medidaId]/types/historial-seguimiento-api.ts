@@ -130,6 +130,24 @@ export interface DispositivoCambioValor {
 }
 
 /**
+ * Información de intervención en evento de cambio de dispositivo
+ */
+export interface IntervencionEventoDispositivo {
+  id: number
+  codigo: string
+  estado: string
+}
+
+/**
+ * Información de etapa en evento de cambio de dispositivo
+ */
+export interface EtapaEventoDispositivo {
+  id: number
+  nombre: string
+  tipo_etapa: TipoEtapa
+}
+
+/**
  * Datos específicos del evento INTERVENCION_DISPOSITIVO_CAMBIO
  */
 export interface DatosEventoDispositivoCambio {
@@ -141,6 +159,8 @@ export interface DatosEventoDispositivoCambio {
     antes: DispositivoCambioValor | null
     despues: DispositivoCambioValor | null
   }
+  intervencion?: IntervencionEventoDispositivo
+  etapa?: EtapaEventoDispositivo
 }
 
 /**

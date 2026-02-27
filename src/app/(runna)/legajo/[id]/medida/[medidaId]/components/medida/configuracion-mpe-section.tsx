@@ -18,7 +18,6 @@ import {
   Grid,
   Button,
   Chip,
-  Skeleton,
   Alert,
   FormControl,
   InputLabel,
@@ -42,7 +41,7 @@ import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import axiosInstance from "@/app/api/utils/axiosInstance"
-import { subtipoDispositivoService, type TSubtipoDispositivo } from "../../services/subtipoDispositivoService"
+import { subtipoDispositivoService } from "../../services/subtipoDispositivoService"
 import type { ConfiguracionDispositivoMPE } from "@/app/(runna)/legajo-mesa/types/medida-api"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 
@@ -63,25 +62,36 @@ interface TipoDispositivo {
 }
 
 interface UpdateConfiguracionRequest {
-  tipo_dispositivo_id: number | null
-  subtipo_dispositivo_id: number | null
+  tipo_dispositivo_id: number
+  subtipo_dispositivo_id?: number | null
 }
 
 // ============================================================================
 // API FUNCTIONS
 // ============================================================================
 
-const getTiposDispositivo = async (): Promise<TipoDispositivo[]> => {
-  const response = await axiosInstance.get<TipoDispositivo[]>('/tipos-dispositivo/')
+/**
+ * Fetch tipos de dispositivo filtered by MPE category
+ * GET /api/tipos-dispositivo/?categoria=MPE
+ */
+const getTiposDispositivoMPE = async (): Promise<TipoDispositivo[]> => {
+  const response = await axiosInstance.get<TipoDispositivo[]>('/tipos-dispositivo/', {
+    params: { categoria: 'MPE' }
+  })
   return response.data
 }
 
+/**
+ * Update device configuration via intervention PATCH
+ * PATCH /api/medidas/{medida_id}/intervenciones/{intervencion_id}/
+ */
 const updateConfiguracionMPE = async (
   medidaId: number,
+  intervencionId: number,
   data: UpdateConfiguracionRequest
-): Promise<ConfiguracionDispositivoMPE> => {
-  const response = await axiosInstance.patch<ConfiguracionDispositivoMPE>(
-    `/medidas/${medidaId}/configuracion-dispositivo-mpe/`,
+): Promise<any> => {
+  const response = await axiosInstance.patch(
+    `/medidas/${medidaId}/intervenciones/${intervencionId}/`,
     data
   )
   return response.data
@@ -101,28 +111,34 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
   const [selectedSubtipoId, setSelectedSubtipoId] = useState<number | null>(null)
 
-  // Fetch tipos dispositivo
+  // Fetch tipos dispositivo filtered by MPE category
   const {
     data: tiposDispositivo = [],
     isLoading: isLoadingTipos,
   } = useQuery({
-    queryKey: ['tipos-dispositivo'],
-    queryFn: getTiposDispositivo,
+    queryKey: ['tipos-dispositivo', 'MPE'],
+    queryFn: getTiposDispositivoMPE,
   })
 
   // Fetch subtipos based on selected tipo
+  // GET /api/subtipos-dispositivo/?tipo_dispositivo={id}
   const {
     data: subtiposDispositivo = [],
     isLoading: isLoadingSubtipos,
   } = useQuery({
     queryKey: ['subtipos-dispositivo', selectedTipoId],
-    queryFn: () => subtipoDispositivoService.list(selectedTipoId || undefined, 'MPE'),
+    queryFn: () => subtipoDispositivoService.list(selectedTipoId || undefined),
     enabled: !!selectedTipoId,
   })
 
-  // Mutation for updating configuration
+  // Mutation for updating configuration via intervention PATCH
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateConfiguracionRequest) => updateConfiguracionMPE(medidaId, data),
+    mutationFn: (data: UpdateConfiguracionRequest) => {
+      if (!configuracion?.intervencion_id) {
+        throw new Error('No hay intervención asociada para actualizar')
+      }
+      return updateConfiguracionMPE(medidaId, configuracion.intervencion_id, data)
+    },
     onSuccess: () => {
       toast.success('Configuración de dispositivo actualizada')
       queryClient.invalidateQueries({ queryKey: ['medidas', 'detail', medidaId] })
@@ -131,7 +147,16 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
     },
     onError: (error: any) => {
       console.error('Error updating configuracion:', error)
-      toast.error(error?.response?.data?.detail || 'Error al actualizar configuración')
+      // Handle validation error when subtipo doesn't belong to tipo
+      const errorDetail = error?.response?.data?.detail
+      const errorSubtipo = error?.response?.data?.subtipo_dispositivo_id
+      if (errorSubtipo) {
+        toast.error(`Error de validación: ${errorSubtipo}`)
+      } else if (errorDetail) {
+        toast.error(errorDetail)
+      } else {
+        toast.error('Error al actualizar configuración de dispositivo')
+      }
     },
   })
 
@@ -153,11 +178,21 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   }
 
   const handleSave = () => {
+    // Tipo de dispositivo is required
+    if (!selectedTipoId) {
+      toast.error('Debe seleccionar un tipo de dispositivo')
+      return
+    }
+
     updateMutation.mutate({
       tipo_dispositivo_id: selectedTipoId,
       subtipo_dispositivo_id: selectedSubtipoId,
     })
   }
+
+  // Check if we can save (tipo is required and intervencion must exist)
+  const hasIntervencion = !!configuracion?.intervencion_id
+  const canSave = !!selectedTipoId && !updateMutation.isPending && hasIntervencion
 
   const isConfigured = configuracion?.tipo_dispositivo !== null
 
@@ -177,21 +212,23 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.dark', display: "flex", alignItems: "center", gap: 1 }}>
             <HomeIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Dispositivo MPE
           </Typography>
-          <Button
-            variant={isConfigured ? "outlined" : "contained"}
-            color="primary"
-            size="small"
-            startIcon={isConfigured ? <EditIcon /> : <SettingsIcon />}
-            onClick={() => setDialogOpen(true)}
-            sx={{
-              borderRadius: 2,
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: "0.75rem",
-            }}
-          >
-            {isConfigured ? "Editar" : "Configurar"}
-          </Button>
+          {hasIntervencion && (
+            <Button
+              variant={isConfigured ? "outlined" : "contained"}
+              color="primary"
+              size="small"
+              startIcon={isConfigured ? <EditIcon /> : <SettingsIcon />}
+              onClick={() => setDialogOpen(true)}
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+              }}
+            >
+              {isConfigured ? "Editar" : "Configurar"}
+            </Button>
+          )}
         </Box>
 
         {isConfigured ? (
@@ -254,10 +291,16 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
               </Grid>
             )}
           </Grid>
-        ) : (
+        ) : hasIntervencion ? (
           <Alert severity="info" sx={{ borderRadius: 2 }}>
             <Typography variant="body2">
               <strong>Sin configurar</strong> - Haga clic en &quot;Configurar&quot; para asignar un tipo de dispositivo y una institución/familia.
+            </Typography>
+          </Alert>
+        ) : (
+          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+            <Typography variant="body2">
+              <strong>Sin intervención asociada</strong> - Debe registrar una intervención de apertura antes de configurar el dispositivo.
             </Typography>
           </Alert>
         )}
@@ -275,7 +318,7 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <HomeIcon color="primary" />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {isConfigured ? "Editar Configuración de Dispositivo" : "Configurar Dispositivo MPE"}
+              Configuración de Dispositivo MPE
             </Typography>
           </Box>
           <IconButton
@@ -289,25 +332,32 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
 
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-            {/* Tipo de Dispositivo Select */}
-            <FormControl fullWidth>
-              <InputLabel>Tipo de Dispositivo</InputLabel>
+            {/* Tipo de Dispositivo Select - Required */}
+            <FormControl fullWidth required error={!selectedTipoId && updateMutation.isError}>
+              <InputLabel>Tipo de Dispositivo *</InputLabel>
               <Select
                 value={selectedTipoId || ''}
                 onChange={(e) => handleTipoChange(e.target.value ? Number(e.target.value) : null)}
-                label="Tipo de Dispositivo"
+                label="Tipo de Dispositivo *"
                 disabled={updateMutation.isPending || isLoadingTipos}
               >
-                <MenuItem value="">Sin especificar</MenuItem>
                 {tiposDispositivo.map((tipo) => (
                   <MenuItem key={tipo.id} value={tipo.id}>
                     {tipo.nombre}
                   </MenuItem>
                 ))}
               </Select>
+              {isLoadingTipos && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                  <CircularProgress size={16} />
+                  <Typography variant="caption" color="text.secondary">
+                    Cargando tipos...
+                  </Typography>
+                </Box>
+              )}
             </FormControl>
 
-            {/* Subtipo / Institución Select */}
+            {/* Subtipo / Institución Select - Optional but recommended */}
             <FormControl fullWidth>
               <InputLabel>Institución / Familia (Subtipo)</InputLabel>
               <Select
@@ -316,7 +366,9 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
                 label="Institución / Familia (Subtipo)"
                 disabled={!selectedTipoId || updateMutation.isPending || isLoadingSubtipos}
               >
-                <MenuItem value="">Sin especificar</MenuItem>
+                <MenuItem value="">
+                  <em>Sin especificar</em>
+                </MenuItem>
                 {subtiposDispositivo.map((subtipo) => (
                   <MenuItem key={subtipo.id} value={subtipo.id}>
                     {subtipo.nombre}
@@ -328,11 +380,30 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
                   <CircularProgress size={16} />
                   <Typography variant="caption" color="text.secondary">
-                    Cargando opciones...
+                    Cargando instituciones/familias...
                   </Typography>
                 </Box>
               )}
+              {!selectedTipoId && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Seleccione primero un tipo de dispositivo
+                </Typography>
+              )}
+              {selectedTipoId && !isLoadingSubtipos && subtiposDispositivo.length === 0 && (
+                <Typography variant="caption" color="warning.main" sx={{ mt: 0.5 }}>
+                  No hay subtipos disponibles para este tipo de dispositivo
+                </Typography>
+              )}
             </FormControl>
+
+            {/* Warning if no intervencion */}
+            {!hasIntervencion && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                <Typography variant="body2">
+                  No se puede guardar: no hay intervención asociada a esta medida.
+                </Typography>
+              </Alert>
+            )}
 
             {/* Info about current configuration */}
             {configuracion?.fecha_configuracion && (
@@ -357,7 +428,7 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
           <Button
             variant="contained"
             onClick={handleSave}
-            disabled={updateMutation.isPending}
+            disabled={!canSave}
             startIcon={updateMutation.isPending ? <CircularProgress size={18} color="inherit" /> : null}
           >
             {updateMutation.isPending ? "Guardando..." : "Guardar"}

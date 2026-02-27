@@ -21,9 +21,12 @@ import EditIcon from "@mui/icons-material/Edit"
 import OpenInNewIcon from "@mui/icons-material/OpenInNew"
 import PersonIcon from "@mui/icons-material/Person"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
+import SettingsIcon from "@mui/icons-material/Settings"
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
 import type {
   HistorialEventoItem,
   CategoriaEvento,
+  DatosEventoDispositivoCambio,
 } from "../../../types/historial-seguimiento-api"
 import {
   CATEGORIA_CONFIGS,
@@ -37,8 +40,13 @@ interface HistorialEventCardProps {
   onDeepLinkClick?: (url: string) => void
 }
 
-const getCategoryIcon = (categoria: CategoriaEvento): React.ReactNode => {
+const getCategoryIcon = (categoria: CategoriaEvento, tipoEvento?: string): React.ReactNode => {
   const iconProps = { fontSize: "small" as const }
+
+  // Special icon for device configuration changes
+  if (tipoEvento === 'INTERVENCION_DISPOSITIVO_CAMBIO') {
+    return <SettingsIcon {...iconProps} />
+  }
 
   switch (categoria) {
     case 'ACTIVIDAD':
@@ -60,6 +68,95 @@ const getCategoryIcon = (categoria: CategoriaEvento): React.ReactNode => {
     default:
       return <AssignmentIcon {...iconProps} />
   }
+}
+
+/**
+ * Helper to check if datos_evento contains device change data
+ */
+const isDispositivoCambioData = (datos: unknown): datos is DatosEventoDispositivoCambio => {
+  if (!datos || typeof datos !== 'object') return false
+  const d = datos as Record<string, unknown>
+  return 'tipo_dispositivo' in d || 'subtipo_dispositivo' in d
+}
+
+/**
+ * Renders the device configuration change details in "antes → después" format
+ */
+const DispositivoCambioDetails: React.FC<{ datos: DatosEventoDispositivoCambio }> = ({ datos }) => {
+  const renderCambio = (
+    label: string,
+    cambio?: { antes: { id: number; nombre: string } | null; despues: { id: number; nombre: string } | null }
+  ) => {
+    if (!cambio) return null
+
+    const antesNombre = cambio.antes?.nombre || 'Sin asignar'
+    const despuesNombre = cambio.despues?.nombre || 'Sin asignar'
+
+    // Skip if no actual change
+    if (antesNombre === despuesNombre) return null
+
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          py: 0.5,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography
+          variant="caption"
+          sx={{ fontWeight: 600, color: 'text.secondary', minWidth: 50 }}
+        >
+          {label}:
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: cambio.antes ? 'text.secondary' : 'warning.main',
+              fontStyle: cambio.antes ? 'normal' : 'italic',
+            }}
+          >
+            {antesNombre}
+          </Typography>
+          <ArrowForwardIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
+          <Typography
+            variant="caption"
+            sx={{
+              color: cambio.despues ? 'success.main' : 'warning.main',
+              fontWeight: 500,
+            }}
+          >
+            {despuesNombre}
+          </Typography>
+        </Box>
+      </Box>
+    )
+  }
+
+  return (
+    <Box
+      sx={{
+        mt: 1,
+        p: 1.5,
+        bgcolor: 'action.hover',
+        borderRadius: 1,
+        borderLeft: 2,
+        borderColor: 'info.main',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+        <SettingsIcon sx={{ fontSize: 14, color: 'info.main' }} />
+        <Typography variant="caption" sx={{ fontWeight: 600, color: 'info.main' }}>
+          Cambios de Configuración
+        </Typography>
+      </Box>
+      {renderCambio('Tipo', datos.tipo_dispositivo)}
+      {renderCambio('Subtipo', datos.subtipo_dispositivo)}
+    </Box>
+  )
 }
 
 export const HistorialEventCard: React.FC<HistorialEventCardProps> = ({
@@ -102,7 +199,7 @@ export const HistorialEventCard: React.FC<HistorialEventCardProps> = ({
               flexShrink: 0,
             }}
           >
-            {getCategoryIcon(categoria)}
+            {getCategoryIcon(categoria, evento.tipo_evento)}
           </Box>
 
           {/* Content */}
@@ -168,6 +265,13 @@ export const HistorialEventCard: React.FC<HistorialEventCardProps> = ({
             >
               {evento.descripcion_automatica}
             </Typography>
+
+            {/* Device configuration change details */}
+            {evento.tipo_evento === 'INTERVENCION_DISPOSITIVO_CAMBIO' &&
+              evento.datos_evento &&
+              isDispositivoCambioData(evento.datos_evento) && (
+                <DispositivoCambioDetails datos={evento.datos_evento} />
+              )}
 
             {/* Footer row */}
             <Box

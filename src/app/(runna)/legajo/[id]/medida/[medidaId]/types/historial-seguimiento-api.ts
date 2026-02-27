@@ -46,6 +46,7 @@ export type TipoEvento =
   | 'INFORME_MENSUAL_VENCIDO'
   // Seguimiento en Dispositivo (SEG)
   | 'SITUACION_DISPOSITIVO_CAMBIO'
+  | 'INTERVENCION_DISPOSITIVO_CAMBIO' // Cambio de configuración de dispositivo MPE
   | 'TALLER_REGISTRADO'
   | 'CAMBIO_LUGAR_RESGUARDO'
   | 'NOTA_SEGUIMIENTO_CREADA'
@@ -121,6 +122,33 @@ export interface DeepLink {
 }
 
 /**
+ * Cambio de valor antes/después para dispositivos
+ */
+export interface DispositivoCambioValor {
+  id: number
+  nombre: string
+}
+
+/**
+ * Datos específicos del evento INTERVENCION_DISPOSITIVO_CAMBIO
+ */
+export interface DatosEventoDispositivoCambio {
+  tipo_dispositivo?: {
+    antes: DispositivoCambioValor | null
+    despues: DispositivoCambioValor | null
+  }
+  subtipo_dispositivo?: {
+    antes: DispositivoCambioValor | null
+    despues: DispositivoCambioValor | null
+  }
+}
+
+/**
+ * Datos del evento - puede contener información específica según el tipo de evento
+ */
+export type DatosEvento = DatosEventoDispositivoCambio | Record<string, unknown>
+
+/**
  * Item del historial de seguimiento
  * GET /api/medidas/{medida_id}/historial-seguimiento/
  */
@@ -136,6 +164,7 @@ export interface HistorialEventoItem {
   intervencion_id?: number
   informe_id?: number
   deep_link: DeepLink | null
+  datos_evento?: DatosEvento | null // Datos adicionales específicos del tipo de evento
 }
 
 /**
@@ -442,6 +471,8 @@ export const FLUJO_ETAPAS_POR_TIPO: Record<string, TipoEtapa[]> = {
  */
 export const getCategoriaFromTipoEvento = (tipo: TipoEvento): CategoriaEvento => {
   if (tipo.startsWith('ACTIVIDAD_')) return 'ACTIVIDAD'
+  // Note: INTERVENCION_DISPOSITIVO_CAMBIO goes to SEGUIMIENTO, not INTERVENCION
+  if (tipo === 'INTERVENCION_DISPOSITIVO_CAMBIO') return 'SEGUIMIENTO'
   if (tipo.startsWith('INTERVENCION_') || tipo.startsWith('NOTA_AVAL_') ||
       tipo.startsWith('INFORME_JURIDICO_') || tipo === 'RATIFICACION_REGISTRADA' ||
       tipo === 'INFORME_CIERRE_CREADO') return 'INTERVENCION'

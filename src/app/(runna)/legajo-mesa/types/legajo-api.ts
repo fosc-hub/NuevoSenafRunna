@@ -453,13 +453,22 @@ export interface UserInfo {
   nivel?: string | null
 }
 
+// Local Centro de Vida info
+export interface LocalCentroVidaInfo {
+  id: number
+  nombre: string
+  tipo?: string
+  direccion?: string
+  activo?: boolean
+}
+
 // Asignacion
 export interface AsignacionActiva {
   id: number
   tipo_responsabilidad: string
   zona: ZonaInfo
   user_responsable: UserInfo
-  local_centro_vida: any | null
+  local_centro_vida: LocalCentroVidaInfo | string | null
   esta_activo: boolean
   recibido: boolean
   fecha_asignacion: string

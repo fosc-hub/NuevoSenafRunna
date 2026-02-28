@@ -216,7 +216,9 @@ export const AsignacionesSection: React.FC<AsignacionesSectionProps> = ({ legajo
                             </Typography>
                           </Box>
                           <Typography variant="body2" sx={{ pl: 3.5 }}>
-                            {asignacion.local_centro_vida}
+                            {typeof asignacion.local_centro_vida === 'string'
+                              ? asignacion.local_centro_vida
+                              : asignacion.local_centro_vida?.nombre || 'N/A'}
                           </Typography>
                         </Box>
                       )}

@@ -235,6 +235,53 @@ export function createPatchFromChanges(originalData: any, updatedData: any): any
     }
   }
 
+  // Handle vinculos (REG-01: Links to legajos/medidas)
+  // Include vinculos if there are changes or if updatedData has vinculos
+  if (changes && changes.vinculos !== undefined) {
+    // Filter and transform vinculos for API submission
+    transformedChanges.vinculos = (updatedData.vinculos || [])
+      .filter((v: any) =>
+        v.legajo !== null &&
+        v.tipo_vinculo !== null &&
+        v.justificacion &&
+        v.justificacion.trim().length >= 20
+      )
+      .map((vinculo: any) => ({
+        legajo: vinculo.legajo,
+        medida: vinculo.medida || null,
+        tipo_vinculo: vinculo.tipo_vinculo,
+        justificacion: vinculo.justificacion.trim(),
+      }))
+  } else if (updatedData.vinculos && updatedData.vinculos.length > 0) {
+    // Check if vinculos have meaningful data that should be included
+    const validVinculos = updatedData.vinculos.filter((v: any) =>
+      v.legajo !== null &&
+      v.tipo_vinculo !== null &&
+      v.justificacion &&
+      v.justificacion.trim().length >= 20
+    )
+
+    // Compare with original vinculos to detect changes
+    const originalVinculos = originalData.vinculos || []
+    const vinculosChanged = JSON.stringify(validVinculos) !== JSON.stringify(
+      originalVinculos.filter((v: any) =>
+        v.legajo !== null &&
+        v.tipo_vinculo !== null &&
+        v.justificacion &&
+        v.justificacion.trim().length >= 20
+      )
+    )
+
+    if (vinculosChanged && validVinculos.length > 0) {
+      transformedChanges.vinculos = validVinculos.map((vinculo: any) => ({
+        legajo: vinculo.legajo,
+        medida: vinculo.medida || null,
+        tipo_vinculo: vinculo.tipo_vinculo,
+        justificacion: vinculo.justificacion.trim(),
+      }))
+    }
+  }
+
   // Handle personas (ninosAdolescentes and adultosConvivientes)
   const hasPersonaChanges = shouldIncludePersonas(originalData, updatedData, changes)
 

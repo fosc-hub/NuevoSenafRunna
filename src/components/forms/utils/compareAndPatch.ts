@@ -149,6 +149,18 @@ export function createPatchFromChanges(originalData: any, updatedData: any): any
     "submotivo_ingreso",
     "objetivo_de_demanda",
     "observaciones",
+    // CARGA_OFICIOS specific fields
+    "tipo_medida_evaluado",
+    "categoria_informacion_judicial",
+    "tipo_oficio",
+    "numero_expediente",
+    "nro_oficio_web",
+    "autocaratulado",
+    "presuntos_delitos",
+    "descripcion",
+    "plazo_dias",
+    "fecha_vencimiento_oficio",
+    "departamento_judicial",
   ]
 
   simpleFields.forEach((field) => {
@@ -157,26 +169,42 @@ export function createPatchFromChanges(originalData: any, updatedData: any): any
     }
   })
 
+  // For CARGA_OFICIOS, also check if we need to map caratula to autocaratulado
+  if (changes && changes.caratula !== undefined) {
+    transformedChanges.autocaratulado = changes.caratula
+  }
+
   // Handle institution - ensure we always create correct structure
+  // For CARGA_OFICIOS, institucion is an ID (number), not an object with nombre
+  const isCargaOficios = updatedData.objetivo_de_demanda === 'CARGA_OFICIOS'
+
   if (changes && changes.institucion !== undefined) {
-    let institucionNombre: string = ''
+    if (isCargaOficios) {
+      // For CARGA_OFICIOS, institucion is just an ID
+      transformedChanges.institucion = typeof changes.institucion === 'number'
+        ? changes.institucion
+        : changes.institucion
+    } else {
+      // For standard demandas, institucion is an object with nombre
+      let institucionNombre: string = ''
 
-    if (typeof changes.institucion === 'string') {
-      institucionNombre = changes.institucion
-    } else if (typeof changes.institucion === 'object' && changes.institucion !== null) {
-      // Handle case where institucion is already an object
-      if (typeof changes.institucion.nombre === 'string') {
-        institucionNombre = changes.institucion.nombre
-      } else if (typeof changes.institucion.nombre === 'object' && changes.institucion.nombre?.nombre) {
-        // Handle double nesting case
-        institucionNombre = changes.institucion.nombre.nombre
-        console.warn('⚠️ Double nesting detected in institucion, fixing automatically')
+      if (typeof changes.institucion === 'string') {
+        institucionNombre = changes.institucion
+      } else if (typeof changes.institucion === 'object' && changes.institucion !== null) {
+        // Handle case where institucion is already an object
+        if (typeof changes.institucion.nombre === 'string') {
+          institucionNombre = changes.institucion.nombre
+        } else if (typeof changes.institucion.nombre === 'object' && changes.institucion.nombre?.nombre) {
+          // Handle double nesting case
+          institucionNombre = changes.institucion.nombre.nombre
+          console.warn('⚠️ Double nesting detected in institucion, fixing automatically')
+        }
       }
-    }
 
-    transformedChanges.institucion = {
-      nombre: institucionNombre,
-      tipo_institucion: updatedData.tipo_institucion,
+      transformedChanges.institucion = {
+        nombre: institucionNombre,
+        tipo_institucion: updatedData.tipo_institucion,
+      }
     }
   }
 

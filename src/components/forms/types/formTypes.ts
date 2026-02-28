@@ -138,7 +138,7 @@ export type ObjetivoDemanda = 'PROTECCION' | 'PETICION_DE_INFORME' | 'CARGA_OFIC
 export type CircuitoType = 'MPI' | 'MPE' | 'MPJ'
 
 export interface FormData {
-  presuntos_delitos: null
+  presuntos_delitos: string | null
   motivo_ingreso: any
   submotivo_ingreso: any
   envio_de_respuesta: any
@@ -195,6 +195,8 @@ export interface FormData {
   // CARGA_OFICIOS categorization fields
   categoria_informacion_judicial?: number | null;
   tipo_informacion_judicial?: number | null;
+  // CARGA_OFICIOS additional fields
+  departamento_judicial?: string | null;       // CAPITAL | INTERIOR
   // REG-01: Vínculos para crear junto con la demanda
   vinculos?: VinculoFormData[];
 }

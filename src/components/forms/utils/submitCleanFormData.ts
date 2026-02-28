@@ -465,7 +465,10 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
       // tipo_informacion_judicial is DEPRECATED - no longer sent to backend
       // tipo_oficio is the main field now
       ...(formData.tipo_oficio ? { tipo_oficio: formData.tipo_oficio } : {}),
+      // For CARGA_OFICIOS, institucion is an ID (from tipo_institucion_demanda)
+      ...(formData.institucion ? { institucion: formData.institucion } : {}),
       numero_expediente: formData.numero_expediente || null,
+      nro_oficio_web: formData.nro_oficio_web || null,
       autocaratulado: formData.caratula || null,
       presuntos_delitos: formData.presuntos_delitos || null,
       descripcion: formData.descripcion || null,

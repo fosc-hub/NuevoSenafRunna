@@ -10,7 +10,11 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     fecha_ingreso_senaf: apiData.fecha_ingreso_senaf || null,
     bloque_datos_remitente: apiData.bloque_datos_remitente || null,
     tipo_institucion: apiData.tipo_institucion || null,
-    institucion: apiData.institucion?.nombre || null,
+    // For standard demandas, institucion is a string (name)
+    // For CARGA_OFICIOS, institucion is a number (ID from tipo_institucion_demanda)
+    institucion: apiData.objetivo_de_demanda === 'CARGA_OFICIOS'
+      ? (apiData.institucion?.id || apiData.institucion || null)
+      : (apiData.institucion?.nombre || null),
     ambito_vulneracion: apiData.ambito_vulneracion || null,
     envio_de_respuesta: apiData.envio_de_respuesta || null,
     etiqueta: apiData.etiqueta || null,
@@ -19,16 +23,20 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     localizacion: apiData.localizacion || null,
 
     // CARGA_OFICIOS specific fields (REG-01 GAP-06)
-    // Backend uses tipo_medida_evaluado, map to frontend's tipo_medida
+    // Backend uses tipo_medida_evaluado, map to frontend's tipo_medida_evaluado
     tipo_oficio: apiData.tipo_oficio || null,
     tipo_medida: apiData.tipo_medida_evaluado || null,
+    tipo_medida_evaluado: apiData.tipo_medida_evaluado || null,
     numero_expediente: apiData.numero_expediente || null,
-    caratula: apiData.caratula || null,
+    // Backend uses 'autocaratulado', frontend uses 'caratula'
+    caratula: apiData.autocaratulado || apiData.caratula || null,
     plazo_dias: apiData.plazo_dias || null,
     fecha_vencimiento_oficio: apiData.fecha_vencimiento_oficio || null,
-
-    // Other required fields
-    presuntos_delitos: null,
+    // Additional CARGA_OFICIOS fields
+    categoria_informacion_judicial: apiData.categoria_informacion_judicial || null,
+    departamento_judicial: apiData.departamento_judicial || null,
+    nro_oficio_web: apiData.nro_oficio_web || null,
+    presuntos_delitos: apiData.presuntos_delitos || null,
     id: apiData.id,
     nombre: apiData.nombre || "",
     tipo_demanda: apiData.tipo_demanda || null,

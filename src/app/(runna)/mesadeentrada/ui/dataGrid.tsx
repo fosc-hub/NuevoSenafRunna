@@ -705,14 +705,34 @@ const DemandaTableContent: React.FC = () => {
       {
         field: "nombre",
         headerName: "Nombre",
-        width: 180,
+        width: 200,
         renderCell: (params) => (
-          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-            <Tooltip title={`DNI: ${params.row.dni}`}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "4px" }}>
+            <Tooltip
+              title={params.row.isFromLinkedLegajo
+                ? `Legajo vinculado #${params.row.linkedLegajoNumero}`
+                : `DNI: ${params.row.dni}`
+              }
+            >
               <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
                 {params.value}
               </Typography>
             </Tooltip>
+            {params.row.isFromLinkedLegajo && (
+              <Tooltip title={`Datos desde legajo #${params.row.linkedLegajoNumero}`}>
+                <Chip
+                  label="Vinculado"
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                  sx={{
+                    height: '20px',
+                    fontSize: '0.65rem',
+                    '& .MuiChip-label': { px: 0.75 }
+                  }}
+                />
+              </Tooltip>
+            )}
           </div>
         ),
       },
@@ -992,16 +1012,39 @@ const DemandaTableContent: React.FC = () => {
 
   const columns = useMemo(() => getColumns(), [isMobile])
 
+  // Helper function to get NNyA name with fallback for CARGA_OFICIOS
+  const getNnyaNombre = (demanda: TDemanda): { nombre: string; isFromLinkedLegajo: boolean; legajoNumero?: string } => {
+    // Primary: nnya_principal (normal demandas)
+    if (demanda.nnya_principal) {
+      return {
+        nombre: `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}`,
+        isFromLinkedLegajo: false,
+      }
+    }
+    // Fallback: nnya_nombre_legajo (CARGA_OFICIOS linked to existing legajo)
+    if (demanda.nnya_nombre_legajo) {
+      return {
+        nombre: `${demanda.nnya_nombre_legajo.nombre} ${demanda.nnya_nombre_legajo.apellido}`,
+        isFromLinkedLegajo: true,
+        legajoNumero: demanda.nnya_nombre_legajo.legajo_numero,
+      }
+    }
+    return { nombre: "N/A", isFromLinkedLegajo: false }
+  }
+
   const rows =
     demandasData?.results.map((demanda: TDemanda) => {
+      const nnyaInfo = getNnyaNombre(demanda)
       return {
         id: demanda.id,
         // score: demanda.demanda_score?.score || "N/A", // HIDDEN
         origen: demanda.bloque_datos_remitente?.nombre || "N/A",
-        nombre: demanda.nnya_principal ? `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}` : "N/A",
-        dni: demanda.nnya_principal?.dni || "N/A",
-        hasLegajo: !!(demanda.nnya_principal?.legajo),
-        legajoNumero: demanda.nnya_principal?.legajo?.numero || "N/A",
+        nombre: nnyaInfo.nombre,
+        isFromLinkedLegajo: nnyaInfo.isFromLinkedLegajo,
+        linkedLegajoNumero: nnyaInfo.legajoNumero,
+        dni: demanda.nnya_principal?.dni || demanda.nnya_nombre_legajo ? "Ver legajo" : "N/A",
+        hasLegajo: !!(demanda.nnya_principal?.legajo) || !!(demanda.nnya_nombre_legajo),
+        legajoNumero: demanda.nnya_principal?.legajo?.numero || demanda.nnya_nombre_legajo?.legajo_numero || "N/A",
         calificacion: demanda.calificacion?.estado_calificacion || null,
         ultimaActualizacion: new Date(demanda.ultima_actualizacion).toLocaleString("es-AR", {
           day: "2-digit",

@@ -62,6 +62,14 @@ export interface TNnyaPrincipal {
     } | null;
 }
 
+// Fallback for CARGA_OFICIOS demandas that link to existing legajos
+export interface TNnyaNombreLegajo {
+    nombre: string;
+    apellido: string;
+    legajo_id: number;
+    legajo_numero: string;
+}
+
 export interface TDemandaScore {
     id: number;
     ultima_actualizacion: Date;
@@ -132,7 +140,9 @@ interface TDemandaBase {
 }
 
 export interface TDemanda extends TDemandaBase {
-    nnya_principal: TNnyaPrincipal;
+    nnya_principal: TNnyaPrincipal | null;
+    // Fallback for CARGA_OFICIOS demandas linked to existing legajos
+    nnya_nombre_legajo: TNnyaNombreLegajo | null;
     precalificacion: any;
     calificacion?: TCalificacion;
     estado_demanda: string;

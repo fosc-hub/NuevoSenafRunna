@@ -108,7 +108,13 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
                 options={filteredInstituciones}
                 getOptionLabel={(option) => option.nombre || ""}
                 value={filteredInstituciones.find((i) => i.id === field.value) || null}
-                onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                onChange={(_, newValue) => {
+                  field.onChange(newValue ? newValue.id : null)
+                  // Auto-populate departamento_judicial based on selected organismo
+                  if (newValue?.departamento) {
+                    setValue("departamento_judicial", newValue.departamento)
+                  }
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}

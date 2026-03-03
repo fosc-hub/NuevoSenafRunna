@@ -27,11 +27,13 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
   const watchedBloqueRemitente = watch("bloque_datos_remitente")
 
   // Filter instituciones by selected bloque_datos_remitente
+  // API may return bloque_datos_remitente or bloque_datos_remitente_id
   const filteredInstituciones = useMemo(() => {
-    if (!watchedBloqueRemitente) return tipoInstitucionDemanda
-    return tipoInstitucionDemanda.filter(
-      (inst) => inst.bloque_datos_remitente === watchedBloqueRemitente
-    )
+    if (!watchedBloqueRemitente) return []
+    return tipoInstitucionDemanda.filter((inst) => {
+      const bloqueId = inst.bloque_datos_remitente_id ?? inst.bloque_datos_remitente
+      return bloqueId === watchedBloqueRemitente
+    })
   }, [watchedBloqueRemitente, tipoInstitucionDemanda])
 
   return (

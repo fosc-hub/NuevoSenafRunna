@@ -83,7 +83,9 @@ export interface BloqueDatosRemitente {
 export interface TipoInstitucionDemanda {
   id: number
   nombre: string
-  bloque_datos_remitente: number
+  /** FK al tipo de organismo - API may return either field name */
+  bloque_datos_remitente?: number
+  bloque_datos_remitente_id?: number
 }
 
 /** Departamento judicial choices */
@@ -184,7 +186,7 @@ export interface CargaOficiosDropdownData {
 
   // Origen del Oficio dropdowns
   bloques_datos_remitente: Array<{ id: number; nombre: string }> // Tipo de Organismo
-  tipo_institucion_demanda: Array<{ id: number; nombre: string; bloque_datos_remitente: number }> // Organismo
+  tipo_institucion_demanda: Array<{ id: number; nombre: string; bloque_datos_remitente?: number; bloque_datos_remitente_id?: number }> // Organismo
   departamento_judicial_choices: Array<{ key: string; value: string }> // CAPITAL | INTERIOR
 
   // Vínculos dropdown
@@ -239,7 +241,7 @@ export interface PlaceholderFieldProps {
 
 export interface OrganoJudicialSectionProps {
   bloquesRemitente: Array<{ id: number; nombre: string }>
-  tipoInstitucionDemanda: Array<{ id: number; nombre: string; bloque_datos_remitente: number }>
+  tipoInstitucionDemanda: Array<{ id: number; nombre: string; bloque_datos_remitente?: number; bloque_datos_remitente_id?: number }>
   departamentoJudicialChoices: Array<{ key: string; value: string }>
   readOnly?: boolean
 }

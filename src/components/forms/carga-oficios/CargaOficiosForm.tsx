@@ -51,6 +51,7 @@ import { useAdjuntosManager } from "./hooks/useAdjuntosManager"
 
 // Types
 import type { CargaOficiosFormData } from "./types/carga-oficios.types"
+import { TIPOS_ORGANISMO_JUDICIAL_IDS } from "./types/carga-oficios.types"
 import type { DropdownData } from "../types/formTypes"
 
 /**
@@ -189,6 +190,14 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
   const filteredTipos = useMemo(() => {
     return getTiposByCategoria(watchedCategoria)
   }, [watchedCategoria, getTiposByCategoria])
+
+  // Filter bloques_datos_remitente to show only judicial types (12 IDs)
+  // CARGA_OFICIOS only allows judicial organizations as origin
+  const bloquesJudiciales = useMemo(() => {
+    return (dropdownData.bloques_datos_remitente || []).filter(
+      (bloque: { id: number; nombre: string }) => TIPOS_ORGANISMO_JUDICIAL_IDS.includes(bloque.id)
+    )
+  }, [dropdownData.bloques_datos_remitente])
 
   if (isLoadingDropdowns) {
     return <LoadingSkeleton />
@@ -366,7 +375,7 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
       {/* Section 2: Origen del Oficio */}
       <FormSection title="Origen del Oficio" icon={AccountBalanceIcon}>
         <OrganoJudicialSection
-          bloquesRemitente={dropdownData.bloques_datos_remitente || []}
+          bloquesRemitente={bloquesJudiciales}
           tipoInstitucionDemanda={dropdownData.tipo_institucion_demanda || []}
           departamentoJudicialChoices={dropdownData.departamento_judicial_choices || [
             { key: "CAPITAL", value: "Capital" },

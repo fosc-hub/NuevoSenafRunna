@@ -47,6 +47,29 @@ export const CIRCUITO_OPTIONS: CircuitoOption[] = [
 ]
 
 // =============================================================================
+// Judicial Organization Types (for CARGA_OFICIOS filtering)
+// =============================================================================
+
+/**
+ * IDs of TBloqueDatosRemitente that are judicial organizations
+ * These are the only types shown in CARGA_OFICIOS form (12 total)
+ */
+export const TIPOS_ORGANISMO_JUDICIAL_IDS: number[] = [
+  9,   // FISCALIA
+  18,  // ASESORIA
+  19,  // UNIDAD JUDICIAL
+  36,  // CAMARA
+  37,  // CENTRO JUDICIAL DE MEDIACION
+  38,  // JUZGADO
+  39,  // COORDINACION DE JUSTICIA RESTAURATIVA
+  40,  // DEFENSORIA PUBLICA
+  41,  // JUZGADO DE CONTROL Y FALTAS (CAPITAL)
+  42,  // JUZGADO DE CONTROL Y FALTAS (INTERIOR)
+  43,  // JUZGADO PENAL JUVENIL DE OTRA PROVINCIA
+  44,  // OFICINA UNICA
+]
+
+// =============================================================================
 // Categoria/Tipo Information Types
 // =============================================================================
 

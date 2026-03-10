@@ -9,13 +9,15 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Popover,
   Chip,
   Tooltip,
   IconButton,
-  Badge,
   useMediaQuery,
   useTheme,
+  Select,
+  MenuItem,
+  FormControl,
+  alpha,
 } from "@mui/material"
 import {
   DataGrid,
@@ -24,8 +26,9 @@ import {
   type GridSortModel,
   GridToolbarContainer,
   GridToolbarFilterButton,
+  gridClasses,
 } from "@mui/x-data-grid"
-import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, DownloadRounded, Info } from "@mui/icons-material"
+import { PersonAdd, Visibility, Refresh, DownloadRounded, Info, PriorityHigh, Remove, KeyboardArrowDown } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import { useQueryClient } from "@tanstack/react-query"
@@ -63,18 +66,25 @@ const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: 
 // Custom toolbar component
 const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
   return (
-    <GridToolbarContainer sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
+    <GridToolbarContainer
+      sx={{
+        p: 1.5,
+        borderBottom: "1px solid #e2e8f0",
+        bgcolor: "#ffffff",
+        gap: 1,
+      }}
+    >
       <GridToolbarFilterButton />
       <Button
         size="small"
-        startIcon={<DownloadRounded />}
+        startIcon={<DownloadRounded sx={{ fontSize: 18 }} />}
         onClick={onExportXlsx}
         sx={{
-          mr: 1,
+          color: "#475569",
+          fontSize: "0.8125rem",
+          fontWeight: 500,
           textTransform: "none",
-          "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.04)",
-          },
+          "&:hover": { bgcolor: "#f1f5f9" },
         }}
       >
         Exportar Excel
@@ -85,32 +95,34 @@ const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
             <Typography variant="caption" sx={{ display: "block", fontWeight: 600, mb: 0.5 }}>
               Ordenamiento Multi-columna
             </Typography>
-            <Typography variant="caption" sx={{ display: "block" }}>
+            <Typography variant="caption" sx={{ display: "block", color: "rgba(255,255,255,0.85)" }}>
               • Click en encabezado: ordena por una columna
             </Typography>
-            <Typography variant="caption" sx={{ display: "block" }}>
+            <Typography variant="caption" sx={{ display: "block", color: "rgba(255,255,255,0.85)" }}>
               • Ctrl/Cmd + Click: agrega columna al ordenamiento
             </Typography>
           </Box>
         }
         placement="right"
+        arrow
       >
-        <IconButton size="small" sx={{ ml: 1 }}>
-          <Info fontSize="small" />
+        <IconButton size="small" sx={{ color: "#94a3b8", "&:hover": { bgcolor: "#f1f5f9", color: "#475569" } }}>
+          <Info sx={{ fontSize: 18 }} />
         </IconButton>
       </Tooltip>
-      <IconButton
-        size="small"
-        onClick={() => window.location.reload()}
-        sx={{
-          ml: "auto",
-          "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.04)",
-          },
-        }}
-      >
-        <Refresh fontSize="small" />
-      </IconButton>
+      <Box sx={{ flexGrow: 1 }} />
+      <Tooltip title="Actualizar" arrow>
+        <IconButton
+          size="small"
+          onClick={() => window.location.reload()}
+          sx={{
+            color: "#94a3b8",
+            "&:hover": { bgcolor: "#f1f5f9", color: "#475569" },
+          }}
+        >
+          <Refresh sx={{ fontSize: 18 }} />
+        </IconButton>
+      </Tooltip>
     </GridToolbarContainer>
   )
 }
@@ -391,8 +403,10 @@ const LegajoTable: React.FC = () => {
       {
         field: "indicadores_alertas",
         headerName: "Alertas",
-        width: 120,
+        width: 90,
         align: "center",
+        headerAlign: "center",
+        sortable: false,
         renderCell: (params) => {
           const allStates = params.row.allStates || []
           const virtualAlerts: any[] = []
@@ -419,12 +433,10 @@ const LegajoTable: React.FC = () => {
           }
 
           return (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <AlertasChip
-                alertas={params.row.indicadores?.alertas || []}
-                virtualAlerts={virtualAlerts}
-              />
-            </Box>
+            <AlertasChip
+              alertas={params.row.indicadores?.alertas || []}
+              virtualAlerts={virtualAlerts}
+            />
           )
         },
       },
@@ -432,123 +444,251 @@ const LegajoTable: React.FC = () => {
         field: "id",
         headerName: "ID",
         width: 80,
+        align: "center",
+        headerAlign: "center",
         renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center" }}>
-            {params.value}
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155", fontSize: "0.8125rem" }}>
+              {params.value}
+            </Typography>
             {params.row.prioridad === "ALTA" && (
-              <Tooltip title="Alta Prioridad">
-                <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
+              <Tooltip title="Alta Prioridad" arrow>
+                <PriorityHigh sx={{ fontSize: 16, color: "#dc2626" }} />
               </Tooltip>
             )}
-          </div>
+          </Box>
         )
       },
       {
         field: "numero_legajo",
         headerName: "Nº Legajo",
-        width: 120,
+        width: 110,
+        align: "left",
+        headerAlign: "left",
+        renderCell: (params) => (
+          <Typography variant="body2" sx={{ fontWeight: 500, color: "#1e40af", fontSize: "0.8125rem" }}>
+            {params.value}
+          </Typography>
+        ),
       },
       {
         field: "nombre",
         headerName: "Nombre",
         width: 180,
+        align: "left",
+        headerAlign: "left",
         renderCell: (params) => (
-          <Tooltip title={`DNI: ${params.row.dni}`}>
-            <Typography variant="body2">{params.value}</Typography>
+          <Tooltip title={`DNI: ${params.row.dni}`} arrow placement="top">
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 500,
+                color: "#1e293b",
+                fontSize: "0.8125rem",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {params.value}
+            </Typography>
           </Tooltip>
         ),
       },
       {
         field: "prioridad",
         headerName: "Prioridad",
-        width: 150,
+        width: 130,
+        align: "center",
+        headerAlign: "center",
         renderCell: (params) => {
           const colors = getPriorityColor(params.value as any)
+          const priorityLabel = params.value === "ALTA" ? "Alta" : params.value === "MEDIA" ? "Media" : params.value === "BAJA" ? "Baja" : null
+
           return (
-            <Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
-              <select
+            <FormControl size="small" sx={{ minWidth: 100 }}>
+              <Select
                 value={params.value || ""}
                 onChange={(e) => {
                   e.stopPropagation()
-                  handlePrioridadChange(params.row.id, e.target.value)
+                  handlePrioridadChange(params.row.id, e.target.value as string)
                 }}
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  backgroundColor: colors.bg,
+                displayEmpty
+                IconComponent={KeyboardArrowDown}
+                sx={{
+                  height: 32,
+                  fontSize: "0.8125rem",
+                  fontWeight: 500,
+                  bgcolor: colors.bg,
                   color: colors.text,
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: 1.5,
+                  "& .MuiSelect-select": {
+                    py: 0.5,
+                    px: 1.5,
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    border: "none",
+                  },
+                  "&:hover": {
+                    bgcolor: alpha(colors.bg, 0.8),
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: colors.text,
+                    fontSize: "1.25rem",
+                  },
                 }}
               >
-                {params.value === null && <option value="">Seleccionar</option>}
-                <option value="ALTA">Alta</option>
-                <option value="MEDIA">Media</option>
-                <option value="BAJA">Baja</option>
-              </select>
-            </Box>
+                {params.value === null && (
+                  <MenuItem value="" sx={{ fontSize: "0.8125rem", color: "text.secondary" }}>
+                    <em>Seleccionar</em>
+                  </MenuItem>
+                )}
+                <MenuItem value="ALTA" sx={{ fontSize: "0.8125rem", color: "#c62828", fontWeight: 500 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <PriorityHigh sx={{ fontSize: 16 }} />
+                    Alta
+                  </Box>
+                </MenuItem>
+                <MenuItem value="MEDIA" sx={{ fontSize: "0.8125rem", color: "#ef6c00", fontWeight: 500 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Remove sx={{ fontSize: 16 }} />
+                    Media
+                  </Box>
+                </MenuItem>
+                <MenuItem value="BAJA" sx={{ fontSize: "0.8125rem", color: "#2e7d32", fontWeight: 500 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <KeyboardArrowDown sx={{ fontSize: 16 }} />
+                    Baja
+                  </Box>
+                </MenuItem>
+              </Select>
+            </FormControl>
           )
         },
       },
       {
         field: "ultimaActualizacion",
         headerName: "Actualización",
-        width: 150,
+        width: 140,
+        align: "left",
+        headerAlign: "left",
+        renderCell: (params) => (
+          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem" }}>
+            {params.value}
+          </Typography>
+        ),
       },
       {
         field: "medidas_activas_count",
         headerName: "Medidas",
-        width: 100,
+        width: 85,
         align: "center",
-        renderCell: (params) => (
-          <Chip label={params.value || 0} size="small" color={params.value > 0 ? "primary" : "default"} />
-        ),
+        headerAlign: "center",
+        renderCell: (params) => {
+          const count = params.value || 0
+          return (
+            <Chip
+              label={count}
+              size="small"
+              sx={{
+                minWidth: 32,
+                height: 24,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                bgcolor: count > 0 ? alpha("#3b82f6", 0.1) : "#f1f5f9",
+                color: count > 0 ? "#2563eb" : "#94a3b8",
+                border: count > 0 ? "1px solid #93c5fd" : "1px solid #e2e8f0",
+              }}
+            />
+          )
+        },
       },
       {
         field: "actividades_activas_count",
         headerName: "Actividades",
-        width: 110,
+        width: 95,
         align: "center",
-        renderCell: (params) => (
-          <Chip label={params.value || 0} size="small" color={params.value > 0 ? "secondary" : "default"} />
-        ),
+        headerAlign: "center",
+        renderCell: (params) => {
+          const count = params.value || 0
+          return (
+            <Chip
+              label={count}
+              size="small"
+              sx={{
+                minWidth: 32,
+                height: 24,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                bgcolor: count > 0 ? alpha("#8b5cf6", 0.1) : "#f1f5f9",
+                color: count > 0 ? "#7c3aed" : "#94a3b8",
+                border: count > 0 ? "1px solid #c4b5fd" : "1px solid #e2e8f0",
+              }}
+            />
+          )
+        },
       },
       {
         field: "oficios_count",
         headerName: "Oficios",
-        width: 100,
+        width: 80,
         align: "center",
-        renderCell: (params) => (
-          <Chip label={params.value || 0} size="small" color={params.value > 0 ? "info" : "default"} />
-        ),
+        headerAlign: "center",
+        renderCell: (params) => {
+          const count = params.value || 0
+          return (
+            <Chip
+              label={count}
+              size="small"
+              sx={{
+                minWidth: 32,
+                height: 24,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                bgcolor: count > 0 ? alpha("#0ea5e9", 0.1) : "#f1f5f9",
+                color: count > 0 ? "#0284c7" : "#94a3b8",
+                border: count > 0 ? "1px solid #7dd3fc" : "1px solid #e2e8f0",
+              }}
+            />
+          )
+        },
       },
       {
         field: "indicadores_pi",
         headerName: "PI",
-        width: 80,
+        width: 70,
         align: "center",
+        headerAlign: "center",
+        sortable: false,
         renderCell: (params) => <ChipDemandaPI count={params.row.indicadores?.demanda_pi_count || 0} />,
       },
       {
         field: "indicadores_oficios_semaforo",
         headerName: "Oficios",
-        width: 150,
+        width: 130,
         align: "center",
+        headerAlign: "center",
+        sortable: false,
         renderCell: (params) => <ChipsOficios oficios={params.row.oficios || []} />,
       },
       {
         field: "indicadores_medidas",
-        headerName: "Andarivel Medidas",
-        width: 180,
+        headerName: "Andarivel",
+        width: 150,
+        align: "left",
+        headerAlign: "left",
+        sortable: false,
         renderCell: (params) => <AndarielMedidas estado={params.row.indicadores?.medida_andarivel || null} />,
       },
       {
         field: "indicadores_pt",
-        headerName: "Plan de Trabajo",
-        width: 200,
+        headerName: "Plan Trabajo",
+        width: 170,
+        align: "center",
+        headerAlign: "center",
+        sortable: false,
         renderCell: (params) => (
           <ContadoresPT
             actividades={params.row.indicadores?.pt_actividades || { pendientes: 0, en_progreso: 0, vencidas: 0, realizadas: 0 }}
@@ -559,19 +699,41 @@ const LegajoTable: React.FC = () => {
       {
         field: "actions",
         headerName: "Acciones",
-        width: 180,
+        width: 150,
         sortable: false,
+        align: "center",
+        headerAlign: "center",
         renderCell: (params) => (
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            <Tooltip title="Ver detalles">
-              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenModal(params.row.id) }} sx={{ color: "primary.main" }}>
-                <Visibility fontSize="small" />
+          <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", justifyContent: "center" }}>
+            <Tooltip title="Ver detalles" arrow>
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); handleOpenModal(params.row.id) }}
+                sx={{
+                  color: "#3b82f6",
+                  bgcolor: alpha("#3b82f6", 0.08),
+                  "&:hover": { bgcolor: alpha("#3b82f6", 0.16) },
+                  width: 30,
+                  height: 30,
+                }}
+              >
+                <Visibility sx={{ fontSize: 18 }} />
               </IconButton>
             </Tooltip>
             {permissions.canAssign && (
-              <Tooltip title="Asignar">
-                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenAsignarModal(params.row.id) }} sx={{ color: "secondary.main" }}>
-                  <PersonAdd fontSize="small" />
+              <Tooltip title="Asignar" arrow>
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); handleOpenAsignarModal(params.row.id) }}
+                  sx={{
+                    color: "#8b5cf6",
+                    bgcolor: alpha("#8b5cf6", 0.08),
+                    "&:hover": { bgcolor: alpha("#8b5cf6", 0.16) },
+                    width: 30,
+                    height: 30,
+                  }}
+                >
+                  <PersonAdd sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
             )}
@@ -592,22 +754,68 @@ const LegajoTable: React.FC = () => {
 
     if (!isMobile) {
       const additionalColumns: GridColDef[] = [
-        { field: "zona", headerName: "Zona", width: 130 },
-        { field: "equipo_trabajo", headerName: "Equipo", width: 150 },
-        { field: "profesional_asignado", headerName: "Profesional", width: 150 },
+        {
+          field: "zona",
+          headerName: "Zona",
+          width: 120,
+          align: "left",
+          headerAlign: "left",
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", color: "#475569" }}>
+              {params.value || "-"}
+            </Typography>
+          ),
+        },
+        {
+          field: "equipo_trabajo",
+          headerName: "Equipo",
+          width: 140,
+          align: "left",
+          headerAlign: "left",
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", color: "#475569", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {params.value || "-"}
+            </Typography>
+          ),
+        },
+        {
+          field: "profesional_asignado",
+          headerName: "Profesional",
+          width: 140,
+          align: "left",
+          headerAlign: "left",
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", color: "#475569", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {params.value || "-"}
+            </Typography>
+          ),
+        },
         {
           field: "fecha_apertura",
-          headerName: "Fecha Apertura",
-          width: 130,
+          headerName: "F. Apertura",
+          width: 110,
+          align: "left",
+          headerAlign: "left",
           renderCell: (params) => (
-            <Typography variant="body2">
-              {params.value ? new Date(params.value).toLocaleDateString("es-AR") : "N/A"}
+            <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              {params.value ? new Date(params.value).toLocaleDateString("es-AR") : "-"}
             </Typography>
           ),
         },
       ]
       if (permissions.canViewJudicialData) {
-        additionalColumns.push({ field: "jefe_zonal", headerName: "Jefe Zonal", width: 150 })
+        additionalColumns.push({
+          field: "jefe_zonal",
+          headerName: "Jefe Zonal",
+          width: 140,
+          align: "left",
+          headerAlign: "left",
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", color: "#475569", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {params.value || "-"}
+            </Typography>
+          ),
+        })
       }
       baseColumns.push(...additionalColumns)
     }
@@ -739,9 +947,28 @@ const LegajoTable: React.FC = () => {
 
   return (
     <>
-      <Paper sx={{ width: "100%", overflow: "hidden", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.08)" }}>
-        <Box sx={{ p: 2, borderBottom: "1px solid #e0e0e0", bgcolor: "#f9f9f9" }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1976d2" }}>Gestión de Legajos</Typography>
+      <Paper
+        sx={{
+          width: "100%",
+          overflow: "hidden",
+          borderRadius: 3,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.05)",
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <Box sx={{ p: 2.5, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              fontSize: "1.25rem",
+              color: "#0f172a",
+              letterSpacing: "-0.025em",
+            }}
+          >
+            Gestión de Legajos
+          </Typography>
           <Box sx={{ mb: 2 }}>
             <LegajoSearchBar onSearch={handleSearch} initialValue={apiFilters.search || ""} />
           </Box>
@@ -751,7 +978,7 @@ const LegajoTable: React.FC = () => {
           </div>
         </Box>
         <ActiveFiltersBar filters={apiFilters} totalResults={totalCount} onRemoveFilter={handleRemoveFilter} onClearAll={handleClearAllFilters} jefeZonalNames={jefeZonalNames} directorNames={directorNames} equipoTrabajoNames={equipoTrabajoNames} equipoCentroVidaNames={equipoCentroVidaNames} />
-        <div style={{ height: 600, width: "100%" }}>
+        <Box sx={{ height: 650, width: "100%", bgcolor: "#ffffff" }}>
           <DataGrid
             rows={rows}
             columns={columns}
@@ -764,23 +991,128 @@ const LegajoTable: React.FC = () => {
             paginationMode="server"
             loading={isLoading || isUpdating}
             onRowClick={(params) => handleOpenModal(params.row.id)}
-            getRowClassName={(params) => shouldHighlightLegajo(params.row) ? "highlight-pending" : ""}
             slots={{ toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} /> }}
+            getRowClassName={(params) => {
+              const classes: string[] = []
+              if (shouldHighlightLegajo(params.row)) classes.push("highlight-pending")
+              if (params.indexRelativeToCurrentPage % 2 === 0) classes.push("row-even")
+              return classes.join(" ")
+            }}
             sx={{
+              border: "none",
+              borderRadius: 2,
               cursor: "pointer",
-              "& .MuiDataGrid-row:hover": { backgroundColor: "rgba(25, 118, 210, 0.04)" },
+              fontSize: "0.8125rem",
+              // Header styling
+              [`& .${gridClasses.columnHeaders}`]: {
+                bgcolor: "#f8fafc",
+                borderBottom: "2px solid #e2e8f0",
+              },
+              [`& .${gridClasses.columnHeader}`]: {
+                fontWeight: 600,
+                color: "#475569",
+                fontSize: "0.8125rem",
+                "&:focus, &:focus-within": {
+                  outline: "none",
+                },
+              },
+              [`& .${gridClasses.columnHeaderTitle}`]: {
+                fontWeight: 600,
+              },
+              // Cell styling
+              [`& .${gridClasses.cell}`]: {
+                borderColor: "#f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                "&:focus, &:focus-within": {
+                  outline: "none",
+                },
+              },
+              // Row styling
+              [`& .${gridClasses.row}`]: {
+                borderBottom: "1px solid #f1f5f9",
+                transition: "background-color 0.15s ease",
+                "&:hover": {
+                  bgcolor: "#f8fafc",
+                },
+                "&.Mui-selected": {
+                  bgcolor: alpha("#1976d2", 0.08),
+                  "&:hover": {
+                    bgcolor: alpha("#1976d2", 0.12),
+                  },
+                },
+              },
+              // Striped rows
+              "& .row-even": {
+                bgcolor: "#fafbfc",
+              },
+              // Highlighted pending rows
               "& .highlight-pending": {
-                backgroundColor: "rgba(79, 63, 240, 0.1) !important",
-                borderLeft: "6px solid #3f51b5 !important",
-                "& .MuiDataGrid-cell": { fontWeight: "900 !important", color: "#1a237e !important" },
+                bgcolor: alpha("#6366f1", 0.06),
+                borderLeft: "4px solid #6366f1",
+                "&:hover": {
+                  bgcolor: alpha("#6366f1", 0.1),
+                },
+                "&.row-even": {
+                  bgcolor: alpha("#6366f1", 0.08),
+                },
+                [`& .${gridClasses.cell}`]: {
+                  color: "#3730a3",
+                },
+              },
+              // Footer and pagination
+              [`& .${gridClasses.footerContainer}`]: {
+                borderTop: "2px solid #e2e8f0",
+                bgcolor: "#f8fafc",
+              },
+              // Remove cell separator
+              [`& .${gridClasses.columnSeparator}`]: {
+                color: "#e2e8f0",
+              },
+              // Scrollbar styling
+              "& ::-webkit-scrollbar": {
+                width: 8,
+                height: 8,
+              },
+              "& ::-webkit-scrollbar-thumb": {
+                bgcolor: "#cbd5e1",
+                borderRadius: 4,
+                "&:hover": {
+                  bgcolor: "#94a3b8",
+                },
+              },
+              "& ::-webkit-scrollbar-track": {
+                bgcolor: "#f1f5f9",
               },
             }}
           />
-        </div>
+        </Box>
       </Paper>
       <Modal open={isModalOpen} onClose={handleCloseModal}>
-        <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: { xs: "95%", md: "80%" }, maxWidth: 900, bgcolor: "background.paper", p: 4, maxHeight: "90vh", overflowY: "auto", borderRadius: 2 }}>
-          {selectedLegajoId ? <LegajoDetail params={{ id: selectedLegajoId.toString() }} onClose={handleCloseModal} /> : <CircularProgress />}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "95%", md: "85%" },
+            maxWidth: 1000,
+            bgcolor: "#ffffff",
+            p: { xs: 2, md: 4 },
+            maxHeight: "90vh",
+            overflowY: "auto",
+            borderRadius: 3,
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          {selectedLegajoId ? (
+            <LegajoDetail params={{ id: selectedLegajoId.toString() }} onClose={handleCloseModal} />
+          ) : (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          )}
         </Box>
       </Modal>
       <AsignarLegajoModal open={isAsignarModalOpen} onClose={handleCloseAsignarModal} legajoId={selectedLegajoIdForAssignment} onAsignacionComplete={loadLegajos} />

@@ -342,11 +342,12 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
             <Tab label="Oficios" />
             <Tab label="Demandas" />
             <Tab label="Documentos" />
+            <Tab label="Plan de Trabajo" />
             {(isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && <Tab label="Auditoría" />}
           </Tabs>
         </Box>
 
-        {/* TAB 0: General (Datos Personales + Medidas Activas + Plan de Trabajo) */}
+        {/* TAB 0: General (Datos Personales + Medidas Activas) */}
         {activeTab === 0 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <DatosPersonalesSection legajoData={legajoData} onEdit={handleEditDatosPersonales} />
@@ -356,7 +357,6 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
               showAddButton={isAdmin || legajoData.permisos_usuario?.puede_tomar_medidas || false}
               refreshTrigger={medidasRefreshTrigger}
             />
-            <PlanTrabajoSection legajoData={legajoData} />
           </Box>
         )}
 
@@ -390,8 +390,15 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
           </>
         )}
 
-        {/* TAB 5: Auditoría (Historial de Cambios) - Solo con permiso o admin */}
-        {activeTab === 5 && (isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && (
+        {/* TAB 5: Plan de Trabajo */}
+        {activeTab === 5 && (
+          <>
+            <PlanTrabajoSection legajoData={legajoData} />
+          </>
+        )}
+
+        {/* TAB 6: Auditoría (Historial de Cambios) - Solo con permiso o admin */}
+        {activeTab === 6 && (isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && (
           <>
             <HistorialCambiosSection legajoData={legajoData} />
           </>

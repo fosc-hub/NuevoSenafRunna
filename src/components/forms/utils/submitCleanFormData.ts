@@ -479,10 +479,18 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
     }),
 
     relacion_demanda: {
-      codigos_demanda: (formData.codigosDemanda || []).map((codigo) => ({
-        codigo: codigo.codigo,
-        tipo_codigo: codigo.tipo,
-      })),
+      // Filter out empty codigo entries - only include if at least one field has a value
+      codigos_demanda: (formData.codigosDemanda || [])
+        .filter((codigo) => {
+          const hasCodigo = codigo.codigo && codigo.codigo.toString().trim() !== ''
+          const hasTipo = codigo.tipo !== null && codigo.tipo !== undefined && codigo.tipo !== ''
+          // Only include if BOTH fields have values (API requires both)
+          return hasCodigo && hasTipo
+        })
+        .map((codigo) => ({
+          codigo: codigo.codigo,
+          tipo_codigo: codigo.tipo,
+        })),
       demanda_zona: {
         zona: formData.zona,
         esta_activo: true,

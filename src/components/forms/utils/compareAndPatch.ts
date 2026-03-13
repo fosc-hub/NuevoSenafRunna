@@ -218,10 +218,17 @@ export function createPatchFromChanges(originalData: any, updatedData: any): any
     transformedChanges.relacion_demanda = {}
 
     if (changes.codigosDemanda) {
-      transformedChanges.relacion_demanda.codigos_demanda = changes.codigosDemanda.map((codigo: any) => ({
-        codigo: codigo.codigo,
-        tipo_codigo: codigo.tipo,
-      }))
+      // Filter out empty codigo entries - only include if BOTH fields have values (API requires both)
+      transformedChanges.relacion_demanda.codigos_demanda = changes.codigosDemanda
+        .filter((codigo: any) => {
+          const hasCodigo = codigo.codigo && codigo.codigo.toString().trim() !== ''
+          const hasTipo = codigo.tipo !== null && codigo.tipo !== undefined && codigo.tipo !== ''
+          return hasCodigo && hasTipo
+        })
+        .map((codigo: any) => ({
+          codigo: codigo.codigo,
+          tipo_codigo: codigo.tipo,
+        }))
     }
 
     // If any field in demanda_zona changes, include the entire structure with required fields

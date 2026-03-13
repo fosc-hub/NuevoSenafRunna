@@ -148,10 +148,17 @@ const LocalizacionOficioSection: React.FC<LocalizacionOficioSectionProps> = ({
                 value={field.value || ""}
                 label="Piso/Depto"
                 fullWidth
+                type="number"
                 disabled={readOnly}
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                inputProps={{ min: 0 }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
               />
             )}
           />
@@ -168,10 +175,17 @@ const LocalizacionOficioSection: React.FC<LocalizacionOficioSectionProps> = ({
                 value={field.value || ""}
                 label="Lote"
                 fullWidth
+                type="number"
                 disabled={readOnly}
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                inputProps={{ min: 0 }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
               />
             )}
           />
@@ -186,10 +200,17 @@ const LocalizacionOficioSection: React.FC<LocalizacionOficioSectionProps> = ({
                 value={field.value || ""}
                 label="Manzana"
                 fullWidth
+                type="number"
                 disabled={readOnly}
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                inputProps={{ min: 0 }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
               />
             )}
           />

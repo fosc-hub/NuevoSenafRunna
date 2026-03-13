@@ -107,9 +107,16 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 {...field}
                 label="Piso/Depto"
                 fullWidth
+                type="number"
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                inputProps={{ min: 0 }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
                 size="small"
               />
             )}
@@ -126,9 +133,16 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 {...field}
                 label="Lote"
                 fullWidth
+                type="number"
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                inputProps={{ min: 0 }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
                 size="small"
               />
             )}
@@ -143,9 +157,16 @@ const LocalizacionFields: React.FC<LocalizacionFieldsProps> = ({ control, prefix
                 {...field}
                 label="Manzana"
                 fullWidth
+                type="number"
                 error={!!error}
                 helperText={error?.message}
                 InputProps={{ readOnly }}
+                inputProps={{ min: 0 }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
                 size="small"
               />
             )}

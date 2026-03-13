@@ -401,38 +401,41 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Controller
-              name={`ninosAdolescentes.${index}.demanda_persona.vinculo_con_nnya_principal`}
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
-                  <Autocomplete
-                    disabled={readOnly}
-                    options={dropdownData.vinculo_con_nnya_principal_choices || []}
-                    getOptionLabel={(option) => option.nombre || ""}
-                    value={
-                      dropdownData.vinculo_con_nnya_principal_choices?.find((item) => item.id === field.value) || null
-                    }
-                    onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Vínculo con NNYA Principal"
-                        error={!!error}
-                        helperText={error?.message}
-                        size="small"
-                      />
-                    )}
-                    PopperProps={{
-                      style: { width: "auto", maxWidth: "300px" },
-                    }}
-                    size="small"
-                  />
-                </FormControl>
-              )}
-            />
-          </Grid>
+          {/* Hide "Vínculo con NNYA Principal" when NNYA_PRINCIPAL is selected */}
+          {watchedFields?.[index]?.demanda_persona?.vinculo_demanda !== "NNYA_PRINCIPAL" && (
+            <Grid item xs={12} md={6}>
+              <Controller
+                name={`ninosAdolescentes.${index}.demanda_persona.vinculo_con_nnya_principal`}
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
+                    <Autocomplete
+                      disabled={readOnly}
+                      options={dropdownData.vinculo_con_nnya_principal_choices || []}
+                      getOptionLabel={(option) => option.nombre || ""}
+                      value={
+                        dropdownData.vinculo_con_nnya_principal_choices?.find((item) => item.id === field.value) || null
+                      }
+                      onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Vínculo con NNYA Principal"
+                          error={!!error}
+                          helperText={error?.message}
+                          size="small"
+                        />
+                      )}
+                      PopperProps={{
+                        style: { width: "auto", maxWidth: "300px" },
+                      }}
+                      size="small"
+                    />
+                  </FormControl>
+                )}
+              />
+            </Grid>
+          )}
         </Grid>
       </FormSection>
 

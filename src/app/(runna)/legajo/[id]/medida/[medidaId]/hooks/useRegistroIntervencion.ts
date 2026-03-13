@@ -927,7 +927,8 @@ export const useRegistroIntervencion = ({
       errors.fecha_intervencion = "La fecha de intervención es obligatoria"
     }
 
-    if (!formData.motivo_id) {
+    // Motivo is only required for apertura and innovacion phases
+    if ((workflowPhase === 'apertura' || workflowPhase === 'innovacion') && !formData.motivo_id) {
       errors.motivo_id = "El motivo es obligatorio"
     }
 

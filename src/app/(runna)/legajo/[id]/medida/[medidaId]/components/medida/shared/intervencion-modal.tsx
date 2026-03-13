@@ -113,6 +113,7 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
         error,
         validationErrors,
         clearErrors,
+        validateForm,
         guardarBorrador,
         guardarYEnviar,
         motivos,
@@ -207,7 +208,52 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     // ============================================================================
     // HANDLERS - Navigation
     // ============================================================================
+
+    /**
+     * Validate fields for a specific step
+     * Returns true if valid, false if there are errors
+     */
+    const validateStep = (step: number): boolean => {
+        const errors = validateForm()
+
+        switch (step) {
+            case 0: // Información Básica
+                if (errors.fecha_intervencion) {
+                    setSnackbar({
+                        open: true,
+                        message: errors.fecha_intervencion,
+                        severity: 'error'
+                    })
+                    return false
+                }
+                return true
+
+            case 1: // Detalles de Intervención
+                const step1Errors: string[] = []
+                if (errors.motivo_id) step1Errors.push(errors.motivo_id)
+                if (errors.categoria_intervencion_id) step1Errors.push(errors.categoria_intervencion_id)
+                if (errors.intervencion_especifica) step1Errors.push(errors.intervencion_especifica)
+
+                if (step1Errors.length > 0) {
+                    setSnackbar({
+                        open: true,
+                        message: step1Errors[0], // Show first error
+                        severity: 'error'
+                    })
+                    return false
+                }
+                return true
+
+            default:
+                return true
+        }
+    }
+
     const handleNext = () => {
+        // Validate current step before proceeding
+        if (!validateStep(activeStep)) {
+            return
+        }
         setActiveStep((prevStep) => prevStep + 1)
     }
 
@@ -216,7 +262,19 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
     }
 
     const handleStepClick = (step: number) => {
-        setActiveStep(step)
+        // Only allow clicking on previous steps or current step
+        // To go forward, must use Next button which validates
+        if (step <= activeStep) {
+            setActiveStep(step)
+        } else {
+            // Validate all steps up to the target step
+            for (let i = activeStep; i < step; i++) {
+                if (!validateStep(i)) {
+                    return
+                }
+            }
+            setActiveStep(step)
+        }
     }
 
     // ============================================================================
@@ -754,45 +812,50 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 3 }}>
-                                <FormControl fullWidth required error={!!validationErrors.motivo_id}>
-                                    <InputLabel>Motivo de Intervención</InputLabel>
-                                    <Select
-                                        value={formData.motivo_id || ''}
-                                        onChange={(e) => updateField('motivo_id', Number(e.target.value))}
-                                        label="Motivo de Intervención"
-                                        disabled={!canEdit || isLoadingCatalogs}
-                                    >
-                                        <MenuItem value="">Seleccionar</MenuItem>
-                                        {motivos.map((motivo) => (
-                                            <MenuItem key={motivo.id} value={motivo.id}>
-                                                {motivo.nombre}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                    {validationErrors.motivo_id && (
-                                        <FormHelperText>{validationErrors.motivo_id}</FormHelperText>
-                                    )}
-                                </FormControl>
+                                {/* Motivo and Submotivo only visible for APERTURA and INNOVACION */}
+                                {(workflowPhase === 'apertura' || workflowPhase === 'innovacion') && (
+                                    <>
+                                        <FormControl fullWidth required error={!!validationErrors.motivo_id}>
+                                            <InputLabel>Motivo de Intervención</InputLabel>
+                                            <Select
+                                                value={formData.motivo_id || ''}
+                                                onChange={(e) => updateField('motivo_id', Number(e.target.value))}
+                                                label="Motivo de Intervención"
+                                                disabled={!canEdit || isLoadingCatalogs}
+                                            >
+                                                <MenuItem value="">Seleccionar</MenuItem>
+                                                {motivos.map((motivo) => (
+                                                    <MenuItem key={motivo.id} value={motivo.id}>
+                                                        {motivo.nombre}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                            {validationErrors.motivo_id && (
+                                                <FormHelperText>{validationErrors.motivo_id}</FormHelperText>
+                                            )}
+                                        </FormControl>
 
-                                <FormControl fullWidth>
-                                    <InputLabel>Submotivo (opcional)</InputLabel>
-                                    <Select
-                                        value={formData.sub_motivo_id || ''}
-                                        onChange={(e) => updateField('sub_motivo_id', e.target.value ? Number(e.target.value) : null)}
-                                        label="Submotivo (opcional)"
-                                        disabled={!canEdit || !formData.motivo_id || isLoadingCatalogs}
-                                    >
-                                        <MenuItem value="">Sin especificar</MenuItem>
-                                        {subMotivos.map((submotivo) => (
-                                            <MenuItem key={submotivo.id} value={submotivo.id}>
-                                                {submotivo.nombre}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                    {!formData.motivo_id && (
-                                        <FormHelperText>Seleccione primero un motivo</FormHelperText>
-                                    )}
-                                </FormControl>
+                                        <FormControl fullWidth>
+                                            <InputLabel>Submotivo (opcional)</InputLabel>
+                                            <Select
+                                                value={formData.sub_motivo_id || ''}
+                                                onChange={(e) => updateField('sub_motivo_id', e.target.value ? Number(e.target.value) : null)}
+                                                label="Submotivo (opcional)"
+                                                disabled={!canEdit || !formData.motivo_id || isLoadingCatalogs}
+                                            >
+                                                <MenuItem value="">Sin especificar</MenuItem>
+                                                {subMotivos.map((submotivo) => (
+                                                    <MenuItem key={submotivo.id} value={submotivo.id}>
+                                                        {submotivo.nombre}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                            {!formData.motivo_id && (
+                                                <FormHelperText>Seleccione primero un motivo</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </>
+                                )}
 
                                 <FormControl fullWidth required error={!!validationErrors.categoria_intervencion_id}>
                                     <InputLabel>Categoría de intervención</InputLabel>
@@ -842,28 +905,34 @@ export const IntervencionModal: React.FC<IntervencionModalProps> = ({
                             />
 
                             <TextField
-                                label="Descripción detallada"
+                                label={workflowPhase === 'cese' ? "Descripción detallada del cese" : "Descripción detallada"}
                                 multiline
                                 rows={4}
                                 fullWidth
                                 value={formData.descripcion_detallada}
                                 onChange={(e) => updateField('descripcion_detallada', e.target.value)}
-                                placeholder="Descripción adicional o contexto de la intervención..."
+                                placeholder={workflowPhase === 'cese'
+                                    ? "Descripción detallada del proceso de cese..."
+                                    : "Descripción adicional o contexto de la intervención..."}
                                 disabled={!canEdit}
                                 helperText="Opcional - Proporcione contexto adicional si es necesario"
                                 sx={{ mb: 2 }}
                             />
 
                             <TextField
-                                label="Motivo de vulneraciones"
+                                label={workflowPhase === 'cese' ? "Motivo de Cese" : "Motivo de vulneraciones"}
                                 multiline
                                 rows={3}
                                 fullWidth
                                 value={formData.motivo_vulneraciones}
                                 onChange={(e) => updateField('motivo_vulneraciones', e.target.value)}
-                                placeholder="Descripción de vulneraciones de derechos detectadas..."
+                                placeholder={workflowPhase === 'cese'
+                                    ? "Describa el motivo del cese de la medida..."
+                                    : "Descripción de vulneraciones de derechos detectadas..."}
                                 disabled={!canEdit}
-                                helperText="Opcional - Describa las vulneraciones de derechos si aplica"
+                                helperText={workflowPhase === 'cese'
+                                    ? "Opcional - Describa el motivo del cese"
+                                    : "Opcional - Describa las vulneraciones de derechos si aplica"}
                             />
                         </Card>
                     </Box>

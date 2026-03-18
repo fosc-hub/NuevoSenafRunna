@@ -105,10 +105,10 @@ export default function Login() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
+        background: "linear-gradient(135deg, #00457F 0%, #6CAEE5 100%)",
       }}
     >
-      {/* Logo RUNNA flotante */}
+      {/* Logo Gobierno de Córdoba */}
       <Box
         component="header"
         sx={{
@@ -125,13 +125,13 @@ export default function Login() {
           sx={{
             position: "relative",
             height: 95,
-            width: 340,
+            width: 420,
             filter: "drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))"
           }}
         >
           <Image
-            src="/img/Logo RUNNA nuevo.png"
-            alt="Logo Runna"
+            src="/img/Screenshot 2026-03-18 002042.png"
+            alt="Gobierno de la Provincia de Córdoba"
             fill
             style={{ objectFit: "contain" }}
             priority
@@ -175,7 +175,7 @@ export default function Login() {
           sx={{
             width: "100%",
             maxWidth: 440,
-            boxShadow: "0px 12px 40px rgba(0, 0, 0, 0.2), 0px 0px 0px 1px rgba(0, 188, 212, 0.1) inset",
+            boxShadow: "0px 12px 40px rgba(0, 0, 0, 0.2), 0px 0px 0px 1px rgba(108, 174, 229, 0.1) inset",
             position: "relative",
             zIndex: 1,
             borderRadius: 3,
@@ -186,7 +186,7 @@ export default function Login() {
             transition: "transform 0.3s ease, box-shadow 0.3s ease",
             "&:hover": {
               transform: "translateY(-4px)",
-              boxShadow: "0px 16px 48px rgba(0, 0, 0, 0.25), 0px 0px 0px 1px rgba(0, 188, 212, 0.15) inset",
+              boxShadow: "0px 16px 48px rgba(0, 0, 0, 0.25), 0px 0px 0px 1px rgba(108, 174, 229, 0.15) inset",
             }
           }}
         >
@@ -197,7 +197,7 @@ export default function Login() {
               left: 0,
               right: 0,
               height: 6,
-              background: "linear-gradient(90deg, #00508C 0%, #00BCD4 50%, #009688 100%)",
+              background: "linear-gradient(90deg, #00457F 0%, #2783D0 50%, #6CAEE5 100%)",
             }}
           />
           <CardHeader
@@ -206,9 +206,9 @@ export default function Login() {
               align: "center",
               variant: "h4",
               fontWeight: 700,
-              color: "#00508C",
+              color: "#00457F",
               sx: {
-                background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
+                background: "linear-gradient(135deg, #00457F 0%, #2783D0 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 letterSpacing: "-0.5px"
@@ -232,18 +232,18 @@ export default function Login() {
                     borderRadius: 2,
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      backgroundColor: "rgba(0, 188, 212, 0.02)",
+                      backgroundColor: "rgba(108, 174, 229, 0.02)",
                     },
                     "&.Mui-focused": {
-                      backgroundColor: "rgba(0, 188, 212, 0.05)",
+                      backgroundColor: "rgba(108, 174, 229, 0.05)",
                       "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#00BCD4",
+                        borderColor: "#2783D0",
                         borderWidth: 2,
                       }
                     }
                   },
                   "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#00508C",
+                    color: "#00457F",
                     fontWeight: 600,
                   }
                 }}
@@ -262,18 +262,18 @@ export default function Login() {
                     borderRadius: 2,
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      backgroundColor: "rgba(0, 188, 212, 0.02)",
+                      backgroundColor: "rgba(108, 174, 229, 0.02)",
                     },
                     "&.Mui-focused": {
-                      backgroundColor: "rgba(0, 188, 212, 0.05)",
+                      backgroundColor: "rgba(108, 174, 229, 0.05)",
                       "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#00BCD4",
+                        borderColor: "#2783D0",
                         borderWidth: 2,
                       }
                     }
                   },
                   "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#00508C",
+                    color: "#00457F",
                     fontWeight: 600,
                   }
                 }}
@@ -285,9 +285,9 @@ export default function Login() {
                         onClick={handleTogglePasswordVisibility}
                         edge="end"
                         sx={{
-                          color: "#00508C",
+                          color: "#00457F",
                           "&:hover": {
-                            backgroundColor: "rgba(0, 188, 212, 0.1)",
+                            backgroundColor: "rgba(108, 174, 229, 0.1)",
                           }
                         }}
                       >
@@ -309,12 +309,12 @@ export default function Login() {
                   fontSize: "1rem",
                   fontWeight: 700,
                   letterSpacing: "0.5px",
-                  background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
-                  boxShadow: "0 4px 14px rgba(0, 188, 212, 0.4)",
+                  background: "linear-gradient(135deg, #00457F 0%, #2783D0 100%)",
+                  boxShadow: "0 4px 14px rgba(39, 131, 208, 0.4)",
                   transition: "all 0.3s ease",
                   "&:hover": {
-                    background: "linear-gradient(135deg, #003D6E 0%, #009AAC 100%)",
-                    boxShadow: "0 6px 20px rgba(0, 188, 212, 0.5)",
+                    background: "linear-gradient(135deg, #003566 0%, #6CAEE5 100%)",
+                    boxShadow: "0 6px 20px rgba(108, 174, 229, 0.5)",
                     transform: "translateY(-2px)",
                   },
                   "&:active": {
@@ -356,11 +356,11 @@ export default function Login() {
         component="footer"
         sx={{
           width: "100%",
-          bgcolor: "rgba(0, 35, 66, 0.92)",
+          bgcolor: "#00457F",
           backdropFilter: "blur(8px)",
           py: 2.5,
           px: 2,
-          borderTop: "1px solid rgba(0, 188, 212, 0.2)",
+          borderTop: "1px solid rgba(108, 174, 229, 0.3)",
           boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.15)",
           display: "flex",
           justifyContent: "center",

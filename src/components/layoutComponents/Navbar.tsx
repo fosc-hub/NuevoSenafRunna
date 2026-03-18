@@ -212,7 +212,7 @@ export default function Header() {
     return (
       <header
         className="text-white p-4 flex justify-between items-center h-[72px] shadow-md"
-        style={{ background: 'linear-gradient(90deg, #00508C 0%, #006BA6 100%)' }}
+        style={{ backgroundColor: '#00457F' }}
       >
         <div className="flex items-center space-x-4">
           <div className="w-32 h-10 bg-white/20 rounded animate-pulse"></div>
@@ -230,14 +230,14 @@ export default function Header() {
   return (
     <header
       className="text-white px-6 py-3 flex justify-between items-center shadow-md"
-      style={{ background: 'linear-gradient(90deg, #00508C 0%, #006BA6 100%)' }}
+      style={{ backgroundColor: '#00457F' }}
     >
-      {/* Logo RUNNA - Lado Izquierdo (Branding) */}
+      {/* Logo Gobierno de Córdoba - Lado Izquierdo (Branding) */}
       <Link href="/mesadeentrada" className="flex-shrink-0 transition-opacity hover:opacity-90">
-        <div className="relative h-12 w-44">
+        <div className="relative h-12 w-64">
           <Image
-            src="/img/PNG STICKER.png"
-            alt="Logo RUNNA"
+            src="/img/Screenshot 2026-03-18 002042.png"
+            alt="Gobierno de la Provincia de Córdoba"
             fill
             style={{ objectFit: 'contain' }}
             priority
@@ -292,7 +292,7 @@ export default function Header() {
             <Bell size={20} />
             {pendingCount > 0 && (
               <span
-                className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-md border-2 border-[#00508C]"
+                className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-md border-2 border-[#00457F]"
                 title={`${pendingCount} tareas pendientes que requieren tu acción`}
               >
                 {pendingCount > 99 ? '99+' : pendingCount}

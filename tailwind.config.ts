@@ -12,6 +12,11 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        sans: ["Poppins", "var(--font-poppins)", "sans-serif"],
+        body: ["Roboto", "var(--font-roboto)", "sans-serif"],
+        heading: ["Poppins", "var(--font-poppins)", "sans-serif"],
+      },
     },
   },
   plugins: [],

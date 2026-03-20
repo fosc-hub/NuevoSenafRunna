@@ -82,6 +82,7 @@ import { useActorVisibility } from "../../[id]/medida/[medidaId]/hooks/useActorV
 import BulkAsignarActividadModal from "./BulkAsignarActividadModal"
 import { AdvancedFiltersPanel } from "./AdvancedFiltersPanel"
 import { SectionCard } from "../../[id]/medida/[medidaId]/components/medida/shared/section-card"
+import { institutionalColors } from "@/theme/colors"
 
 // ============================================================================
 // TYPES & CONFIGURATION
@@ -98,7 +99,7 @@ const ESTADO_COLORS: Record<string, { backgroundColor: string; color: string; bg
   PENDIENTE_VISADO_JZ: { backgroundColor: "#f57c00", color: "white", bgLight: "rgba(245, 124, 0, 0.1)", label: "Pend. Visado JZ" },
   PENDIENTE_VISADO: { backgroundColor: "#9c27b0", color: "white", bgLight: "rgba(156, 39, 176, 0.1)", label: "Pend. Visado" },
   VISADO_CON_OBSERVACION: { backgroundColor: "#ff5722", color: "white", bgLight: "rgba(255, 87, 34, 0.1)", label: "Visado c/Obs" },
-  VISADO_APROBADO: { backgroundColor: "#009688", color: "white", bgLight: "rgba(0, 150, 136, 0.1)", label: "Visado Aprobado" },
+  VISADO_APROBADO: { backgroundColor: institutionalColors.azulMedio, color: "white", bgLight: "rgba(39, 131, 208, 0.1)", label: "Visado Aprobado" },
   CANCELADA: { backgroundColor: "#f44336", color: "white", bgLight: "rgba(244, 67, 54, 0.1)", label: "Cancelada" },
   VENCIDA: { backgroundColor: "#9e9e9e", color: "white", bgLight: "rgba(158, 158, 158, 0.1)", label: "Vencida" },
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import { createTheme } from "@mui/material/styles";
+import { muiPalette } from "./colors";
 
 // Font family constants - Google Fonts loaded via CDN + next/font CSS variables
 const POPPINS = '"Poppins", var(--font-poppins), sans-serif';
 const ROBOTO = '"Roboto", var(--font-roboto), sans-serif';
 
 const theme = createTheme({
+  palette: muiPalette,
   typography: {
     fontFamily: POPPINS,
     h1: {

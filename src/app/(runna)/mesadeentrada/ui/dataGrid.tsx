@@ -40,6 +40,7 @@ import { useUser } from "@/utils/auth/userZustand"
 // Assume these imports are available in your project
 import { get, update, create, put } from "@/app/api/apiService"
 import type { TDemanda, TCalificacionOperation, TDemandaZonaOperation } from "@/app/interfaces"
+import { institutionalColors, gradients, shadows, rgba } from "@/theme/colors"
 
 // Dynamically import DemandaDetail with no SSR to avoid hydration issues
 const DemandaDetail = dynamic(() => import("../../demanda/DemandaDetail"), { ssr: false })
@@ -634,7 +635,7 @@ const DemandaTableContent: React.FC = () => {
       case "REPUESTA_ENVIADA":
         return "#8bc34a" // light green
       case "INFORME_ENVIADO":
-        return "#00bcd4" // cyan
+        return institutionalColors.azulClaro // Azul Claro institucional
       default:
         return "transparent"
     }
@@ -1136,8 +1137,8 @@ const DemandaTableContent: React.FC = () => {
           width: "100%",
           overflow: "hidden",
           borderRadius: 2,
-          boxShadow: "0 4px 20px rgba(0, 80, 140, 0.08)",
-          border: "1px solid rgba(0, 188, 212, 0.1)",
+          boxShadow: shadows.subtle,
+          border: `1px solid ${rgba.primaryLight(0.1)}`,
         }}
       >
         {/* Barra 1: Título */}
@@ -1148,15 +1149,15 @@ const DemandaTableContent: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderBottom: "1px solid rgba(0, 188, 212, 0.15)",
-            background: "linear-gradient(135deg, #ffffff 0%, #f8fcff 100%)",
+            borderBottom: `1px solid ${rgba.primaryLight(0.15)}`,
+            background: gradients.subtle,
           }}
         >
           <Typography
             variant="h5"
             sx={{
               fontWeight: 700,
-              background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
+              background: gradients.title,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               letterSpacing: "-0.5px",
@@ -1192,13 +1193,13 @@ const DemandaTableContent: React.FC = () => {
               px: 2,
               py: 0.75,
               borderRadius: 1.5,
-              color: "#00508C",
-              border: "1px solid rgba(0, 80, 140, 0.15)",
+              color: institutionalColors.azulPrincipal,
+              border: `1px solid ${rgba.primary(0.15)}`,
               textTransform: "none",
               fontWeight: 500,
               "&:hover": {
-                backgroundColor: "rgba(0, 188, 212, 0.04)",
-                borderColor: "#00BCD4",
+                backgroundColor: rgba.primaryLight(0.04),
+                borderColor: institutionalColors.azulClaro,
               },
             }}
           >
@@ -1209,13 +1210,13 @@ const DemandaTableContent: React.FC = () => {
             size="small"
             onClick={() => refetch()}
             sx={{
-              color: "#00508C",
-              border: "1px solid rgba(0, 80, 140, 0.15)",
+              color: institutionalColors.azulPrincipal,
+              border: `1px solid ${rgba.primary(0.15)}`,
               borderRadius: 1.5,
               padding: 1,
               "&:hover": {
-                backgroundColor: "rgba(0, 188, 212, 0.04)",
-                borderColor: "#00BCD4",
+                backgroundColor: rgba.primaryLight(0.04),
+                borderColor: institutionalColors.azulClaro,
               },
             }}
           >
@@ -1374,7 +1375,7 @@ const DemandaTableContent: React.FC = () => {
                 backgroundColor: "#8bc34a",
               },
               "& .row-informe-enviado::before": {
-                backgroundColor: "#00bcd4",
+                backgroundColor: institutionalColors.azulClaro,
               },
               // Add style for non-received rows
               "& .row-not-received": {

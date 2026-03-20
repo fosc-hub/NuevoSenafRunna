@@ -41,6 +41,7 @@ import type { TTipoActividad } from '../../[id]/medida/[medidaId]/types/activida
 import type { Usuario, Zona } from '@/app/(runna)/legajo-mesa/types/asignacion-types'
 import type { TableVariant } from './UnifiedActividadesTable'
 import { useUser } from '@/utils/auth/userZustand'
+import { institutionalColors } from '@/theme/colors'
 
 // Estado options for multi-select
 const ESTADO_OPTIONS = [
@@ -50,7 +51,7 @@ const ESTADO_OPTIONS = [
   { value: 'PENDIENTE_VISADO_JZ', label: 'Pendiente Visado JZ', color: '#f57c00' },
   { value: 'PENDIENTE_VISADO', label: 'Pendiente Visado Legal', color: '#9c27b0' },
   { value: 'VISADO_CON_OBSERVACION', label: 'Visado con Observación', color: '#ff5722' },
-  { value: 'VISADO_APROBADO', label: 'Visado Aprobado', color: '#009688' },
+  { value: 'VISADO_APROBADO', label: 'Visado Aprobado', color: institutionalColors.azulMedio },
   { value: 'CANCELADA', label: 'Cancelada', color: '#f44336' },
   { value: 'VENCIDA', label: 'Vencida', color: '#9e9e9e' },
 ]

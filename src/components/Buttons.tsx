@@ -9,6 +9,7 @@ import { PersonAdd } from "@mui/icons-material"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
 import SearchButton from "../app/(runna)/mesadeentrada/ui/search-button"
 import { useUser } from "@/utils/auth/userZustand"
+import { institutionalColors, gradients, shadows, rgba } from "@/theme/colors"
 
 interface FilterState {
   envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null
@@ -100,13 +101,13 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                   px: 2.5,
                   py: 1,
                   borderRadius: 2,
-                  background: "linear-gradient(135deg, #00508C 0%, #00BCD4 100%)",
-                  boxShadow: "0 4px 12px rgba(0, 188, 212, 0.3)",
+                  background: gradients.primary,
+                  boxShadow: shadows.accent,
                   fontWeight: 600,
                   textTransform: "none",
                   "&:hover": {
-                    background: "linear-gradient(135deg, #003D6E 0%, #009AAC 100%)",
-                    boxShadow: "0 6px 16px rgba(0, 188, 212, 0.4)",
+                    background: gradients.primaryHover,
+                    boxShadow: shadows.accentHover,
                   },
                 }}
               >
@@ -121,11 +122,11 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
               borderRadius: 2,
               px: 2.5,
               py: 1,
-              border: "1px solid rgba(0, 80, 140, 0.2)",
-              color: "#00508C",
+              border: `1px solid ${rgba.primary(0.2)}`,
+              color: institutionalColors.azulPrincipal,
               "&:hover": {
-                borderColor: "#00BCD4",
-                backgroundColor: "rgba(0, 188, 212, 0.04)",
+                borderColor: institutionalColors.azulClaro,
+                backgroundColor: rgba.primaryLight(0.04),
               },
             }}
           />
@@ -138,13 +139,13 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
               px: 2.5,
               py: 1,
               borderRadius: 2,
-              border: "1px solid rgba(0, 80, 140, 0.2)",
-              color: "#00508C",
+              border: `1px solid ${rgba.primary(0.2)}`,
+              color: institutionalColors.azulPrincipal,
               textTransform: "none",
               fontWeight: 500,
               "&:hover": {
-                borderColor: "#00BCD4",
-                backgroundColor: "rgba(0, 188, 212, 0.04)",
+                borderColor: institutionalColors.azulClaro,
+                backgroundColor: rgba.primaryLight(0.04),
               },
             }}
           >

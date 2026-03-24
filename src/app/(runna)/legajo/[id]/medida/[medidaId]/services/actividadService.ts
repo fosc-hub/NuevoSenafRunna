@@ -7,6 +7,7 @@ import axiosInstance from '@/app/api/utils/axiosInstance' // Only for cancel() -
 import type {
   TActividadPlanTrabajo,
   TTipoActividad,
+  TSubtipoActividadPlanTrabajo,
   TAdjuntoActividad,
   CreateActividadRequest,
   UpdateActividadRequest,
@@ -136,6 +137,64 @@ export const actividadService = {
   // Get single activity type
   async getTipo(id: number): Promise<TTipoActividad> {
     return get<TTipoActividad>(`tipos-actividad-plan-trabajo/${id}/`)
+  },
+
+  // ============================================================================
+  // PLTM V4.0: Specific Activities (Subtipos)
+  // ============================================================================
+
+  /**
+   * Get specific activities (36 total, optionally filtered by Derecho Principal)
+   * Endpoint: GET /api/subtipos-actividad-plan-trabajo/
+   * Cascading: GET /api/subtipos-actividad-plan-trabajo/?derecho=2
+   *
+   * PLTM V4.0: Hierarchical structure
+   * - Each subtipo belongs to one of 7 Derechos Principales
+   * - Use derecho filter for cascading selection
+   *
+   * @param filters - Optional filters (derecho, tipo_actividad, tipo_actividad__tipo, activo, search)
+   * @returns Array of specific activities
+   */
+  async getSubtipos(filters?: {
+    derecho?: number
+    tipo_actividad?: number // Same as derecho (alternative name)
+    tipo_actividad__tipo?: 'MANUAL' | 'OFICIO'
+    activo?: boolean
+    search?: string
+  }): Promise<TSubtipoActividadPlanTrabajo[]> {
+    const params = new URLSearchParams({ activo: 'true', page_size: '500' })
+
+    if (filters?.derecho) {
+      params.append('derecho', filters.derecho.toString())
+    }
+    if (filters?.tipo_actividad) {
+      params.append('tipo_actividad', filters.tipo_actividad.toString())
+    }
+    if (filters?.tipo_actividad__tipo) {
+      params.append('tipo_actividad__tipo', filters.tipo_actividad__tipo)
+    }
+    if (filters?.activo !== undefined) {
+      params.set('activo', filters.activo.toString())
+    }
+    if (filters?.search) {
+      params.append('search', filters.search)
+    }
+
+    const response = await get<TSubtipoActividadPlanTrabajo[] | { results: TSubtipoActividadPlanTrabajo[] }>(
+      `subtipos-actividad-plan-trabajo/?${params.toString()}`
+    )
+    return extractArray(response)
+  },
+
+  /**
+   * Get single specific activity
+   * Endpoint: GET /api/subtipos-actividad-plan-trabajo/{id}/
+   *
+   * @param id - Subtipo activity ID
+   * @returns Specific activity detail
+   */
+  async getSubtipo(id: number): Promise<TSubtipoActividadPlanTrabajo> {
+    return get<TSubtipoActividadPlanTrabajo>(`subtipos-actividad-plan-trabajo/${id}/`)
   },
 
   // Auto-mark overdue activities (admin only)

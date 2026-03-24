@@ -18,20 +18,20 @@ export interface TTipoOficio {
 // ============================================================================
 
 /**
- * TTipoActividad - Activity type catalog
+ * TTipoActividad - Derecho Principal (Parent category in hierarchical system)
  *
- * Source: RUNNA API (9).yaml lines 13812-13928
+ * PLTM Restructuring V4.0 (2026-03-23):
+ * - Changed from 36 flat activity types to 7 Derechos Principales (Primary Rights)
+ * - These are now parent categories for specific activities (TSubtipoActividadPlanTrabajo)
+ *
  * Endpoint: GET /api/tipos-actividad-plan-trabajo/
- *
- * V2: Updated with fields for tipo, aplicabilidad, and visado
- * V2.2: tipo_oficio changed from ENUM to ForeignKey
- * LEG-01 V2: Added permite_gestion_grupal for group activity management with linked siblings
+ * Returns: 7 primary rights categories
  */
 export interface TTipoActividad {
   /** Unique identifier (readonly) */
   id: number
 
-  /** Activity type name (e.g., "Visita domiciliaria") */
+  /** Derecho Principal name (e.g., "Derecho a la familia") */
   nombre: string
 
   /** Detailed description (nullable) */
@@ -119,6 +119,78 @@ export interface TTipoActividad {
    * Must be null when es_recursiva=False
    */
   periodo_recursion_dias: number | null
+}
+
+/**
+ * TSubtipoActividadPlanTrabajo - Specific activity (Child in hierarchical system)
+ *
+ * PLTM Restructuring V4.0 (2026-03-23):
+ * - 36 specific activities, each belonging to one of the 7 Derechos Principales
+ * - These are the actual activities that users select for creation
+ *
+ * Endpoint: GET /api/subtipos-actividad-plan-trabajo/
+ * Cascading: GET /api/subtipos-actividad-plan-trabajo/?derecho=2
+ */
+export interface TSubtipoActividadPlanTrabajo {
+  /** Unique identifier (readonly) */
+  id: number
+
+  /** FK to Derecho Principal (parent category) */
+  tipo_actividad: number
+
+  /** Derecho Principal name (readonly, from relationship) */
+  derecho_principal_nombre: string
+
+  /** Specific activity name (e.g., "Entrevista con familia / referentes socioafectivos") */
+  nombre: string
+
+  /** Detailed description (nullable) */
+  descripcion: string
+
+  /** Activity type: MANUAL or OFICIO */
+  tipo: 'MANUAL' | 'OFICIO'
+
+  /** Display name for tipo (readonly) */
+  tipo_display: string
+
+  /** FK to judicial office type (only if tipo=OFICIO, nullable) */
+  tipo_oficio: number | null
+
+  /** Actor responsible for this activity */
+  actor: 'EQUIPO_TECNICO' | 'EQUIPO_LEGAL' | 'EQUIPOS_RESIDENCIALES' | 'ADULTOS_INSTITUCION'
+
+  /** Display name for actor (readonly) */
+  actor_display: string
+
+  /** Applicable measure type (nullable) */
+  tipo_medida_aplicable: 'MPI' | 'MPE' | 'MPJ' | null
+
+  /** Applicable measure stage (nullable) */
+  etapa_medida_aplicable: 'APERTURA' | 'INNOVACION' | 'PRORROGA' | 'CESE' | 'POST_CESE' | 'PROCESO' | null
+
+  /** If true, completing activity requires mandatory attachments */
+  requiere_evidencia: boolean
+
+  /** If true, completing activity requires legal team approval (visado) */
+  requiere_visado_legales: boolean
+
+  /** Deadline in days to complete activity (nullable) */
+  plazo_dias: number | null
+
+  /** If true, allows group activity management */
+  permite_gestion_grupal: boolean
+
+  /** If true, activities are created automatically at regular intervals */
+  es_recursiva: boolean
+
+  /** Period in days for recurring activities (nullable) */
+  periodo_recursion_dias: number | null
+
+  /** Whether this subtipo is available for selection */
+  activo: boolean
+
+  /** Display order in lists */
+  orden: number
 }
 
 // Attachment
@@ -233,15 +305,39 @@ export interface TActividadPlanTrabajo {
    */
   zonas_info?: ZonaInfo[]
 
-  // Type & Classification
-  /** FK to activity type catalog */
+  // Type & Classification (PLTM V4.0: Hierarchical Structure)
+  /**
+   * FK to Derecho Principal (parent category)
+   * Same as tipo_actividad for backwards compatibility
+   */
+  derecho_principal: number
+
+  /** Nested Derecho Principal detail (readonly) */
+  derecho_principal_info: TTipoActividad
+
+  /**
+   * FK to activity type catalog (Derecho Principal)
+   * Alias for derecho_principal
+   */
   tipo_actividad: number
 
-  /** Nested activity type detail (readonly) */
+  /** Nested activity type detail (readonly) - Derecho Principal */
   tipo_actividad_info: TTipoActividad
 
-  /** Specific subactivity detail */
-  subactividad: string
+  /**
+   * FK to specific activity (REQUIRED in V4.0)
+   * This is the actual activity selected from the 36 available
+   */
+  subtipo_actividad: number
+
+  /** Nested specific activity detail (readonly) */
+  subtipo_actividad_info: TSubtipoActividadPlanTrabajo
+
+  /**
+   * @deprecated Legacy field - Use subtipo_actividad instead
+   * Specific subactivity detail (free text)
+   */
+  subactividad?: string
 
   // Temporal Planning
   /** Planned date for execution */
@@ -367,10 +463,27 @@ export interface TActividadPlanTrabajo {
 }
 
 // API Request/Response types
+/**
+ * PLTM V4.0: Create activity with hierarchical structure
+ * REQUIRED: Both tipo_actividad (Derecho Principal) and subtipo_actividad (Specific Activity)
+ */
 export interface CreateActividadRequest {
   plan_trabajo: number
+  /**
+   * Derecho Principal ID (parent category)
+   * In V4.0, tipo_actividad represents the Derecho Principal (7 categories)
+   */
   tipo_actividad: number
-  subactividad: string
+  /**
+   * Specific Activity ID (REQUIRED in V4.0)
+   * Must belong to the selected tipo_actividad
+   */
+  subtipo_actividad: number
+  /**
+   * @deprecated Legacy field - Use subtipo_actividad instead
+   * Kept for backwards compatibility
+   */
+  subactividad?: string
   fecha_planificacion: string
   descripcion?: string
   responsable_principal: number
@@ -385,8 +498,24 @@ export interface CreateActividadRequest {
   adjuntos_descripciones?: string[]
 }
 
+/**
+ * PLTM V4.0: Update activity with hierarchical structure
+ */
 export interface UpdateActividadRequest {
+  /**
+   * Derecho Principal ID (parent category)
+   * In V4.0, tipo_actividad represents the Derecho Principal
+   */
   tipo_actividad?: number
+  /**
+   * Specific Activity ID
+   * Must belong to the selected tipo_actividad if both are provided
+   */
+  subtipo_actividad?: number
+  /**
+   * @deprecated Legacy field - Use subtipo_actividad instead
+   * Kept for backwards compatibility
+   */
   subactividad?: string
   fecha_planificacion?: string
   descripcion?: string

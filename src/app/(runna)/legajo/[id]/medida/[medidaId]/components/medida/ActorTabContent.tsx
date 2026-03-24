@@ -34,8 +34,10 @@ const createActividadSchema = (isEquipoTecnico: boolean, isDraft: boolean) => {
     return z.object({
       tipo_actividad: z.number().min(1, 'Debe seleccionar un Derecho Principal'),
       subtipo_actividad: isDraft
-        ? z.number().optional()
-        : z.number().min(1, 'Debe seleccionar una Actividad Específica'),
+        ? z.number().nullable().optional()
+        : z.number().nullable().refine(val => val !== null && val !== undefined && val >= 1, {
+            message: 'Debe seleccionar una Actividad Específica'
+          }),
       fecha_planificacion: isDraft
         ? z.date().optional()
         : z.date().min(new Date(1900, 0, 1), 'La fecha es requerida'),
@@ -54,7 +56,7 @@ const createActividadSchema = (isEquipoTecnico: boolean, isDraft: boolean) => {
     // Other teams: Flat structure (Direct activity selection, no subtipo)
     return z.object({
       tipo_actividad: z.number().min(1, 'Debe seleccionar una Actividad'),
-      subtipo_actividad: z.number().optional(), // Always optional for flat structure
+      subtipo_actividad: z.number().nullable().optional(), // Always optional for flat structure
       fecha_planificacion: isDraft
         ? z.date().optional()
         : z.date().min(new Date(1900, 0, 1), 'La fecha es requerida'),
@@ -110,10 +112,10 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
     formState: { errors }
   } = useForm<ActividadFormData>({
     resolver: zodResolver(createActividadSchema(isEquipoTecnico, isDraft)),
-    mode: 'onChange',
+    mode: 'onBlur', // Changed from 'onChange' to avoid immediate validation
     defaultValues: {
       tipo_actividad: 0,
-      subtipo_actividad: 0,
+      subtipo_actividad: undefined, // Changed from 0 to undefined to avoid validation error on load
       fecha_planificacion: new Date(),
       descripcion: '',
       responsable_principal: 0,

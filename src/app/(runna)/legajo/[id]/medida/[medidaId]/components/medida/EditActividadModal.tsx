@@ -27,7 +27,9 @@ const createEditSchema = (isEquipoTecnico: boolean) => {
     // EQUIPO_TECNICO: Hierarchical structure
     return z.object({
       tipo_actividad: z.number().min(1, 'Debe seleccionar un Derecho Principal'),
-      subtipo_actividad: z.number().min(1, 'Debe seleccionar una Actividad Específica'),
+      subtipo_actividad: z.number().nullable().refine(val => val !== null && val !== undefined && val >= 1, {
+        message: 'Debe seleccionar una Actividad Específica'
+      }),
       fecha_planificacion: z.date().min(new Date(1900, 0, 1), 'La fecha es requerida'),
       descripcion: z.string().optional(),
       responsable_principal: z.number().min(1, 'El responsable principal es requerido'),
@@ -38,7 +40,7 @@ const createEditSchema = (isEquipoTecnico: boolean) => {
     // Other teams: Flat structure
     return z.object({
       tipo_actividad: z.number().min(1, 'Debe seleccionar una Actividad'),
-      subtipo_actividad: z.number().optional(), // Optional for flat structure
+      subtipo_actividad: z.number().nullable().optional(), // Optional for flat structure
       fecha_planificacion: z.date().min(new Date(1900, 0, 1), 'La fecha es requerida'),
       descripcion: z.string().optional(),
       responsable_principal: z.number().min(1, 'El responsable principal es requerido'),

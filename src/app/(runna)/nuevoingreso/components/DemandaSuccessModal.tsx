@@ -18,6 +18,7 @@ import GavelIcon from "@mui/icons-material/Gavel"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import ListAltIcon from "@mui/icons-material/ListAlt"
 import HomeIcon from "@mui/icons-material/Home"
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance"
 
 import BaseModal from "@/components/shared/BaseModal"
 import type { DemandaCreatedResponse } from "../types/demanda-response"
@@ -31,6 +32,7 @@ interface DemandaSuccessModalProps {
   data: DemandaCreatedResponse | null
   onNavigateToDemanda?: (demandaId: number) => void
   onNavigateToMesaEntrada?: () => void
+  onNavigateToMedida?: (legajoId: number, medidaId: number) => void
 }
 
 /**
@@ -43,6 +45,7 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
   data,
   onNavigateToDemanda,
   onNavigateToMesaEntrada,
+  onNavigateToMedida,
 }) => {
   // Local state for actividades - allows updates from bulk operations
   const [localActividades, setLocalActividades] = useState<TActividadPlanTrabajo[]>([])
@@ -61,10 +64,15 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
 
   if (!data) return null
 
-  const { demanda, demanda_zona, personas, medidas_creadas } = data
+  const { demanda, demanda_zona, personas, medidas_creadas, vinculos_legajo } = data
   const nnyaCount = getNnyaCount(data)
   const adultosCount = getAdultosCount(data)
   const hasPlanTrabajo = localActividades.length > 0
+
+  // Get first medida and legajo for navigation
+  const firstMedida = medidas_creadas?.[0]
+  const firstVinculo = vinculos_legajo?.[0]
+  const canNavigateToMedida = firstMedida && firstVinculo?.legajo_origen_id
 
   return (
     <BaseModal
@@ -96,6 +104,13 @@ export const DemandaSuccessModal: React.FC<DemandaSuccessModalProps> = ({
           color: "primary",
           startIcon: <HomeIcon />,
         },
+        ...(canNavigateToMedida ? [{
+          label: "Ver Medida",
+          onClick: () => onNavigateToMedida?.(firstVinculo.legajo_origen_id, firstMedida.id),
+          variant: "contained",
+          color: "secondary",
+          startIcon: <AccountBalanceIcon />,
+        }] : []),
         {
           label: "Ver Demanda",
           onClick: () => onNavigateToDemanda?.(demanda.id),

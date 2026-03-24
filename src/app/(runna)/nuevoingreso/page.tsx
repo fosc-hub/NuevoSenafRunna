@@ -150,6 +150,11 @@ const Home: React.FC = () => {
     router.push("/mesadeentrada")
   }
 
+  const handleNavigateToMedida = (legajoId: number, medidaId: number) => {
+    setShowSuccessModal(false)
+    router.push(`/legajo/${legajoId}/medida/${medidaId}`)
+  }
+
   if (error) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
@@ -261,6 +266,7 @@ const Home: React.FC = () => {
         data={createdDemandaData}
         onNavigateToDemanda={handleNavigateToDemanda}
         onNavigateToMesaEntrada={handleNavigateToMesaEntrada}
+        onNavigateToMedida={handleNavigateToMedida}
       />
     </Container>
   )

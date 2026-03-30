@@ -1,28 +1,44 @@
 /**
  * Type definitions for SEGUIMIENTO EN DISPOSITIVO module
- * Used by both MPE and MPJ with different field requirements
+ * Used by both MPE and MPJ with unified structure (API v2.0)
+ *
+ * @version 2.0.0
+ * @since 2026-03-30 - Breaking changes: Unified SituacionNNyA structure
  */
 
-// Common interfaces
+// Type constants for tipo_situacion
+export const TIPO_SITUACION_CHOICES = {
+  AUTORIZACION: 'AUTORIZACION',
+  PERMISO: 'PERMISO',
+  PERMISO_PROLONGADO: 'PERMISO_PROLONGADO'
+} as const
+
+export const TIPO_SITUACION_LABELS = {
+  AUTORIZACION: 'Autorización',
+  PERMISO: 'Permiso',
+  PERMISO_PROLONGADO: 'Permiso Prolongado'
+} as const
+
+export type TipoSituacion = keyof typeof TIPO_SITUACION_CHOICES
+
+// Common interface - Unified structure for API v2.0
 export interface SituacionNNyA {
   id?: number
-  fecha: string
-  observaciones: string
+  tipo_situacion: TipoSituacion
+  tipo_situacion_display?: string // Read-only from backend
+  fecha: string // YYYY-MM-DD, cannot be future date
+  observaciones?: string // Optional
+  fecha_registro?: string // Read-only, datetime from backend
 }
 
-// MPE specific - Situación en Residencia
+// MPE specific - Situación en Residencia (now inherits unified structure)
 export interface SituacionResidenciaMPE extends SituacionNNyA {
-  tipo: 'AUTORIZACION' | 'PERMISO' | 'PERMISO_PROLONGADO'
-  residencia?: string
+  medida: number // FK to Medida
 }
 
-// MPJ specific - Situación en Instituto
+// MPJ specific - Situación en Instituto (now inherits unified structure)
 export interface SituacionInstitutoMPJ extends SituacionNNyA {
-  instituto: string
-  sector: string
-  permiso: boolean
-  visita_recibida: 'SI' | 'NO' | null
-  fecha_visita?: string
+  medida: number // FK to Medida
 }
 
 // Información Educativa (editable fields from origen_demanda)

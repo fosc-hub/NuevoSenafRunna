@@ -293,46 +293,6 @@ export const MPJHeader: React.FC<MPJHeaderProps> = ({
           </Grid>
         </Grid>
 
-        {/* MPJ Specific Toggle Section */}
-        <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200", mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, color: 'primary.dark', display: "flex", alignItems: "center", gap: 1 }}>
-            <GavelIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Medida MPJ
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper" }}>
-                <InputLabel>Tipo de Medida (MPJ)</InputLabel>
-                <Select
-                  value={tipoMedidaMPJ}
-                  onChange={(e) => handleTipoMedidaMPJChange(e.target.value)}
-                  label="Tipo de Medida (MPJ)"
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="">Sin especificar</MenuItem>
-                  <MenuItem value="NO_PRIVATIVAS">Medidas socioeducativas no privativas de la libertad</MenuItem>
-                  <MenuItem value="PRIVATIVAS">Medidas socioeducativas privativas de la libertad</MenuItem>
-                  <MenuItem value="RESGUARDO">Medidas socioeducativas de resguardo institucional</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper" }}>
-                <InputLabel>Subtipo de Medida (MPJ)</InputLabel>
-                <Select
-                  value={subtipoMedidaMPJ}
-                  onChange={(e) => handleSubtipoMedidaMPJChange(e.target.value)}
-                  label="Subtipo de Medida (MPJ)"
-                  disabled={!tipoMedidaMPJ}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem key="empty" value="">Sin especificar</MenuItem>
-                  {getSubtipoOptions()}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </Box>
-
         {/* MPJ Device Configuration Section */}
         {medidaId && (
           <ConfiguracionMPJSection
@@ -378,10 +338,18 @@ export const MPJHeader: React.FC<MPJHeaderProps> = ({
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 0, overflow: 'auto' }}>
-          <SeguimientoDispositivoMPJ
-            demandaData={demandaData}
-            personaId={medidaData.persona?.id}
-          />
+          {medidaId ? (
+            <SeguimientoDispositivoMPJ
+              key={seguimientoModalOpen ? 'open' : 'closed'} // Force remount on modal open
+              medidaId={medidaId}
+              demandaData={demandaData}
+              personaId={medidaData.persona?.id}
+            />
+          ) : (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography color="error">Error: medidaId no disponible</Typography>
+            </Box>
+          )}
         </DialogContent>
       </Dialog>
     </Paper>

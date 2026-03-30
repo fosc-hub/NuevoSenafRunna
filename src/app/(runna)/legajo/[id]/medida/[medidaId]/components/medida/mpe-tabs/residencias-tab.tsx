@@ -28,6 +28,10 @@ import { InformacionEducativaSection } from "../shared/InformacionEducativaSecti
 import { InformacionSaludSection } from "../shared/InformacionSaludSection"
 import { TalleresSection } from "../shared/TalleresSection"
 import { mapEducacionFromDemanda, mapSaludFromDemandaEnhanced } from "../../../utils/seguimiento-mapper"
+import { seguimientoDispositivoService } from "../../../api/seguimiento-dispositivo-api-service"
+import { toast } from "react-toastify"
+import type { TipoSituacion, SituacionNNyA } from "../../../types/seguimiento-dispositivo"
+import { useEffect } from "react"
 
 interface SituacionCritica {
     id: number
@@ -165,27 +169,97 @@ const mockNotas = [
 ]
 
 // Situación del NNyA en Residencia (MPE specific) - Moved outside parent component
-const SituacionResidenciaSection = () => {
-    const [tipoSituacion, setTipoSituacion] = useState<'AUTORIZACION' | 'PERMISO' | 'PERMISO_PROLONGADO'>('AUTORIZACION')
+const SituacionResidenciaSection = ({ medidaId }: { medidaId: number }) => {
+    const [tipoSituacion, setTipoSituacion] = useState<TipoSituacion>('AUTORIZACION')
     const [fechaSituacion, setFechaSituacion] = useState('')
     const [observaciones, setObservaciones] = useState('')
+    const [situaciones, setSituaciones] = useState<SituacionNNyA[]>([])
+    const [loading, setLoading] = useState(false)
+    const today = new Date().toISOString().split('T')[0]
+
+    // Fetch existing situaciones on mount
+    useEffect(() => {
+        fetchSituaciones()
+    }, [medidaId])
+
+    const fetchSituaciones = async () => {
+        setLoading(true)
+        try {
+            const data = await seguimientoDispositivoService.listSituaciones(medidaId)
+            // Ensure data is an array
+            setSituaciones(Array.isArray(data) ? data : [])
+        } catch (error) {
+            console.error('Error fetching situaciones:', error)
+            setSituaciones([]) // Set empty array on error
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleSaveSituacion = async () => {
+        if (!fechaSituacion) {
+            toast.error('La fecha es requerida')
+            return
+        }
+
+        try {
+            const savedSituacion = await seguimientoDispositivoService.addSituacionDispositivo(medidaId, {
+                tipo_situacion: tipoSituacion,
+                fecha: fechaSituacion,
+                observaciones: observaciones || undefined
+            })
+
+            // Reset form
+            setTipoSituacion('AUTORIZACION')
+            setFechaSituacion('')
+            setObservaciones('')
+
+            // Add new situación to local state instead of refetching
+            setSituaciones(prev => [savedSituacion, ...prev])
+        } catch (error) {
+            // Error handled by apiService
+            console.error('Error saving situación:', error)
+        }
+    }
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        })
+    }
+
+    const formatDateTime = (dateString: string) => {
+        const date = new Date(dateString)
+        return date.toLocaleString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    }
 
     return (
         <Box>
             <Typography variant="h6" align="center" sx={{ fontWeight: 600, mb: 2 }}>
                 Situación del NNyA en Residencia
             </Typography>
-            <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+
+            {/* Form to add new situación */}
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
                 <Grid container spacing={2}>
                     <Grid item xs={12}>
                         <FormControl component="fieldset">
                             <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                                Tipo de Situación
+                                Tipo de Situación *
                             </Typography>
                             <RadioGroup
                                 row
                                 value={tipoSituacion}
-                                onChange={(e) => setTipoSituacion(e.target.value as 'AUTORIZACION' | 'PERMISO' | 'PERMISO_PROLONGADO')}
+                                onChange={(e) => setTipoSituacion(e.target.value as TipoSituacion)}
                             >
                                 <FormControlLabel value="AUTORIZACION" control={<Radio />} label="Autorización" />
                                 <FormControlLabel value="PERMISO" control={<Radio />} label="Permiso" />
@@ -196,12 +270,18 @@ const SituacionResidenciaSection = () => {
                     <Grid item xs={12} md={6}>
                         <TextField
                             fullWidth
+                            required
                             type="date"
                             label="Fecha"
                             value={fechaSituacion}
                             onChange={(e) => setFechaSituacion(e.target.value)}
                             size="small"
                             InputLabelProps={{ shrink: true }}
+                            inputProps={{
+                                max: today // Prevent future dates
+                            }}
+                            helperText="La fecha no puede ser futura (requerido)"
+                            error={!fechaSituacion}
                         />
                     </Grid>
                     <Grid item xs={12}>
@@ -212,12 +292,15 @@ const SituacionResidenciaSection = () => {
                             label="Observaciones"
                             value={observaciones}
                             onChange={(e) => setObservaciones(e.target.value)}
+                            placeholder="Detalles adicionales sobre la situación (opcional)"
                         />
                     </Grid>
                     <Grid item xs={12}>
                         <Button
                             variant="contained"
                             color="primary"
+                            onClick={handleSaveSituacion}
+                            disabled={!fechaSituacion}
                             sx={{ textTransform: 'none', borderRadius: 2 }}
                         >
                             Guardar Situación
@@ -225,6 +308,67 @@ const SituacionResidenciaSection = () => {
                     </Grid>
                 </Grid>
             </Paper>
+
+            {/* List of saved situaciones */}
+            <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                    Historial de Situaciones
+                </Typography>
+                {loading ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                        Cargando situaciones...
+                    </Typography>
+                ) : situaciones.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                        No hay situaciones registradas
+                    </Typography>
+                ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {situaciones.map((situacion) => (
+                            <Card key={situacion.id} elevation={1} sx={{ borderRadius: 2 }}>
+                                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} md={4}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                Tipo
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                                                {situacion.tipo_situacion_display}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={12} md={3}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                Fecha
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                                                {formatDate(situacion.fecha)}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={12} md={5}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                Fecha de Registro
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {situacion.fecha_registro ? formatDateTime(situacion.fecha_registro) : '-'}
+                                            </Typography>
+                                        </Grid>
+                                        {situacion.observaciones && (
+                                            <Grid item xs={12}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                                    Observaciones
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    {situacion.observaciones}
+                                                </Typography>
+                                            </Grid>
+                                        )}
+                                    </Grid>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
+                )}
+            </Box>
         </Box>
     )
 }
@@ -315,11 +459,13 @@ const NotasSeguimientoSection = () => {
 }
 
 interface ResidenciasTabProps {
+    medidaId: number // Required for API calls
     demandaData?: any // Full demanda data from the full-detail endpoint
     personaId?: number // Optional specific persona ID to use
 }
 
 export const ResidenciasTab: React.FC<ResidenciasTabProps> = ({
+    medidaId,
     demandaData,
     personaId
 }) => {
@@ -458,19 +604,19 @@ export const ResidenciasTab: React.FC<ResidenciasTabProps> = ({
     const renderContent = () => {
         switch (selectedSection) {
             case "situacion-residencia":
-                return <SituacionResidenciaSection />
+                return <SituacionResidenciaSection medidaId={medidaId} />
             case "informacion-educativa":
-                return <InformacionEducativaSection data={educacionData} />
+                return <InformacionEducativaSection medidaId={medidaId} data={educacionData} />
             case "informacion-salud":
-                return <InformacionSaludSection data={saludData} />
+                return <InformacionSaludSection medidaId={medidaId} data={saludData} />
             case "talleres":
-                return <TalleresSection maxTalleres={5} />
+                return <TalleresSection medidaId={medidaId} maxTalleres={5} />
             case "cambio-lugar":
                 return <CambioLugarResguardoSection />
             case "notas-seguimiento":
                 return <NotasSeguimientoSection />
             default:
-                return <SituacionResidenciaSection />
+                return <SituacionResidenciaSection medidaId={medidaId} />
         }
     }
 

@@ -516,10 +516,18 @@ export const MPEHeader: React.FC<MPEHeaderProps> = ({
                     </IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ p: 0, overflow: 'auto' }}>
-                    <ResidenciasTab
-                        demandaData={demandaData}
-                        personaId={medidaData.persona?.id}
-                    />
+                    {medidaId ? (
+                        <ResidenciasTab
+                            key={residenciasModalOpen ? 'open' : 'closed'} // Force remount on modal open
+                            medidaId={medidaId}
+                            demandaData={demandaData}
+                            personaId={medidaData.persona?.id}
+                        />
+                    ) : (
+                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                            <Typography color="error">Error: medidaId no disponible</Typography>
+                        </Box>
+                    )}
                 </DialogContent>
             </Dialog>
 

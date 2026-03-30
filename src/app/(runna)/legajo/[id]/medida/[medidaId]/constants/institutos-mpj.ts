@@ -1,6 +1,20 @@
 /**
  * Instituto and Sector options for MPJ SEGUIMIENTO EN DISPOSITIVO
  * Data source: https://docs.google.com/spreadsheets/d/1qwbevOLXnB-87EzPlGbyIU1KvWwM7asr5GWZkYmWWKk/edit?usp=sharing
+ *
+ * @deprecated This file is deprecated as of API v2.0 (2026-03-30)
+ *
+ * Instituto and Sector dropdowns are no longer part of Situación del NNyA in v2.0
+ * The new API uses a simplified structure with tipo_situacion enum instead of
+ * instituto/sector relationships.
+ *
+ * The v2.0 SituacionNNyA only includes:
+ * - tipo_situacion (AUTORIZACION | PERMISO | PERMISO_PROLONGADO)
+ * - fecha (required, cannot be future)
+ * - observaciones (optional)
+ *
+ * This file is kept for historical reference and backward compatibility only.
+ * Do not use in new implementations.
  */
 
 import type { InstitutoOption } from '../types/seguimiento-dispositivo'

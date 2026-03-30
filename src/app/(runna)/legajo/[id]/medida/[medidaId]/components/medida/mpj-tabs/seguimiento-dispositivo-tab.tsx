@@ -28,9 +28,11 @@ import { InformacionEducativaSection } from "../shared/InformacionEducativaSecti
 import { InformacionSaludSection } from "../shared/InformacionSaludSection"
 import { TalleresSection } from "../shared/TalleresSection"
 import { INSTITUTOS_MPJ, getSectoresByInstituto } from "../../../constants/institutos-mpj"
-import type { SituacionInstitutoMPJ, CambioLugarResguardo, NotaSeguimiento } from "../../../types/seguimiento-dispositivo"
+import type { SituacionInstitutoMPJ, CambioLugarResguardo, NotaSeguimiento, TipoSituacion, SituacionNNyA } from "../../../types/seguimiento-dispositivo"
 import { mapEducacionFromDemanda, mapSaludFromDemandaEnhanced } from "../../../utils/seguimiento-mapper"
-import { useMemo } from "react"
+import { useMemo, useEffect } from "react"
+import { seguimientoDispositivoService } from "../../../api/seguimiento-dispositivo-api-service"
+import { toast } from "react-toastify"
 
 // Mock data for testing - replace with API calls
 const mockCambiosResguardo: CambioLugarResguardo[] = [
@@ -43,20 +45,78 @@ const mockNotas: NotaSeguimiento[] = [
   { id: 2, fecha: "2025-02-15", detalle: "Seguimiento mensual", autor: "María González" },
 ]
 
-// Situación del NNyA en Instituto (MPJ specific)
-const SituacionInstitutoSection = () => {
-  const [instituto, setInstituto] = useState("")
-  const [sector, setSector] = useState("")
-  const [permiso, setPermiso] = useState(false)
-  const [visitaRecibida, setVisitaRecibida] = useState<'SI' | 'NO' | null>(null)
-  const [fechaVisita, setFechaVisita] = useState("")
-  const [observaciones, setObservaciones] = useState("")
-  const [sectoresDisponibles, setSectoresDisponibles] = useState<string[]>([])
+// Situación del NNyA en Instituto (MPJ specific) - API v2.0
+const SituacionInstitutoSection = ({ medidaId }: { medidaId: number }) => {
+  const [tipoSituacion, setTipoSituacion] = useState<TipoSituacion>('AUTORIZACION')
+  const [fecha, setFecha] = useState('')
+  const [observaciones, setObservaciones] = useState('')
+  const [situaciones, setSituaciones] = useState<SituacionNNyA[]>([])
+  const [loading, setLoading] = useState(false)
+  const today = new Date().toISOString().split('T')[0]
 
-  const handleInstitutoChange = (institutoId: string) => {
-    setInstituto(institutoId)
-    setSector("") // Reset sector when instituto changes
-    setSectoresDisponibles(getSectoresByInstituto(institutoId))
+  // Fetch existing situaciones on mount
+  useEffect(() => {
+    fetchSituaciones()
+  }, [medidaId])
+
+  const fetchSituaciones = async () => {
+    setLoading(true)
+    try {
+      const data = await seguimientoDispositivoService.listSituaciones(medidaId)
+      // Ensure data is an array
+      setSituaciones(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error fetching situaciones:', error)
+      setSituaciones([]) // Set empty array on error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!fecha) {
+      toast.error('La fecha es requerida')
+      return
+    }
+
+    try {
+      const savedSituacion = await seguimientoDispositivoService.addSituacionDispositivo(medidaId, {
+        tipo_situacion: tipoSituacion,
+        fecha: fecha,
+        observaciones: observaciones || undefined
+      })
+
+      // Reset form
+      setTipoSituacion('AUTORIZACION')
+      setFecha('')
+      setObservaciones('')
+
+      // Add new situación to local state instead of refetching
+      setSituaciones(prev => [savedSituacion, ...prev])
+    } catch (error) {
+      // Error handled by apiService
+      console.error('Error saving situación:', error)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  }
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   return (
@@ -64,82 +124,60 @@ const SituacionInstitutoSection = () => {
       <Typography variant="h6" align="center" sx={{ fontWeight: 600, mb: 2 }}>
         Situación del NNyA en Instituto
       </Typography>
-      <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+
+      {/* Form to add new situación */}
+      <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Instituto</InputLabel>
-              <Select
-                value={instituto}
-                onChange={(e) => handleInstitutoChange(e.target.value)}
-                label="Instituto"
-              >
-                <MenuItem value="">- Seleccionar -</MenuItem>
-                {INSTITUTOS_MPJ.map((inst) => (
-                  <MenuItem key={inst.id} value={inst.id}>
-                    {inst.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Sector</InputLabel>
-              <Select
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                label="Sector"
-                disabled={!instituto}
-              >
-                <MenuItem value="">- Seleccionar -</MenuItem>
-                {sectoresDisponibles.map((sec) => (
-                  <MenuItem key={sec} value={sec}>
-                    {sec}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={permiso}
-                  onChange={(e) => setPermiso(e.target.checked)}
-                />
-              }
-              label="Permiso Otorgado"
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Box>
+          {/* Radio buttons for tipo_situacion */}
+          <Grid item xs={12}>
+            <FormControl component="fieldset">
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Visita Recibida
+                Tipo de Situación *
               </Typography>
               <RadioGroup
                 row
-                value={visitaRecibida || ''}
-                onChange={(e) => setVisitaRecibida(e.target.value as 'SI' | 'NO')}
+                value={tipoSituacion}
+                onChange={(e) => setTipoSituacion(e.target.value as TipoSituacion)}
               >
-                <FormControlLabel value="SI" control={<Radio />} label="Sí" />
-                <FormControlLabel value="NO" control={<Radio />} label="No" />
+                <FormControlLabel
+                  value="AUTORIZACION"
+                  control={<Radio />}
+                  label="Autorización"
+                />
+                <FormControlLabel
+                  value="PERMISO"
+                  control={<Radio />}
+                  label="Permiso"
+                />
+                <FormControlLabel
+                  value="PERMISO_PROLONGADO"
+                  control={<Radio />}
+                  label="Permiso Prolongado"
+                />
               </RadioGroup>
-            </Box>
+            </FormControl>
           </Grid>
-          {visitaRecibida === 'SI' && (
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Fecha de Visita"
-                value={fechaVisita}
-                onChange={(e) => setFechaVisita(e.target.value)}
-                size="small"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          )}
+
+          {/* Fecha field with validation */}
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              required
+              type="date"
+              label="Fecha"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              size="small"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                max: today // Prevent future dates
+              }}
+              helperText="La fecha no puede ser futura (requerido)"
+              error={!fecha}
+            />
+          </Grid>
+
+          {/* Observaciones */}
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -148,12 +186,17 @@ const SituacionInstitutoSection = () => {
               label="Observaciones"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Detalles adicionales sobre la situación (opcional)"
             />
           </Grid>
+
+          {/* Save button */}
           <Grid item xs={12}>
             <Button
               variant="contained"
               color="primary"
+              onClick={handleSave}
+              disabled={!fecha}
               sx={{ textTransform: 'none', borderRadius: 2 }}
             >
               Guardar Situación
@@ -161,6 +204,67 @@ const SituacionInstitutoSection = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      {/* List of saved situaciones */}
+      <Box>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+          Historial de Situaciones
+        </Typography>
+        {loading ? (
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+            Cargando situaciones...
+          </Typography>
+        ) : situaciones.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+            No hay situaciones registradas
+          </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {situaciones.map((situacion) => (
+              <Card key={situacion.id} elevation={1} sx={{ borderRadius: 2 }}>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        Tipo
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {situacion.tipo_situacion_display}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        Fecha
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {formatDate(situacion.fecha)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={5}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        Fecha de Registro
+                      </Typography>
+                      <Typography variant="body2">
+                        {situacion.fecha_registro ? formatDateTime(situacion.fecha_registro) : '-'}
+                      </Typography>
+                    </Grid>
+                    {situacion.observaciones && (
+                      <Grid item xs={12}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                          Observaciones
+                        </Typography>
+                        <Typography variant="body2">
+                          {situacion.observaciones}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
+      </Box>
     </Box>
   )
 }
@@ -356,11 +460,13 @@ const NotasSeguimientoSection = () => {
 
 // Main MPJ Seguimiento Dispositivo Tab
 interface SeguimientoDispositivoMPJProps {
+  medidaId: number // Required for API calls
   demandaData?: any // Full demanda data from the full-detail endpoint
   personaId?: number // Optional specific persona ID to use
 }
 
 export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps> = ({
+  medidaId,
   demandaData,
   personaId
 }) => {
@@ -389,19 +495,19 @@ export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps>
   const renderContent = () => {
     switch (selectedSection) {
       case "situacion-instituto":
-        return <SituacionInstitutoSection />
+        return <SituacionInstitutoSection medidaId={medidaId} />
       case "informacion-educativa":
-        return <InformacionEducativaSection data={educacionData} />
+        return <InformacionEducativaSection medidaId={medidaId} data={educacionData} />
       case "informacion-salud":
-        return <InformacionSaludSection data={saludData} />
+        return <InformacionSaludSection medidaId={medidaId} data={saludData} />
       case "talleres":
-        return <TalleresSection maxTalleres={5} />
+        return <TalleresSection medidaId={medidaId} maxTalleres={5} />
       case "cambio-lugar":
         return <CambioLugarResguardoSection />
       case "notas-seguimiento":
         return <NotasSeguimientoSection />
       default:
-        return <SituacionInstitutoSection />
+        return <SituacionInstitutoSection medidaId={medidaId} />
     }
   }
 

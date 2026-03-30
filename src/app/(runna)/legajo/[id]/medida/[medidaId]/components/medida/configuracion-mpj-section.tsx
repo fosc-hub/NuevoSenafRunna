@@ -1,13 +1,13 @@
 "use client"
 
 /**
- * ConfiguracionMPESection Component
+ * ConfiguracionMPJSection Component
  *
- * Displays and allows editing of MPE device configuration.
+ * Displays and allows editing of MPJ device configuration.
  * Shows tipo_dispositivo, subtipo_dispositivo (institution/family),
  * and configuration metadata (date, user).
  *
- * Only rendered when tipo_medida === 'MPE'
+ * Only rendered when tipo_medida === 'MPJ'
  */
 
 import React, { useState, useEffect } from "react"
@@ -48,7 +48,7 @@ import { formatDateLocaleAR } from "@/utils/dateUtils"
 // INTERFACES
 // ============================================================================
 
-interface ConfiguracionMPESectionProps {
+interface ConfiguracionMPJSectionProps {
   medidaId: number
   configuracion: ConfiguracionDispositivoMPE | null | undefined
   onConfigUpdated?: () => void
@@ -64,7 +64,7 @@ interface TipoDispositivo {
   id: number
   nombre: string
   categoria?: string
-  subtipos?: SubtipoDispositivo[] // Nested subtipos from GET /api/tipos-dispositivo/?categoria=MPE
+  subtipos?: SubtipoDispositivo[] // Nested subtipos from GET /api/tipos-dispositivo/?categoria=MPJ
 }
 
 interface UpdateConfiguracionRequest {
@@ -77,18 +77,18 @@ interface UpdateConfiguracionRequest {
 // ============================================================================
 
 /**
- * Fetch tipos de dispositivo for MPE
- * GET /api/tipos-dispositivo/?categoria=MPE
+ * Fetch tipos de dispositivo for MPJ
+ * GET /api/tipos-dispositivo/?categoria=MPJ
  */
-const getTiposDispositivoMPE = async (): Promise<TipoDispositivo[]> => {
+const getTiposDispositivoMPJ = async (): Promise<TipoDispositivo[]> => {
   try {
     const response = await axiosInstance.get<TipoDispositivo[]>('/tipos-dispositivo/', {
-      params: { categoria: 'MPE' }
+      params: { categoria: 'MPJ' }
     })
-    console.log('[ConfiguracionMPE] Tipos dispositivo MPE loaded:', response.data)
+    console.log('[ConfiguracionMPJ] Tipos dispositivo MPJ loaded:', response.data)
     return response.data
   } catch (error) {
-    console.error('[ConfiguracionMPE] Error loading tipos dispositivo:', error)
+    console.error('[ConfiguracionMPJ] Error loading tipos dispositivo:', error)
     throw error
   }
 }
@@ -128,7 +128,7 @@ interface UpdateConfiguracionResponse {
  * API Error codes from the new endpoint
  */
 const ERROR_MESSAGES: Record<string, string> = {
-  TIPO_MEDIDA_INVALIDO: 'Esta medida no es de tipo MPE',
+  TIPO_MEDIDA_INVALIDO: 'Esta medida no es de tipo MPJ',
   DATOS_REQUERIDOS: 'Debe proporcionar al menos un campo para actualizar',
   TIPO_DISPOSITIVO_INVALIDO: 'El tipo de dispositivo seleccionado no existe o está inactivo',
   SUBTIPO_DISPOSITIVO_INVALIDO: 'El subtipo de dispositivo seleccionado no existe o está inactivo',
@@ -144,7 +144,7 @@ const ERROR_MESSAGES: Record<string, string> = {
  * This endpoint allows editing tipo_dispositivo and subtipo_dispositivo
  * independently of the intervention state (works with BORRADOR, ENVIADO, APROBADO, RECHAZADO)
  */
-const updateConfiguracionMPE = async (
+const updateConfiguracionMPJ = async (
   medidaId: number,
   data: UpdateConfiguracionRequest
 ): Promise<UpdateConfiguracionResponse> => {
@@ -159,7 +159,7 @@ const updateConfiguracionMPE = async (
 // MAIN COMPONENT
 // ============================================================================
 
-export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = ({
+export const ConfiguracionMPJSection: React.FC<ConfiguracionMPJSectionProps> = ({
   medidaId,
   configuracion,
   onConfigUpdated,
@@ -176,22 +176,22 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
     error: tiposError,
     refetch: refetchTipos,
   } = useQuery({
-    queryKey: ['tipos-dispositivo'],
-    queryFn: getTiposDispositivoMPE,
+    queryKey: ['tipos-dispositivo-mpj'],
+    queryFn: getTiposDispositivoMPJ,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   // Log error for debugging
   useEffect(() => {
     if (tiposError) {
-      console.error('[ConfiguracionMPE] Error fetching tipos:', tiposError)
+      console.error('[ConfiguracionMPJ] Error fetching tipos:', tiposError)
     }
   }, [tiposError])
 
   // Refetch tipos when dialog opens if data is empty
   useEffect(() => {
     if (dialogOpen && tiposDispositivo.length === 0 && !isLoadingTipos && !tiposError) {
-      console.log('[ConfiguracionMPE] Dialog opened with empty tipos, refetching...')
+      console.log('[ConfiguracionMPJ] Dialog opened with empty tipos, refetching...')
       refetchTipos()
     }
   }, [dialogOpen, tiposDispositivo.length, isLoadingTipos, tiposError, refetchTipos])
@@ -205,7 +205,7 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
   // PATCH /api/medidas/{medida_id}/intervenciones/configuracion-dispositivo/
   const updateMutation = useMutation({
     mutationFn: (data: UpdateConfiguracionRequest) => {
-      return updateConfiguracionMPE(medidaId, data)
+      return updateConfiguracionMPJ(medidaId, data)
     },
     onSuccess: (response) => {
       toast.success(response.mensaje || 'Configuración de dispositivo actualizada')
@@ -284,7 +284,7 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
       <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.dark', display: "flex", alignItems: "center", gap: 1 }}>
-            <HomeIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Dispositivo MPE
+            <HomeIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Dispositivo MPJ
           </Typography>
           <Button
             variant={isConfigured ? "outlined" : "contained"}
@@ -384,7 +384,7 @@ export const ConfiguracionMPESection: React.FC<ConfiguracionMPESectionProps> = (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <HomeIcon color="primary" />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Configuración de Dispositivo MPE
+              Configuración de Dispositivo MPJ
             </Typography>
           </Box>
           <IconButton

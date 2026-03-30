@@ -18,7 +18,9 @@ import AssignmentIcon from "@mui/icons-material/Assignment"
 import WarningIcon from "@mui/icons-material/Warning"
 import { useState } from "react"
 import { SeguimientoDispositivoMPJ } from "./mpj-tabs/seguimiento-dispositivo-tab"
+import { ConfiguracionMPJSection } from "./configuracion-mpj-section"
 import { Divider, Stack } from "@mui/material"
+import type { ConfiguracionDispositivoMPE } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
 interface MPJHeaderProps {
   medidaData: {
@@ -43,6 +45,8 @@ interface MPJHeaderProps {
     tipo_medida_mpj?: string
     subtipo_medida_mpj?: string
   }
+  /** Medida ID for API calls */
+  medidaId?: number
   demandaData?: any // Full demanda data from the full-detail endpoint
   estados?: {
     apertura: boolean
@@ -50,9 +54,21 @@ interface MPJHeaderProps {
     cese: boolean
   }
   onFieldChange?: (field: string, value: string) => void
+  /** Callback to refresh medida data after configuration update */
+  onMedidaRefetch?: () => void
+  /** Configuración de dispositivo MPJ desde el backend */
+  configuracionDispositivoMpj?: ConfiguracionDispositivoMPE | null
 }
 
-export const MPJHeader: React.FC<MPJHeaderProps> = ({ medidaData, demandaData, estados, onFieldChange }) => {
+export const MPJHeader: React.FC<MPJHeaderProps> = ({
+  medidaData,
+  medidaId,
+  demandaData,
+  estados,
+  onFieldChange,
+  onMedidaRefetch,
+  configuracionDispositivoMpj,
+}) => {
   const [seguimientoModalOpen, setSeguimientoModalOpen] = useState(false)
   const [tipoMedidaMPJ, setTipoMedidaMPJ] = useState(medidaData.tipo_medida_mpj || '')
   const [subtipoMedidaMPJ, setSubtipoMedidaMPJ] = useState(medidaData.subtipo_medida_mpj || '')
@@ -278,7 +294,7 @@ export const MPJHeader: React.FC<MPJHeaderProps> = ({ medidaData, demandaData, e
         </Grid>
 
         {/* MPJ Specific Toggle Section */}
-        <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200" }}>
+        <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200", mb: 3 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, color: 'primary.dark', display: "flex", alignItems: "center", gap: 1 }}>
             <GavelIcon sx={{ fontSize: "1.2rem" }} /> Configuración de Medida MPJ
           </Typography>
@@ -316,6 +332,15 @@ export const MPJHeader: React.FC<MPJHeaderProps> = ({ medidaData, demandaData, e
             </Grid>
           </Grid>
         </Box>
+
+        {/* MPJ Device Configuration Section */}
+        {medidaId && (
+          <ConfiguracionMPJSection
+            medidaId={medidaId}
+            configuracion={configuracionDispositivoMpj}
+            onConfigUpdated={onMedidaRefetch}
+          />
+        )}
       </Box>
 
       {/* Seguimiento Dispositivo Modal */}

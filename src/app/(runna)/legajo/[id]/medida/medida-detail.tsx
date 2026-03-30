@@ -584,8 +584,11 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           <>
             <MPJHeader
               medidaData={medidaData}
+              medidaId={medidaApiData?.id}
               demandaData={demandaData}
               estados={{ apertura: true, proceso: false, cese: false }}
+              onMedidaRefetch={refetchMedida}
+              configuracionDispositivoMpj={medidaApiData?.configuracion_dispositivo_mpe}
             />
 
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>

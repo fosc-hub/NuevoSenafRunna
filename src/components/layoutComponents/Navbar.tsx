@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState, useMemo } from "react"
-import { Bell, LogOut, ChevronDown } from "lucide-react"
+import { Bell, LogOut, ChevronDown, BookOpen } from "lucide-react"
 import UserAvatar from "./UserAvatar"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -220,6 +220,7 @@ export default function Header() {
         <div className="flex items-center space-x-3">
           <div className="w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
           <div className="w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
+          <div className="w-8 h-8 bg-white/20 rounded-full animate-pulse"></div>
           <div className="w-6 h-6 bg-white/20 rounded-full animate-pulse"></div>
           <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse"></div>
         </div>
@@ -270,6 +271,26 @@ export default function Header() {
             Bandeja de legajos
           </a>
         </div>
+
+        {/* Tutorial */}
+        <a
+          href="https://capacitacion-tutorial-runna-umber.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Manual de Capacitación"
+          className="p-2 rounded-full transition-all duration-200 hover:scale-110 flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 188, 212, 0.25)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
+          }}
+        >
+          <BookOpen size={20} />
+        </a>
 
         {/* Notificaciones */}
         <div className="relative">

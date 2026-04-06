@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -264,6 +264,8 @@ export default function PersonaDetailModalEnhanced({
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState<PersonaFormState>(initialFormState)
+  // Store initial values to track changes for PATCH requests
+  const initialFormValues = useRef<PersonaFormState>(initialFormState)
 
   // Extract data
   const persona = legajoData?.persona
@@ -328,7 +330,7 @@ export default function PersonaDetailModalEnhanced({
     const edu = educacion as any
     const salud = saludData?.cobertura_medica as any
 
-    setFormData({
+    const initialData: PersonaFormState = {
       nombre: nnyaData?.nombre || persona?.nombre || "",
       nombre_autopercibido: nnyaData?.nombre_autopercibido || persona?.nombre_autopercibido || "",
       apellido: nnyaData?.apellido || persona?.apellido || "",
@@ -371,12 +373,17 @@ export default function PersonaDetailModalEnhanced({
       observaciones_medicas: salud?.observaciones || "",
       // Vulnerability
       condiciones_vulnerabilidad: vulnerabilidadData?.condiciones_vulnerabilidad?.map((c: any) => c.condicion_vulnerabilidad?.id || c.id) || [],
-    })
+    }
+
+    setFormData(initialData)
+    return initialData
   }
 
   // Handle entering edit mode
   const handleEnterEditMode = () => {
-    initializeFormData()
+    const initialData = initializeFormData()
+    // Store initial values for change detection
+    initialFormValues.current = initialData
     setIsEditing(true)
   }
 
@@ -391,6 +398,136 @@ export default function PersonaDetailModalEnhanced({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  /**
+   * Extract only modified fields by comparing current formData with initial values
+   * This ensures PATCH semantics - only send changed fields
+   */
+  const getModifiedFields = (): NNyAUpdateRequest => {
+    const initial = initialFormValues.current
+    const current = formData
+    const modified: NNyAUpdateRequest = {}
+
+    // Helper to parse integer or return null
+    const parseIntOrNull = (value: string | number | null | undefined): number | null => {
+      if (value === null || value === undefined || value === "") return null
+      const parsed = typeof value === "number" ? value : parseInt(value, 10)
+      return isNaN(parsed) ? null : parsed
+    }
+
+    // Helper to check if value changed (handles empty strings vs null)
+    const hasChanged = (currentVal: any, initialVal: any): boolean => {
+      // Normalize empty strings and null
+      const normalizeCurrent = currentVal === "" ? null : currentVal
+      const normalizeInitial = initialVal === "" ? null : initialVal
+      return normalizeCurrent !== normalizeInitial
+    }
+
+    // Check personal info fields
+    if (hasChanged(current.nombre, initial.nombre)) {
+      modified.nombre = current.nombre || undefined
+    }
+    if (hasChanged(current.nombre_autopercibido, initial.nombre_autopercibido)) {
+      modified.nombre_autopercibido = current.nombre_autopercibido || null
+    }
+    if (hasChanged(current.apellido, initial.apellido)) {
+      modified.apellido = current.apellido || undefined
+    }
+    if (hasChanged(current.fecha_nacimiento, initial.fecha_nacimiento)) {
+      modified.fecha_nacimiento = current.fecha_nacimiento || null
+    }
+    if (hasChanged(current.edad_aproximada, initial.edad_aproximada)) {
+      modified.edad_aproximada = parseIntOrNull(current.edad_aproximada)
+    }
+    if (hasChanged(current.nacionalidad, initial.nacionalidad)) {
+      modified.nacionalidad = current.nacionalidad || null
+    }
+    if (hasChanged(current.dni, initial.dni)) {
+      modified.dni = parseIntOrNull(current.dni)
+    }
+    if (hasChanged(current.situacion_dni, initial.situacion_dni)) {
+      modified.situacion_dni = current.situacion_dni || null
+    }
+    if (hasChanged(current.genero, initial.genero)) {
+      modified.genero = current.genero || null
+    }
+    if (hasChanged(current.telefono, initial.telefono)) {
+      modified.telefono = current.telefono || null
+    }
+    if (hasChanged(current.observaciones, initial.observaciones)) {
+      modified.observaciones = current.observaciones || null
+    }
+
+    // Check location fields - only include localizacion if any field changed
+    const localizacionChanged =
+      hasChanged(current.calle, initial.calle) ||
+      hasChanged(current.numero, initial.numero) ||
+      hasChanged(current.piso, initial.piso) ||
+      hasChanged(current.departamento, initial.departamento) ||
+      hasChanged(current.barrio, initial.barrio) ||
+      hasChanged(current.localidad, initial.localidad) ||
+      hasChanged(current.cpc, initial.cpc) ||
+      hasChanged(current.referencia_geo, initial.referencia_geo) ||
+      hasChanged(current.mza, initial.mza) ||
+      hasChanged(current.lote, initial.lote)
+
+    if (localizacionChanged) {
+      modified.localizacion = {
+        calle: current.calle || undefined,
+        casa_nro: current.numero || "",
+        piso: current.piso || undefined,
+        departamento: current.departamento || undefined,
+        barrio: current.barrio,
+        localidad: current.localidad,
+        cpc: current.cpc,
+        referencia_geo: current.referencia_geo || undefined,
+        mza: parseIntOrNull(current.mza),
+        lote: parseIntOrNull(current.lote),
+      }
+    }
+
+    // Check education fields - only include educacion if any field changed
+    const educacionChanged =
+      hasChanged(current.institucion_educativa, initial.institucion_educativa) ||
+      hasChanged(current.nivel_alcanzado, initial.nivel_alcanzado) ||
+      hasChanged(current.esta_escolarizado, initial.esta_escolarizado) ||
+      hasChanged(current.ultimo_cursado, initial.ultimo_cursado) ||
+      hasChanged(current.tipo_escuela, initial.tipo_escuela) ||
+      hasChanged(current.comentarios_educativos, initial.comentarios_educativos)
+
+    if (educacionChanged) {
+      modified.educacion = {
+        institucion_educativa: current.institucion_educativa,
+        nivel_alcanzado: current.nivel_alcanzado || null,
+        esta_escolarizado: current.esta_escolarizado,
+        ultimo_cursado: current.ultimo_cursado || null,
+        tipo_escuela: current.tipo_escuela || null,
+        comentarios_educativos: current.comentarios_educativos || null,
+      }
+    }
+
+    // Check health/cobertura_medica fields - only include if any field changed
+    const coberturaMedicaChanged =
+      hasChanged(current.institucion_sanitaria, initial.institucion_sanitaria) ||
+      hasChanged(current.obra_social, initial.obra_social) ||
+      hasChanged(current.intervencion, initial.intervencion) ||
+      hasChanged(current.auh, initial.auh) ||
+      hasChanged(current.medico_cabecera, initial.medico_cabecera) ||
+      hasChanged(current.observaciones_medicas, initial.observaciones_medicas)
+
+    if (coberturaMedicaChanged) {
+      modified.cobertura_medica = {
+        institucion_sanitaria: current.institucion_sanitaria,
+        obra_social: current.obra_social || null,
+        intervencion: current.intervencion || null,
+        auh: current.auh,
+        medico_cabecera: current.medico_cabecera,
+        observaciones: current.observaciones_medicas || null,
+      }
+    }
+
+    return modified
+  }
+
   // Handle saving changes
   const handleSave = async () => {
     if (!legajo?.id) {
@@ -400,66 +537,40 @@ export default function PersonaDetailModalEnhanced({
 
     setIsSaving(true)
     try {
-      // Helper to parse integer or return null
-      const parseIntOrNull = (value: string | number | null | undefined): number | null => {
-        if (value === null || value === undefined || value === "") return null
-        const parsed = typeof value === "number" ? value : parseInt(value, 10)
-        return isNaN(parsed) ? null : parsed
+      // Get only the modified fields for PATCH semantics
+      const updateData = getModifiedFields()
+
+      console.log("[PersonaDetailModal] Sending PATCH with modified fields only:", updateData)
+
+      // Only send PATCH if there are actually modified fields
+      if (Object.keys(updateData).length === 0) {
+        toast.info("No hay cambios para guardar")
+        setIsEditing(false)
+        setIsSaving(false)
+        return
       }
 
-      const updateData: NNyAUpdateRequest = {
-        nombre: formData.nombre || undefined,
-        nombre_autopercibido: formData.nombre_autopercibido || null,
-        apellido: formData.apellido || undefined,
-        fecha_nacimiento: formData.fecha_nacimiento || null,
-        edad_aproximada: parseIntOrNull(formData.edad_aproximada),
-        nacionalidad: formData.nacionalidad || null,
-        dni: parseIntOrNull(formData.dni),
-        situacion_dni: formData.situacion_dni || null,
-        genero: formData.genero || null,
-        telefono: formData.telefono || null,
-        observaciones: formData.observaciones || null,
-        localizacion: {
-          calle: formData.calle || undefined,
-          casa_nro: formData.numero || "", // NOT NULL in DB - send empty string if not provided
-          piso: formData.piso || undefined,
-          departamento: formData.departamento || undefined,
-          barrio: formData.barrio, // FK - already number or null
-          localidad: formData.localidad, // FK - already number or null
-          cpc: formData.cpc, // FK - already number or null
-          referencia_geo: formData.referencia_geo || undefined,
-          mza: parseIntOrNull(formData.mza), // Convert to integer
-          lote: parseIntOrNull(formData.lote), // Convert to integer
-        },
-        educacion: {
-          institucion_educativa: formData.institucion_educativa, // FK - already number or null
-          nivel_alcanzado: formData.nivel_alcanzado || null, // Enum key
-          esta_escolarizado: formData.esta_escolarizado,
-          ultimo_cursado: formData.ultimo_cursado || null, // Enum key
-          tipo_escuela: formData.tipo_escuela || null, // Enum key
-          comentarios_educativos: formData.comentarios_educativos || null,
-        },
-        cobertura_medica: {
-          institucion_sanitaria: formData.institucion_sanitaria, // FK - already number or null
-          obra_social: formData.obra_social || null, // Enum key
-          intervencion: formData.intervencion || null, // Enum key
-          auh: formData.auh,
-          medico_cabecera: formData.medico_cabecera, // FK - integer or null
-          observaciones: formData.observaciones_medicas || null,
-        },
-      }
-
-      await updateNNyAData(legajo.id, updateData)
+      const updatedNNyAData = await updateNNyAData(legajo.id, updateData)
+      console.log("[PersonaDetailModal] Received PATCH response:", updatedNNyAData)
       toast.success("Datos actualizados correctamente")
 
-      // Invalidate related queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["legajo-detail"] })
-      queryClient.invalidateQueries({ queryKey: ["nnya-data"] })
+      // Immediately update the nnya-data cache with the response for instant UI update
+      queryClient.setQueryData(["nnya-data", legajo.id], updatedNNyAData)
+
+      // Invalidate and refetch legajo-detail to update persona data in parent
+      // This ensures the dialog header and other persona-based displays update
+      await queryClient.invalidateQueries({
+        queryKey: ["legajo-detail"],
+        refetchType: "active"
+      })
+
+      // Invalidate related queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["persona-localizacion"] })
       queryClient.invalidateQueries({ queryKey: ["persona-educacion"] })
       queryClient.invalidateQueries({ queryKey: ["persona-cobertura-medica"] })
       queryClient.invalidateQueries({ queryKey: ["persona-condiciones-vulnerabilidad"] })
 
+      // Exit edit mode - component will re-render with updated data
       setIsEditing(false)
     } catch (error: any) {
       console.error("[PersonaDetailModal] Error saving:", error)
@@ -470,12 +581,29 @@ export default function PersonaDetailModalEnhanced({
     }
   }
 
-  // Calculate edad
-  const edad =
-    calcularEdad(persona?.fecha_nacimiento) || persona?.edad_aproximada || persona?.edad_calculada
+  // Create display data that prioritizes nnyaData (most recent) over persona (from prop)
+  // This ensures UI updates immediately when nnyaData cache is updated after PATCH
+  const displayData = {
+    nombre: nnyaData?.nombre || persona?.nombre || "",
+    apellido: nnyaData?.apellido || persona?.apellido || "",
+    nombre_autopercibido: nnyaData?.nombre_autopercibido || persona?.nombre_autopercibido || null,
+    dni: nnyaData?.dni || persona?.dni || null,
+    fecha_nacimiento: nnyaData?.fecha_nacimiento || persona?.fecha_nacimiento || null,
+    edad_aproximada: nnyaData?.edad_aproximada || persona?.edad_aproximada || null,
+    edad_calculada: nnyaData?.edad_calculada || persona?.edad_calculada || null,
+    genero: nnyaData?.genero || persona?.genero || null,
+    nacionalidad: nnyaData?.nacionalidad || persona?.nacionalidad || null,
+    telefono: nnyaData?.telefono || persona?.telefono || null,
+    situacion_dni: nnyaData?.situacion_dni || persona?.situacion_dni || null,
+    observaciones: nnyaData?.observaciones || persona?.observaciones || null,
+  }
 
-  // Get avatar color
-  const avatarColor = getAvatarColor(persona?.nombre)
+  // Calculate edad from display data
+  const edad =
+    calcularEdad(displayData.fecha_nacimiento) || displayData.edad_aproximada || displayData.edad_calculada
+
+  // Get avatar color from display data
+  const avatarColor = getAvatarColor(displayData.nombre)
 
   // Full address for location tab
   const fullAddress = localizacion ? buildFullAddress(localizacion) : "N/A"
@@ -504,19 +632,19 @@ export default function PersonaDetailModalEnhanced({
                 fontWeight: "bold",
               }}
             >
-              {getInitials(persona?.nombre, persona?.apellido)}
+              {getInitials(displayData.nombre, displayData.apellido)}
             </Avatar>
             <Box>
               <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-                {persona?.nombre} {persona?.apellido}
+                {displayData.nombre} {displayData.apellido}
               </Typography>
-              {persona?.nombre_autopercibido && (
+              {displayData.nombre_autopercibido && (
                 <Typography variant="body2" color="text.secondary">
-                  &ldquo;{persona.nombre_autopercibido}&rdquo;
+                  &ldquo;{displayData.nombre_autopercibido}&rdquo;
                 </Typography>
               )}
               <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
-                <Chip label={`DNI: ${persona?.dni || "N/A"}`} size="small" variant="outlined" />
+                <Chip label={`DNI: ${displayData.dni || "N/A"}`} size="small" variant="outlined" />
                 <Chip label={`${edad || "N/A"} años`} size="small" variant="outlined" color="primary" />
                 {legajo?.urgencia?.nombre === "ALTA" && <Chip label="URGENTE" color="error" size="small" />}
                 {asignaciones[0]?.zona && (
@@ -722,23 +850,23 @@ export default function PersonaDetailModalEnhanced({
                   </Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {persona?.nombre} {persona?.apellido}
+                      {displayData.nombre} {displayData.apellido}
                     </Typography>
-                    <IconButton size="small" onClick={() => copyToClipboard(`${persona?.nombre} ${persona?.apellido}`, "Nombre")}>
+                    <IconButton size="small" onClick={() => copyToClipboard(`${displayData.nombre} ${displayData.apellido}`, "Nombre")}>
                       <ContentCopyIcon fontSize="small" />
                     </IconButton>
                   </Box>
                 </Paper>
               </Grid>
 
-              {persona?.nombre_autopercibido && (
+              {displayData.nombre_autopercibido && (
                 <Grid item xs={12} md={6}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Nombre Autopercibido
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {persona.nombre_autopercibido}
+                      {displayData.nombre_autopercibido}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -752,16 +880,16 @@ export default function PersonaDetailModalEnhanced({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <BadgeIcon color="action" />
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {persona?.dni || "No registrado"}
+                      {displayData.dni || "No registrado"}
                     </Typography>
-                    {persona?.dni && (
-                      <IconButton size="small" onClick={() => copyToClipboard(String(persona.dni), "DNI")}>
+                    {displayData.dni && (
+                      <IconButton size="small" onClick={() => copyToClipboard(String(displayData.dni), "DNI")}>
                         <ContentCopyIcon fontSize="small" />
                       </IconButton>
                     )}
                   </Box>
-                  {persona?.situacion_dni && (
-                    <Chip label={persona.situacion_dni} size="small" sx={{ mt: 1 }} variant="outlined" />
+                  {displayData.situacion_dni && (
+                    <Chip label={displayData.situacion_dni} size="small" sx={{ mt: 1 }} variant="outlined" />
                   )}
                 </Paper>
               </Grid>
@@ -774,7 +902,7 @@ export default function PersonaDetailModalEnhanced({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <CalendarTodayIcon color="action" />
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {formatFecha(persona?.fecha_nacimiento)}
+                      {formatFecha(displayData.fecha_nacimiento)}
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -789,7 +917,7 @@ export default function PersonaDetailModalEnhanced({
                     Género
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {persona?.genero || "No especificado"}
+                    {displayData.genero || "No especificado"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -800,7 +928,7 @@ export default function PersonaDetailModalEnhanced({
                     Nacionalidad
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {persona?.nacionalidad || "No especificada"}
+                    {displayData.nacionalidad || "No especificada"}
                   </Typography>
                 </Paper>
               </Grid>
@@ -813,10 +941,10 @@ export default function PersonaDetailModalEnhanced({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <PhoneIcon color="action" />
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {persona?.telefono || "No registrado"}
+                      {displayData.telefono || "No registrado"}
                     </Typography>
-                    {persona?.telefono && (
-                      <IconButton size="small" onClick={() => copyToClipboard(String(persona.telefono), "Teléfono")}>
+                    {displayData.telefono && (
+                      <IconButton size="small" onClick={() => copyToClipboard(String(displayData.telefono), "Teléfono")}>
                         <ContentCopyIcon fontSize="small" />
                       </IconButton>
                     )}
@@ -824,24 +952,24 @@ export default function PersonaDetailModalEnhanced({
                 </Paper>
               </Grid>
 
-              {persona?.observaciones && (
+              {displayData.observaciones && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Observaciones
                     </Typography>
-                    <Typography variant="body1">{persona.observaciones}</Typography>
+                    <Typography variant="body1">{displayData.observaciones}</Typography>
                   </Paper>
                 </Grid>
               )}
 
-              {persona?.fecha_defuncion && (
+              {nnyaData?.fecha_defuncion && (
                 <Grid item xs={12}>
                   <Alert severity="warning" icon={<WarningIcon />}>
                     <Typography variant="subtitle2" gutterBottom>
                       Fecha de Defunción
                     </Typography>
-                    <Typography variant="body2">{formatFecha(persona.fecha_defuncion)}</Typography>
+                    <Typography variant="body2">{formatFecha(nnyaData.fecha_defuncion)}</Typography>
                   </Alert>
                 </Grid>
               )}

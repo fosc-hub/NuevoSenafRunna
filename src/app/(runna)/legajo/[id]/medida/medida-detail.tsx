@@ -79,6 +79,7 @@ const convertMedidaToMedidaData = (
     tipo_display: medida.tipo_medida_display,  // Add display name for proper header rendering
     numero: numeroMedida,
     persona: {
+      id: legajo.persona?.id, // Add persona ID for creating education/health records
       nombre: legajo.persona ? `${legajo.persona.apellido} ${legajo.persona.nombre}` : "N/A",
       dni: legajo.persona?.dni ? String(legajo.persona.dni) : "N/A",
     },

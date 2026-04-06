@@ -44,9 +44,10 @@ export interface SituacionInstitutoMPJ extends SituacionNNyA {
 // Información Educativa (editable fields from origen_demanda)
 export interface InformacionEducativa {
   id?: number
-  nivel_educativo?: string
-  establecimiento?: string
-  grado_curso?: string
+  nivel_educativo?: string // nivel_alcanzado (string key from choices)
+  institucion_educativa_id?: number // FK to TInstitucionEducativa
+  establecimiento?: string // Display name (read-only from backend: institucion_educativa_nombre)
+  grado_curso?: string // ultimo_cursado (string key from choices)
   turno?: string
   rendimiento?: string
   asistencia?: string
@@ -54,19 +55,24 @@ export interface InformacionEducativa {
   fecha_actualizacion?: string
 }
 
-// Información de Salud (editable fields from origen_demanda)
+// Información de Salud (editable fields for seguimiento en dispositivo)
+// Matches /api/medidas/{id}/info-salud/ response (cobertura_medica model)
 export interface InformacionSalud {
   id?: number
-  obra_social?: string
-  centro_salud?: string
-  medico_cabecera?: string
-  medicacion_actual?: string
-  alergias?: string
-  condiciones_preexistentes?: string
-  discapacidad?: string
-  cud?: boolean
+  obra_social?: string // String key from obra_social_choices
+  intervencion?: string // String key from intervencion_choices
+  auh?: boolean
+  institucion_sanitaria_id?: number // FK to TInstitucionSanitaria
+  centro_salud?: string  // Display name (read-only from backend: institucion_sanitaria_nombre)
   observaciones?: string
-  fecha_actualizacion?: string
+}
+
+// Local Centro de Vida (for Cambio de Lugar de Resguardo)
+export interface TLocalCentroVida {
+  id: number
+  nombre: string
+  direccion?: string
+  zona?: any // You can expand this type if needed
 }
 
 // Talleres Recreativos y Sociolaborales
@@ -83,23 +89,32 @@ export interface TallerRecreativo {
 }
 
 // Cambio de Lugar de Resguardo (shared structure)
+// Backend expects lugar_origen and lugar_destino as FKs to TLocalCentroVida
 export interface CambioLugarResguardo {
-  id: number
-  lugar_anterior: string
-  lugar_nuevo: string
+  id?: number
+  lugar_origen?: number // FK to TLocalCentroVida (optional for display)
+  lugar_destino?: number // FK to TLocalCentroVida (optional for display)
+  lugar_origen_nombre?: string // Display name from backend
+  lugar_destino_nombre?: string // Display name from backend
   fecha_cambio: string
   motivo?: string
+  autorizado_por?: string
   adjunto_url?: string
-  nota?: string
+  fecha_registro?: string // Read-only from backend
 }
 
 // Notas de Seguimiento (shared structure)
+// Backend expects titulo and nota
 export interface NotaSeguimiento {
-  id: number
+  id?: number
+  titulo: string
+  nota: string
   fecha: string
-  detalle: string
-  autor?: string
+  autor?: number // User ID from backend
+  autor_nombre?: string // Display name from backend (read-only)
   adjunto_url?: string
+  fecha_registro?: string // Read-only from backend
+  fecha_creacion?: string // Read-only from backend
 }
 
 // Situaciones Críticas (MPE specific - from existing ResidenciasTab)

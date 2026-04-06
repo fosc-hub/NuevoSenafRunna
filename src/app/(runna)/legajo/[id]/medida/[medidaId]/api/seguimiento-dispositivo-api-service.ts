@@ -6,6 +6,7 @@
  */
 
 import { get, create, put, patch, remove, update } from '@/app/api/apiService'
+import axiosInstance from '@/app/api/utils/axiosInstance'
 import { toast } from 'react-toastify'
 import type {
   SeguimientoDispositivoMPE,
@@ -19,6 +20,7 @@ import type {
   CambioLugarResguardo,
   NotaSeguimiento,
   SituacionCritica,
+  TLocalCentroVida,
   CreateSeguimientoRequest,
   UpdateSeguimientoRequest,
   SeguimientoResponse
@@ -164,7 +166,21 @@ class SeguimientoDispositivoApiService {
    */
   async getInformacionEducativa(medidaId: number): Promise<InformacionEducativa | null> {
     try {
-      return await get<InformacionEducativa>(`medidas/${medidaId}/info-educativa/`)
+      const apiData = await get<any>(`medidas/${medidaId}/info-educativa/`)
+
+      // Transform API field names to frontend interface
+      return {
+        id: apiData.id,
+        nivel_educativo: apiData.nivel_alcanzado,
+        institucion_educativa_id: apiData.institucion_educativa_id,
+        establecimiento: apiData.institucion_educativa_nombre,
+        grado_curso: apiData.ultimo_cursado,
+        turno: apiData.turno,
+        rendimiento: apiData.rendimiento,
+        asistencia: apiData.asistencia,
+        observaciones: apiData.comentarios_educativos,
+        fecha_actualizacion: apiData.fecha_actualizacion
+      }
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null // No info educativa yet
@@ -174,16 +190,102 @@ class SeguimientoDispositivoApiService {
   }
 
   /**
+   * Create información educativa (first time)
+   * @version 2.0.0 - POST to /api/educacion/ to create base TEducacion record
+   *
+   * Flow:
+   * 1. GET /api/medidas/{id}/ to extract persona_id
+   * 2. POST /api/educacion/ with persona_id to create base record
+   * 3. PATCH /api/medidas/{id}/info-educativa/ to update with user data
+   */
+  async createInformacionEducativa(medidaId: number, personaId: number, data: Partial<InformacionEducativa>): Promise<InformacionEducativa> {
+    // Step 1: Create base TEducacion record via /api/educacion/
+    const baseEducacionData = {
+      persona: personaId,
+      nivel_alcanzado: data.nivel_educativo || 'PRIMARIO_INCOMPLETO',
+      esta_escolarizado: true,
+      ultimo_cursado: data.grado_curso || '',
+      tipo_escuela: 'PUBLICA',
+      comentarios_educativos: data.observaciones || 'Registro inicial'
+    }
+
+    await create<any>(
+      'educacion/',
+      baseEducacionData,
+      false // No toast for intermediate step
+    )
+
+    // Step 2: Transform frontend data to API format for PATCH
+    const apiData = {
+      nivel_alcanzado: data.nivel_educativo,
+      institucion_educativa_id: data.institucion_educativa_id, // Send ID, not nombre
+      ultimo_cursado: data.grado_curso,
+      turno: data.turno,
+      rendimiento: data.rendimiento,
+      asistencia: data.asistencia,
+      comentarios_educativos: data.observaciones,
+      fecha_actualizacion: data.fecha_actualizacion
+    }
+
+    const response = await axiosInstance.patch<any>(
+      `medidas/${medidaId}/info-educativa/`,
+      apiData
+    )
+
+    toast.success('Información educativa creada exitosamente')
+
+    // Transform response back to frontend format
+    return {
+      id: response.data.id,
+      nivel_educativo: response.data.nivel_alcanzado,
+      establecimiento: response.data.institucion_educativa_nombre,
+      grado_curso: response.data.ultimo_cursado,
+      turno: response.data.turno,
+      rendimiento: response.data.rendimiento,
+      asistencia: response.data.asistencia,
+      observaciones: response.data.comentarios_educativos,
+      fecha_actualizacion: response.data.fecha_actualizacion
+    }
+  }
+
+  /**
    * Update información educativa (partial update)
    * @version 2.0.0 - Now uses PATCH method and updated endpoint
+   * Note: Endpoint is /medidas/{id}/info-educativa/ (no separate record ID)
    */
   async updateInformacionEducativa(medidaId: number, data: Partial<InformacionEducativa>): Promise<InformacionEducativa> {
-    return patch<InformacionEducativa>(
+    // Transform frontend data to API format
+    const apiData = {
+      nivel_alcanzado: data.nivel_educativo,
+      institucion_educativa_id: data.institucion_educativa_id, // Send ID, not nombre
+      ultimo_cursado: data.grado_curso,
+      turno: data.turno,
+      rendimiento: data.rendimiento,
+      asistencia: data.asistencia,
+      comentarios_educativos: data.observaciones,
+      fecha_actualizacion: data.fecha_actualizacion
+    }
+
+    const response = await axiosInstance.patch<any>(
       `medidas/${medidaId}/info-educativa/`,
-      data,
-      true,
-      'Información educativa actualizada'
+      apiData
     )
+
+    toast.success('Información educativa actualizada')
+
+    // Transform response back to frontend format
+    return {
+      id: response.data.id,
+      nivel_educativo: response.data.nivel_alcanzado,
+      institucion_educativa_id: response.data.institucion_educativa_id,
+      establecimiento: response.data.institucion_educativa_nombre,
+      grado_curso: response.data.ultimo_cursado,
+      turno: response.data.turno,
+      rendimiento: response.data.rendimiento,
+      asistencia: response.data.asistencia,
+      observaciones: response.data.comentarios_educativos,
+      fecha_actualizacion: response.data.fecha_actualizacion
+    }
   }
 
   /**
@@ -192,7 +294,19 @@ class SeguimientoDispositivoApiService {
    */
   async getInformacionSalud(medidaId: number): Promise<InformacionSalud | null> {
     try {
-      return await get<InformacionSalud>(`medidas/${medidaId}/info-salud/`)
+      const apiData = await get<any>(`medidas/${medidaId}/info-salud/`)
+
+      // Transform API field names to frontend interface
+      // API returns cobertura_medica model fields
+      return {
+        id: apiData.id,
+        obra_social: apiData.obra_social,
+        intervencion: apiData.intervencion,
+        auh: apiData.auh,
+        institucion_sanitaria_id: apiData.institucion_sanitaria_id,
+        centro_salud: apiData.institucion_sanitaria_nombre,
+        observaciones: apiData.observaciones
+      }
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null // No info salud yet
@@ -202,16 +316,90 @@ class SeguimientoDispositivoApiService {
   }
 
   /**
+   * Create información de salud (first time)
+   * @version 2.0.0 - POST to /api/cobertura-medica/ to create base record
+   *
+   * Flow:
+   * 1. GET /api/medidas/{id}/ to extract persona_id
+   * 2. POST /api/cobertura-medica/ with persona_id to create base record
+   * 3. PATCH /api/medidas/{id}/info-salud/ to update with user data
+   */
+  async createInformacionSalud(medidaId: number, personaId: number, data: Partial<InformacionSalud>): Promise<InformacionSalud> {
+    // Step 1: Create base cobertura médica record
+    const baseSaludData = {
+      persona: personaId,
+      obra_social: data.obra_social || 'NO_POSEE',
+      observaciones: data.observaciones || 'Registro inicial'
+    }
+
+    await create<any>(
+      'cobertura-medica/',
+      baseSaludData,
+      false // No toast for intermediate step
+    )
+
+    // Step 2: Transform frontend data to API format for PATCH
+    // Only send fields that exist in cobertura_medica model
+    const apiData = {
+      obra_social: data.obra_social,
+      intervencion: data.intervencion,
+      auh: data.auh,
+      institucion_sanitaria_id: data.institucion_sanitaria_id, // Send ID, not nombre
+      observaciones: data.observaciones
+    }
+
+    const response = await axiosInstance.patch<any>(
+      `medidas/${medidaId}/info-salud/`,
+      apiData
+    )
+
+    toast.success('Información de salud creada exitosamente')
+
+    // Transform response back to frontend format
+    return {
+      id: response.data.id,
+      obra_social: response.data.obra_social,
+      intervencion: response.data.intervencion,
+      auh: response.data.auh,
+      institucion_sanitaria_id: response.data.institucion_sanitaria_id,
+      centro_salud: response.data.institucion_sanitaria_nombre,
+      observaciones: response.data.observaciones
+    }
+  }
+
+  /**
    * Update información de salud (partial update)
    * @version 2.0.0 - Now uses PATCH method and updated endpoint
+   * Note: Endpoint is /medidas/{id}/info-salud/ (no separate record ID)
    */
   async updateInformacionSalud(medidaId: number, data: Partial<InformacionSalud>): Promise<InformacionSalud> {
-    return patch<InformacionSalud>(
+    // Transform frontend data to API format
+    // Only send fields that exist in cobertura_medica model
+    const apiData = {
+      obra_social: data.obra_social,
+      intervencion: data.intervencion,
+      auh: data.auh,
+      institucion_sanitaria_id: data.institucion_sanitaria_id, // Send ID, not nombre
+      observaciones: data.observaciones
+    }
+
+    const response = await axiosInstance.patch<any>(
       `medidas/${medidaId}/info-salud/`,
-      data,
-      true,
-      'Información de salud actualizada'
+      apiData
     )
+
+    toast.success('Información de salud actualizada')
+
+    // Transform response back to frontend format
+    return {
+      id: response.data.id,
+      obra_social: response.data.obra_social,
+      intervencion: response.data.intervencion,
+      auh: response.data.auh,
+      institucion_sanitaria_id: response.data.institucion_sanitaria_id,
+      centro_salud: response.data.institucion_sanitaria_nombre,
+      observaciones: response.data.observaciones
+    }
   }
 
   /**
@@ -328,7 +516,10 @@ class SeguimientoDispositivoApiService {
   async addCambioResguardo(medidaId: number, data: Omit<CambioLugarResguardo, 'id'>): Promise<CambioLugarResguardo> {
     return create<CambioLugarResguardo>(
       `medidas/${medidaId}/cambio-lugar/`,
-      data,
+      {
+        medida: medidaId,
+        ...data
+      },
       true,
       'Cambio de resguardo registrado'
     )
@@ -375,7 +566,10 @@ class SeguimientoDispositivoApiService {
   async addNotaSeguimiento(medidaId: number, data: Omit<NotaSeguimiento, 'id'>): Promise<NotaSeguimiento> {
     return create<NotaSeguimiento>(
       `medidas/${medidaId}/notas-seguimiento/`,
-      data,
+      {
+        medida: medidaId,
+        ...data
+      },
       true,
       'Nota de seguimiento agregada'
     )
@@ -467,6 +661,15 @@ class SeguimientoDispositivoApiService {
       true,
       'Archivo adjuntado exitosamente'
     )
+  }
+
+  /**
+   * Get all locales-centro-vida (for lugar_origen and lugar_destino dropdowns)
+   * @version 2.0.0 - Endpoint: /api/locales-centro-vida/
+   */
+  async listLocalesCentroVida(): Promise<TLocalCentroVida[]> {
+    const response = await get<{ results: TLocalCentroVida[] }>('locales-centro-vida/')
+    return response.results || []
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useQueries } from "@tanstack/react-query"
 import { get } from "@/app/api/apiService"
 
 export interface FilterOption {
@@ -34,58 +34,61 @@ export interface FilterOptions {
  * ```tsx
  * const { zonas, jefesZonales, isLoading } = useFilterOptions()
  * ```
+ *
+ * Optimizado con TanStack Query para:
+ * - Caching automático (10 minutos)
+ * - Fetching paralelo
+ * - Retry automático
  */
 export const useFilterOptions = (): FilterOptions => {
-  const [options, setOptions] = useState<FilterOptions>({
-    zonas: [],
-    jefesZonales: [],
-    directores: [],
-    equiposTrabajo: [],
-    equiposCentroVida: [],
-    localidades: [],
-    isLoading: true,
-    error: null,
+  // Fetch all filter options in parallel using useQueries
+  const results = useQueries({
+    queries: [
+      {
+        queryKey: ['filter-options', 'zonas'],
+        queryFn: () => get<FilterOption[]>("zonas/"),
+        staleTime: 10 * 60 * 1000, // Consider fresh for 10 minutes
+        cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+        retry: 1,
+        onError: (error: any) => {
+          console.error("Error fetching zonas:", error)
+        },
+      },
+      {
+        queryKey: ['filter-options', 'localidades'],
+        queryFn: () => get<FilterOption[]>("localidad/"),
+        staleTime: 10 * 60 * 1000,
+        cacheTime: 30 * 60 * 1000,
+        retry: 1,
+        onError: (error: any) => {
+          console.error("Error fetching localidades:", error)
+        },
+      },
+      // TODO: Add other endpoints when available
+      // - jefes zonales
+      // - directores
+      // - equipos de trabajo
+      // - equipos de centro de vida
+    ],
   })
 
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        setOptions((prev) => ({ ...prev, isLoading: true, error: null }))
+  const [zonasQuery, localidadesQuery] = results
 
-        // Fetch all options in parallel
-        const [zonasRes, locRes] = await Promise.all([
-          get<FilterOption[]>("zonas/").catch(() => []),
-          get<FilterOption[]>("localidad/").catch(() => []),
-        ])
+  // Determine overall loading state
+  const isLoading = results.some(query => query.isLoading)
 
-        // TODO: Add other endpoints when available
-        // - jefes zonales
-        // - directores
-        // - equipos de trabajo
-        // - equipos de centro de vida
+  // Determine if there are any errors
+  const hasError = results.some(query => query.isError)
+  const error = hasError ? "Error al cargar opciones de filtros" : null
 
-        setOptions({
-          zonas: Array.isArray(zonasRes) ? zonasRes : [],
-          jefesZonales: [], // TODO: Fetch from API
-          directores: [], // TODO: Fetch from API
-          equiposTrabajo: [], // TODO: Fetch from API
-          equiposCentroVida: [], // TODO: Fetch from API
-          localidades: Array.isArray(locRes) ? locRes : [],
-          isLoading: false,
-          error: null,
-        })
-      } catch (error) {
-        console.error("Error fetching filter options:", error)
-        setOptions((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: "Error al cargar opciones de filtros",
-        }))
-      }
-    }
-
-    fetchOptions()
-  }, [])
-
-  return options
+  return {
+    zonas: Array.isArray(zonasQuery.data) ? zonasQuery.data : [],
+    jefesZonales: [], // TODO: Fetch from API
+    directores: [], // TODO: Fetch from API
+    equiposTrabajo: [], // TODO: Fetch from API
+    equiposCentroVida: [], // TODO: Fetch from API
+    localidades: Array.isArray(localidadesQuery.data) ? localidadesQuery.data : [],
+    isLoading,
+    error,
+  }
 }

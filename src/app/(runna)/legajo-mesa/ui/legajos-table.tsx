@@ -64,7 +64,7 @@ import { useApiQuery } from "@/hooks/useApiQuery"
 const LegajoDetail = dynamic(() => import("../../legajo/legajo-detail"), { ssr: false })
 
 // Custom toolbar component
-const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
+const CustomToolbar = ({ onExportXlsx, onRefresh }: { onExportXlsx: () => void; onRefresh: () => void }) => {
   return (
     <GridToolbarContainer
       sx={{
@@ -111,10 +111,10 @@ const CustomToolbar = ({ onExportXlsx }: { onExportXlsx: () => void }) => {
         </IconButton>
       </Tooltip>
       <Box sx={{ flexGrow: 1 }} />
-      <Tooltip title="Actualizar" arrow>
+      <Tooltip title="Actualizar datos" arrow>
         <IconButton
           size="small"
-          onClick={() => window.location.reload()}
+          onClick={onRefresh}
           sx={{
             color: "#94a3b8",
             "&:hover": { bgcolor: "#f1f5f9", color: "#475569" },
@@ -991,13 +991,16 @@ const LegajoTable: React.FC = () => {
             paginationMode="server"
             loading={isLoading || isUpdating}
             onRowClick={(params) => handleOpenModal(params.row.id)}
-            slots={{ toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} /> }}
+            slots={{ toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} onRefresh={loadLegajos} /> }}
+            getRowId={(row) => row.id}
             getRowClassName={(params) => {
               const classes: string[] = []
               if (shouldHighlightLegajo(params.row)) classes.push("highlight-pending")
               if (params.indexRelativeToCurrentPage % 2 === 0) classes.push("row-even")
               return classes.join(" ")
             }}
+            disableRowSelectionOnClick
+            disableColumnMenu
             sx={{
               border: "none",
               borderRadius: 2,

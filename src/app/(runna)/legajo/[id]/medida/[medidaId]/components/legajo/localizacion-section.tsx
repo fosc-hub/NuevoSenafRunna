@@ -5,7 +5,7 @@ import type React from "react"
 import { Typography, Grid, Chip, Box, CircularProgress, Alert } from "@mui/material"
 import HomeIcon from "@mui/icons-material/Home"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
-import { useApiQuery } from "@/hooks/useApiQuery"
+import { useDemandaFullDetail } from "@/hooks/useDemandaFullDetail"
 import { SectionCard } from "../medida/shared/section-card"
 
 interface LocalizacionSectionProps {
@@ -41,14 +41,8 @@ export const LocalizacionSection: React.FC<LocalizacionSectionProps> = ({ legajo
     return extractedId
   }, [legajoData])
 
-  // Fetch demanda full-detail using TanStack Query
-  const { data: demandaDetail, isLoading: loading, error: queryError } = useApiQuery<any>(
-    `registro-demanda-form/${demandaId}/full-detail/`,
-    undefined,
-    {
-      enabled: !!demandaId,
-    }
-  )
+  // Fetch demanda full-detail using shared hook (enables cache sharing)
+  const { data: demandaDetail, isLoading: loading, error: queryError } = useDemandaFullDetail(demandaId)
 
   // Extract localizacion from response with fallbacks
   const localizacion = useMemo(() => {

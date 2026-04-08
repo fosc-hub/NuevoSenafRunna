@@ -28,6 +28,7 @@ import { SectionCard } from "../medida/shared/section-card"
 
 interface MedidasActivasSectionProps {
   legajoData: LegajoDetailResponse
+  prefetchedMedidas?: MedidaBasicResponse[] | any // Optional prefetched data from parent
   onAddMedida?: () => void
   showAddButton?: boolean
   refreshTrigger?: number // Prop para forzar recarga
@@ -35,19 +36,22 @@ interface MedidasActivasSectionProps {
 
 export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
   legajoData,
+  prefetchedMedidas,
   onAddMedida,
   showAddButton = false,
   refreshTrigger = 0,
 }) => {
   const router = useRouter()
 
-  // Fetch medidas using TanStack Query (all medidas, not just VIGENTE)
+  // Fetch medidas using TanStack Query (only if not prefetched)
+  // Use prefetched data to avoid duplicate requests and queuing
   const { data: medidasData, isLoading, error: queryError } = useApiQuery<MedidaBasicResponse[]>(
     `legajo/${legajoData.legajo.id}/medidas`,
     { _refresh: refreshTrigger },
     {
       queryFn: () => getMedidasByLegajo(legajoData.legajo.id, {}),
-      enabled: !!legajoData.legajo.id,
+      enabled: !!legajoData.legajo.id && !prefetchedMedidas, // Only fetch if not prefetched
+      initialData: prefetchedMedidas, // Use prefetched data as initial
     }
   )
   const medidas = extractArray(medidasData)

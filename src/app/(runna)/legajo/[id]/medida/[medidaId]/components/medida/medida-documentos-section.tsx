@@ -24,10 +24,9 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import DownloadIcon from "@mui/icons-material/Download"
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile"
 import InfoIcon from "@mui/icons-material/Info"
-import { useApiQuery } from "@/hooks/useApiQuery"
+import { useDemandaFullDetail } from "@/hooks/useDemandaFullDetail"
 import { usePdfViewer } from "@/hooks"
 import { extractDemandaIdFromMedida } from "@/app/(runna)/legajo-mesa/utils/extract-demanda-from-observaciones"
-import { fetchDemandaFullDetail } from "@/app/(runna)/legajo-mesa/api/demanda-api-service"
 import { processDemandaAdjuntos } from "@/app/(runna)/legajo-mesa/utils/demanda-adjuntos-processor"
 import { SectionCard } from "./shared/section-card"
 import { isPdfFile, getFileNameFromUrl } from "@/utils/pdfUtils"
@@ -45,15 +44,8 @@ export const MedidaDocumentosSection: React.FC<MedidaDocumentosSectionProps> = (
   // Extract demanda ID from medida data
   const demandaId = useMemo(() => extractDemandaIdFromMedida(medidaApiData), [medidaApiData])
 
-  // Fetch demanda full details using TanStack Query
-  const { data: demandaDetail, isLoading, error: queryError } = useApiQuery<any>(
-    `demanda/${demandaId}/full-detail`,
-    undefined,
-    {
-      queryFn: () => fetchDemandaFullDetail(demandaId!),
-      enabled: !!demandaId,
-    }
-  )
+  // Fetch demanda full details using shared hook (enables cache sharing)
+  const { data: demandaDetail, isLoading, error: queryError } = useDemandaFullDetail(demandaId)
 
   // Process adjuntos from demanda detail
   const { oficios, documentos } = useMemo(() => {

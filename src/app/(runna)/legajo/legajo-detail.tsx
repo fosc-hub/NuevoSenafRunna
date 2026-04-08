@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import type React from "react"
 
 import { CircularProgress, Typography, IconButton, Box, Alert, Button, Tabs, Tab, Menu, MenuItem, ListItemIcon, ListItemText, Divider, AlertTitle } from "@mui/material"
@@ -13,6 +13,7 @@ import GavelIcon from "@mui/icons-material/Gavel"
 import RefreshIcon from "@mui/icons-material/Refresh"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 import { updateLegajoDatosPersonales } from "../legajo-mesa/api/legajos-api-service"
 import {
   fetchBaseLegajoDetail,
@@ -41,6 +42,8 @@ import { MedidasActivasSection } from "./[id]/medida/[medidaId]/components/legaj
 import PersonaDetailModalEnhanced from "./[id]/medida/[medidaId]/components/dialogs/persona-detail-modal-enhanced"
 
 // Importar tipos
+import { getMedidasByLegajo } from "../legajo-mesa/api/medidas-api-service"
+import type { MedidaBasicResponse } from "../legajo-mesa/types/medida-api"
 
 interface LegajoDetailProps {
   params: {
@@ -51,10 +54,6 @@ interface LegajoDetailProps {
 }
 
 export default function LegajoDetail({ params, onClose, isFullPage = false }: LegajoDetailProps) {
-  const [legajoData, setLegajoData] = useState<LegajoDetailResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingDemandaDetails, setIsLoadingDemandaDetails] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(0)
   const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState("")
@@ -72,67 +71,56 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
   // Admins (is_superuser o is_staff) tienen acceso completo
   const isAdmin = user?.is_superuser || user?.is_staff
 
-  const loadLegajoData = async () => {
-    if (params.id) {
-      try {
-        setIsLoading(true)
-        setError(null)
+  // Main legajo data query (fast, non-blocking)
+  const {
+    data: baseLegajoData,
+    isLoading,
+    error: queryError,
+    refetch: loadLegajoData,
+  } = useQuery({
+    queryKey: ['legajo', params.id],
+    queryFn: () => fetchBaseLegajoDetail(Number(params.id), { include_history: false }),
+    enabled: !!params.id,
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    retry: 1,
+  })
 
-        // Step 1: Fetch base legajo detail (fast) - show page immediately
-        const baseLegajo = await fetchBaseLegajoDetail(Number(params.id), {
-          include_history: false,
-        })
+  // Background enhancement query (non-blocking, loads in parallel)
+  const { data: enhancements, isLoading: isLoadingDemandaDetails } = useQuery({
+    queryKey: ['legajo-enhancements', params.id],
+    queryFn: () => fetchDemandaEnhancements(baseLegajoData!),
+    enabled: !!baseLegajoData,
+    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+    retry: false, // Don't retry enhancements - they're optional
+  })
 
-        console.log("Base Legajo Detail API Response:", baseLegajo)
-        console.log("Permisos del usuario:", baseLegajo.permisos_usuario)
+  // Merge base data with enhancements
+  const legajoData = useMemo(() => {
+    if (!baseLegajoData) return null
+    if (!enhancements) return baseLegajoData
+    return mergeDemandaEnhancements(baseLegajoData, enhancements)
+  }, [baseLegajoData, enhancements])
 
-        // Show page immediately with base data
-        setLegajoData(baseLegajo)
-        setIsLoading(false)
+  // Prefetch medidas data in parallel (eliminates queuing)
+  const { data: prefetchedMedidas } = useQuery({
+    queryKey: ['legajo', params.id, 'medidas', { _refresh: medidasRefreshTrigger }],
+    queryFn: () => getMedidasByLegajo(Number(params.id), {}),
+    enabled: !!legajoData?.legajo?.id,
+    staleTime: 2 * 60 * 1000,
+  })
 
-        // Step 2: Fetch demanda enhancements in background (slower)
-        setIsLoadingDemandaDetails(true)
-        try {
-          const enhancements = await fetchDemandaEnhancements(baseLegajo)
-
-          // Merge enhancements and update state
-          const enhancedLegajo = mergeDemandaEnhancements(baseLegajo, enhancements)
-          setLegajoData(enhancedLegajo)
-
-          console.log("Enhanced with demanda details:", {
-            oficios: enhancedLegajo.oficios?.length || 0,
-            documentos: enhancedLegajo.documentos?.length || 0,
-          })
-        } catch (enhancementError) {
-          console.error("Error loading demanda enhancements (non-blocking):", enhancementError)
-          // Don't show error to user - base data is already displayed
-        } finally {
-          setIsLoadingDemandaDetails(false)
-        }
-      } catch (err) {
-        console.error("Error loading legajo data:", err)
-        // Provide more detailed error messages
-        if (err instanceof Error) {
-          if (err.message.includes("404")) {
-            setError("No se encontró el legajo solicitado.")
-          } else if (err.message.includes("403")) {
-            setError("No tienes permisos para ver este legajo.")
-          } else if (err.message.includes("Network") || err.message.includes("fetch")) {
-            setError("Error de conexión. Verifica tu conexión a internet e intenta nuevamente.")
-          } else {
-            setError(`Error al cargar los datos: ${err.message}`)
-          }
-        } else {
-          setError("Error al cargar los datos del legajo. Por favor, intente nuevamente.")
-        }
-        setIsLoading(false)
-      }
-    }
-  }
-
-  useEffect(() => {
-    loadLegajoData()
-  }, [params.id])
+  // Convert query error to string
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message.includes("404")
+        ? "No se encontró el legajo solicitado."
+        : queryError.message.includes("403")
+        ? "No tienes permisos para ver este legajo."
+        : queryError.message.includes("Network") || queryError.message.includes("fetch")
+        ? "Error de conexión. Verifica tu conexión a internet e intenta nuevamente."
+        : `Error al cargar los datos: ${queryError.message}`
+      : "Error al cargar los datos del legajo. Por favor, intente nuevamente."
+    : null
 
   const handleOpenInFullPage = () => {
     router.push(`/legajo/${params.id}`)
@@ -154,12 +142,12 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
     setOpenCrearMedidaDialog(true)
   }
 
-  const handleCrearMedidaSuccess = async () => {
+  const handleCrearMedidaSuccess = () => {
     // Trigger refresh of medidas section
     setMedidasRefreshTrigger(prev => prev + 1)
 
     // Also reload legajo data
-    await loadLegajoData()
+    loadLegajoData()
   }
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -212,7 +200,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
       await updateLegajoDatosPersonales(Number(params.id), updatedPersona)
 
       // Reload legajo data to reflect changes
-      await loadLegajoData()
+      loadLegajoData()
 
       setOpenEditDatosDialog(false)
     } catch (error) {
@@ -353,6 +341,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
             <DatosPersonalesSection legajoData={legajoData} onEdit={handleEditDatosPersonales} />
             <MedidasActivasSection
               legajoData={legajoData}
+              prefetchedMedidas={prefetchedMedidas}
               onAddMedida={() => setOpenCrearMedidaDialog(true)}
               showAddButton={isAdmin || legajoData.permisos_usuario?.puede_tomar_medidas || false}
               refreshTrigger={medidasRefreshTrigger}

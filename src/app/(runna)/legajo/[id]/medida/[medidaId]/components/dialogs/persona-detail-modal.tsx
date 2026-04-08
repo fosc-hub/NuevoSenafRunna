@@ -44,7 +44,7 @@ import {
   MedicalServices as MedicalIcon,
   LocalHospital as LocalHospitalIcon,
 } from "@mui/icons-material"
-import { useConditionalData } from "@/hooks/useApiQuery"
+import { useDemandaFullDetail } from "@/hooks/useDemandaFullDetail"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 
 interface PersonaDetailModalProps {
@@ -197,11 +197,10 @@ export default function PersonaDetailModal({
     return extractedId
   }, [legajoData])
 
-  // Fetch demanda full-detail using TanStack Query (only when modal is open)
-  const { data: demandaDetail, isLoading: loadingPersona } = useConditionalData<Record<string, unknown>>(
-    `registro-demanda-form/${demandaId}/full-detail/`,
-    open && !!demandaId && !!persona?.id
-  )
+  // Fetch demanda full-detail using shared hook (only when modal is open)
+  const { data: demandaDetail, isLoading: loadingPersona } = useDemandaFullDetail(demandaId, {
+    enabled: open && !!persona?.id,
+  })
 
   // Extract and process personaCompleta from demanda response
   const personaCompleta = useMemo(() => {

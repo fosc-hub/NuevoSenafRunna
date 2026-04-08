@@ -31,7 +31,7 @@ import { formatDateLocaleAR } from "@/utils/dateUtils"
 
 // API imports
 import { fetchLegajoDetail } from "../../../legajo-mesa/api/legajos-api-service"
-import { get } from "@/app/api/apiService"
+import { useDemandaFullDetail } from "@/hooks/useDemandaFullDetail"
 import type { LegajoDetailResponse } from "../../../legajo-mesa/types/legajo-api"
 import type { MedidaDetailResponse } from "../../../legajo-mesa/types/medida-api"
 
@@ -208,8 +208,17 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const [isLegajoLoading, setIsLegajoLoading] = useState(true)
   const [legajoError, setLegajoError] = useState<string | null>(null)
 
-  // State for demanda data (for seguimiento dispositivo)
-  const [demandaData, setDemandaData] = useState<any>(null)
+  // Extract demanda ID from legajo data
+  const demandaId = useMemo(() => {
+    const demandas = legajoData?.demandas_relacionadas?.resultados || []
+    if (demandas.length === 0) return null
+
+    const activeDemanda = demandas.find((d: any) => d.estado === 'ACTIVA') || demandas[0]
+    return activeDemanda?.id || null
+  }, [legajoData])
+
+  // Load demanda full-detail data using shared hook (for seguimiento dispositivo)
+  const { data: demandaData } = useDemandaFullDetail(demandaId)
 
   // UI state
   const [openAddTaskDialog, setOpenAddTaskDialog] = useState(false)
@@ -262,28 +271,6 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
     loadLegajo()
   }, [legajoIdNum])
 
-  // Load demanda full-detail data for seguimiento dispositivo
-  useEffect(() => {
-    const loadDemanda = async () => {
-      if (!legajoData?.demandas_relacionadas?.resultados) return
-
-      // Get the first active demanda or the first demanda if no active ones
-      const demandas = legajoData.demandas_relacionadas.resultados
-      if (demandas.length === 0) return
-
-      const activeDemanda = demandas.find((d: any) => d.estado === 'ACTIVA') || demandas[0]
-      if (!activeDemanda?.id) return
-
-      try {
-        const fullDemanda = await get<any>(`registro-demanda-form/${activeDemanda.id}/full-detail/`)
-        setDemandaData(fullDemanda)
-      } catch (err: any) {
-        console.error('Error loading demanda full-detail:', err)
-      }
-    }
-
-    loadDemanda()
-  }, [legajoData])
 
   // Convert medida API data to MedidaData format
   const medidaData = useMemo(() => {

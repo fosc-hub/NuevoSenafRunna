@@ -418,7 +418,9 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
                   <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                     <Autocomplete
                       disabled={readOnly}
-                      options={dropdownData.vinculo_con_nnya_principal_choices || []}
+                      options={(dropdownData.vinculo_con_nnya_principal_choices || []).filter(
+                        (item) => [2, 7, 8, 9, 10, 13, 18].includes(item.id)
+                      )}
                       getOptionLabel={(option) => option.nombre || ""}
                       value={
                         dropdownData.vinculo_con_nnya_principal_choices?.find((item) => item.id === field.value) || null

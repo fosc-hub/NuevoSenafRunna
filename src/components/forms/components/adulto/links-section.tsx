@@ -61,7 +61,9 @@ const LinksSection: React.FC<LinksSectionProps> = ({ index, control, dropdownDat
               <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={dropdownData.vinculo_con_nnya_principal_choices || []}
+                  options={(dropdownData.vinculo_con_nnya_principal_choices || []).filter(
+                    (item) => [1, 3, 4, 5, 6, 10, 11, 12, 14, 15, 16, 17, 20].includes(item.id)
+                  )}
                   getOptionLabel={(option) => option.nombre || ""}
                   value={
                     dropdownData.vinculo_con_nnya_principal_choices?.find((item) => item.id === field.value) || null

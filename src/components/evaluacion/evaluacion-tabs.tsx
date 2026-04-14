@@ -208,7 +208,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       </Box>
 
       <Box sx={{ mt: 4 }}>
-        <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} />
+        <DescripcionSituacion descripcion={descripcionSituacion} setDescripcion={setDescripcionSituacion} disabled={isDirector} />
       </Box>
 
 

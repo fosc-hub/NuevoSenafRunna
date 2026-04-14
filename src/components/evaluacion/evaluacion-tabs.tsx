@@ -226,6 +226,7 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
             fullWidth
             variant="outlined"
             placeholder="Ingrese su valoración profesional final"
+            disabled={isDirector}
           />
         </Paper>
       </Box>

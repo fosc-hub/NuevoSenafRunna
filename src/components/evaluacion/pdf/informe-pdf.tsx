@@ -677,22 +677,6 @@ const InformePDF = ({ data }: InformePDFProps) => (
         )}
       </View>
 
-      {/* Indicadores de evaluación */}
-      <View style={styles.section}>
-        <Text style={styles.subtitle}>Indicadores de vulneración de la evaluación</Text>
-        {data.IndicadoresEvaluacion && data.IndicadoresEvaluacion.length > 0 ? (
-          data.IndicadoresEvaluacion.map((ind: any, index: number) => (
-            <View key={index}>
-              <Text style={styles.text}>
-                {index + 1}. {String(ind.NombreIndicador || '')} - {String(ind.Descripcion || '')} - Peso: {String(ind.Peso || '')}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.text}>No hay indicadores registrados</Text>
-        )}
-      </View>
-
       {/* Valoración Profesional */}
       <View style={styles.section}>
         <Text style={styles.subtitle}>Valoración Profesional / Conclusiones</Text>

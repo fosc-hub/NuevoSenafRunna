@@ -26,7 +26,6 @@ import NnyaNoConvivientes from "./tabs/nnya-no-convivientes"
 import AdultosConvivientes from "./tabs/adultos-convivientes"
 import AdultosNoConvivientes from "./tabs/adultos-no-convivientes"
 import AntecedentesDemanda from "./tabs/antecedentes-demanda"
-import DecisionBox from "./decision-box"
 import ActionButtons from "./action-buttons"
 import FileManagement, { type FileManagementHandle } from "./file-management"
 import AdjuntosTab from "./tabs/adjuntos"
@@ -63,23 +62,6 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     user?.groups?.some((group: any) => group.name === "Director") ||
     user?.zonas?.some((zona: any) => zona.director === true)
 
-  const [vulnerabilityIndicators, setVulnerabilityIndicators] = useState(
-    Array.isArray(data.IndicadoresEvaluacion) ? data.IndicadoresEvaluacion.map((indicator: any, index: number) => {
-      // Find if there's a previous valoracion for this indicator
-      const previousValoracion = Array.isArray(data.valoracionesSeleccionadas)
-        ? data.valoracionesSeleccionadas.find((val: any) => val.indicador === indicator.id)
-        : null;
-
-      return {
-        id: indicator.id || index + 1, // Use the actual ID from the API
-        nombre: indicator.NombreIndicador,
-        descripcion: indicator.Descripcion,
-        peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
-        selected: previousValoracion ? previousValoracion.checked : false, // Apply previous selection
-      }
-    }) : []
-  )
-
   // State for editable data
   const [actividades, setActividades] = useState(Array.isArray(data.Actividades) ? data.Actividades : [])
   const [informacionGeneral, setInformacionGeneral] = useState<any>(data.InformacionGeneral || {})
@@ -113,50 +95,8 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
     }
   }, [searchParams])
 
-  // Update vulnerability indicators when data changes (including valoraciones_seleccionadas)
-  useEffect(() => {
-    if (Array.isArray(data.IndicadoresEvaluacion)) {
-      console.log("Updating vulnerability indicators with valoraciones:", data.valoracionesSeleccionadas);
-      const updatedIndicators = data.IndicadoresEvaluacion.map((indicator: any, index: number) => {
-        // Find if there's a previous valoracion for this indicator
-        const previousValoracion = Array.isArray(data.valoracionesSeleccionadas)
-          ? data.valoracionesSeleccionadas.find((val: any) => val.indicador === indicator.id)
-          : null;
-
-        const indicatorData = {
-          id: indicator.id || index + 1, // Use the actual ID from the API
-          nombre: indicator.NombreIndicador,
-          descripcion: indicator.Descripcion,
-          peso: indicator.Peso === "Alto" ? 5 : indicator.Peso === "Medio" ? 3 : 1,
-          selected: previousValoracion ? previousValoracion.checked : false, // Apply previous selection
-        };
-
-        if (previousValoracion) {
-          console.log(`Applied valoracion for indicator ${indicator.id}:`, previousValoracion.checked);
-        }
-
-        return indicatorData;
-      });
-      setVulnerabilityIndicators(updatedIndicators);
-    }
-  }, [data.IndicadoresEvaluacion, data.valoracionesSeleccionadas])
-
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
-  }
-
-  const handleIndicatorChange = (id: number, value: boolean) => {
-    setVulnerabilityIndicators(
-      vulnerabilityIndicators.map((indicator: VulnerabilityIndicator) => (indicator.id === id ? { ...indicator, selected: value } : indicator)),
-    )
-  }
-
-  // Color decision word: ARCHIVAR in red, TOMAR MEDIDA in green, others default
-  const decisionWordColor = (sol?: string) => {
-    const v = (sol || '').trim().toUpperCase()
-    if (v.includes('ARCHIV')) return '#DC2626'
-    if (v.includes('TOMAR')) return '#16A34A'
-    return 'inherit'
   }
 
   // Function to collect all updated data
@@ -173,19 +113,6 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       DescripcionSituacion: descripcionSituacion,
       ValoracionProfesional: valoracionProfesional,
       adjuntos: adjuntos,
-      // Note: justificacionTecnico and justificacionDirector are intentionally not included in the PDF
-      IndicadoresEvaluacion: Array.isArray(vulnerabilityIndicators) ? vulnerabilityIndicators.map((indicator: VulnerabilityIndicator) => ({
-        NombreIndicador: indicator.nombre,
-        Descripcion: indicator.descripcion,
-        Peso:
-          typeof indicator.peso === "number"
-            ? indicator.peso >= 5
-              ? "Alto"
-              : indicator.peso >= 3
-                ? "Medio"
-                : "Bajo"
-            : indicator.peso,
-      })) : [],
     }
   }
 
@@ -284,36 +211,12 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
       </Box>
 
 
-      <DecisionBox
-        vulnerabilityIndicators={vulnerabilityIndicators}
-        handleIndicatorChange={handleIndicatorChange}
-        demandaId={demandaId}
-        preloadedScores={Array.isArray(data.scores) ? data.scores : []}
-        // pass técnico context
-        solicitudTecnico={typeof data.SolicitudTecnico === 'string' ? data.SolicitudTecnico : ''}
-        justificacionTecnico={typeof data.JustificacionTecnico === 'string' ? data.JustificacionTecnico : ''}
-      />
-
       {/* Valoración Profesional Final */}
       <Box sx={{ mt: 4, mb: 2 }}>
         <Paper sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
-            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-              VALORACIÓN PROFESIONAL FINAL
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              {typeof data?.SolicitudTecnico === 'string' && data.SolicitudTecnico.trim() !== '' ? (
-                <>
-                  · Decisión del técnico: {''}
-                  <Box component="span" sx={{ color: decisionWordColor(data?.SolicitudTecnico) }}>
-                    {data.SolicitudTecnico}
-                  </Box>
-                </>
-              ) : (
-                '· Decisión del técnico: —'
-              )}
-            </Typography>
-          </Box>
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9", mb: 2 }}>
+            VALORACIÓN PROFESIONAL FINAL
+          </Typography>
           <TextField
             value={valoracionProfesional}
             onChange={(e) => setValoracionProfesional(e.target.value)}
@@ -414,11 +317,3 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
   )
 }
 
-// Types
-export interface VulnerabilityIndicator {
-  id: number
-  nombre: string
-  descripcion: string | null
-  peso: number | string
-  selected?: boolean
-}

@@ -156,12 +156,6 @@ export default function DownloadDocxButton({
         }),
       })),
       Actividades: data.Actividades || [],
-      IndicadoresEvaluacion: (data.IndicadoresEvaluacion || []).map((ind: any) => ({
-        ...ind,
-        NombreIndicador: String(ind.NombreIndicador || ""),
-        Descripcion: String(ind.Descripcion || ""),
-        Peso: String(ind.Peso || ""),
-      })),
       adjuntos: data.adjuntos || [],
       InformacionGeneral: {
         ...data.InformacionGeneral,

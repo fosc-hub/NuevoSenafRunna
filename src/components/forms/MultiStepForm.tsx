@@ -69,12 +69,11 @@ const cargaOficiosSteps = [
 
 /**
  * Get steps array based on form variant
+ * When editing an existing demanda (objetivo already set), skip the objetivo step
  */
-const getSteps = (formVariant: FormVariant) => {
-  if (formVariant === "CARGA_OFICIOS") {
-    return [objetivoStep, ...cargaOficiosSteps]
-  }
-  return [objetivoStep, ...standardSteps]
+const getSteps = (formVariant: FormVariant, includeObjetivo: boolean) => {
+  const baseSteps = formVariant === "CARGA_OFICIOS" ? cargaOficiosSteps : standardSteps
+  return includeObjetivo ? [objetivoStep, ...baseSteps] : baseSteps
 }
 
 /**
@@ -134,8 +133,17 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
 
-  // Get current steps based on form variant
-  const currentSteps = useMemo(() => getSteps(formVariant), [formVariant])
+  // When editing an existing demanda that already has an objetivo, skip the objetivo step
+  const showObjetivoStep = !initialData?.objetivo_de_demanda
+
+  // Get current steps based on form variant (exclude objetivo step when editing)
+  const currentSteps = useMemo(() => getSteps(formVariant, showObjetivoStep), [formVariant, showObjetivoStep])
+
+  // Helper: whether we're currently on the objetivo selection step
+  const isOnObjetivoStep = showObjetivoStep && activeStep === 0
+
+  // Content step index (0-based index into the actual content steps, excluding objetivo)
+  const contentStepIndex = showObjetivoStep ? activeStep - 1 : activeStep
 
   // Get draft store functions
   const { saveDraft, getDraft, clearDraft } = useDraftStore()
@@ -215,8 +223,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   }
 
   const handleNext = async () => {
-    // If on Step 0 (Objetivo selection), validate objetivo is selected
-    if (activeStep === 0) {
+    // If on the objetivo selection step, validate objetivo is selected
+    if (isOnObjetivoStep) {
       if (!selectedObjetivo) {
         toast.error("Por favor, seleccione un objetivo antes de continuar.")
         return
@@ -513,7 +521,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
         {/* REG-01: Global VinculosManager - accessible from all steps (only for standard flow) */}
         {/* Hide VinculosManager when viewing/editing existing demanda (id exists) - use Conexiones tab instead */}
         {/* Also hide for CARGA_OFICIOS flow as it doesn't need vinculos */}
-        {dropdownData && !id && formVariant === "STANDARD" && activeStep > 0 && (
+        {dropdownData && !id && formVariant === "STANDARD" && !isOnObjetivoStep && (
           <Box sx={{ px: 3, pt: 3 }} data-section="vinculos">
             <FormSection title="Vínculos con Legajos y Medidas" collapsible={true} defaultExpanded={false}>
               <VinculosManager dropdownData={dropdownData} readOnly={isReadOnly} />
@@ -524,8 +532,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
         <Box sx={{ p: 3 }}>
           {dropdownData && (
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-              {/* Step 0: Objetivo Selection (always shown first) */}
-              {activeStep === 0 && (
+              {/* Step 0: Objetivo Selection (only for new demandas) */}
+              {isOnObjetivoStep && (
                 <ObjetivoSelectionStep
                   selected={selectedObjetivo}
                   onSelect={handleObjetivoSelect}
@@ -533,12 +541,12 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
                 />
               )}
 
-              {/* Standard Flow: Steps 1-3 */}
-              {formVariant === "STANDARD" && activeStep > 0 && (
+              {/* Standard Flow content steps */}
+              {formVariant === "STANDARD" && !isOnObjetivoStep && (
                 <>
-                  {activeStep === 1 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
-                  {activeStep === 2 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
-                  {activeStep === 3 && (
+                  {contentStepIndex === 0 && <Step1Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
+                  {contentStepIndex === 1 && <Step2Form dropdownData={dropdownData} readOnly={isReadOnly} id={demandaId} />}
+                  {contentStepIndex === 2 && (
                     <Step3Form
                       dropdownData={dropdownData}
                       adultosConvivientes={methods.watch("adultosConvivientes") || []}
@@ -549,8 +557,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
                 </>
               )}
 
-              {/* CARGA_OFICIOS Flow: Step 1 only */}
-              {formVariant === "CARGA_OFICIOS" && activeStep === 1 && (
+              {/* CARGA_OFICIOS Flow content step */}
+              {formVariant === "CARGA_OFICIOS" && !isOnObjetivoStep && contentStepIndex === 0 && (
                 <CargaOficiosForm dropdownData={dropdownData} readOnly={isReadOnly} />
               )}
             </LocalizationProvider>

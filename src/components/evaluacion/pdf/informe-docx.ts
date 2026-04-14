@@ -64,7 +64,6 @@ interface InformeData {
   AdultosNoConvivientes?: any[]
   AntecedentesDemanda?: any
   MotivosActuacion?: any
-  IndicadoresEvaluacion?: any[]
   ValoracionProfesional?: string
   firmantes?: Array<{ nombre: string; cargo: string }>
 }
@@ -490,20 +489,6 @@ export async function generateInformeDocx(data: InformeData): Promise<Blob> {
     sections.push(createBullet(data.MotivosActuacion.Motivos))
   } else {
     sections.push(createText("No hay motivos registrados", true))
-  }
-
-  // Evaluation Indicators
-  sections.push(createSectionTitle("Indicadores de vulneración de la evaluación"))
-  if (data.IndicadoresEvaluacion && data.IndicadoresEvaluacion.length > 0) {
-    data.IndicadoresEvaluacion.forEach((ind: any, index: number) => {
-      sections.push(
-        createBullet(
-          `${index + 1}. ${ind.NombreIndicador || ""} - ${ind.Descripcion || ""} - Peso: ${ind.Peso || ""}`
-        )
-      )
-    })
-  } else {
-    sections.push(createText("No hay indicadores registrados", true))
   }
 
   // Professional Assessment

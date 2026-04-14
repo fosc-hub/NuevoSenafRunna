@@ -190,33 +190,6 @@ const transformApiData = (apiData: any) => {
     submotivo_ingreso: typeof apiData.submotivo_ingreso === 'object' && apiData.submotivo_ingreso?.nombre ? apiData.submotivo_ingreso.nombre : (apiData.submotivo_ingreso || ""),
   }
 
-  // Extraer indicadores de valoración
-  let indicadoresEvaluacion: any[] = []
-  if (Array.isArray(apiData.indicadores_valoracion)) {
-    indicadoresEvaluacion = apiData.indicadores_valoracion.map((ind: any) => ({
-      NombreIndicador: ind.nombre || "Indicador",
-      Descripcion: ind.descripcion || "",
-      Peso: ind.peso >= 5 ? "Alto" : ind.peso >= 3 ? "Medio" : "Bajo",
-      id: ind.id, // Agregar el ID del indicador
-    }))
-  }
-
-  // Extraer valoraciones seleccionadas previas (top-level o anidadas)
-  let valoracionesSeleccionadas: any[] = []
-  const rawValoracionesTop = Array.isArray(apiData.valoraciones_seleccionadas)
-    ? apiData.valoraciones_seleccionadas
-    : []
-  const rawValoracionesNested = Array.isArray(apiData.latest_evaluacion?.demanda_log?.log?.valoraciones_seleccionadas)
-    ? apiData.latest_evaluacion.demanda_log.log.valoraciones_seleccionadas
-    : []
-  const rawValoraciones = rawValoracionesTop.length > 0 ? rawValoracionesTop : rawValoracionesNested
-  if (Array.isArray(rawValoraciones)) {
-    valoracionesSeleccionadas = rawValoraciones.map((val: any) => ({
-      indicador: val.indicador,
-      checked: val.checked,
-    }))
-  }
-
   // Extraer adjuntos
   const adjuntos = Array.isArray(apiData.adjuntos) ? apiData.adjuntos : []
 
@@ -264,7 +237,6 @@ const transformApiData = (apiData: any) => {
     bloque_datos_remitente: informacionGeneral.bloque_datos_remitente,
     tipo_institucion: informacionGeneral.tipo_institucion,
     registrado_por_user_zona: informacionGeneral.registrado_por_user_zona,
-    IndicadoresEvaluacion: indicadoresEvaluacion,
     DescripcionSituacion: descripcionSituacion,
     ValoracionProfesional: valoracionProfesional,
     JustificacionTecnico: justificacionTecnico,
@@ -273,37 +245,6 @@ const transformApiData = (apiData: any) => {
     adjuntos: adjuntos,
     // Preserve latest_evaluacion for file management and other components
     latest_evaluacion: apiData.latest_evaluacion,
-    // Add scores data from API with enriched NNyA information (top-level or nested)
-    scores: (() => {
-      const rawScoresTop = Array.isArray(apiData.scores) ? apiData.scores : []
-      const rawScoresNested = Array.isArray(apiData.latest_evaluacion?.demanda_log?.log?.scores)
-        ? apiData.latest_evaluacion.demanda_log.log.scores
-        : []
-      const rawScores = rawScoresTop.length > 0 ? rawScoresTop : rawScoresNested
-      if (!Array.isArray(rawScores)) return []
-      return rawScores.map((score: any) => {
-        const nnyaId = (score && (score.nnya_id || score.nnya)) || null
-        const nnyaInfo = nnyaId && Array.isArray(apiData.personas)
-          ? apiData.personas.find((persona: any) => persona.persona.id === nnyaId)
-          : null
-        return {
-          ...score,
-          nnya: nnyaInfo ? {
-            id: nnyaInfo.persona.id,
-            nombre: nnyaInfo.persona.nombre || "",
-            apellido: nnyaInfo.persona.apellido || "",
-            dni: nnyaInfo.persona.dni || "No especificado",
-          } : {
-            id: nnyaId || null,
-            nombre: "",
-            apellido: "",
-            dni: "No especificado",
-          },
-        }
-      })
-    })(),
-    // Add valoraciones seleccionadas data from API
-    valoracionesSeleccionadas: valoracionesSeleccionadas,
   }
 }
 
@@ -337,7 +278,6 @@ export default function EvaluacionContent() {
   // Debug: Log the transformed data to see what's being passed to tabs
   if (transformedData) {
     console.log("Transformed data for tabs:", transformedData)
-    console.log("Enriched scores with NNyA info:", transformedData.scores)
   }
 
   if (isLoading) {

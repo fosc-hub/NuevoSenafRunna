@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form"
 import {
   Button,
@@ -50,6 +50,14 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
     control,
     name: "ninosAdolescentes",
   })
+
+  // Track which NNYA index has NNYA_PRINCIPAL selected
+  const nnyaPrincipalIndex = useMemo(() => {
+    if (!watchedFields) return -1
+    return watchedFields.findIndex(
+      (nnya: any) => nnya?.demanda_persona?.vinculo_demanda === "NNYA_PRINCIPAL"
+    )
+  }, [watchedFields])
 
   // Vinculacion state (legacy - mantener para compatibilidad)
   const [vinculacionResults, setVinculacionResults] = useState<{
@@ -388,7 +396,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
       persona_enfermedades: [],
       demanda_persona: {
         conviviente: true,
-        vinculo_demanda: "",
+        vinculo_demanda: fields.length === 0 ? "NNYA_PRINCIPAL" : "",
         vinculo_con_nnya_principal: "",
       },
       condicionesVulnerabilidad: [],
@@ -488,6 +496,7 @@ const Step3Form: React.FC<Step3FormProps> = ({ dropdownData, readOnly = false, a
               toggleExpanded={() => toggleSection(index)}
               onDelete={() => openDeleteDialog(index)}
               isPrincipal={index === 0}
+              nnyaPrincipalTakenByOther={nnyaPrincipalIndex !== -1 && nnyaPrincipalIndex !== index}
             />
           ))
         )}

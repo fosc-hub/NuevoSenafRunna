@@ -32,9 +32,11 @@ interface PersonalInfoTabProps {
   dropdownData: DropdownData
   readOnly: boolean
   watchedFields: any
+  nnyaPrincipalTakenByOther: boolean
+  isPrincipal: boolean
 }
 
-const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropdownData, readOnly, watchedFields }) => {
+const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropdownData, readOnly, watchedFields, nnyaPrincipalTakenByOther, isPrincipal }) => {
   return (
     <>
       {/* Sección de Información Personal */}
@@ -376,8 +378,13 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ index, control, dropd
               render={({ field, fieldState: { error } }) => (
                 <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                   <Autocomplete
-                    disabled={readOnly}
-                    options={dropdownData.vinculo_demanda_choices || []}
+                    disabled={readOnly || isPrincipal}
+                    options={(dropdownData.vinculo_demanda_choices || []).filter(
+                      (item) => {
+                        if (item.key === 'NNYA_PRINCIPAL') return !nnyaPrincipalTakenByOther
+                        return ['NNYA_SECUNDARIO', 'SE_DESCONOCE'].includes(item.key)
+                      }
+                    )}
                     getOptionLabel={(option) => option.value || ""}
                     value={dropdownData.vinculo_demanda_choices?.find((item) => item.key === field.value) || null}
                     onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}

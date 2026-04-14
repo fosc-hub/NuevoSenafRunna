@@ -56,6 +56,7 @@ interface NNYACardProps {
   toggleExpanded: () => void
   onDelete: () => void
   isPrincipal: boolean
+  nnyaPrincipalTakenByOther: boolean
 }
 
 const NNYACard: React.FC<NNYACardProps> = ({
@@ -70,6 +71,7 @@ const NNYACard: React.FC<NNYACardProps> = ({
   toggleExpanded,
   onDelete,
   isPrincipal,
+  nnyaPrincipalTakenByOther,
 }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -304,6 +306,8 @@ const NNYACard: React.FC<NNYACardProps> = ({
               dropdownData={dropdownData}
               readOnly={readOnly}
               watchedFields={watchedFields}
+              nnyaPrincipalTakenByOther={nnyaPrincipalTakenByOther}
+              isPrincipal={isPrincipal}
             />
           </TabPanel>
 

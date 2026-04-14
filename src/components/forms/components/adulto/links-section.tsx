@@ -27,7 +27,9 @@ const LinksSection: React.FC<LinksSectionProps> = ({ index, control, dropdownDat
               <FormControl fullWidth error={!!error} sx={{ mb: 2 }}>
                 <Autocomplete
                   disabled={readOnly}
-                  options={dropdownData.vinculo_demanda_choices || []}
+                  options={(dropdownData.vinculo_demanda_choices || []).filter(
+                    (item) => ['SUPUESTO_AUTOR_DV', 'SUPUESTO_AUTOR_DV_PRINCIPAL', 'GARANTIZA_PROTECCION', 'SE_DESCONOCE'].includes(item.key)
+                  )}
                   getOptionLabel={(option) => option.value || ""}
                   value={dropdownData.vinculo_demanda_choices?.find((item) => item.key === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue ? newValue.key : null)}

@@ -48,6 +48,12 @@ export default function Header() {
   }, [user])
 
   // Determine user roles for notifications
+  const isAdministracion = useMemo(() => {
+    if (!user) return false
+    const groupNames = (user.groups || []).map((g) => g.name.toLowerCase())
+    return groupNames.some((n) => n.includes("administración") || n.includes("administracion"))
+  }, [user])
+
   const roles = useMemo(() => {
     if (!user) return { isET: false, isJZ: false, isLegal: false, user_id: null }
     const groups = user.groups || []
@@ -260,16 +266,18 @@ export default function Header() {
           >
             Mesa de Entradas
           </a>
-          <a
-            href="/legajo-mesa"
-            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            Bandeja de legajos
-          </a>
+          {!isAdministracion && (
+            <a
+              href="/legajo-mesa"
+              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              Bandeja de legajos
+            </a>
+          )}
         </div>
 
         {/* Tutorial */}

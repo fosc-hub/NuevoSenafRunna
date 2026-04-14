@@ -13,6 +13,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Divider,
+  Chip,
 } from "@mui/material"
 import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
 import { useSearchParams } from "next/navigation"
@@ -248,9 +249,19 @@ export default function EvaluacionTabs({ data }: EvaluacionTabsProps) {
             },
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
-            JUSTIFICACIONES INTERNAS
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#0EA5E9" }}>
+              JUSTIFICACIONES INTERNAS
+            </Typography>
+            {data.SolicitudTecnico && (
+              <Chip
+                label={`Solicitud del técnico: ${data.SolicitudTecnico}${data.TipoMedidaEvaluado ? ` "${data.TipoMedidaEvaluado}"` : ""}`}
+                color="info"
+                variant="outlined"
+                size="small"
+              />
+            )}
+          </Box>
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ p: 1 }}>

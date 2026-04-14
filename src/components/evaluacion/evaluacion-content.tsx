@@ -199,6 +199,7 @@ const transformApiData = (apiData: any) => {
   let justificacionTecnico = ""
   let justificacionDirector = ""
   let solicitudTecnico = ""
+  let tipoMedidaEvaluado = ""
 
   if (apiData.latest_evaluacion) {
     try {
@@ -212,6 +213,7 @@ const transformApiData = (apiData: any) => {
       justificacionTecnico = evaluacionData.justificacion_tecnico || ""
       justificacionDirector = evaluacionData.justificacion_director || ""
       solicitudTecnico = evaluacionData.solicitud_tecnico || ""
+      tipoMedidaEvaluado = evaluacionData.tipo_medida_evaluado || ""
 
       // Solo sobrescribir descripcionSituacion si hay un valor real (no placeholder "Blank")
       if (evaluacionData.descripcion_de_la_situacion && String(evaluacionData.descripcion_de_la_situacion).trim().toLowerCase() !== "blank") {
@@ -242,6 +244,7 @@ const transformApiData = (apiData: any) => {
     JustificacionTecnico: justificacionTecnico,
     JustificacionDirector: justificacionDirector,
     SolicitudTecnico: solicitudTecnico,
+    TipoMedidaEvaluado: tipoMedidaEvaluado,
     adjuntos: adjuntos,
     // Preserve latest_evaluacion for file management and other components
     latest_evaluacion: apiData.latest_evaluacion,

@@ -147,8 +147,15 @@ export const useNotaAvalAdjuntos = (
   })
 
   // Mutation: Upload adjunto
-  const uploadMutation = useMutation<AdjuntoNotaAval, Error, File>({
-    mutationFn: async (file: File) => {
+  const uploadMutation = useMutation<
+    AdjuntoNotaAval,
+    Error,
+    { file: File; etiquetaId?: number | null } | File
+  >({
+    mutationFn: async (input) => {
+      const file = input instanceof File ? input : input.file
+      const etiquetaId = input instanceof File ? null : input.etiquetaId ?? null
+
       // Validate file before upload
       const validation = validateFile(file)
       if (!validation.valid) {
@@ -175,7 +182,7 @@ export const useNotaAvalAdjuntos = (
       }, 200)
 
       try {
-        const result = await uploadAdjuntoNotaAval(medidaId, file)
+        const result = await uploadAdjuntoNotaAval(medidaId, file, etiquetaId)
 
         // Complete progress
         clearInterval(progressInterval)
@@ -275,8 +282,8 @@ export const useNotaAvalAdjuntos = (
    * Upload file with validation
    */
   const uploadFile = useCallback(
-    (file: File) => {
-      return uploadMutation.mutateAsync(file)
+    (file: File, etiquetaId?: number | null) => {
+      return uploadMutation.mutateAsync({ file, etiquetaId: etiquetaId ?? null })
     },
     [uploadMutation]
   )

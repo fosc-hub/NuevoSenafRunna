@@ -55,6 +55,7 @@ import type {
   TipoAdjuntoInformeJuridico,
 } from "../../types/informe-juridico-api"
 import { formatFileSize } from '@/utils/fileUtils'
+import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
 
 // ============================================================================
 // INTERFACES
@@ -69,7 +70,8 @@ interface AdjuntosInformeJuridicoProps {
   onUpload: (
     file: File,
     tipoAdjunto: TipoAdjuntoInformeJuridico,
-    descripcion?: string
+    descripcion?: string,
+    etiquetaId?: number | null,
   ) => Promise<void>
   onDelete: (adjuntoId: number) => Promise<void>
   isUploading?: boolean
@@ -105,6 +107,7 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [tipoAdjunto, setTipoAdjunto] = useState<TipoAdjuntoInformeJuridico>("ACUSE")
   const [descripcion, setDescripcion] = useState("")
+  const [etiquetaId, setEtiquetaId] = useState<number | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -247,10 +250,11 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
 
     try {
       setUploadError(null)
-      await onUpload(selectedFile, tipoAdjunto, descripcion || undefined)
+      await onUpload(selectedFile, tipoAdjunto, descripcion || undefined, etiquetaId)
       setUploadDialogOpen(false)
       setSelectedFile(null)
       setDescripcion("")
+      setEtiquetaId(null)
     } catch (error: any) {
       console.error("Error uploading file:", error)
       setUploadError(error.message || "Error al subir archivo")
@@ -636,6 +640,14 @@ export const AdjuntosInformeJuridico: React.FC<AdjuntosInformeJuridicoProps> = (
                 helperText="Descripción útil para identificar el acuse"
               />
             )}
+
+            {/* Etiqueta de documento (catálogo unificado) */}
+            <EtiquetaDocumentoSelector
+              value={etiquetaId}
+              onChange={setEtiquetaId}
+              disabled={isUploading}
+              helperText="Etiqueta clasificatoria opcional"
+            />
 
             {uploadError && (
               <Alert severity="error" onClose={() => setUploadError(null)}>

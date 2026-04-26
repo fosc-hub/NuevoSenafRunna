@@ -189,7 +189,8 @@ export const uploadAdjuntoInformeCierre = async (
   informeCierreId: number,
   file: File,
   tipo: TipoInformeCierreAdjunto,
-  descripcion?: string
+  descripcion?: string,
+  etiquetaId?: number | null,
 ): Promise<InformeCierreAdjunto> => {
   try {
     console.log(`Uploading adjunto for informe ${informeCierreId}:`, {
@@ -205,6 +206,9 @@ export const uploadAdjuntoInformeCierre = async (
     formData.append("tipo_adjunto", tipo)
     if (descripcion) {
       formData.append("descripcion", descripcion)
+    }
+    if (etiquetaId) {
+      formData.append("etiqueta", String(etiquetaId))
     }
 
     // apiService.create() supports FormData automatically

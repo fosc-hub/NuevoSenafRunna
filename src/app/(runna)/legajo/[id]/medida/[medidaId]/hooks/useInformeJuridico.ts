@@ -409,7 +409,8 @@ export const useInformeJuridico = (
     async (
       file: File,
       tipoAdjunto: TipoAdjuntoInformeJuridico,
-      descripcion?: string
+      descripcion?: string,
+      etiquetaId?: number | null,
     ): Promise<AdjuntoInformeJuridico> => {
       try {
         setIsLoadingAdjuntos(true)
@@ -419,7 +420,8 @@ export const useInformeJuridico = (
           medidaId,
           file,
           tipoAdjunto,
-          descripcion
+          descripcion,
+          etiquetaId,
         )
 
         // Refetch adjuntos and informe to update counts

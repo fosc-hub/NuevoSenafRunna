@@ -201,7 +201,8 @@ export const createNotaAval = async (
  */
 export const uploadAdjuntoNotaAval = async (
   medidaId: number,
-  file: File
+  file: File,
+  etiquetaId?: number | null,
 ): Promise<AdjuntoNotaAval> => {
   try {
     console.log(`Uploading adjunto to nota de aval: medida ${medidaId}`)
@@ -220,6 +221,9 @@ export const uploadAdjuntoNotaAval = async (
     // Create FormData for multipart/form-data
     const formData = new FormData()
     formData.append("archivo", file)
+    if (etiquetaId) {
+      formData.append("etiqueta", String(etiquetaId))
+    }
 
     // REFACTORED: apiService.create() DOES support FormData
     // Using type assertion because FormData is handled correctly by axios

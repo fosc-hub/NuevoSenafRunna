@@ -44,6 +44,9 @@ import DescriptionIcon from "@mui/icons-material/Description"
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { formatFileSize } from "@/utils/fileUtils"
+import EtiquetaDocumentoSelector, {
+  EtiquetaDocumentoChip,
+} from "@/components/forms/components/EtiquetaDocumentoSelector"
 
 export interface FileItem {
   id: number | string
@@ -52,7 +55,19 @@ export interface FileItem {
   url?: string
   fecha_subida?: string
   tamano?: number
+  /** Etiqueta clasificatoria del documento (mostrada como chip). */
+  etiqueta_nombre?: string | null
 }
+
+/**
+ * Firma del callback de subida.
+ * - Si el componente está configurado con etiqueta, recibe `etiquetaId` como segundo argumento.
+ * - Llamadores legacy que ignoran el segundo argumento siguen funcionando sin cambios.
+ */
+export type UploadCallback = (
+  file: File,
+  etiquetaId?: number | null,
+) => void | Promise<void>
 
 export interface FileUploadSectionProps {
   // File data
@@ -60,7 +75,7 @@ export interface FileUploadSectionProps {
   isLoading?: boolean
 
   // Actions
-  onUpload?: (file: File) => void | Promise<void>
+  onUpload?: UploadCallback
   onDownload?: (file: FileItem) => void
   onDelete?: (fileId: number | string) => void | Promise<void>
 
@@ -84,6 +99,14 @@ export interface FileUploadSectionProps {
   // Upload state
   isUploading?: boolean
   uploadError?: string
+
+  // Etiqueta de documento (catalog-driven). Si `enableEtiqueta` es true,
+  // se muestra el selector arriba del dropzone y el id se reenvía al `onUpload`.
+  enableEtiqueta?: boolean
+  etiquetaValue?: number | null
+  onEtiquetaChange?: (etiquetaId: number | null) => void
+  etiquetaRequired?: boolean
+  etiquetaHelperText?: string
 }
 
 export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
@@ -105,9 +128,27 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
   emptyMessage = "No hay archivos adjuntos",
   isUploading = false,
   uploadError,
+  enableEtiqueta = false,
+  etiquetaValue = null,
+  onEtiquetaChange,
+  etiquetaRequired = false,
+  etiquetaHelperText,
 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const dispatchUpload = (file: File) => {
+    if (!onUpload) return
+    if (enableEtiqueta && etiquetaRequired && !etiquetaValue) {
+      alert("Seleccioná una etiqueta antes de subir el archivo.")
+      return
+    }
+    if (enableEtiqueta) {
+      void onUpload(file, etiquetaValue ?? null)
+    } else {
+      void onUpload(file)
+    }
+  }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files
@@ -122,7 +163,7 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
           return
         }
 
-        onUpload(file)
+        dispatchUpload(file)
       })
 
       // Reset input
@@ -172,7 +213,7 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
           return
         }
 
-        onUpload(file)
+        dispatchUpload(file)
       })
     }
   }
@@ -223,6 +264,19 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
           </Button>
         )}
       </Box>
+
+      {/* Etiqueta de Documento (opcional, controlada por enableEtiqueta) */}
+      {enableEtiqueta && !readOnly && onUpload && (
+        <Box sx={{ mb: 2 }}>
+          <EtiquetaDocumentoSelector
+            value={etiquetaValue ?? null}
+            onChange={(id) => onEtiquetaChange?.(id)}
+            disabled={disabled || isUploading}
+            required={etiquetaRequired}
+            helperText={etiquetaHelperText}
+          />
+        </Box>
+      )}
 
       {/* Drag-and-Drop Zone (NEW) */}
       {!readOnly && onUpload && enableDragDrop && (
@@ -316,7 +370,12 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                     <AttachFileIcon color="primary" />
                   </ListItemIcon>
                   <ListItemText
-                    primary={file.nombre}
+                    primary={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <span>{file.nombre}</span>
+                        <EtiquetaDocumentoChip nombre={file.etiqueta_nombre} />
+                      </Box>
+                    }
                     secondary={
                       <>
                         {file.tipo && <span>{file.tipo}</span>}

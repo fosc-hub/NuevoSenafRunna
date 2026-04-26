@@ -40,6 +40,7 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import AssignmentIcon from "@mui/icons-material/Assignment"
 import BaseDialog from "@/components/shared/BaseDialog"
+import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
 import { useFormSubmission } from "@/hooks"
 import {
   createInformeCierre,
@@ -82,6 +83,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
   const [tipoCese, setTipoCese] = useState<TipoCeseMPI | "">("")
   const [observaciones, setObservaciones] = useState("")
   const [archivos, setArchivos] = useState<File[]>([])
+  const [etiquetaCierre, setEtiquetaCierre] = useState<number | null>(null)
 
   // ========== Validation ==========
   const isObservacionesValid = observaciones.trim().length >= 20
@@ -96,7 +98,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
         observaciones: observaciones.trim(),
       })
 
-      // Step 2: Upload adjuntos if any
+      // Step 2: Upload adjuntos if any (con etiqueta opcional global)
       if (archivos.length > 0) {
         await Promise.all(archivos.map((archivo) =>
           uploadAdjuntoInformeCierre(
@@ -104,7 +106,8 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
             informeCreado.id,
             archivo,
             "INFORME_CIERRE",
-            `Adjunto: ${archivo.name}`
+            `Adjunto: ${archivo.name}`,
+            etiquetaCierre,
           )
         ))
       }
@@ -249,6 +252,15 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
         <Typography variant="subtitle2" gutterBottom>
           Adjuntos (Opcional)
         </Typography>
+
+        <Box sx={{ mb: 2 }}>
+          <EtiquetaDocumentoSelector
+            value={etiquetaCierre}
+            onChange={setEtiquetaCierre}
+            disabled={isLoading}
+            helperText="Etiqueta común para los adjuntos del cierre"
+          />
+        </Box>
 
         <Button
           variant="outlined"

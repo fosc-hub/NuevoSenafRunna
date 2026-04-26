@@ -17,6 +17,7 @@ import { useState } from "react"
 import CloseIcon from "@mui/icons-material/Close"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
+import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
 
 interface AgregarIntervencionModalProps {
     open: boolean
@@ -34,6 +35,7 @@ export const AgregarIntervencionModal: React.FC<AgregarIntervencionModalProps> =
     const [fecha, setFecha] = useState<string>("")
     const [tipo, setTipo] = useState<string>("")
     const [archivo, setArchivo] = useState<File | null>(null)
+    const [etiquetaId, setEtiquetaId] = useState<number | null>(null)
     const [observaciones, setObservaciones] = useState<string>("")
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,6 +136,15 @@ export const AgregarIntervencionModal: React.FC<AgregarIntervencionModalProps> =
                             {archivo ? archivo.name : "Seleccionar archivo"}
                             <input type="file" hidden onChange={handleFileChange} />
                         </Button>
+                        {archivo && (
+                            <Box sx={{ mt: 2 }}>
+                                <EtiquetaDocumentoSelector
+                                    value={etiquetaId}
+                                    onChange={setEtiquetaId}
+                                    helperText="Etiqueta clasificatoria del archivo (opcional)"
+                                />
+                            </Box>
+                        )}
                     </Box>
                     {/* Observaciones */}
                     <Box>

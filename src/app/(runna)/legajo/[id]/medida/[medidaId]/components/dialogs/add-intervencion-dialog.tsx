@@ -6,10 +6,12 @@ import { Button, TextField, Box, Typography } from "@mui/material"
 import AttachFileIcon from "@mui/icons-material/AttachFile"
 import AddIcon from "@mui/icons-material/Add"
 import BaseDialog from "@/components/shared/BaseDialog"
+import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
 
 export interface NewIntervencion {
   descripcion: string
   archivo?: File | null
+  etiquetaId?: number | null
 }
 
 interface AddIntervencionDialogProps {
@@ -22,6 +24,7 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
   const [intervencion, setIntervencion] = useState<NewIntervencion>({
     descripcion: "",
     archivo: null,
+    etiquetaId: null,
   })
   const [fileName, setFileName] = useState<string>("")
 
@@ -40,7 +43,7 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
 
   const handleSave = () => {
     onSave(intervencion)
-    setIntervencion({ descripcion: "", archivo: null })
+    setIntervencion({ descripcion: "", archivo: null, etiquetaId: null })
     setFileName("")
   }
 
@@ -96,6 +99,16 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
             </Typography>
           )}
         </Box>
+
+        {intervencion.archivo && (
+          <Box sx={{ mt: 2 }}>
+            <EtiquetaDocumentoSelector
+              value={intervencion.etiquetaId ?? null}
+              onChange={(id) => setIntervencion((prev) => ({ ...prev, etiquetaId: id }))}
+              helperText="Etiqueta clasificatoria del archivo (opcional)"
+            />
+          </Box>
+        )}
       </Box>
     </BaseDialog>
   )

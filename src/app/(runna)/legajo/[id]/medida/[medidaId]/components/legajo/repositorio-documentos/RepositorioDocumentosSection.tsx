@@ -38,6 +38,7 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
     categoria: 'TODOS',
     tipoModelo: 'TODOS',
     medidaId: 'TODOS',
+    etiqueta: 'TODOS',
   })
 
   // Expansion state for accordions - default all expanded
@@ -49,7 +50,8 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
   const hasActiveFilters =
     filters.categoria !== 'TODOS' ||
     filters.tipoModelo !== 'TODOS' ||
-    filters.medidaId !== 'TODOS'
+    filters.medidaId !== 'TODOS' ||
+    filters.etiqueta !== 'TODOS'
 
   // Get unique tipo_modelo values for filter dropdown
   const tipoModeloOptions = useMemo(() => {
@@ -75,6 +77,10 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
         if (metadata?.medida_id !== filters.medidaId) {
           return false
         }
+      }
+      // Filter by etiqueta de documento
+      if (filters.etiqueta !== 'TODOS' && doc.etiqueta_id !== filters.etiqueta) {
+        return false
       }
       return true
     })

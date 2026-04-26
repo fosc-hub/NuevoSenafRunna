@@ -32,6 +32,8 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
+import EtiquetaDocumentoSelector, { EtiquetaDocumentoChip } from "./components/EtiquetaDocumentoSelector"
+import { useEtiquetasDocumento } from "@/hooks/useEtiquetasDocumento"
 
 // NOTE: CARGA_OFICIOS dropdowns have been moved to the specialized CargaOficiosForm component
 
@@ -48,6 +50,11 @@ const FileUploadSection = ({
 }) => {
   const { field } = useController({ name: "adjuntos", control, defaultValue: [] })
   const { value, onChange } = field
+  // Etiqueta seleccionada para el próximo archivo cargado en esta sesión.
+  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
+  const { etiquetas } = useEtiquetasDocumento()
+  const etiquetaNombre = (id?: number | null) =>
+    id ? etiquetas.find((e) => e.id === id)?.nombre ?? null : null
 
   // Separar archivos existentes (objetos con propiedad 'archivo') y nuevos archivos (objetos File)
   const existingFiles = Array.isArray(value)
@@ -98,6 +105,15 @@ const FileUploadSection = ({
         <Grid container spacing={3}>
           {/* Sección para agregar nuevos archivos */}
           <Grid item xs={12} md={6}>
+            {/* Etiqueta de Documento (catálogo unificado) — aplica al próximo archivo cargado */}
+            <Box sx={{ mb: 2 }}>
+              <EtiquetaDocumentoSelector
+                value={etiquetaActual}
+                onChange={setEtiquetaActual}
+                disabled={readOnly}
+                helperText="Aplica al próximo archivo cargado. Podés cambiarla entre archivos."
+              />
+            </Box>
             <Box
               sx={{
                 border: "2px dashed",
@@ -124,7 +140,12 @@ const FileUploadSection = ({
                 multiple
                 onChange={(e) => {
                   const files = Array.from(e.target.files || [])
-                  onChange([...value, ...files])
+                  // Marcar cada File con la etiqueta elegida (brand __etiquetaId)
+                  // para que el submit pueda recuperarla y enviarla al backend.
+                  const tagged = files.map((f) =>
+                    Object.assign(f, { __etiquetaId: etiquetaActual ?? null }),
+                  )
+                  onChange([...value, ...tagged])
                 }}
                 style={{ display: "none" }}
                 disabled={readOnly}
@@ -165,11 +186,14 @@ const FileUploadSection = ({
                           "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", gap: 1 }}>
                           <AttachFile sx={{ mr: 1, color: "primary.light", flexShrink: 0 }} fontSize="small" />
                           <Typography variant="body2" noWrap title={'name' in file ? file.name : file.archivo}>
                             {'name' in file ? file.name : file.archivo}
                           </Typography>
+                          <EtiquetaDocumentoChip
+                            nombre={etiquetaNombre((file as any).__etiquetaId)}
+                          />
                         </Box>
                         <Tooltip title="Eliminar archivo">
                           <IconButton
@@ -234,11 +258,17 @@ const FileUploadSection = ({
                           },
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", flexGrow: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", flexGrow: 1, gap: 1 }}>
                           <AttachFile sx={{ mr: 1, color: "primary.light", flexShrink: 0 }} fontSize="small" />
                           <Typography variant="body2" noWrap title={getFileName(file.archivo)}>
                             {getFileName(file.archivo)}
                           </Typography>
+                          <EtiquetaDocumentoChip
+                            nombre={
+                              file?.etiqueta_detail?.nombre ??
+                              etiquetaNombre(file?.etiqueta ?? null)
+                            }
+                          />
                         </Box>
                         <Tooltip title="Ver archivo">
                           <IconButton size="small" color="primary" onClick={() => openFile(file.archivo)}>

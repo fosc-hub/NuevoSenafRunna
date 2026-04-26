@@ -38,6 +38,7 @@ import {
 import { useNotaAvalAdjuntos } from "../../hooks/useNotaAvalAdjuntos"
 import { extractUserName } from "../../types/nota-aval-api"
 import type { AdjuntoNotaAval } from "../../types/nota-aval-api"
+import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
 
 // ============================================================================
 // INTERFACES
@@ -75,6 +76,7 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   // HOOKS
   // ============================================================================
 
+  const [etiquetaSeleccionada, setEtiquetaSeleccionada] = useState<number | null>(null)
   const {
     adjuntos,
     isLoadingAdjuntos,
@@ -142,7 +144,7 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
     }
 
     try {
-      await uploadFile(file)
+      await uploadFile(file, etiquetaSeleccionada)
     } catch (error) {
       console.error("Error uploading file:", error)
     }
@@ -182,7 +184,7 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
       const validation = validateFileBeforeUpload(file)
       if (validation.valid) {
         try {
-          await uploadFile(file)
+          await uploadFile(file, etiquetaSeleccionada)
         } catch (error) {
           console.error("Error uploading file:", error)
         }
@@ -255,6 +257,18 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
           )}
         </Box>
       </Box>
+
+      {/* ETIQUETA SELECTOR (aplica al próximo archivo) */}
+      {canUpload && (
+        <Box sx={{ mb: 2 }}>
+          <EtiquetaDocumentoSelector
+            value={etiquetaSeleccionada}
+            onChange={setEtiquetaSeleccionada}
+            disabled={isUploading}
+            helperText="Etiqueta que se asigna al próximo archivo subido"
+          />
+        </Box>
+      )}
 
       {/* DRAG & DROP UPLOAD ZONE */}
       {canUpload && (

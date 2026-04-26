@@ -163,7 +163,7 @@ export interface CargaOficiosFormData {
   nro_oficio_web?: string // Número de oficio web (opcional)
   caratula: string // Autos caratulados (OBLIGATORIO)
   plazo_dias: number | null
-  descripcion: string // (OBLIGATORIO)
+  descripcion?: string // Observaciones (opcional)
   presuntos_delitos: string // Tags separados por coma (OBLIGATORIO)
 
   // === Localización Section ===

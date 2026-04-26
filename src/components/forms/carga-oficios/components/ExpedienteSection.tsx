@@ -189,20 +189,17 @@ const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false,
           />
         </Grid>
 
-        {/* Row 4: Descripción Detallada (full width, multiline) */}
+        {/* Row 4: Observaciones (full width, multiline, optional) */}
         <Grid item xs={12}>
           <Controller
             name="descripcion"
             control={control}
-            rules={{
-              required: "La descripción es obligatoria",
-            }}
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
-                label="Descripción Detallada *"
+                value={field.value || ""}
+                label="Observaciones"
                 fullWidth
-                required
                 multiline
                 rows={4}
                 disabled={readOnly}
@@ -210,9 +207,9 @@ const ExpedienteSection: React.FC<ExpedienteSectionProps> = ({ readOnly = false,
                 helperText={
                   error?.message ||
                   errors?.descripcion ||
-                  "Ampliar detalles de la carátula o estado de la causa"
+                  "Observaciones opcionales sobre el caso, estado de la causa, etc."
                 }
-                placeholder="Ingrese información adicional sobre el caso, estado de la causa, observaciones relevantes..."
+                placeholder="Ingrese observaciones adicionales (opcional)..."
                 InputProps={{
                   readOnly,
                   startAdornment: (

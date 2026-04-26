@@ -54,6 +54,7 @@ import {
   DECISION_JUDICIAL_LABELS,
   validateRatificacionDates,
 } from "../../types/ratificacion-judicial-api"
+import { FileUploadSection } from "@/components/shared/FileUploadSection"
 
 // ============================================================================
 // INTERFACES
@@ -129,6 +130,9 @@ export const RatificacionJudicialDialog: React.FC<
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [etiquetaResolucion, setEtiquetaResolucion] = useState<number | null>(null)
+  const [etiquetaCedula, setEtiquetaCedula] = useState<number | null>(null)
+  const [etiquetaAcuseRatif, setEtiquetaAcuseRatif] = useState<number | null>(null)
 
   // Update form data when initialData changes (edit mode)
   React.useEffect(() => {
@@ -453,122 +457,103 @@ export const RatificacionJudicialDialog: React.FC<
               Adjuntos
             </Typography>
 
-            {/* Archivo Resolución Judicial */}
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Resolución Judicial {mode === "create" ? "*" : "(Opcional)"} (PDF)
+            {/* Resolución Judicial */}
+            <FileUploadSection
+              files={
+                files.archivo_resolucion_judicial
+                  ? [
+                      {
+                        id: "resolucion",
+                        nombre: files.archivo_resolucion_judicial.name,
+                        tipo: files.archivo_resolucion_judicial.type,
+                        tamano: files.archivo_resolucion_judicial.size,
+                      },
+                    ]
+                  : []
+              }
+              onUpload={(file) =>
+                setFiles((prev) => ({ ...prev, archivo_resolucion_judicial: file }))
+              }
+              onDelete={() => handleFileRemove("archivo_resolucion_judicial")}
+              multiple={false}
+              title={`Resolución Judicial ${mode === "create" ? "*" : "(Opcional)"} (PDF)`}
+              emptyMessage="No hay archivo seleccionado"
+              allowedTypes=".pdf"
+              maxSizeInMB={10}
+              disabled={isLoading}
+              enableEtiqueta
+              etiquetaValue={etiquetaResolucion}
+              onEtiquetaChange={setEtiquetaResolucion}
+              etiquetaHelperText="Etiqueta clasificatoria de la resolución (opcional)"
+            />
+            {errors.archivo_resolucion_judicial && (
+              <Typography variant="caption" color="error" sx={{ display: "block", mb: 2 }}>
+                {errors.archivo_resolucion_judicial}
               </Typography>
-              {mode === "edit" && initialData && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                  {initialData.adjuntos?.find(adj => adj.tipo_adjunto === "RESOLUCION_JUDICIAL")
-                    ? `Archivo actual: Resolución Judicial existente. Sube uno nuevo para reemplazarlo.`
-                    : "No hay archivo actual. Sube uno nuevo si deseas agregarlo."}
-                </Typography>
-              )}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<UploadIcon />}
-                  disabled={isLoading}
-                  sx={{ textTransform: "none" }}
-                >
-                  Seleccionar Archivo
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    hidden
-                    onChange={(e) =>
-                      handleFileSelect("archivo_resolucion_judicial", e)
-                    }
-                  />
-                </Button>
-                {files.archivo_resolucion_judicial && (
-                  <Chip
-                    label={files.archivo_resolucion_judicial.name}
-                    icon={<DescriptionIcon />}
-                    onDelete={() => handleFileRemove("archivo_resolucion_judicial")}
-                    deleteIcon={<DeleteIcon />}
-                    color="primary"
-                    variant="outlined"
-                  />
-                )}
-              </Box>
-              {errors.archivo_resolucion_judicial && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
-                  {errors.archivo_resolucion_judicial}
-                </Typography>
-              )}
+            )}
+
+            {/* Cédula de Notificación */}
+            <Box sx={{ mt: 2 }}>
+              <FileUploadSection
+                files={
+                  files.archivo_cedula_notificacion
+                    ? [
+                        {
+                          id: "cedula",
+                          nombre: files.archivo_cedula_notificacion.name,
+                          tipo: files.archivo_cedula_notificacion.type,
+                          tamano: files.archivo_cedula_notificacion.size,
+                        },
+                      ]
+                    : []
+                }
+                onUpload={(file) =>
+                  setFiles((prev) => ({ ...prev, archivo_cedula_notificacion: file }))
+                }
+                onDelete={() => handleFileRemove("archivo_cedula_notificacion")}
+                multiple={false}
+                title="Cédula de Notificación (PDF - Opcional)"
+                emptyMessage="No hay archivo seleccionado"
+                allowedTypes=".pdf"
+                maxSizeInMB={10}
+                disabled={isLoading}
+                enableEtiqueta
+                etiquetaValue={etiquetaCedula}
+                onEtiquetaChange={setEtiquetaCedula}
+                etiquetaHelperText="Etiqueta clasificatoria de la cédula (opcional)"
+              />
             </Box>
 
-            {/* Archivo Cédula Notificación (Opcional) */}
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Cédula de Notificación (PDF - Opcional)
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<UploadIcon />}
-                  disabled={isLoading}
-                  sx={{ textTransform: "none" }}
-                >
-                  Seleccionar Archivo
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    hidden
-                    onChange={(e) =>
-                      handleFileSelect("archivo_cedula_notificacion", e)
-                    }
-                  />
-                </Button>
-                {files.archivo_cedula_notificacion && (
-                  <Chip
-                    label={files.archivo_cedula_notificacion.name}
-                    icon={<DescriptionIcon />}
-                    onDelete={() => handleFileRemove("archivo_cedula_notificacion")}
-                    deleteIcon={<DeleteIcon />}
-                    color="secondary"
-                    variant="outlined"
-                  />
-                )}
-              </Box>
-            </Box>
-
-            {/* Archivo Acuse Recibo (Opcional) */}
-            <Box>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Acuse de Recibo (PDF - Opcional)
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<UploadIcon />}
-                  disabled={isLoading}
-                  sx={{ textTransform: "none" }}
-                >
-                  Seleccionar Archivo
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    hidden
-                    onChange={(e) => handleFileSelect("archivo_acuse_recibo", e)}
-                  />
-                </Button>
-                {files.archivo_acuse_recibo && (
-                  <Chip
-                    label={files.archivo_acuse_recibo.name}
-                    icon={<DescriptionIcon />}
-                    onDelete={() => handleFileRemove("archivo_acuse_recibo")}
-                    deleteIcon={<DeleteIcon />}
-                    color="secondary"
-                    variant="outlined"
-                  />
-                )}
-              </Box>
+            {/* Acuse de Recibo */}
+            <Box sx={{ mt: 2 }}>
+              <FileUploadSection
+                files={
+                  files.archivo_acuse_recibo
+                    ? [
+                        {
+                          id: "acuse",
+                          nombre: files.archivo_acuse_recibo.name,
+                          tipo: files.archivo_acuse_recibo.type,
+                          tamano: files.archivo_acuse_recibo.size,
+                        },
+                      ]
+                    : []
+                }
+                onUpload={(file) =>
+                  setFiles((prev) => ({ ...prev, archivo_acuse_recibo: file }))
+                }
+                onDelete={() => handleFileRemove("archivo_acuse_recibo")}
+                multiple={false}
+                title="Acuse de Recibo (PDF - Opcional)"
+                emptyMessage="No hay archivo seleccionado"
+                allowedTypes=".pdf"
+                maxSizeInMB={10}
+                disabled={isLoading}
+                enableEtiqueta
+                etiquetaValue={etiquetaAcuseRatif}
+                onEtiquetaChange={setEtiquetaAcuseRatif}
+                etiquetaHelperText="Etiqueta clasificatoria del acuse (opcional)"
+              />
             </Box>
           </Box>
         </Box>

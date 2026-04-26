@@ -66,6 +66,7 @@ import type {
   CrearYEnviarInformeJuridicoRequest,
 } from "../../types/informe-juridico-api"
 import { getCurrentDateISO } from "@/utils/dateUtils"
+import { FileUploadSection } from "@/components/shared/FileUploadSection"
 
 // ============================================================================
 // INTERFACES
@@ -153,6 +154,8 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
   // File state
   const [informeOficial, setInformeOficial] = useState<File | null>(null)
   const [acuses, setAcuses] = useState<File[]>([])
+  const [etiquetaInforme, setEtiquetaInforme] = useState<number | null>(null)
+  const [etiquetaAcuse, setEtiquetaAcuse] = useState<number | null>(null)
   const [fileErrors, setFileErrors] = useState<string[]>([])
 
   // Drag-drop state
@@ -573,243 +576,74 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
   // Step 2: Documentos
   const renderStep2 = () => (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* Informe Oficial (Required) - Drag & Drop */}
-      <Card variant="outlined" sx={{ borderColor: formErrors.informe_oficial ? 'error.main' : 'divider' }}>
-        <CardHeader
-          avatar={
-            <Avatar sx={{ bgcolor: informeOficial ? 'success.main' : 'primary.main' }}>
-              <GavelIcon />
-            </Avatar>
-          }
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Informe Jurídico Oficial
-              </Typography>
-              <Chip label="Requerido" size="small" color="error" variant="outlined" />
-            </Box>
-          }
-          subheader="Documento oficial del informe jurídico en formato PDF"
-          action={
-            informeOficial && (
-              <Chip
-                icon={<CheckCircleIcon />}
-                label="Archivo cargado"
-                color="success"
-                size="small"
-              />
-            )
-          }
-        />
-        <CardContent>
-          {informeOficial ? (
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                bgcolor: 'success.50',
-                borderColor: 'success.200',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-              }}
-            >
-              <PdfIcon color="error" sx={{ fontSize: 40 }} />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {informeOficial.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatFileSize(informeOficial.size)}
-                </Typography>
-              </Box>
-              <IconButton
-                onClick={handleRemoveInformeOficial}
-                disabled={isLoading}
-                color="error"
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Paper>
-          ) : (
-            <Paper
-              onDragEnter={handleInformeDragEnter}
-              onDragOver={handleInformeDragOver}
-              onDragLeave={handleInformeDragLeave}
-              onDrop={handleInformeDrop}
-              onClick={() => informeInputRef.current?.click()}
-              sx={{
-                border: isDraggingInforme ? '2px dashed #4f3ff0' : '2px dashed',
-                borderColor: isDraggingInforme ? '#4f3ff0' : 'divider',
-                borderRadius: 2,
-                p: 4,
-                textAlign: 'center',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                backgroundColor: isDraggingInforme ? 'rgba(79, 63, 240, 0.05)' : 'background.default',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: isLoading ? 'background.default' : 'action.hover',
-                  borderColor: isLoading ? 'divider' : '#4f3ff0',
+      {/* Informe Oficial (Required) */}
+      <FileUploadSection
+        files={
+          informeOficial
+            ? [
+                {
+                  id: "informe",
+                  nombre: informeOficial.name,
+                  tipo: informeOficial.type,
+                  tamano: informeOficial.size,
                 },
-              }}
-            >
-              <CloudUploadIcon
-                sx={{
-                  fontSize: 48,
-                  color: isDraggingInforme ? '#4f3ff0' : 'text.secondary',
-                  mb: 2,
-                }}
-              />
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                {isDraggingInforme ? "Suelta el archivo aquí" : "Arrastra y suelta el informe oficial"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                o haz clic para seleccionar
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Solo archivos PDF, máximo 10MB
-              </Typography>
-              <input
-                ref={informeInputRef}
-                type="file"
-                accept=".pdf,application/pdf"
-                style={{ display: 'none' }}
-                onChange={handleInformeOficialSelect}
-                disabled={isLoading}
-              />
-            </Paper>
-          )}
+              ]
+            : []
+        }
+        onUpload={(file, etiquetaId) => {
+          ;(file as any).__etiquetaId = etiquetaId ?? null
+          setInformeOficial(file)
+        }}
+        onDelete={handleRemoveInformeOficial}
+        multiple={false}
+        title="Informe Jurídico Oficial (Requerido)"
+        emptyMessage="Aún no se cargó el informe oficial"
+        allowedTypes=".pdf,application/pdf"
+        maxSizeInMB={10}
+        disabled={isLoading}
+        enableEtiqueta
+        etiquetaValue={etiquetaInforme}
+        onEtiquetaChange={setEtiquetaInforme}
+        etiquetaHelperText="Etiqueta clasificatoria del informe (opcional)"
+      />
 
-          {formErrors.informe_oficial && (
-            <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
-              {formErrors.informe_oficial}
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
+      {formErrors.informe_oficial && (
+        <Typography color="error" variant="caption">{formErrors.informe_oficial}</Typography>
+      )}
 
-      {/* Acuses de Recibo (Optional) - Drag & Drop */}
-      <Card variant="outlined">
-        <CardHeader
-          avatar={
-            <Avatar sx={{ bgcolor: 'secondary.main' }}>
-              <ReceiptIcon />
-            </Avatar>
-          }
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Acuses de Recibo
-              </Typography>
-              <Chip label="Opcional" size="small" color="default" variant="outlined" />
-            </Box>
-          }
-          subheader="Comprobantes de recepción de las notificaciones"
-          action={
-            acuses.length > 0 && (
-              <Chip
-                label={`${acuses.length} archivo${acuses.length > 1 ? 's' : ''}`}
-                color="secondary"
-                size="small"
-              />
-            )
-          }
-        />
-        <CardContent>
-          {/* Drag & Drop Zone */}
-          <Paper
-            onDragEnter={handleAcuseDragEnter}
-            onDragOver={handleAcuseDragOver}
-            onDragLeave={handleAcuseDragLeave}
-            onDrop={handleAcuseDrop}
-            onClick={() => acuseInputRef.current?.click()}
-            sx={{
-              border: isDraggingAcuse ? '2px dashed #9c27b0' : '2px dashed',
-              borderColor: isDraggingAcuse ? '#9c27b0' : 'divider',
-              borderRadius: 2,
-              p: 3,
-              textAlign: 'center',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              backgroundColor: isDraggingAcuse ? 'rgba(156, 39, 176, 0.05)' : 'background.default',
-              transition: 'all 0.2s ease',
-              mb: acuses.length > 0 ? 2 : 0,
-              '&:hover': {
-                backgroundColor: isLoading ? 'background.default' : 'action.hover',
-                borderColor: isLoading ? 'divider' : '#9c27b0',
-              },
-            }}
-          >
-            <CloudUploadIcon
-              sx={{
-                fontSize: 36,
-                color: isDraggingAcuse ? '#9c27b0' : 'text.secondary',
-                mb: 1,
-              }}
-            />
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {isDraggingAcuse ? "Suelta los archivos aquí" : "Agregar acuses de recibo"}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Puede agregar múltiples archivos PDF, máximo 10MB cada uno
-            </Typography>
-            <input
-              ref={acuseInputRef}
-              type="file"
-              accept=".pdf,application/pdf"
-              multiple
-              style={{ display: 'none' }}
-              onChange={handleAcuseSelect}
-              disabled={isLoading}
-            />
-          </Paper>
-
-          {/* Acuses List */}
-          {acuses.length > 0 && (
-            <Grid container spacing={2}>
-              {acuses.map((file, index) => (
-                <Grid item xs={12} sm={6} key={`${file.name}-${index}`}>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      bgcolor: 'grey.50',
-                    }}
-                  >
-                    <PdfIcon color="error" />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
-                        {file.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatFileSize(file.size)}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      onClick={() => handleRemoveAcuse(index)}
-                      disabled={isLoading}
-                      size="small"
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </CardContent>
-      </Card>
+      {/* Acuses de Recibo (Optional) */}
+      <FileUploadSection
+        files={acuses.map((file, index) => ({
+          id: `acuse-${index}`,
+          nombre: file.name,
+          tipo: file.type,
+          tamano: file.size,
+        }))}
+        onUpload={(file, etiquetaId) => {
+          ;(file as any).__etiquetaId = etiquetaId ?? null
+          setAcuses((prev) => [...prev, file])
+        }}
+        onDelete={(id) => {
+          const idx = typeof id === "string" ? Number(id.replace("acuse-", "")) : id
+          handleRemoveAcuse(idx)
+        }}
+        multiple
+        title="Acuses de Recibo (Opcional)"
+        emptyMessage="No hay acuses de recibo cargados"
+        allowedTypes=".pdf,application/pdf"
+        maxSizeInMB={10}
+        disabled={isLoading}
+        enableEtiqueta
+        etiquetaValue={etiquetaAcuse}
+        onEtiquetaChange={setEtiquetaAcuse}
+        etiquetaHelperText="Etiqueta clasificatoria (aplica al próximo acuse cargado)"
+      />
 
       {/* File Errors */}
       {fileErrors.length > 0 && (
         <Alert severity="error" onClose={() => setFileErrors([])}>
           {fileErrors.map((error, i) => (
-            <Typography key={i} variant="body2">
-              {error}
-            </Typography>
+            <Typography key={i} variant="body2">{error}</Typography>
           ))}
         </Alert>
       )}

@@ -15,9 +15,8 @@ import {
 } from "@mui/material"
 import { useState } from "react"
 import CloseIcon from "@mui/icons-material/Close"
-import AttachFileIcon from "@mui/icons-material/AttachFile"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
-import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 
 interface AgregarIntervencionModalProps {
     open: boolean
@@ -38,10 +37,18 @@ export const AgregarIntervencionModal: React.FC<AgregarIntervencionModalProps> =
     const [etiquetaId, setEtiquetaId] = useState<number | null>(null)
     const [observaciones, setObservaciones] = useState<string>("")
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            setArchivo(e.target.files[0])
-        }
+    const fileItems: FileItem[] = archivo
+        ? [{ id: "current", nombre: archivo.name, tipo: archivo.type, tamano: archivo.size }]
+        : []
+
+    const handleUpload = (file: File, etId?: number | null) => {
+        setArchivo(file)
+        setEtiquetaId(etId ?? null)
+    }
+
+    const handleDelete = () => {
+        setArchivo(null)
+        setEtiquetaId(null)
     }
 
     const handleSave = () => {
@@ -124,27 +131,18 @@ export const AgregarIntervencionModal: React.FC<AgregarIntervencionModalProps> =
                     </Box>
                     {/* Adjuntar documento */}
                     <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                            Adjuntar documento
-                        </Typography>
-                        <Button
-                            variant="outlined"
-                            component="label"
-                            startIcon={<AttachFileIcon />}
-                            sx={{ borderRadius: 2, textTransform: 'none' }}
-                        >
-                            {archivo ? archivo.name : "Seleccionar archivo"}
-                            <input type="file" hidden onChange={handleFileChange} />
-                        </Button>
-                        {archivo && (
-                            <Box sx={{ mt: 2 }}>
-                                <EtiquetaDocumentoSelector
-                                    value={etiquetaId}
-                                    onChange={setEtiquetaId}
-                                    helperText="Etiqueta clasificatoria del archivo (opcional)"
-                                />
-                            </Box>
-                        )}
+                        <FileUploadSection
+                            files={fileItems}
+                            onUpload={handleUpload}
+                            onDelete={handleDelete}
+                            multiple={false}
+                            title="Adjuntar documento"
+                            emptyMessage="No hay archivo seleccionado"
+                            enableEtiqueta
+                            etiquetaValue={etiquetaId}
+                            onEtiquetaChange={setEtiquetaId}
+                            etiquetaHelperText="Etiqueta clasificatoria del archivo (opcional)"
+                        />
                     </Box>
                     {/* Observaciones */}
                     <Box>

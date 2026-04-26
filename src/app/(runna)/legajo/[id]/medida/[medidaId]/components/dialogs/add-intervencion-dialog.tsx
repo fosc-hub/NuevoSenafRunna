@@ -2,11 +2,10 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Button, TextField, Box, Typography } from "@mui/material"
-import AttachFileIcon from "@mui/icons-material/AttachFile"
+import { TextField, Box } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
 import BaseDialog from "@/components/shared/BaseDialog"
-import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 
 export interface NewIntervencion {
   descripcion: string
@@ -26,26 +25,37 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
     archivo: null,
     etiquetaId: null,
   })
-  const [fileName, setFileName] = useState<string>("")
+  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target
     setIntervencion((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0]
-      setIntervencion((prev) => ({ ...prev, archivo: file }))
-      setFileName(file.name)
-    }
+  const handleUpload = (file: File, etiquetaId?: number | null) => {
+    setIntervencion((prev) => ({ ...prev, archivo: file, etiquetaId: etiquetaId ?? null }))
+  }
+
+  const handleDelete = () => {
+    setIntervencion((prev) => ({ ...prev, archivo: null, etiquetaId: null }))
   }
 
   const handleSave = () => {
     onSave(intervencion)
     setIntervencion({ descripcion: "", archivo: null, etiquetaId: null })
-    setFileName("")
+    setEtiquetaActual(null)
   }
+
+  const fileItems: FileItem[] = intervencion.archivo
+    ? [
+        {
+          id: "current",
+          nombre: intervencion.archivo.name,
+          tipo: intervencion.archivo.type,
+          tamano: intervencion.archivo.size,
+        },
+      ]
+    : []
 
   return (
     <BaseDialog
@@ -57,18 +67,14 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
       titleIcon={<AddIcon />}
       showCloseButton
       actions={[
-        {
-          label: "Cancelar",
-          onClick: onClose,
-          variant: "text"
-        },
+        { label: "Cancelar", onClick: onClose, variant: "text" },
         {
           label: "Guardar",
           onClick: handleSave,
           variant: "contained",
           color: "primary",
-          disabled: !intervencion.descripcion
-        }
+          disabled: !intervencion.descripcion,
+        },
       ]}
     >
       <Box sx={{ mt: 2 }}>
@@ -88,27 +94,18 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
           sx={{ mb: 2 }}
         />
 
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Button component="label" startIcon={<AttachFileIcon />} sx={{ textTransform: "none" }}>
-            Adjuntar archivo
-            <input type="file" hidden onChange={handleFileChange} />
-          </Button>
-          {fileName && (
-            <Typography variant="body2" sx={{ ml: 2 }}>
-              {fileName}
-            </Typography>
-          )}
-        </Box>
-
-        {intervencion.archivo && (
-          <Box sx={{ mt: 2 }}>
-            <EtiquetaDocumentoSelector
-              value={intervencion.etiquetaId ?? null}
-              onChange={(id) => setIntervencion((prev) => ({ ...prev, etiquetaId: id }))}
-              helperText="Etiqueta clasificatoria del archivo (opcional)"
-            />
-          </Box>
-        )}
+        <FileUploadSection
+          files={fileItems}
+          onUpload={handleUpload}
+          onDelete={handleDelete}
+          multiple={false}
+          title="Archivo adjunto (opcional)"
+          emptyMessage="No hay archivo seleccionado"
+          enableEtiqueta
+          etiquetaValue={etiquetaActual}
+          onEtiquetaChange={setEtiquetaActual}
+          etiquetaHelperText="Etiqueta clasificatoria del archivo (opcional)"
+        />
       </Box>
     </BaseDialog>
   )

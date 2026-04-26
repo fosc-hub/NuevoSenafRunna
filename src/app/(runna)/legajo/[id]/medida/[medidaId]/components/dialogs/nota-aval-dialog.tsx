@@ -46,6 +46,7 @@ import { DECISION_LABELS, DECISION_DESCRIPTIONS, NOTA_AVAL_VALIDATIONS } from ".
 import { useNotaAval } from "../../hooks/useNotaAval"
 import { useNotaAvalAdjuntos } from "../../hooks/useNotaAvalAdjuntos"
 import { WizardModal, type WizardStep } from "../medida/shared/wizard-modal"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 
 // ============================================================================
 // INTERFACES
@@ -84,8 +85,7 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
   const [decision, setDecision] = useState<TNotaAvalDecision | "">("")
   const [comentarios, setComentarios] = useState("")
   const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
 
   // ============================================================================
   // HOOKS
@@ -138,61 +138,7 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
     setComentarios(event.target.value)
   }
 
-  /**
-   * Process file for upload
-   */
-  const processFile = useCallback((file: File) => {
-    const validation = validateFileBeforeUpload(file)
-    const newFile: FileToUpload = {
-      id: `${Date.now()}-${file.name}-${Math.random().toString(36).substr(2, 9)}`,
-      file,
-      error: validation.valid ? undefined : validation.error,
-    }
-    setFilesToUpload(prev => [...prev, newFile])
-  }, [validateFileBeforeUpload])
-
-  /**
-   * Handle file selection from input
-   */
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files || files.length === 0) return
-
-    Array.from(files).forEach(processFile)
-    event.target.value = ""
-  }
-
-  /**
-   * Handle drag over
-   */
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  /**
-   * Handle drag leave
-   */
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
-
-  /**
-   * Handle drop
-   */
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    files.forEach(processFile)
-  }
-
-  /**
-   * Handle file removal
-   */
-  const handleFileRemove = (fileId: string) => {
-    setFilesToUpload(prev => prev.filter(f => f.id !== fileId))
-  }
+  // (file picking + drag/drop now handled by FileUploadSection — see DocumentsStep below)
 
   /**
    * Handle next step
@@ -235,7 +181,8 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
       const validFiles = filesToUpload.filter(f => !f.error)
       for (const fileToUpload of validFiles) {
         try {
-          await uploadFile(fileToUpload.file)
+          const etiquetaId = (fileToUpload.file as any).__etiquetaId ?? null
+          await uploadFile(fileToUpload.file, etiquetaId)
         } catch (error) {
           console.error(`Error uploading file ${fileToUpload.file.name}:`, error)
           // Continue with other files even if one fails
@@ -265,7 +212,7 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
     setDecision("")
     setComentarios("")
     setFilesToUpload([])
-    setIsDragging(false)
+    setEtiquetaActual(null)
 
     onClose()
   }
@@ -281,7 +228,7 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
       setDecision("")
       setComentarios("")
       setFilesToUpload([])
-      setIsDragging(false)
+      setEtiquetaActual(null)
     }
   }, [open])
 
@@ -409,120 +356,44 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
   /**
    * Step 2: Documents upload + Review summary
    */
+  const fileItems: FileItem[] = filesToUpload.map((f) => ({
+    id: f.id,
+    nombre: f.file.name,
+    tipo: f.file.type,
+    tamano: f.file.size,
+  }))
+
+  const handleSharedUpload = (file: File, etiquetaId?: number | null) => {
+    const validation = validateFileBeforeUpload(file)
+    const newFile: FileToUpload = {
+      id: `${Date.now()}-${file.name}-${Math.random().toString(36).substr(2, 9)}`,
+      file: Object.assign(file, { __etiquetaId: etiquetaId ?? null }),
+      error: validation.valid ? undefined : validation.error,
+    }
+    setFilesToUpload((prev) => [...prev, newFile])
+  }
+
+  const handleSharedDelete = (id: number | string) => {
+    setFilesToUpload((prev) => prev.filter((f) => f.id !== String(id)))
+  }
+
   const DocumentsStep = (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* DRAG & DROP ZONE */}
-      <Box>
-        <Typography variant="subtitle2" gutterBottom>
-          Adjuntar documentos (Opcional)
-        </Typography>
-
-        <Paper
-          variant="outlined"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
-          sx={{
-            p: 4,
-            textAlign: "center",
-            border: "2px dashed",
-            borderColor: isDragging ? "primary.main" : "grey.300",
-            bgcolor: isDragging ? "action.hover" : "background.default",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              borderColor: "primary.light",
-              bgcolor: "action.hover",
-            },
-          }}
-        >
-          <CloudUploadIcon sx={{ fontSize: 48, color: isDragging ? "primary.main" : "text.secondary", mb: 1 }} />
-          <Typography variant="body1" color={isDragging ? "primary.main" : "text.primary"}>
-            {isDragging ? "Suelta los archivos aquí" : "Arrastra archivos o haz clic para seleccionar"}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Solo PDF, máximo {formatFileSize(maxSizeBytes)}
-          </Typography>
-          <input
-            ref={inputRef}
-            type="file"
-            hidden
-            multiple
-            accept={allowedExtensions.join(",")}
-            onChange={handleFileSelect}
-            disabled={isCreating || isUploading}
-          />
-        </Paper>
-      </Box>
-
-      {/* FILES LIST - Card based */}
-      {filesToUpload.length > 0 && (
-        <Box>
-          <Typography variant="subtitle2" gutterBottom>
-            Archivos seleccionados ({filesToUpload.length})
-          </Typography>
-          <Grid container spacing={2}>
-            {filesToUpload.map((fileToUpload) => (
-              <Grid item xs={12} sm={6} key={fileToUpload.id}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    borderColor: fileToUpload.error ? "error.main" : "divider",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      borderColor: fileToUpload.error ? "error.main" : "primary.main",
-                      boxShadow: 1,
-                    },
-                  }}
-                >
-                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: fileToUpload.error ? "error.light" : "error.lighter",
-                        width: 40,
-                        height: 40,
-                      }}
-                    >
-                      <PdfIcon sx={{ color: fileToUpload.error ? "error.main" : "error.dark" }} />
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        variant="body2"
-                        fontWeight={500}
-                        noWrap
-                        title={fileToUpload.file.name}
-                      >
-                        {fileToUpload.file.name}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color={fileToUpload.error ? "error" : "text.secondary"}
-                      >
-                        {fileToUpload.error || formatFileSize(fileToUpload.file.size)}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleFileRemove(fileToUpload.id)
-                      }}
-                      disabled={isCreating || isUploading}
-                      sx={{
-                        color: "text.secondary",
-                        "&:hover": { color: "error.main" },
-                      }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      )}
+      <FileUploadSection
+        files={fileItems}
+        onUpload={handleSharedUpload}
+        onDelete={handleSharedDelete}
+        multiple
+        title="Adjuntar documentos (Opcional)"
+        emptyMessage="No hay documentos seleccionados"
+        allowedTypes={allowedExtensions.join(",")}
+        maxSizeInMB={Math.round(maxSizeBytes / (1024 * 1024))}
+        disabled={isCreating || isUploading}
+        enableEtiqueta
+        etiquetaValue={etiquetaActual}
+        onEtiquetaChange={setEtiquetaActual}
+        etiquetaHelperText="Etiqueta clasificatoria (aplica al próximo archivo cargado)"
+      />
 
       {/* UPLOAD PROGRESS */}
       {uploadProgress && uploadProgress.isUploading && (

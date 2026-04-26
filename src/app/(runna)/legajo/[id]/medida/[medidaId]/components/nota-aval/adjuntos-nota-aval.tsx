@@ -13,32 +13,11 @@
  * - Validación de archivos (PDF, máx 10MB)
  */
 
-import React, { useState, useRef } from "react"
-import {
-  Box,
-  Typography,
-  IconButton,
-  Paper,
-  Tooltip,
-  CircularProgress,
-  Alert,
-  Chip,
-  Card,
-  CardContent,
-  Avatar,
-  Grid,
-} from "@mui/material"
-import {
-  PictureAsPdf as PdfIcon,
-  Download as DownloadIcon,
-  Delete as DeleteIcon,
-  AttachFile as AttachFileIcon,
-  CloudUpload as CloudUploadIcon,
-} from "@mui/icons-material"
+import React, { useState } from "react"
+import { Box, Typography, Chip, CircularProgress, Alert } from "@mui/material"
 import { useNotaAvalAdjuntos } from "../../hooks/useNotaAvalAdjuntos"
-import { extractUserName } from "../../types/nota-aval-api"
 import type { AdjuntoNotaAval } from "../../types/nota-aval-api"
-import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 
 // ============================================================================
 // INTERFACES
@@ -66,14 +45,7 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   dense = false,
 }) => {
   // ============================================================================
-  // STATE
-  // ============================================================================
-
-  const [isDragging, setIsDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  // ============================================================================
-  // HOOKS
+  // STATE + HOOKS
   // ============================================================================
 
   const [etiquetaSeleccionada, setEtiquetaSeleccionada] = useState<number | null>(null)
@@ -82,13 +54,10 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
     isLoadingAdjuntos,
     adjuntosError,
     deleteAdjunto,
-    isDeleting,
     uploadFile,
     isUploading,
-    uploadProgress,
     hasAdjuntos,
     adjuntosCount,
-    formatFileSize,
     validateFileBeforeUpload,
     allowedExtensions,
     maxSizeBytes,
@@ -98,115 +67,41 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   // HANDLERS
   // ============================================================================
 
-  /**
-   * Handle file download
-   */
-  const handleDownload = (adjunto: AdjuntoNotaAval) => {
-    window.open(adjunto.archivo, "_blank")
-  }
+  // Map adjuntos del hook a FileItem para el componente compartido
+  const fileItems: FileItem[] = (adjuntos || []).map((adj: AdjuntoNotaAval) => ({
+    id: adj.id,
+    nombre: adj.nombre_archivo,
+    tipo: "application/pdf",
+    tamano: adj.tamano_bytes,
+    url: adj.archivo,
+    fecha_subida: adj.fecha_carga,
+  }))
 
-  /**
-   * Handle file delete
-   */
-  const handleDelete = async (adjuntoId: number) => {
-    if (!canDelete) return
-
-    if (
-      !confirm(
-        "¿Está seguro que desea eliminar este adjunto? Esta acción no se puede deshacer."
-      )
-    ) {
-      return
-    }
-
-    try {
-      await deleteAdjunto(adjuntoId)
-    } catch (error) {
-      console.error("Error deleting adjunto:", error)
-    }
-  }
-
-  /**
-   * Handle file upload
-   */
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canUpload) return
-
-    const files = event.target.files
-    if (!files || files.length === 0) return
-
-    const file = files[0]
-
+  const handleUpload = async (file: File, etiquetaId?: number | null) => {
     const validation = validateFileBeforeUpload(file)
     if (!validation.valid) {
       alert(validation.error)
       return
     }
-
     try {
-      await uploadFile(file, etiquetaSeleccionada)
+      await uploadFile(file, etiquetaId ?? etiquetaSeleccionada)
     } catch (error) {
       console.error("Error uploading file:", error)
     }
-
-    event.target.value = ""
   }
 
-  /**
-   * Handle drag over
-   */
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!canUpload) return
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  /**
-   * Handle drag leave
-   */
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
-
-  /**
-   * Handle drop
-   */
-  const handleDrop = async (e: React.DragEvent) => {
-    if (!canUpload) return
-    e.preventDefault()
-    setIsDragging(false)
-
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length === 0) return
-
-    // Upload first valid file
-    for (const file of files) {
-      const validation = validateFileBeforeUpload(file)
-      if (validation.valid) {
-        try {
-          await uploadFile(file, etiquetaSeleccionada)
-        } catch (error) {
-          console.error("Error uploading file:", error)
-        }
-        break // Only upload one file at a time
-      } else {
-        alert(validation.error)
-      }
+  const handleDelete = async (adjuntoId: number | string) => {
+    if (!canDelete) return
+    if (!confirm("¿Está seguro que desea eliminar este adjunto? Esta acción no se puede deshacer.")) return
+    try {
+      await deleteAdjunto(typeof adjuntoId === "number" ? adjuntoId : Number(adjuntoId))
+    } catch (error) {
+      console.error("Error deleting adjunto:", error)
     }
   }
 
-  /**
-   * Format date
-   */
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat("es-AR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date)
+  const handleDownload = (file: FileItem) => {
+    if (file.url) window.open(file.url, "_blank")
   }
 
   // ============================================================================
@@ -258,190 +153,24 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
         </Box>
       </Box>
 
-      {/* ETIQUETA SELECTOR (aplica al próximo archivo) */}
-      {canUpload && (
-        <Box sx={{ mb: 2 }}>
-          <EtiquetaDocumentoSelector
-            value={etiquetaSeleccionada}
-            onChange={setEtiquetaSeleccionada}
-            disabled={isUploading}
-            helperText="Etiqueta que se asigna al próximo archivo subido"
-          />
-        </Box>
-      )}
-
-      {/* DRAG & DROP UPLOAD ZONE */}
-      {canUpload && (
-        <Paper
-          variant="outlined"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
-          sx={{
-            p: 3,
-            mb: 2,
-            textAlign: "center",
-            border: "2px dashed",
-            borderColor: isDragging ? "primary.main" : "grey.300",
-            bgcolor: isDragging ? "action.hover" : "background.default",
-            cursor: isUploading ? "default" : "pointer",
-            transition: "all 0.2s ease",
-            opacity: isUploading ? 0.7 : 1,
-            "&:hover": {
-              borderColor: isUploading ? "grey.300" : "primary.light",
-              bgcolor: isUploading ? "background.default" : "action.hover",
-            },
-          }}
-        >
-          {isUploading ? (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-              <CircularProgress size={40} />
-              <Typography variant="body2" color="text.secondary">
-                Subiendo {uploadProgress?.fileName}... {uploadProgress?.progress}%
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              <CloudUploadIcon
-                sx={{
-                  fontSize: 40,
-                  color: isDragging ? "primary.main" : "text.secondary",
-                  mb: 1,
-                }}
-              />
-              <Typography variant="body2" color={isDragging ? "primary.main" : "text.secondary"}>
-                {isDragging ? "Suelta el archivo aquí" : "Arrastra archivos o haz clic para seleccionar"}
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                PDF, máximo {formatFileSize(maxSizeBytes)}
-              </Typography>
-            </>
-          )}
-          <input
-            ref={inputRef}
-            type="file"
-            hidden
-            accept={allowedExtensions.join(",")}
-            onChange={handleFileUpload}
-            disabled={isUploading}
-          />
-        </Paper>
-      )}
-
-      {/* ADJUNTOS LIST - Card based */}
-      {hasAdjuntos ? (
-        <Grid container spacing={2}>
-          {adjuntos?.map((adjunto) => (
-            <Grid item xs={12} sm={dense ? 12 : 6} key={adjunto.id}>
-              <Card
-                variant="outlined"
-                sx={{
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    boxShadow: 1,
-                  },
-                }}
-              >
-                <CardContent
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    py: dense ? 1 : 1.5,
-                    px: 2,
-                    "&:last-child": { pb: dense ? 1 : 1.5 },
-                  }}
-                >
-                  {/* ICON */}
-                  <Avatar
-                    sx={{
-                      bgcolor: "error.lighter",
-                      width: dense ? 36 : 40,
-                      height: dense ? 36 : 40,
-                    }}
-                  >
-                    <PdfIcon sx={{ color: "error.main", fontSize: dense ? 20 : 24 }} />
-                  </Avatar>
-
-                  {/* TEXT */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={500}
-                      noWrap
-                      title={adjunto.nombre_archivo}
-                    >
-                      {adjunto.nombre_archivo}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap display="block">
-                      {formatFileSize(adjunto.tamano_bytes)}
-                      {" • "}
-                      {formatDate(adjunto.fecha_carga)}
-                      {adjunto.subido_por_detalle && !dense && (
-                        <>
-                          {" • "}
-                          {extractUserName(adjunto.subido_por_detalle)}
-                        </>
-                      )}
-                    </Typography>
-                  </Box>
-
-                  {/* ACTIONS */}
-                  <Box sx={{ display: "flex", gap: 0.5 }}>
-                    <Tooltip title="Descargar">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDownload(adjunto)}
-                        sx={{
-                          color: "text.secondary",
-                          "&:hover": { color: "primary.main" },
-                        }}
-                      >
-                        <DownloadIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {canDelete && (
-                      <Tooltip title="Eliminar">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(adjunto.id)}
-                          disabled={isDeleting}
-                          sx={{
-                            color: "text.secondary",
-                            "&:hover": { color: "error.main" },
-                          }}
-                        >
-                          {isDeleting ? (
-                            <CircularProgress size={16} />
-                          ) : (
-                            <DeleteIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      ) : (
-        /* EMPTY STATE */
-        <Box sx={{ textAlign: "center", py: 4 }}>
-          <AttachFileIcon sx={{ fontSize: 56, color: "text.disabled", mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Sin documentos adjuntos
-          </Typography>
-          <Typography variant="body2" color="text.disabled">
-            {canUpload
-              ? "Arrastra archivos aquí o usa el área de arriba para subir documentos"
-              : "No hay documentos disponibles para esta nota de aval"}
-          </Typography>
-        </Box>
-      )}
+      <FileUploadSection
+        files={fileItems}
+        isLoading={isLoadingAdjuntos}
+        onUpload={canUpload ? handleUpload : undefined}
+        onDelete={canDelete ? handleDelete : undefined}
+        onDownload={handleDownload}
+        readOnly={!canUpload}
+        multiple={false}
+        title="Documentos Adjuntos"
+        emptyMessage="Sin documentos adjuntos"
+        allowedTypes={allowedExtensions.join(",")}
+        maxSizeInMB={Math.round(maxSizeBytes / (1024 * 1024))}
+        isUploading={isUploading}
+        enableEtiqueta={canUpload}
+        etiquetaValue={etiquetaSeleccionada}
+        onEtiquetaChange={setEtiquetaSeleccionada}
+        etiquetaHelperText="Etiqueta que se asigna al próximo archivo subido"
+      />
     </Box>
   )
 }

@@ -1,155 +1,165 @@
 "use client"
 
-import { useState } from 'react'
+/**
+ * AttachmentUpload — wrapper alrededor del componente compartido
+ * `FileUploadSection`. Mantiene la API histórica:
+ *   onChange(files, tipos, descripciones)
+ * pero reemplaza el picker / lista por el componente unificado, agregando
+ * controles de "Tipo" y "Descripción" por archivo debajo de la lista.
+ *
+ * El selector de etiqueta del catálogo (TEtiquetaDocumento) está expuesto por
+ * el componente compartido y se aplica al próximo archivo cargado.
+ */
+
+import { useState } from "react"
 import {
   Box,
-  Button,
   Typography,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  TextField
-} from '@mui/material'
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import DeleteIcon from '@mui/icons-material/Delete'
+  TextField,
+  Paper,
+} from "@mui/material"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 
 interface FileWithType {
   file: File
   tipo: string
   descripcion: string
+  etiquetaId: number | null
 }
 
 interface AttachmentUploadProps {
   files: File[]
-  onChange: (files: File[], tipos?: string[], descripciones?: string[]) => void
+  onChange: (
+    files: File[],
+    tipos?: string[],
+    descripciones?: string[],
+    etiquetaIds?: Array<number | null>,
+  ) => void
   requiereEvidencia?: boolean
 }
 
+const TIPOS_ADJUNTO = [
+  { value: "ACTA_COMPROMISO", label: "Acta de Compromiso" },
+  { value: "EVIDENCIA", label: "Evidencia" },
+  { value: "INFORME", label: "Informe" },
+  { value: "FOTO", label: "Foto" },
+  { value: "OTRO", label: "Otro" },
+] as const
+
 export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
   onChange,
-  requiereEvidencia = false
+  requiereEvidencia = false,
 }) => {
-  const [filesWithMetadata, setFilesWithMetadata] = useState<FileWithType[]>([])
+  const [items, setItems] = useState<FileWithType[]>([])
+  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
 
-  const tiposAdjunto = [
-    { value: 'ACTA_COMPROMISO', label: 'Acta de Compromiso' },
-    { value: 'EVIDENCIA', label: 'Evidencia' },
-    { value: 'INFORME', label: 'Informe' },
-    { value: 'FOTO', label: 'Foto' },
-    { value: 'OTRO', label: 'Otro' }
-  ]
+  const update = (next: FileWithType[]) => {
+    setItems(next)
+    onChange(
+      next.map((i) => i.file),
+      next.map((i) => i.tipo),
+      next.map((i) => i.descripcion),
+      next.map((i) => i.etiquetaId),
+    )
+  }
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const newFiles = Array.from(event.target.files).map(file => ({
+  const handleUpload = (file: File, etiquetaId?: number | null) => {
+    update([
+      ...items,
+      {
         file,
-        tipo: requiereEvidencia ? 'EVIDENCIA' : 'OTRO',
-        descripcion: ''
-      }))
-      const updatedFilesWithMetadata = [...filesWithMetadata, ...newFiles]
-      setFilesWithMetadata(updatedFilesWithMetadata)
-      updateParent(updatedFilesWithMetadata)
-    }
+        tipo: requiereEvidencia ? "EVIDENCIA" : "OTRO",
+        descripcion: "",
+        etiquetaId: etiquetaId ?? null,
+      },
+    ])
   }
 
-  const handleRemoveFile = (index: number) => {
-    const newFilesWithMetadata = filesWithMetadata.filter((_, i) => i !== index)
-    setFilesWithMetadata(newFilesWithMetadata)
-    updateParent(newFilesWithMetadata)
+  const handleDelete = (id: number | string) => {
+    const idx = typeof id === "string" ? Number(id.replace("att-", "")) : id
+    update(items.filter((_, i) => i !== idx))
   }
 
-  const handleTipoChange = (index: number, tipo: string) => {
-    const newFilesWithMetadata = [...filesWithMetadata]
-    newFilesWithMetadata[index].tipo = tipo
-    setFilesWithMetadata(newFilesWithMetadata)
-    updateParent(newFilesWithMetadata)
+  const handleTipoChange = (idx: number, tipo: string) => {
+    const next = [...items]
+    next[idx] = { ...next[idx], tipo }
+    update(next)
   }
 
-  const handleDescripcionChange = (index: number, descripcion: string) => {
-    const newFilesWithMetadata = [...filesWithMetadata]
-    newFilesWithMetadata[index].descripcion = descripcion
-    setFilesWithMetadata(newFilesWithMetadata)
-    updateParent(newFilesWithMetadata)
+  const handleDescripcionChange = (idx: number, descripcion: string) => {
+    const next = [...items]
+    next[idx] = { ...next[idx], descripcion }
+    update(next)
   }
 
-  const updateParent = (filesData: FileWithType[]) => {
-    const files = filesData.map(f => f.file)
-    const tipos = filesData.map(f => f.tipo)
-    const descripciones = filesData.map(f => f.descripcion)
-    onChange(files, tipos, descripciones)
-  }
+  const fileItems: FileItem[] = items.map((it, i) => ({
+    id: `att-${i}`,
+    nombre: it.file.name,
+    tipo: it.file.type,
+    tamano: it.file.size,
+  }))
 
   return (
     <Box>
-      <Typography variant="body2" sx={{ fontWeight: 500, mb: 2 }}>
-        Adjuntos {requiereEvidencia && '(Evidencia requerida)'}
+      <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+        Adjuntos {requiereEvidencia && "(Evidencia requerida)"}
       </Typography>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <Button
-          variant="outlined"
-          component="label"
-          startIcon={<AttachFileIcon />}
-          sx={{ textTransform: 'none', borderRadius: 2 }}
-        >
-          Seleccionar archivos
-          <input
-            type="file"
-            hidden
-            multiple
-            onChange={handleFileSelect}
-          />
-        </Button>
-      </Box>
+      <FileUploadSection
+        files={fileItems}
+        onUpload={handleUpload}
+        onDelete={handleDelete}
+        multiple
+        title="Archivos"
+        emptyMessage="No hay archivos seleccionados"
+        enableEtiqueta
+        etiquetaValue={etiquetaActual}
+        onEtiquetaChange={setEtiquetaActual}
+        etiquetaHelperText="Etiqueta del catálogo (aplica al próximo archivo)"
+      />
 
-      {filesWithMetadata.length > 0 && (
-        <List>
-          {filesWithMetadata.map((fileData, index) => (
-            <ListItem
-              key={index}
-              sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 1, flexDirection: 'column', alignItems: 'stretch', p: 2 }}
+      {/* Per-file metadata: tipo + descripción (legacy fields) */}
+      {items.length > 0 && (
+        <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          {items.map((it, idx) => (
+            <Paper
+              key={`meta-${idx}`}
+              variant="outlined"
+              sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Box sx={{ flex: 1, mr: 2 }}>
-                  <ListItemText
-                    primary={fileData.file.name}
-                    secondary={`${(fileData.file.size / 1024).toFixed(2)} KB`}
-                  />
-                </Box>
-                <FormControl size="small" sx={{ minWidth: 180, mr: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {it.file.name}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <FormControl size="small" sx={{ minWidth: 200 }}>
                   <InputLabel>Tipo</InputLabel>
                   <Select
-                    value={fileData.tipo}
-                    onChange={(e) => handleTipoChange(index, e.target.value)}
+                    value={it.tipo}
                     label="Tipo"
+                    onChange={(e) => handleTipoChange(idx, e.target.value)}
                   >
-                    {tiposAdjunto.map((tipo) => (
-                      <MenuItem key={tipo.value} value={tipo.value}>
-                        {tipo.label}
+                    {TIPOS_ADJUNTO.map((t) => (
+                      <MenuItem key={t.value} value={t.value}>
+                        {t.label}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-                <IconButton edge="end" onClick={() => handleRemoveFile(index)} color="error">
-                  <DeleteIcon />
-                </IconButton>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Descripción (opcional)"
+                  value={it.descripcion}
+                  onChange={(e) => handleDescripcionChange(idx, e.target.value)}
+                />
               </Box>
-              <TextField
-                fullWidth
-                size="small"
-                label="Descripción (opcional)"
-                value={fileData.descripcion}
-                onChange={(e) => handleDescripcionChange(index, e.target.value)}
-                placeholder="Agregar una descripción del archivo"
-              />
-            </ListItem>
+            </Paper>
           ))}
-        </List>
+        </Box>
       )}
     </Box>
   )

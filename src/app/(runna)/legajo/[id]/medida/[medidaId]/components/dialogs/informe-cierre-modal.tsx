@@ -19,15 +19,8 @@
 
 import React, { useState } from "react"
 import {
-  Button,
   TextField,
-  IconButton,
   Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   Chip,
   FormControl,
   InputLabel,
@@ -35,27 +28,18 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material"
-import AttachFileIcon from "@mui/icons-material/AttachFile"
-import DeleteIcon from "@mui/icons-material/Delete"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import AssignmentIcon from "@mui/icons-material/Assignment"
 import BaseDialog from "@/components/shared/BaseDialog"
-import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 import { useFormSubmission } from "@/hooks"
 import {
   createInformeCierre,
   uploadAdjuntoInformeCierre,
   getInformeCierreActivo,
 } from "../../api/informe-cierre-api-service"
-import {
-  validateFile,
-  formatFileSize,
-  getAcceptAttribute,
-} from "../../utils/file-validation"
-import type {
-  InformeCierre,
-  TipoCeseMPI,
-} from "../../types/informe-cierre-api"
+import { validateFile, getAcceptAttribute } from "../../utils/file-validation"
+import type { InformeCierre, TipoCeseMPI } from "../../types/informe-cierre-api"
 import { TipoCeseMPILabels } from "../../types/informe-cierre-api"
 
 // ============================================================================
@@ -134,27 +118,26 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
   })
 
   // ========== File Handlers ==========
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const newFiles = Array.from(event.target.files)
-
-      // Validate each file
-      for (const file of newFiles) {
-        const validation = validateFile(file)
-        if (!validation.valid) {
-          // Note: file errors are handled separately from submission errors
-          return
-        }
-      }
-
-      // Add valid files
-      setArchivos((prev) => [...prev, ...newFiles])
+  const handleUpload = (file: File) => {
+    const validation = validateFile(file)
+    if (!validation.valid) {
+      alert(validation.error || "Archivo inválido")
+      return
     }
+    setArchivos((prev) => [...prev, file])
   }
 
-  const handleRemoveFile = (index: number) => {
-    setArchivos((prev) => prev.filter((_, i) => i !== index))
+  const handleDelete = (id: number | string) => {
+    const idx = typeof id === "string" ? Number(id.replace("file-", "")) : id
+    setArchivos((prev) => prev.filter((_, i) => i !== idx))
   }
+
+  const fileItems: FileItem[] = archivos.map((archivo, index) => ({
+    id: `file-${index}`,
+    nombre: archivo.name,
+    tipo: archivo.type,
+    tamano: archivo.size,
+  }))
 
   const handleSubmit = () => submit({})
   const handleClose = () => close()
@@ -248,64 +231,21 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
       />
 
       {/* File Upload Section */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" gutterBottom>
-          Adjuntos (Opcional)
-        </Typography>
-
-        <Box sx={{ mb: 2 }}>
-          <EtiquetaDocumentoSelector
-            value={etiquetaCierre}
-            onChange={setEtiquetaCierre}
-            disabled={isLoading}
-            helperText="Etiqueta común para los adjuntos del cierre"
-          />
-        </Box>
-
-        <Button
-          variant="outlined"
-          component="label"
-          startIcon={<AttachFileIcon />}
-          disabled={isLoading}
-          sx={{ mb: 1 }}
-        >
-          Seleccionar Archivos
-          <input
-            type="file"
-            hidden
-            multiple
-            accept={getAcceptAttribute()}
-            onChange={handleFileChange}
-          />
-        </Button>
-
-        <Typography variant="caption" display="block" color="text.secondary">
-          Formatos permitidos: PDF, DOC, DOCX, JPG, PNG (máx. 10 MB cada uno)
-        </Typography>
-      </Box>
-
-      {/* File List */}
-      {archivos.length > 0 && (
-        <List dense sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
-          {archivos.map((archivo, index) => (
-            <ListItem key={index}>
-              <ListItemText
-                primary={archivo.name}
-                secondary={formatFileSize(archivo.size)}
-              />
-              <ListItemSecondaryAction>
-                <IconButton
-                  edge="end"
-                  onClick={() => handleRemoveFile(index)}
-                  disabled={isLoading}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </ListItemSecondaryAction>
-            </ListItem>
-          ))}
-        </List>
-      )}
+      <FileUploadSection
+        files={fileItems}
+        onUpload={handleUpload}
+        onDelete={handleDelete}
+        multiple
+        title="Adjuntos (Opcional)"
+        emptyMessage="No hay archivos adjuntos"
+        allowedTypes={getAcceptAttribute()}
+        maxSizeInMB={10}
+        disabled={isLoading}
+        enableEtiqueta
+        etiquetaValue={etiquetaCierre}
+        onEtiquetaChange={setEtiquetaCierre}
+        etiquetaHelperText="Etiqueta común para los adjuntos del cierre"
+      />
     </BaseDialog>
   )
 }

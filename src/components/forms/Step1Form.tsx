@@ -32,13 +32,19 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
-import EtiquetaDocumentoSelector, { EtiquetaDocumentoChip } from "./components/EtiquetaDocumentoSelector"
 import { useEtiquetasDocumento } from "@/hooks/useEtiquetasDocumento"
+import {
+  FileUploadSection as SharedFileUploadSection,
+  type FileItem,
+} from "@/components/shared/FileUploadSection"
 
 // NOTE: CARGA_OFICIOS dropdowns have been moved to the specialized CargaOficiosForm component
 
 
-// Componente para la sección de archivos adjuntos
+// Adapter local: usa el componente compartido para todo el upload UI.
+// Mapea el array `adjuntos` del form (mezcla de File + objetos {archivo}) al
+// formato FileItem que entiende el shared component, y stampa __etiquetaId
+// sobre cada File para que el submit lo lea.
 const FileUploadSection = ({
   control,
   readOnly,
@@ -49,256 +55,81 @@ const FileUploadSection = ({
   openPdfUrl: (url: string, options?: { title?: string; fileName?: string }) => void
 }) => {
   const { field } = useController({ name: "adjuntos", control, defaultValue: [] })
-  const { value, onChange } = field
-  // Etiqueta seleccionada para el próximo archivo cargado en esta sesión.
+  const value: any[] = Array.isArray(field.value) ? field.value : []
+  const onChange = field.onChange
   const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
   const { etiquetas } = useEtiquetasDocumento()
   const etiquetaNombre = (id?: number | null) =>
     id ? etiquetas.find((e) => e.id === id)?.nombre ?? null : null
 
-  // Separar archivos existentes (objetos con propiedad 'archivo') y nuevos archivos (objetos File)
-  const existingFiles = Array.isArray(value)
-    ? value.filter((file) => typeof file === "object" && "archivo" in file)
-    : []
+  const getFileName = (filePath?: string | null) =>
+    !filePath ? "Archivo sin nombre" : filePath.split("/").pop() || filePath
 
-  const newFiles = Array.isArray(value) ? value.filter((file) => !(typeof file === "object" && "archivo" in file)) : []
-
-  // Función para extraer el nombre del archivo de la ruta
-  const getFileName = (filePath: string | null | undefined): string => {
-    if (!filePath) return "Archivo sin nombre"
-    return filePath.split("/").pop() || filePath
-  }
-
-  // Función para abrir el archivo en una nueva pestaña o en el visor de PDF
-  const openFile = (filePath: string | null | undefined) => {
-    if (!filePath) return
-    // If the path already includes the full URL, use it directly
-    // Otherwise, prepend the base URL
-    const url = filePath.startsWith("http://") || filePath.startsWith("https://")
+  const buildFullUrl = (filePath: string) =>
+    filePath.startsWith("http://") || filePath.startsWith("https://")
       ? filePath
       : `https://web-runna-v2legajos.up.railway.app${filePath}`
-    const fileName = filePath.split("/").pop() || "archivo"
 
-    console.log("[PDF Debug] filePath:", filePath, "fileName:", fileName, "isPdf:", isPdfFile(fileName))
+  const items: FileItem[] = value.map((file, index) => {
+    if (file && typeof file === "object" && "archivo" in file) {
+      const nombre = getFileName(file.archivo)
+      return {
+        id: `existing-${index}`,
+        nombre,
+        url: file.archivo ? buildFullUrl(file.archivo) : undefined,
+        etiqueta_nombre:
+          file?.etiqueta_detail?.nombre ?? etiquetaNombre(file?.etiqueta ?? null),
+      }
+    }
+    return {
+      id: `new-${index}`,
+      nombre: file.name,
+      tipo: file.type,
+      tamano: file.size,
+      etiqueta_nombre: etiquetaNombre((file as any).__etiquetaId),
+    }
+  })
 
+  const handleUpload = (file: File, etiquetaId?: number | null) => {
+    const tagged = Object.assign(file, { __etiquetaId: etiquetaId ?? null })
+    onChange([...value, tagged])
+  }
+
+  const handleDelete = (id: number | string) => {
+    const idx = value.findIndex((_, i) =>
+      typeof id === "string" && (id === `existing-${i}` || id === `new-${i}`),
+    )
+    if (idx === -1) return
+    const next = [...value]
+    next.splice(idx, 1)
+    onChange(next)
+  }
+
+  const handleDownload = (file: FileItem) => {
+    if (!file.url) return
+    const fileName = file.nombre || "archivo"
     if (isPdfFile(fileName)) {
-      console.log("[PDF Debug] Opening PDF viewer for:", url)
-      openPdfUrl(url, { title: "Archivo Adjunto", fileName })
+      openPdfUrl(file.url, { title: "Archivo Adjunto", fileName })
     } else {
-      console.log("[PDF Debug] Opening in new tab:", url)
-      window.open(url, "_blank")
+      window.open(file.url, "_blank")
     }
   }
 
-  // Función para eliminar un archivo nuevo
-  const removeNewFile = (index: number) => {
-    const updatedFiles = [...value]
-    // Encontrar el índice real considerando los archivos existentes
-    const realIndex = existingFiles.length + index
-    updatedFiles.splice(realIndex, 1)
-    onChange(updatedFiles)
-  }
-
   return (
-    <Card variant="outlined" sx={{ mb: 2 }}>
-      <CardContent>
-        <Grid container spacing={3}>
-          {/* Sección para agregar nuevos archivos */}
-          <Grid item xs={12} md={6}>
-            {/* Etiqueta de Documento (catálogo unificado) — aplica al próximo archivo cargado */}
-            <Box sx={{ mb: 2 }}>
-              <EtiquetaDocumentoSelector
-                value={etiquetaActual}
-                onChange={setEtiquetaActual}
-                disabled={readOnly}
-                helperText="Aplica al próximo archivo cargado. Podés cambiarla entre archivos."
-              />
-            </Box>
-            <Box
-              sx={{
-                border: "2px dashed",
-                borderColor: "primary.light",
-                borderRadius: "8px",
-                p: 3,
-                minHeight: "180px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                textAlign: "center",
-                backgroundColor: "background.paper",
-                transition: "all 0.2s ease-in-out",
-                "&:hover": {
-                  borderColor: "primary.main",
-                  backgroundColor: "action.hover",
-                },
-              }}
-            >
-              <input
-                type="file"
-                id="file-upload"
-                multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || [])
-                  // Marcar cada File con la etiqueta elegida (brand __etiquetaId)
-                  // para que el submit pueda recuperarla y enviarla al backend.
-                  const tagged = files.map((f) =>
-                    Object.assign(f, { __etiquetaId: etiquetaActual ?? null }),
-                  )
-                  onChange([...value, ...tagged])
-                }}
-                style={{ display: "none" }}
-                disabled={readOnly}
-              />
-              <label htmlFor="file-upload">
-                <CloudUpload color="primary" sx={{ fontSize: 48, mb: 2 }} />
-                <Typography variant="body1" gutterBottom>
-                  Arrastra y suelta archivos aquí
-                </Typography>
-                <Button
-                  component="span"
-                  variant="contained"
-                  disabled={readOnly}
-                  size="medium"
-                  sx={{ mt: 2 }}
-                  disableElevation
-                >
-                  SELECCIONAR ARCHIVOS
-                </Button>
-              </label>
-
-              {newFiles.length > 0 && (
-                <Box sx={{ mt: 3, width: "100%" }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Archivos nuevos:
-                  </Typography>
-                  <Paper variant="outlined" sx={{ p: 1, maxHeight: "150px", overflow: "auto" }}>
-                    {newFiles.map((file: File | { archivo: string }, index: number) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          width: "100%",
-                          py: 0.75,
-                          px: 1,
-                          "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
-                        }}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", gap: 1 }}>
-                          <AttachFile sx={{ mr: 1, color: "primary.light", flexShrink: 0 }} fontSize="small" />
-                          <Typography variant="body2" noWrap title={'name' in file ? file.name : file.archivo}>
-                            {'name' in file ? file.name : file.archivo}
-                          </Typography>
-                          <EtiquetaDocumentoChip
-                            nombre={etiquetaNombre((file as any).__etiquetaId)}
-                          />
-                        </Box>
-                        <Tooltip title="Eliminar archivo">
-                          <IconButton
-                            onClick={() => removeNewFile(index)}
-                            disabled={readOnly}
-                            size="small"
-                            color="error"
-                          >
-                            <Remove fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    ))}
-                  </Paper>
-                </Box>
-              )}
-            </Box>
-          </Grid>
-
-          {/* Sección para mostrar archivos existentes */}
-          <Grid item xs={12} md={6}>
-            <Box
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: "8px",
-                p: 3,
-                height: "100%",
-                minHeight: "180px",
-                display: "flex",
-                flexDirection: "column",
-                backgroundColor: "background.paper",
-              }}
-            >
-              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                Archivos existentes:
-              </Typography>
-              <Box
-                sx={{
-                  flexGrow: 1,
-                  overflow: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  mt: 1,
-                }}
-              >
-                {existingFiles.length > 0 ? (
-                  <Paper variant="outlined" sx={{ p: 1, maxHeight: "200px", overflow: "auto" }}>
-                    {existingFiles.map((file: any, idx: number) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          width: "100%",
-                          py: 0.75,
-                          px: 1,
-                          "&:not(:last-child)": { borderBottom: "1px solid", borderColor: "divider" },
-                          "&:hover": {
-                            backgroundColor: "action.hover",
-                          },
-                        }}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden", flexGrow: 1, gap: 1 }}>
-                          <AttachFile sx={{ mr: 1, color: "primary.light", flexShrink: 0 }} fontSize="small" />
-                          <Typography variant="body2" noWrap title={getFileName(file.archivo)}>
-                            {getFileName(file.archivo)}
-                          </Typography>
-                          <EtiquetaDocumentoChip
-                            nombre={
-                              file?.etiqueta_detail?.nombre ??
-                              etiquetaNombre(file?.etiqueta ?? null)
-                            }
-                          />
-                        </Box>
-                        <Tooltip title="Ver archivo">
-                          <IconButton size="small" color="primary" onClick={() => openFile(file.archivo)}>
-                            <OpenInNew fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    ))}
-                  </Paper>
-                ) : (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "100%",
-                      p: 2,
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-                      No hay archivos existentes
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+    <SharedFileUploadSection
+      files={items}
+      onUpload={readOnly ? undefined : handleUpload}
+      onDelete={readOnly ? undefined : handleDelete}
+      onDownload={handleDownload}
+      multiple
+      readOnly={readOnly}
+      title="Archivos Adjuntos"
+      emptyMessage="No hay archivos adjuntos"
+      enableEtiqueta={!readOnly}
+      etiquetaValue={etiquetaActual}
+      onEtiquetaChange={setEtiquetaActual}
+      etiquetaHelperText="Aplica al próximo archivo cargado. Podés cambiarla entre archivos."
+    />
   )
 }
 

@@ -36,6 +36,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload"
 import DeleteIcon from "@mui/icons-material/Delete"
 import WarningIcon from "@mui/icons-material/Warning"
 import BaseDialog from "@/components/shared/BaseDialog"
+import { FileUploadSection, type FileItem } from "@/components/shared/FileUploadSection"
 import { useCompletarInforme, useDescargarPlantilla, usePlantillaInfo } from "../../hooks/useInformesSeguimiento"
 import { ADJUNTO_INFORME_SEGUIMIENTO_CONFIG } from "../../types/informe-seguimiento-api"
 
@@ -113,8 +114,7 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({
 }) => {
   // State
   const [archivo, setArchivo] = useState<File | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [etiquetaPlantilla, setEtiquetaPlantilla] = useState<number | null>(null)
 
   // API Hooks
   const { data: plantillaInfo } = usePlantillaInfo({ medidaId })
@@ -154,55 +154,23 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({
     })
   }
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0]
-    if (selectedFile) {
-      validateAndSetFile(selectedFile)
-    }
-    event.target.value = ''
-  }
-
-  const validateAndSetFile = (file: File) => {
-    // Check file size
+  const handleUpload = (file: File, etiquetaId?: number | null) => {
     if (file.size > ADJUNTO_INFORME_SEGUIMIENTO_CONFIG.MAX_SIZE_BYTES) {
       alert('El archivo excede el tamaño máximo permitido de 10MB')
       return
     }
     setArchivo(file)
-  }
-
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!isDragging) setIsDragging(true)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
-    const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile) {
-      validateAndSetFile(droppedFile)
-    }
+    setEtiquetaPlantilla(etiquetaId ?? null)
   }
 
   const handleRemoveFile = () => {
     setArchivo(null)
+    setEtiquetaPlantilla(null)
   }
+
+  const fileItems: FileItem[] = archivo
+    ? [{ id: 'plantilla', nombre: archivo.name, tipo: archivo.type, tamano: archivo.size }]
+    : []
 
   const onSubmit = async (data: CompletarInformeFormData) => {
     await completarInformeMutation.mutateAsync({
@@ -321,90 +289,21 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({
           </Box>
 
           {/* File Upload Zone */}
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-              Adjuntar plantilla completada (opcional)
-            </Typography>
-
-            {!archivo ? (
-              <Paper
-                onDragEnter={handleDragEnter}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                sx={{
-                  border: isDragging ? '2px dashed' : '2px dashed',
-                  borderColor: isDragging ? 'primary.main' : 'divider',
-                  borderRadius: 2,
-                  p: 3,
-                  textAlign: 'center',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  backgroundColor: isDragging ? 'action.hover' : 'background.default',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: isLoading ? 'background.default' : 'action.hover',
-                    borderColor: isLoading ? 'divider' : 'primary.main',
-                  },
-                }}
-              >
-                <CloudUploadIcon
-                  sx={{
-                    fontSize: 40,
-                    color: isDragging ? 'primary.main' : 'text.secondary',
-                    mb: 1,
-                  }}
-                />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {isDragging ? 'Suelta el archivo aquí' : 'Arrastra y suelta o haz clic para seleccionar'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  PDF, DOC, DOCX (máx. 10MB)
-                </Typography>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileSelect}
-                  disabled={isLoading}
-                />
-              </Paper>
-            ) : (
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <AttachFileIcon color="primary" />
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {archivo.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatFileSize(archivo.size)}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={handleRemoveFile}
-                  disabled={isLoading}
-                  startIcon={<DeleteIcon />}
-                >
-                  Eliminar
-                </Button>
-              </Paper>
-            )}
-          </Box>
+          <FileUploadSection
+            files={fileItems}
+            onUpload={handleUpload}
+            onDelete={handleRemoveFile}
+            multiple={false}
+            disabled={isLoading}
+            title="Adjuntar plantilla completada (opcional)"
+            emptyMessage="No hay plantilla seleccionada"
+            allowedTypes=".pdf,.doc,.docx"
+            maxSizeInMB={10}
+            enableEtiqueta
+            etiquetaValue={etiquetaPlantilla}
+            onEtiquetaChange={setEtiquetaPlantilla}
+            etiquetaHelperText="Etiqueta clasificatoria del informe (opcional)"
+          />
 
           {/* Error Message */}
           {completarInformeMutation.isError && (

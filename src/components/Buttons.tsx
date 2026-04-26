@@ -7,7 +7,9 @@ import { Button, Skeleton, Popover, Box, List, ListItem, ListItemIcon, ListItemT
 import FilterList from "@mui/icons-material/FilterList"
 import { PersonAdd } from "@mui/icons-material"
 import { Check, Mail, FileText, Clock, Send, AlertCircle, FileCheck, Archive } from "lucide-react"
-import SearchButton from "../app/(runna)/mesadeentrada/ui/search-button"
+// Búsqueda modal reemplazada por la barra inline (LegajoSearchBar) en dataGrid.tsx.
+// Se mantiene importable para el caso de "búsqueda familiar/avanzada" cuando se reactive.
+// import SearchButton from "../app/(runna)/mesadeentrada/ui/search-button"
 import { useUser } from "@/utils/auth/userZustand"
 import { institutionalColors, gradients, shadows, rgba } from "@/theme/colors"
 
@@ -116,7 +118,9 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
             </Link>
           )}
 
-          <SearchButton
+          {/* Búsqueda modal desactivada: la barra inline en dataGrid.tsx ya filtra la tabla server-side.
+              Reactivar cuando se implemente la "búsqueda familiar/avanzada" (grupo conviviente). */}
+          {/* <SearchButton
             buttonText="Buscar por ID, DNI, Número..."
             buttonSx={{
               borderRadius: 2,
@@ -129,7 +133,7 @@ const Buttons: React.FC<ButtonsProps> = ({ isLoading, handleNuevoRegistro, onFil
                 backgroundColor: rgba.primaryLight(0.04),
               },
             }}
-          />
+          /> */}
 
           <Button
             onClick={handleFilterClick}

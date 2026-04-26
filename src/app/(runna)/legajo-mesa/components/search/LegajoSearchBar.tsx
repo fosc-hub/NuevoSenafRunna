@@ -10,6 +10,8 @@ interface LegajoSearchBarProps {
   placeholder?: string
   debounceMs?: number
   initialValue?: string
+  searchFieldsHint?: string
+  ariaLabel?: string
 }
 
 /**
@@ -28,6 +30,8 @@ const LegajoSearchBar: React.FC<LegajoSearchBarProps> = ({
   placeholder = "Buscar por ID, Número, DNI, Nombre, Apellido o Zona...",
   debounceMs = 500,
   initialValue = "",
+  searchFieldsHint = "Buscando en: ID, Número de Legajo, DNI, Nombre, Apellido, Zona, Demandas, Medidas y Oficios",
+  ariaLabel = "Búsqueda de legajos",
 }) => {
   const [searchTerm, setSearchTerm] = useState(initialValue)
   const [isSearching, setIsSearching] = useState(false)
@@ -120,7 +124,7 @@ const LegajoSearchBar: React.FC<LegajoSearchBarProps> = ({
             },
           },
         }}
-        aria-label="Búsqueda de legajos"
+        aria-label={ariaLabel}
       />
       {searchTerm && (
         <Box
@@ -131,7 +135,7 @@ const LegajoSearchBar: React.FC<LegajoSearchBarProps> = ({
             px: 1,
           }}
         >
-          Buscando en: ID, Número de Legajo, DNI, Nombre, Apellido, Zona, Demandas, Medidas y Oficios
+          {searchFieldsHint}
         </Box>
       )}
     </Box>

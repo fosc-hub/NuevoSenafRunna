@@ -33,6 +33,7 @@ import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import Buttons from "../../../../components/Buttons"
 import AsignarModal from "../../../../components/asignarModal"
+import LegajoSearchBar from "../../legajo-mesa/components/search/LegajoSearchBar"
 import * as XLSX from "xlsx"
 import { DownloadRounded } from "@mui/icons-material"
 import { useUser } from "@/utils/auth/userZustand"
@@ -327,10 +328,12 @@ const DemandaTableContent: React.FC = () => {
     envio_de_respuesta: "NO_NECESARIO" | "PENDIENTE" | "ENVIADO" | null;
     estado_demanda: "SIN_ASIGNAR" | "CONSTATACION" | "EVALUACION" | "PENDIENTE_AUTORIZACION" | "ARCHIVADA" | "ADMITIDA" | null;
     objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null;
+    search: string | null;
   }>({
     envio_de_respuesta: null,
     estado_demanda: null,
     objetivo_de_demanda: null,
+    search: null,
   })
 
   // Check if user has permission to assign demandas
@@ -373,6 +376,9 @@ const DemandaTableContent: React.FC = () => {
       if (apiFilters.objetivo_de_demanda) {
         params.append("objetivo_de_demanda", apiFilters.objetivo_de_demanda)
       }
+      if (apiFilters.search) {
+        params.append("search", apiFilters.search)
+      }
 
       const response = await get<TDemandaPaginated>(`mesa-de-entrada/?${params.toString()}`)
       setTotalCount(response.count)
@@ -396,13 +402,23 @@ const DemandaTableContent: React.FC = () => {
     estado_demanda: "SIN_ASIGNAR" | "CONSTATACION" | "EVALUACION" | "PENDIENTE_AUTORIZACION" | "ARCHIVADA" | "ADMITIDA" | null;
     objetivo_de_demanda: "CONSTATACION" | "PETICION_DE_INFORME" | null;
   }) => {
-    setApiFilters({
+    setApiFilters((prev) => ({
+      ...prev,
       envio_de_respuesta: newFilters.envio_de_respuesta,
       estado_demanda: newFilters.estado_demanda,
       objetivo_de_demanda: newFilters.objetivo_de_demanda,
-    })
+    }))
     // Reset to first page when filters change
     setPaginationModel((prev) => ({ ...prev, page: 0 }))
+  }
+
+  const handleSearchChange = (term: string) => {
+    const normalized = term.trim() ? term.trim() : null
+    setApiFilters((prev) => {
+      if (prev.search === normalized) return prev
+      return { ...prev, search: normalized }
+    })
+    setPaginationModel((prev) => (prev.page === 0 ? prev : { ...prev, page: 0 }))
   }
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -1223,6 +1239,25 @@ const DemandaTableContent: React.FC = () => {
             <Refresh fontSize="small" />
           </IconButton>
         </Box>
+
+        {/* Búsqueda inline: filtra la tabla server-side por demanda + NNyA + legajo + localización + códigos */}
+        <Box
+          sx={{
+            px: 3,
+            py: 1.5,
+            borderBottom: "1px solid #e0e0e0",
+            bgcolor: "#fff",
+          }}
+        >
+          <LegajoSearchBar
+            onSearch={handleSearchChange}
+            initialValue={apiFilters.search ?? ""}
+            placeholder="Buscar demanda por ID, NNyA (nombre/DNI), legajo vinculado, localización o código..."
+            searchFieldsHint="Buscando en: ID de demanda, NNyA (nombre, apellido, DNI), legajo vinculado, localización (calle, localidad, barrio) y códigos de demanda"
+            ariaLabel="Búsqueda de demandas"
+          />
+        </Box>
+
         <div style={{ height: 600, width: "100%" }}>
           <DataGrid
             rows={rows}

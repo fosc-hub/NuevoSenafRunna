@@ -74,7 +74,8 @@ const ScoringProgressBar: React.FC<ScoringProgressBarProps> = ({
   // Obtener texto del tooltip
   const getTooltipText = (): string => {
     const baseMessage = ALERT_MESSAGES[alertLevel]?.subtitle || "Nivel de coincidencia"
-    return `${percentage}% de coincidencia - ${baseMessage}`
+    // return `${percentage}% de coincidencia - ${baseMessage}`
+    return baseMessage
   }
 
   const progressBar = (
@@ -96,6 +97,7 @@ const ScoringProgressBar: React.FC<ScoringProgressBarProps> = ({
         />
       </Box>
 
+      {/*
       {showPercentage && (
         <Typography
           variant={size === "small" ? "caption" : "body2"}
@@ -109,6 +111,7 @@ const ScoringProgressBar: React.FC<ScoringProgressBarProps> = ({
           {percentage}%
         </Typography>
       )}
+      */}
     </Box>
   )
 

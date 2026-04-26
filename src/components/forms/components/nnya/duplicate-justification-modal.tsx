@@ -127,8 +127,8 @@ const DuplicateJustificationModal: React.FC<DuplicateJustificationModalProps> = 
               ÚLTIMA CONFIRMACIÓN
             </Typography>
             <Typography variant="body2">
-              Estás a punto de crear un nuevo legajo ignorando un duplicado con{" "}
-              <strong>{percentage}%</strong> de coincidencia.
+              Estás a punto de crear un nuevo legajo ignorando un duplicado.
+              {/* Estás a punto de crear un nuevo legajo ignorando un duplicado con <strong>{percentage}%</strong> de coincidencia. */}
             </Typography>
           </Alert>
 
@@ -172,8 +172,8 @@ const DuplicateJustificationModal: React.FC<DuplicateJustificationModalProps> = 
             CONFIRMACIÓN REQUERIDA
           </Typography>
           <Typography variant="body2">
-            Estás a punto de crear un NUEVO legajo a pesar de existir uno con{" "}
-            <strong>{percentage}%</strong> de coincidencia (Legajo {legajoNumero}).
+            Estás a punto de crear un NUEVO legajo a pesar de existir uno coincidente (Legajo {legajoNumero}).
+            {/* Estás a punto de crear un NUEVO legajo a pesar de existir uno con <strong>{percentage}%</strong> de coincidencia (Legajo {legajoNumero}). */}
           </Typography>
         </Alert>
 

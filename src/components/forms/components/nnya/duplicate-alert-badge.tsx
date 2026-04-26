@@ -78,9 +78,11 @@ const DuplicateAlertBadge: React.FC<DuplicateAlertBadgeProps> = ({
   // Obtener label según variante
   const getLabel = () => {
     if (legajoNumero) {
-      return `Legajo ${legajoNumero} (${percentage}%)`
+      // return `Legajo ${legajoNumero} (${percentage}%)`
+      return `Legajo ${legajoNumero}`
     }
-    return `Duplicado: ${percentage}%`
+    // return `Duplicado: ${percentage}%`
+    return `Duplicado`
   }
 
   // Renderizar según variante
@@ -116,7 +118,7 @@ const DuplicateAlertBadge: React.FC<DuplicateAlertBadgeProps> = ({
     return (
       <Tooltip title={message.subtitle} arrow>
         <Badge
-          badgeContent={`${percentage}%`}
+          // badgeContent={`${percentage}%`}
           sx={{
             "& .MuiBadge-badge": {
               backgroundColor: color,

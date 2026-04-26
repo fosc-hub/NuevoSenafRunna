@@ -58,7 +58,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       options={dropdownData.categoria_motivo || []}
                       getOptionLabel={(option) => {
                         if (!option || typeof option !== 'object') return ""
-                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        // return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        return option.nombre || ""
                       }}
                       value={dropdownData.categoria_motivo?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
@@ -101,7 +102,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       }
                       getOptionLabel={(option) => {
                         if (!option || typeof option !== 'object') return ""
-                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        // return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        return option.nombre || ""
                       }}
                       value={
                         dropdownData.categoria_submotivo
@@ -146,7 +148,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       options={dropdownData.gravedad_vulneracion || []}
                       getOptionLabel={(option) => {
                         if (!option || typeof option !== 'object') return ""
-                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        // return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        return option.nombre || ""
                       }}
                       value={dropdownData.gravedad_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
@@ -183,7 +186,8 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                       options={dropdownData.urgencia_vulneracion || []}
                       getOptionLabel={(option) => {
                         if (!option || typeof option !== 'object') return ""
-                        return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        // return option.nombre ? `${option.nombre} (Peso: ${option.peso || 0})` : ""
+                        return option.nombre || ""
                       }}
                       value={dropdownData.urgencia_vulneracion?.find((item: any) => item.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue ? newValue.id : null)}
@@ -208,6 +212,7 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
             </Grid>
 
             {/* Cálculo y despliegue de los pesos totales con colores */}
+            {/*
             <Grid item xs={12}>
               <Box
                 sx={{
@@ -315,6 +320,7 @@ const VulneracionesFieldArray: React.FC<VulneracionesFieldArrayProps> = ({
                 </Box>
               </Box>
             </Grid>
+            */}
           </Grid>
         </Box>
       ))}

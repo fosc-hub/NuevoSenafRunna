@@ -98,10 +98,15 @@ export default function CrearLegajoDialog({ open, onClose }: Props) {
       disableEscapeKeyDown={isPending}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" component="span" fontWeight="bold">
-            Crear Nuevo Legajo
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }} gutterBottom>
+              Crear Nuevo Legajo
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Complete el formulario con la información requerida. Los campos marcados con * son obligatorios.
+            </Typography>
+          </Box>
           <IconButton
             onClick={() => handleDialogClose(false)}
             disabled={isPending}

@@ -83,7 +83,7 @@ export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = (
 
   if (historial.length === 0) {
     return (
-      <SectionCard title="Historial de Cambios (Auditoría)">
+      <SectionCard title="Historial de Cambios">
         <Typography variant="body1" color="text.secondary">
           No hay cambios registrados en el historial.
         </Typography>
@@ -96,7 +96,7 @@ export const HistorialCambiosSection: React.FC<HistorialCambiosSectionProps> = (
 
   return (
     <SectionCard
-      title="Historial de Cambios (Auditoría)"
+      title="Historial de Cambios"
       chips={[{
         label: `${historial.length} cambio${historial.length !== 1 ? "s" : ""}`,
         color: "primary"

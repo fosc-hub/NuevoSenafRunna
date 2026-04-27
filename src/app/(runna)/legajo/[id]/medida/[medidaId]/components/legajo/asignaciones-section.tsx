@@ -67,7 +67,7 @@ export const AsignacionesSection: React.FC<AsignacionesSectionProps> = ({ legajo
 
   if (asignaciones.length === 0) {
     return (
-      <SectionCard title="Asignaciones Activas">
+      <SectionCard title="Asignaciones">
         <Typography variant="body1" color="text.secondary">
           No hay asignaciones activas registradas.
         </Typography>
@@ -77,7 +77,7 @@ export const AsignacionesSection: React.FC<AsignacionesSectionProps> = ({ legajo
 
   return (
     <SectionCard
-      title="Asignaciones Activas"
+      title="Asignaciones"
       chips={[{
         label: `${asignaciones.length} activa${asignaciones.length !== 1 ? "s" : ""}`,
         color: "primary",

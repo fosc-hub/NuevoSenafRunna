@@ -331,7 +331,7 @@ export default function LegajoDetail({ params, onClose, isFullPage = false }: Le
             <Tab label="Demandas" />
             <Tab label="Documentos" />
             <Tab label="Plan de Trabajo" />
-            {(isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && <Tab label="Auditoría" />}
+            {(isAdmin || legajoData.permisos_usuario?.puede_ver_historial) && <Tab label="Historial" />}
           </Tabs>
         </Box>
 

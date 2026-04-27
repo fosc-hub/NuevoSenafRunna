@@ -469,6 +469,25 @@ const LegajoTable: React.FC = () => {
   const getColumns = (): GridColDef[] => {
     const baseColumns: GridColDef[] = [
       {
+        field: "id",
+        headerName: "ID",
+        width: 80,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155", fontSize: "0.8125rem" }}>
+              {params.value}
+            </Typography>
+            {params.row.prioridad === "ALTA" && (
+              <Tooltip title="Alta Prioridad" arrow>
+                <PriorityHigh sx={{ fontSize: 16, color: "#dc2626" }} />
+              </Tooltip>
+            )}
+          </Box>
+        )
+      },
+      {
         field: "indicadores_alertas",
         headerName: "Alertas",
         width: 90,
@@ -507,25 +526,6 @@ const LegajoTable: React.FC = () => {
             />
           )
         },
-      },
-      {
-        field: "id",
-        headerName: "ID",
-        width: 80,
-        align: "center",
-        headerAlign: "center",
-        renderCell: (params) => (
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155", fontSize: "0.8125rem" }}>
-              {params.value}
-            </Typography>
-            {params.row.prioridad === "ALTA" && (
-              <Tooltip title="Alta Prioridad" arrow>
-                <PriorityHigh sx={{ fontSize: 16, color: "#dc2626" }} />
-              </Tooltip>
-            )}
-          </Box>
-        )
       },
       {
         field: "numero_legajo",

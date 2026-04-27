@@ -853,7 +853,7 @@ const DemandaTableContent: React.FC = () => {
   }
 
   // Define responsive columns based on screen size.
-  // Order matters: nombre is intentionally first (acts as pinned-left identifier)
+  // Order matters: id is pinned-left as the row identifier
   // and actions is appended last (acts as pinned-right action column).
   const getColumns = (): GridColDef[] => {
     const baseColumns: GridColDef[] = [
@@ -875,9 +875,19 @@ const DemandaTableContent: React.FC = () => {
       //   ),
       // },
       {
-        field: "nombre",
-        headerName: "Nombre",
-        width: 220,
+        field: "id",
+        headerName: "ID",
+        width: 80,
+        renderCell: (params) => (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+            <Typography variant="body2" color="text.secondary">{params.value}</Typography>
+          </div>
+        ),
+      },
+      {
+        field: "apellido",
+        headerName: "Apellido",
+        width: 170,
         renderCell: (params) => (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", width: "100%", gap: "4px" }}>
             <Tooltip
@@ -924,12 +934,21 @@ const DemandaTableContent: React.FC = () => {
         ),
       },
       {
-        field: "id",
-        headerName: "ID",
-        width: 80,
+        field: "nombre",
+        headerName: "Nombre",
+        width: 150,
         renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
-            <Typography variant="body2" color="text.secondary">{params.value}</Typography>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", width: "100%" }}>
+            <Tooltip
+              title={params.row.isFromLinkedLegajo
+                ? `Legajo vinculado #${params.row.linkedLegajoNumero}`
+                : `DNI: ${params.row.dni}`
+              }
+            >
+              <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }} noWrap>
+                {params.value}
+              </Typography>
+            </Tooltip>
           </div>
         ),
       },
@@ -1213,23 +1232,25 @@ const DemandaTableContent: React.FC = () => {
   const columns = useMemo(() => getColumns(), [isMobile])
 
   // Helper function to get NNyA name with fallback for CARGA_OFICIOS
-  const getNnyaNombre = (demanda: TDemanda): { nombre: string; isFromLinkedLegajo: boolean; legajoNumero?: string } => {
+  const getNnyaNombre = (demanda: TDemanda): { nombre: string; apellido: string; isFromLinkedLegajo: boolean; legajoNumero?: string } => {
     // Primary: nnya_principal (normal demandas)
     if (demanda.nnya_principal) {
       return {
-        nombre: `${demanda.nnya_principal.nombre} ${demanda.nnya_principal.apellido}`,
+        nombre: demanda.nnya_principal.nombre || "N/A",
+        apellido: demanda.nnya_principal.apellido || "N/A",
         isFromLinkedLegajo: false,
       }
     }
     // Fallback: nnya_nombre_legajo (CARGA_OFICIOS linked to existing legajo)
     if (demanda.nnya_nombre_legajo) {
       return {
-        nombre: `${demanda.nnya_nombre_legajo.nombre} ${demanda.nnya_nombre_legajo.apellido}`,
+        nombre: demanda.nnya_nombre_legajo.nombre || "N/A",
+        apellido: demanda.nnya_nombre_legajo.apellido || "N/A",
         isFromLinkedLegajo: true,
         legajoNumero: demanda.nnya_nombre_legajo.legajo_numero,
       }
     }
-    return { nombre: "N/A", isFromLinkedLegajo: false }
+    return { nombre: "N/A", apellido: "N/A", isFromLinkedLegajo: false }
   }
 
   const rows =
@@ -1240,6 +1261,7 @@ const DemandaTableContent: React.FC = () => {
         // score: demanda.demanda_score?.score || "N/A", // HIDDEN
         origen: demanda.bloque_datos_remitente?.nombre || "N/A",
         nombre: nnyaInfo.nombre,
+        apellido: nnyaInfo.apellido,
         isFromLinkedLegajo: nnyaInfo.isFromLinkedLegajo,
         linkedLegajoNumero: nnyaInfo.legajoNumero,
         dni: demanda.nnya_principal?.dni || demanda.nnya_nombre_legajo ? "Ver legajo" : "N/A",

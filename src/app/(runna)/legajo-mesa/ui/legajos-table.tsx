@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Paper,
   Button,
@@ -47,6 +47,8 @@ import {
   TableRowsRounded,
   Close as CloseIcon,
   ArrowBack,
+  ChevronLeft,
+  ChevronRight,
 } from "@mui/icons-material"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "react-toastify"
@@ -78,6 +80,7 @@ import LegajoSearchBar from "../components/search/LegajoSearchBar"
 import ActiveFiltersBar from "../components/search/ActiveFiltersBar"
 import { useFilterOptions } from "../hooks/useFilterOptions"
 import { getPriorityColor } from "../config/legajo-theme"
+import { gradients } from "@/theme/colors"
 import { useApiQuery } from "@/hooks/useApiQuery"
 
 // Dynamically import LegajoDetail with no SSR to avoid hydration issues
@@ -537,9 +540,33 @@ const LegajoTable: React.FC = () => {
         ),
       },
       {
+        field: "apellido",
+        headerName: "Apellido",
+        width: 140,
+        align: "left",
+        headerAlign: "left",
+        renderCell: (params) => (
+          <Tooltip title={`DNI: ${params.row.dni}`} arrow placement="top">
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 500,
+                color: "#1e293b",
+                fontSize: "0.8125rem",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {params.value}
+            </Typography>
+          </Tooltip>
+        ),
+      },
+      {
         field: "nombre",
         headerName: "Nombre",
-        width: 180,
+        width: 140,
         align: "left",
         headerAlign: "left",
         renderCell: (params) => (
@@ -647,8 +674,8 @@ const LegajoTable: React.FC = () => {
       },
       {
         field: "medidas_activas_count",
-        headerName: "Medidas",
-        width: 85,
+        headerName: "Cant. Medidas",
+        width: 110,
         align: "center",
         headerAlign: "center",
         renderCell: (params) => {
@@ -740,12 +767,17 @@ const LegajoTable: React.FC = () => {
       },
       {
         field: "indicadores_medidas",
-        headerName: "Andarivel",
+        headerName: "Medidas",
         width: 150,
         align: "left",
         headerAlign: "left",
         sortable: false,
-        renderCell: (params) => <AndarielMedidas estado={params.row.indicadores?.medida_andarivel || null} />,
+        renderCell: (params) => (
+          <AndarielMedidas
+            estado={params.row.indicadores?.medida_andarivel || null}
+            medidasActivas={params.row.medidas_activas || []}
+          />
+        ),
       },
       {
         field: "indicadores_pt",
@@ -935,7 +967,8 @@ const LegajoTable: React.FC = () => {
       return {
         id: legajo.id,
         numero_legajo: legajo.numero || `L-${legajo.id}`,
-        nombre: legajo.nnya?.nombre_completo || "N/A",
+        nombre: legajo.nnya?.nombre || "N/A",
+        apellido: legajo.nnya?.apellido || "N/A",
         dni: legajo.nnya?.dni ? String(legajo.nnya.dni) : "N/A",
         prioridad: legajo.prioridad || null,
         ultimaActualizacion: ultimaActualizacionFormatted,
@@ -1017,6 +1050,71 @@ const LegajoTable: React.FC = () => {
   const showTable = viewMode === "tabla" || (viewMode === "list" && !selectedLegajoId && !isMdDown)
   const showCardsList = viewMode === "list" && (isMdDown || selectedLegajoId !== null)
 
+  // Horizontal scroll affordance — see mesadeentrada for full rationale.
+  const gridContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollerRef = useRef<HTMLElement | null>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  const scrollGridBy = (delta: number) => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    scroller.scrollBy({ left: delta, behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    if (!showTable) {
+      scrollerRef.current = null
+      setCanScrollLeft(false)
+      setCanScrollRight(false)
+      return
+    }
+    const container = gridContainerRef.current
+    if (!container) return
+
+    let scroller: HTMLElement | null = null
+    let resizeObs: ResizeObserver | null = null
+
+    const update = () => {
+      const el = scroller
+      if (!el) return
+      setCanScrollLeft(el.scrollLeft > 1)
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+    }
+
+    const attach = (el: HTMLElement) => {
+      scroller = el
+      scrollerRef.current = el
+      update()
+      el.addEventListener("scroll", update, { passive: true })
+      resizeObs = new ResizeObserver(update)
+      resizeObs.observe(el)
+    }
+
+    const found = container.querySelector(".MuiDataGrid-virtualScroller") as HTMLElement | null
+    let mo: MutationObserver | null = null
+    if (found) {
+      attach(found)
+    } else {
+      mo = new MutationObserver(() => {
+        const el = container.querySelector(".MuiDataGrid-virtualScroller") as HTMLElement | null
+        if (el) {
+          attach(el)
+          mo?.disconnect()
+          mo = null
+        }
+      })
+      mo.observe(container, { childList: true, subtree: true })
+    }
+
+    return () => {
+      if (scroller) scroller.removeEventListener("scroll", update)
+      resizeObs?.disconnect()
+      mo?.disconnect()
+      scrollerRef.current = null
+    }
+  }, [showTable, columns])
+
   return (
     <>
       <Paper
@@ -1040,12 +1138,14 @@ const LegajoTable: React.FC = () => {
             }}
           >
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
                 fontWeight: 700,
-                fontSize: { xs: "1.0625rem", md: "1.25rem" },
-                color: "#0f172a",
-                letterSpacing: "-0.025em",
+                fontSize: { xs: "1.125rem", md: "1.5rem" },
+                background: gradients.title,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                letterSpacing: "-0.5px",
               }}
             >
               Gestión de Legajos
@@ -1080,12 +1180,94 @@ const LegajoTable: React.FC = () => {
         </Box>
         <ActiveFiltersBar filters={apiFilters} totalResults={totalCount} onRemoveFilter={handleRemoveFilter} onClearAll={handleClearAllFilters} jefeZonalNames={jefeZonalNames} directorNames={directorNames} equipoTrabajoNames={equipoTrabajoNames} equipoCentroVidaNames={equipoCentroVidaNames} />
         {showTable && (
-        <Box sx={{ height: 650, width: "100%", bgcolor: "#ffffff" }}>
+        <Box ref={gridContainerRef} sx={{ position: "relative", height: 650, width: "100%", bgcolor: "#ffffff" }}>
+          {canScrollLeft && (
+            <>
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  top: 56,
+                  left: 0,
+                  bottom: 56,
+                  width: 48,
+                  pointerEvents: "none",
+                  background: "linear-gradient(to right, rgba(255,255,255,0.95), rgba(255,255,255,0))",
+                  zIndex: 2,
+                }}
+              />
+              <Tooltip title="Desplazar a la izquierda" placement="right">
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); scrollGridBy(-320) }}
+                  aria-label="Desplazar tabla a la izquierda"
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: 8,
+                    transform: "translateY(-50%)",
+                    bgcolor: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    border: "1px solid #e2e8f0",
+                    zIndex: 3,
+                    "&:hover": { bgcolor: "#f1f5f9", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" },
+                  }}
+                >
+                  <ChevronLeft fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+          {canScrollRight && (
+            <>
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  top: 56,
+                  right: 0,
+                  bottom: 56,
+                  width: 48,
+                  pointerEvents: "none",
+                  background: "linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0))",
+                  zIndex: 2,
+                }}
+              />
+              <Tooltip title="Desplazar a la derecha — hay más columnas" placement="left">
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); scrollGridBy(320) }}
+                  aria-label="Desplazar tabla a la derecha"
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    right: 8,
+                    transform: "translateY(-50%)",
+                    bgcolor: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    border: "1px solid #e2e8f0",
+                    zIndex: 3,
+                    "&:hover": { bgcolor: "#f1f5f9", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" },
+                    animation: "scrollHintPulse 2s ease-in-out 1",
+                    "@keyframes scrollHintPulse": {
+                      "0%": { transform: "translateY(-50%) translateX(0)" },
+                      "30%": { transform: "translateY(-50%) translateX(-4px)" },
+                      "60%": { transform: "translateY(-50%) translateX(0)" },
+                      "100%": { transform: "translateY(-50%) translateX(0)" },
+                    },
+                  }}
+                >
+                  <ChevronRight fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
           <DataGrid
             rows={rows}
             columns={columns}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[5, 10, 25, 50]}
             sortModel={sortModel}
             onSortModelChange={setSortModel}
             sortingMode="server"
@@ -1093,6 +1275,13 @@ const LegajoTable: React.FC = () => {
             paginationMode="server"
             loading={isLoading || isUpdating}
             onRowClick={(params) => handleOpenModal(params.row.id)}
+            localeText={{
+              MuiTablePagination: {
+                labelRowsPerPage: 'Filas por página:',
+                labelDisplayedRows: ({ from, to, count }) =>
+                  `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`,
+              },
+            }}
             slots={{ toolbar: () => <CustomToolbar onExportXlsx={handleExportXlsx} onRefresh={loadLegajos} /> }}
             getRowId={(row) => row.id}
             getRowClassName={(params) => {

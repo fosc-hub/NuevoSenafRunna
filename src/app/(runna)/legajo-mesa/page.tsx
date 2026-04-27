@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic"
 import { useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import Header from "../../../components/Header"
 import { useUser } from "@/utils/auth/userZustand"
 
 // Dynamically import LegajoTable with no SSR to avoid hydration issues
@@ -28,11 +27,8 @@ export default function Page() {
   if (isAdministracion) return null
 
   return (
-    <>
-      <Header type="legajos" />
-      <div className="p-4 md:p-4">
-        <LegajoTable />
-      </div>
-    </>
+    <div className="p-4 md:p-6">
+      <LegajoTable />
+    </div>
   )
 }

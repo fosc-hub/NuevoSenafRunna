@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Paper,
   Button,
@@ -45,6 +45,8 @@ import {
   TableRowsRounded,
   Close as CloseIcon,
   ArrowBack,
+  ChevronLeft,
+  ChevronRight,
 } from "@mui/icons-material"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getCurrentDateISO } from "@/utils/dateUtils"
@@ -485,6 +487,19 @@ const DemandaTableContent: React.FC = () => {
     else params.set("demanda", String(id))
     const qs = params.toString()
     router.replace(qs ? `?${qs}` : "?", { scroll: false })
+  }
+
+  // Horizontal scroll affordance: track whether the DataGrid's virtual scroller can
+  // scroll left/right so we can render edge gradients + floating chevron buttons.
+  const gridContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollerRef = useRef<HTMLElement | null>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  const scrollGridBy = (delta: number) => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    scroller.scrollBy({ left: delta, behavior: "smooth" })
   }
 
   // Check if user has permission to assign demandas
@@ -1312,14 +1327,67 @@ const DemandaTableContent: React.FC = () => {
     })
   }
 
-  if (isError) return <Typography color="error">Error al cargar la data</Typography>
-
   // Layout flags. List mode reuses the DataGrid for the "nothing selected" state on
   // desktop (denser scan view) and switches to a 420px sidebar of cards once a
   // demanda is opened. On mobile the cards list is always shown and detail is in a
   // Drawer, since DataGrid is unusable on small screens.
   const showTable = viewMode === "tabla" || (viewMode === "list" && !selectedDemandaId && !isMdDown)
   const showCardsList = viewMode === "list" && (isMdDown || selectedDemandaId !== null)
+
+  useEffect(() => {
+    if (!showTable) {
+      scrollerRef.current = null
+      setCanScrollLeft(false)
+      setCanScrollRight(false)
+      return
+    }
+    const container = gridContainerRef.current
+    if (!container) return
+
+    let scroller: HTMLElement | null = null
+    let resizeObs: ResizeObserver | null = null
+
+    const update = () => {
+      const el = scroller
+      if (!el) return
+      setCanScrollLeft(el.scrollLeft > 1)
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+    }
+
+    const attach = (el: HTMLElement) => {
+      scroller = el
+      scrollerRef.current = el
+      update()
+      el.addEventListener("scroll", update, { passive: true })
+      resizeObs = new ResizeObserver(update)
+      resizeObs.observe(el)
+    }
+
+    const found = container.querySelector(".MuiDataGrid-virtualScroller") as HTMLElement | null
+    let mo: MutationObserver | null = null
+    if (found) {
+      attach(found)
+    } else {
+      mo = new MutationObserver(() => {
+        const el = container.querySelector(".MuiDataGrid-virtualScroller") as HTMLElement | null
+        if (el) {
+          attach(el)
+          mo?.disconnect()
+          mo = null
+        }
+      })
+      mo.observe(container, { childList: true, subtree: true })
+    }
+
+    return () => {
+      if (scroller) scroller.removeEventListener("scroll", update)
+      resizeObs?.disconnect()
+      mo?.disconnect()
+      scrollerRef.current = null
+    }
+  }, [showTable, columnVisibilityModel])
+
+  if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
   return (
     <>
@@ -1500,7 +1568,89 @@ const DemandaTableContent: React.FC = () => {
               </Typography>
             </Box>
 
-        <div style={{ height: 600, width: "100%" }}>
+        <Box ref={gridContainerRef} sx={{ position: "relative", height: 600, width: "100%" }}>
+          {canScrollLeft && (
+            <>
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  top: 56,
+                  left: 0,
+                  bottom: 56,
+                  width: 48,
+                  pointerEvents: "none",
+                  background: "linear-gradient(to right, rgba(255,255,255,0.95), rgba(255,255,255,0))",
+                  zIndex: 2,
+                }}
+              />
+              <Tooltip title="Desplazar a la izquierda" placement="right">
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); scrollGridBy(-320) }}
+                  aria-label="Desplazar tabla a la izquierda"
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: 8,
+                    transform: "translateY(-50%)",
+                    bgcolor: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    border: "1px solid #e0e0e0",
+                    zIndex: 3,
+                    "&:hover": { bgcolor: "#f5f5f5", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" },
+                  }}
+                >
+                  <ChevronLeft fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+          {canScrollRight && (
+            <>
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  top: 56,
+                  right: 0,
+                  bottom: 56,
+                  width: 48,
+                  pointerEvents: "none",
+                  background: "linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0))",
+                  zIndex: 2,
+                }}
+              />
+              <Tooltip title="Desplazar a la derecha — hay más columnas" placement="left">
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); scrollGridBy(320) }}
+                  aria-label="Desplazar tabla a la derecha"
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    right: 8,
+                    transform: "translateY(-50%)",
+                    bgcolor: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    border: "1px solid #e0e0e0",
+                    zIndex: 3,
+                    "&:hover": { bgcolor: "#f5f5f5", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" },
+                    // Subtle pulse to attract the eye on first appearance.
+                    animation: "scrollHintPulse 2s ease-in-out 1",
+                    "@keyframes scrollHintPulse": {
+                      "0%": { transform: "translateY(-50%) translateX(0)" },
+                      "30%": { transform: "translateY(-50%) translateX(-4px)" },
+                      "60%": { transform: "translateY(-50%) translateX(0)" },
+                      "100%": { transform: "translateY(-50%) translateX(0)" },
+                    },
+                  }}
+                >
+                  <ChevronRight fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
           <DataGrid
             rows={rows}
             columns={columns}
@@ -1671,7 +1821,7 @@ const DemandaTableContent: React.FC = () => {
               return `row-${estado.replace(/_/g, "-")}${recibido ? " row-received" : " row-not-received"}`
             }}
           />
-        </div>
+        </Box>
           </>
         )}
 

@@ -16,6 +16,7 @@ import type {
   SemaforoEstado,
   AndarielEstado,
   MedidaAndarivel,
+  MedidaActivaBasica,
   Alerta,
 } from "../types/legajo-api"
 import {
@@ -127,7 +128,10 @@ export const ChipsOficios: React.FC<{ oficios: OficioConSemaforo[] }> = ({ ofici
 /**
  * Andarivel de Medidas - Barra de progreso visual
  */
-export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstado | null }> = ({ estado }) => {
+export const AndarielMedidas: React.FC<{
+  estado: MedidaAndarivel | AndarielEstado | null
+  medidasActivas?: MedidaActivaBasica[]
+}> = ({ estado, medidasActivas }) => {
   if (!estado) {
     return <Typography variant="body2" color="text.disabled">Sin medidas</Typography>
   }
@@ -163,17 +167,52 @@ export const AndarielMedidas: React.FC<{ estado: MedidaAndarivel | AndarielEstad
   const progreso = ((etapaIndex + 1) / etapas.length) * 100
   const colors = getAndarielColor(estadoString as AndarielEstado)
 
-  // Build tooltip with additional info if available
-  let tooltipContent = `Etapa: ${estadoString}`
-  if (estadoObj) {
-    const parts = [`Etapa: ${estadoString}`]
-    if (estadoObj.numero_medida) parts.push(`Medida: ${String(estadoObj.numero_medida)}`)
-    if (estadoObj.etapa_estado) parts.push(`Estado: ${String(estadoObj.etapa_estado)}`)
-    tooltipContent = parts.join(' | ')
-  }
+  const tipoMedida = estadoObj?.tipo_medida_display || estadoObj?.tipo_medida || null
+  const numeroMedida = estadoObj?.numero_medida || null
+  const etapaEstado = estadoObj?.etapa_estado || null
+
+  const tooltipContent = (
+    <Box sx={{ p: 0.5, minWidth: 220 }}>
+      <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.5, color: "#fff" }}>
+        Medida actual del andarivel
+      </Typography>
+      {tipoMedida && (
+        <Typography variant="caption" sx={{ display: "block", color: "#fff" }}>
+          <strong>Tipo:</strong> {String(tipoMedida)}
+        </Typography>
+      )}
+      {numeroMedida && (
+        <Typography variant="caption" sx={{ display: "block", color: "#fff" }}>
+          <strong>N°:</strong> {String(numeroMedida)}
+        </Typography>
+      )}
+      <Typography variant="caption" sx={{ display: "block", color: "#fff" }}>
+        <strong>Etapa:</strong> {estadoString}
+      </Typography>
+      {etapaEstado && (
+        <Typography variant="caption" sx={{ display: "block", color: "#fff" }}>
+          <strong>Estado etapa:</strong> {String(etapaEstado)}
+        </Typography>
+      )}
+      {Array.isArray(medidasActivas) && medidasActivas.length > 0 && (
+        <>
+          <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.25)", mt: 0.75, pt: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.25, color: "#fff" }}>
+              Todas las medidas activas ({medidasActivas.length})
+            </Typography>
+            {medidasActivas.map((m) => (
+              <Typography key={m.id} variant="caption" sx={{ display: "block", color: "#fff" }}>
+                • {m.tipo}{m.etapa ? ` — ${m.etapa}` : ""}{m.estado ? ` (${m.estado})` : ""}
+              </Typography>
+            ))}
+          </Box>
+        </>
+      )}
+    </Box>
+  )
 
   return (
-    <Tooltip title={tooltipContent}>
+    <Tooltip title={tooltipContent} arrow placement="top">
       <Box sx={{ width: "100%", minWidth: 120 }}>
         <LinearProgress
           variant="determinate"

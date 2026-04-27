@@ -96,6 +96,7 @@ export const exportLegajosToExcel = (rows: any[], filterMetadata?: { filters: an
   const fieldMappings = {
     id: "ID",
     numero_legajo: "Nº Legajo",
+    apellido: "Apellido",
     nombre: "Nombre",
     dni: "DNI",
     prioridad: "Prioridad",

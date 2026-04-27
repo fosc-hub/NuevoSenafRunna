@@ -18,6 +18,12 @@ import {
   MenuItem,
   FormControl,
   alpha,
+  Stack,
+  Drawer,
+  Pagination,
+  ToggleButton,
+  ToggleButtonGroup,
+  Skeleton,
 } from "@mui/material"
 import {
   DataGrid,
@@ -28,7 +34,21 @@ import {
   GridToolbarFilterButton,
   gridClasses,
 } from "@mui/x-data-grid"
-import { PersonAdd, Visibility, Refresh, DownloadRounded, Info, PriorityHigh, Remove, KeyboardArrowDown } from "@mui/icons-material"
+import {
+  PersonAdd,
+  Visibility,
+  Refresh,
+  DownloadRounded,
+  Info,
+  PriorityHigh,
+  Remove,
+  KeyboardArrowDown,
+  ViewListRounded,
+  TableRowsRounded,
+  Close as CloseIcon,
+  ArrowBack,
+} from "@mui/icons-material"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
 import { useQueryClient } from "@tanstack/react-query"
@@ -128,12 +148,18 @@ const CustomToolbar = ({ onExportXlsx, onRefresh }: { onExportXlsx: () => void; 
 }
 
 
+const LEGAJO_VIEW_MODE_STORAGE_KEY = "legajo-mesa:viewMode:v1"
+type LegajoViewMode = "list" | "tabla"
+
 const LegajoTable: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const isMdDown = useMediaQuery(theme.breakpoints.down("md"))
   const permissions = useUserPermissions()
   const filterOptions = useFilterOptions()
   const queryClient = useQueryClient()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -179,6 +205,42 @@ const LegajoTable: React.FC = () => {
       sessionStorage.setItem("legajo-mesa-filters", JSON.stringify(apiFilters))
     }
   }, [apiFilters])
+
+  const [viewMode, setViewMode] = useState<LegajoViewMode>(() => {
+    if (typeof window === "undefined") return "list"
+    const stored = window.localStorage.getItem(LEGAJO_VIEW_MODE_STORAGE_KEY) as LegajoViewMode | null
+    return stored === "list" || stored === "tabla" ? stored : "list"
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LEGAJO_VIEW_MODE_STORAGE_KEY, viewMode)
+    } catch {
+      /* ignore */
+    }
+  }, [viewMode])
+
+  const handleViewModeChange = (_e: React.MouseEvent<HTMLElement>, next: LegajoViewMode | null) => {
+    if (next) setViewMode(next)
+  }
+
+  // Sync ?legajo=ID URL param -> selectedLegajoId on first mount.
+  useEffect(() => {
+    const fromUrl = searchParams.get("legajo")
+    if (fromUrl) {
+      const parsed = Number(fromUrl)
+      if (!Number.isNaN(parsed)) setSelectedLegajoId(parsed)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const updateUrlSelection = (id: number | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (id == null) params.delete("legajo")
+    else params.set("legajo", String(id))
+    const qs = params.toString()
+    router.replace(qs ? `?${qs}` : "?", { scroll: false })
+  }
 
   // Build query params using useMemo - API uses 1-based pagination
   const queryParams = useMemo(() => {
@@ -380,12 +442,15 @@ const LegajoTable: React.FC = () => {
 
   const handleOpenModal = (legajoId: number) => {
     setSelectedLegajoId(legajoId)
-    setIsModalOpen(true)
+    updateUrlSelection(legajoId)
+    // Modal only opens in tabla mode; list mode shows detail in the side pane.
+    if (viewMode === "tabla") setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setSelectedLegajoId(null)
     setIsModalOpen(false)
+    updateUrlSelection(null)
   }
 
   const handleOpenAsignarModal = (legajoId: number) => {
@@ -945,6 +1010,13 @@ const LegajoTable: React.FC = () => {
     toast.success("Archivo Excel generado correctamente")
   }
 
+  // Layout flags. List mode reuses the DataGrid for the "nothing selected" state on
+  // desktop (denser scan view) and switches to a 420px sidebar of cards once a
+  // legajo is opened. On mobile the cards list is always shown and detail is in a
+  // Drawer, since DataGrid is unusable on small screens.
+  const showTable = viewMode === "tabla" || (viewMode === "list" && !selectedLegajoId && !isMdDown)
+  const showCardsList = viewMode === "list" && (isMdDown || selectedLegajoId !== null)
+
   return (
     <>
       <Paper
@@ -956,28 +1028,58 @@ const LegajoTable: React.FC = () => {
           border: "1px solid #e2e8f0",
         }}
       >
-        <Box sx={{ p: 2.5, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
-          <Typography
-            variant="h6"
+        <Box sx={{ p: { xs: 1.5, md: 2.5 }, borderBottom: "1px solid #e2e8f0", bgcolor: "#ffffff" }}>
+          <Box
             sx={{
               mb: 2,
-              fontWeight: 700,
-              fontSize: "1.25rem",
-              color: "#0f172a",
-              letterSpacing: "-0.025em",
+              display: "flex",
+              alignItems: { xs: "stretch", sm: "center" },
+              justifyContent: "space-between",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 1.5,
             }}
           >
-            Gestión de Legajos
-          </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: "1.0625rem", md: "1.25rem" },
+                color: "#0f172a",
+                letterSpacing: "-0.025em",
+              }}
+            >
+              Gestión de Legajos
+            </Typography>
+
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={viewMode}
+              onChange={handleViewModeChange}
+              aria-label="Modo de vista"
+              sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
+            >
+              <ToggleButton value="list" aria-label="Vista lista" sx={{ textTransform: "none", px: 1.25 }}>
+                <ViewListRounded fontSize="small" sx={{ mr: 0.5 }} />
+                Lista
+              </ToggleButton>
+              <ToggleButton value="tabla" aria-label="Vista tabla" sx={{ textTransform: "none", px: 1.25 }}>
+                <TableRowsRounded fontSize="small" sx={{ mr: 0.5 }} />
+                Tabla
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
           <Box sx={{ mb: 2 }}>
             <LegajoSearchBar onSearch={handleSearch} initialValue={apiFilters.search || ""} />
           </Box>
-          <div className="flex gap-4 relative z-10">
+          <div className="flex flex-wrap gap-2 sm:gap-4 relative z-10">
             <LegajoButtons isLoading={isLoading} handleNuevoRegistro={() => { }} onLegajoCreated={() => loadLegajos()} />
             <LegajoFilters onFilterChange={(newFilters) => { setApiFilters((prev) => ({ ...prev, ...newFilters })); setPaginationModel((prev) => ({ ...prev, page: 0 })) }} />
           </div>
         </Box>
         <ActiveFiltersBar filters={apiFilters} totalResults={totalCount} onRemoveFilter={handleRemoveFilter} onClearAll={handleClearAllFilters} jefeZonalNames={jefeZonalNames} directorNames={directorNames} equipoTrabajoNames={equipoTrabajoNames} equipoCentroVidaNames={equipoCentroVidaNames} />
+        {showTable && (
         <Box sx={{ height: 650, width: "100%", bgcolor: "#ffffff" }}>
           <DataGrid
             rows={rows}
@@ -1090,8 +1192,264 @@ const LegajoTable: React.FC = () => {
             }}
           />
         </Box>
+        )}
+
+        {showCardsList && (
+          <Box
+            sx={{
+              display: "flex",
+              height: { xs: "calc(100dvh - 320px)", md: "calc(100vh - 280px)" },
+              minHeight: { xs: 360, md: 520 },
+              bgcolor: "#fff",
+            }}
+          >
+            {/* Left pane: 420px sidebar of cards (full width on mobile). */}
+            <Box
+              sx={{
+                width: { xs: "100%", md: 420 },
+                flexShrink: 0,
+                borderRight: { xs: "none", md: "1px solid #e2e8f0" },
+                display: "flex",
+                flexDirection: "column",
+                bgcolor: "#fafbfc",
+              }}
+            >
+              <Box sx={{ flex: 1, overflowY: "auto" }}>
+                {isLoading && rows.length === 0 ? (
+                  <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} variant="rectangular" height={84} sx={{ borderRadius: 1 }} />
+                    ))}
+                  </Box>
+                ) : rows.length === 0 ? (
+                  <Box sx={{ p: 4, textAlign: "center" }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No se encontraron legajos con los filtros actuales.
+                    </Typography>
+                  </Box>
+                ) : (
+                  rows.map((row) => {
+                    const isSelected = selectedLegajoId === row.id
+                    const accent = row.prioridad === "ALTA"
+                      ? "#dc2626"
+                      : row.prioridad === "MEDIA"
+                        ? "#ef6c00"
+                        : row.prioridad === "BAJA"
+                          ? "#2e7d32"
+                          : "#cbd5e1"
+                    return (
+                      <Box
+                        key={row.id}
+                        onClick={() => handleOpenModal(row.id)}
+                        sx={{
+                          px: 2,
+                          py: 1.25,
+                          borderBottom: "1px solid #eef2f6",
+                          borderLeft: `4px solid ${accent}`,
+                          cursor: "pointer",
+                          bgcolor: isSelected ? alpha("#1976d2", 0.08) : "#fff",
+                          transition: "background-color 0.15s",
+                          "&:hover": { bgcolor: isSelected ? alpha("#1976d2", 0.12) : "#f8fafc" },
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, color: "#1e293b", flex: 1, minWidth: 0 }}
+                            noWrap
+                            title={row.nombre}
+                          >
+                            {row.nombre}
+                          </Typography>
+                          {row.prioridad === "ALTA" && (
+                            <Tooltip title="Alta prioridad">
+                              <PriorityHigh sx={{ fontSize: 16, color: "#dc2626" }} />
+                            </Tooltip>
+                          )}
+                          <Typography variant="caption" sx={{ color: "#1e40af", fontWeight: 500 }}>
+                            {row.numero_legajo}
+                          </Typography>
+                        </Stack>
+
+                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.5, flexWrap: "wrap" }}>
+                          <AlertasChip
+                            alertas={row.indicadores?.alertas || []}
+                            virtualAlerts={[]}
+                          />
+                          {row.medidas_activas_count > 0 && (
+                            <Tooltip title={`${row.medidas_activas_count} medidas activas`}>
+                              <Chip
+                                label={`M·${row.medidas_activas_count}`}
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: "0.7rem",
+                                  fontWeight: 600,
+                                  bgcolor: alpha("#3b82f6", 0.1),
+                                  color: "#2563eb",
+                                  border: "1px solid #93c5fd",
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+                          {row.actividades_activas_count > 0 && (
+                            <Tooltip title={`${row.actividades_activas_count} actividades activas`}>
+                              <Chip
+                                label={`A·${row.actividades_activas_count}`}
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: "0.7rem",
+                                  fontWeight: 600,
+                                  bgcolor: alpha("#8b5cf6", 0.1),
+                                  color: "#7c3aed",
+                                  border: "1px solid #c4b5fd",
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+                          {row.oficios_count > 0 && (
+                            <Tooltip title={`${row.oficios_count} oficios`}>
+                              <Chip
+                                label={`O·${row.oficios_count}`}
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: "0.7rem",
+                                  fontWeight: 600,
+                                  bgcolor: alpha("#0ea5e9", 0.1),
+                                  color: "#0284c7",
+                                  border: "1px solid #7dd3fc",
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Stack>
+
+                        <Typography
+                          variant="caption"
+                          sx={{ mt: 0.5, display: "block", color: "#64748b" }}
+                          noWrap
+                          title={`${row.zona || "-"} · ${row.equipo_trabajo || "-"} · ${row.ultimaActualizacion}`}
+                        >
+                          {row.zona || "-"} · {row.equipo_trabajo || "-"} · {row.ultimaActualizacion}
+                        </Typography>
+                      </Box>
+                    )
+                  })
+                )}
+              </Box>
+
+              {/* Compact pagination footer */}
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1,
+                  borderTop: "1px solid #e2e8f0",
+                  bgcolor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  {totalCount > 0
+                    ? `${paginationModel.page * paginationModel.pageSize + 1}–${Math.min(
+                        (paginationModel.page + 1) * paginationModel.pageSize,
+                        totalCount,
+                      )} de ${totalCount}`
+                    : "0 resultados"}
+                </Typography>
+                <Pagination
+                  size="small"
+                  count={Math.max(1, Math.ceil(totalCount / paginationModel.pageSize))}
+                  page={paginationModel.page + 1}
+                  onChange={(_, p) => setPaginationModel((prev) => ({ ...prev, page: p - 1 }))}
+                  siblingCount={0}
+                  boundaryCount={1}
+                />
+              </Box>
+            </Box>
+
+            {/* Right pane: detail (desktop only — mobile uses the Drawer below). */}
+            {!isMdDown && selectedLegajoId !== null && (
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <Box
+                  sx={{
+                    px: 3,
+                    py: 1.5,
+                    borderBottom: "1px solid #e2e8f0",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    bgcolor: "#fff",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+                    Legajo #{selectedLegajoId}
+                  </Typography>
+                  <Tooltip title="Cerrar">
+                    <IconButton size="small" onClick={handleCloseModal}>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 3 } }}>
+                  <LegajoDetail
+                    params={{ id: selectedLegajoId.toString() }}
+                    onClose={handleCloseModal}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
+        )}
       </Paper>
-      <Modal open={isModalOpen} onClose={handleCloseModal}>
+
+      {/* Mobile drawer for detail when in list mode */}
+      {viewMode === "list" && isMdDown && (
+        <Drawer
+          anchor="right"
+          open={selectedLegajoId !== null}
+          onClose={handleCloseModal}
+          PaperProps={{ sx: { width: "100%", maxWidth: "100vw" } }}
+        >
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              borderBottom: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              position: "sticky",
+              top: 0,
+              bgcolor: "#fff",
+              zIndex: 1,
+            }}
+          >
+            <IconButton size="small" onClick={handleCloseModal} aria-label="Volver">
+              <ArrowBack fontSize="small" />
+            </IconButton>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+              Legajo #{selectedLegajoId}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2 }}>
+            {selectedLegajoId && (
+              <LegajoDetail
+                params={{ id: selectedLegajoId.toString() }}
+                onClose={handleCloseModal}
+              />
+            )}
+          </Box>
+        </Drawer>
+      )}
+      <Modal open={isModalOpen && viewMode === "tabla"} onClose={handleCloseModal}>
         <Box
           sx={{
             position: "absolute",

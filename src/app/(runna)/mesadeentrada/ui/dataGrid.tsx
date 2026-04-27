@@ -18,16 +18,35 @@ import {
   useMediaQuery,
   useTheme,
   Skeleton,
+  Stack,
+  Drawer,
+  Pagination,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material"
 import {
   DataGrid,
   type GridColDef,
   type GridPaginationModel,
+  type GridColumnVisibilityModel,
   GridToolbarContainer,
   GridToolbarFilterButton,
 } from "@mui/x-data-grid"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { PersonAdd, Edit, Warning, AttachFile, Visibility, Refresh, FilterList } from "@mui/icons-material"
+import {
+  PersonAdd,
+  Edit,
+  Warning,
+  AttachFile,
+  Visibility,
+  Refresh,
+  FilterList,
+  ViewListRounded,
+  TableRowsRounded,
+  Close as CloseIcon,
+  ArrowBack,
+} from "@mui/icons-material"
+import { useRouter, useSearchParams } from "next/navigation"
 import { getCurrentDateISO } from "@/utils/dateUtils"
 import { toast } from "react-toastify"
 import dynamic from "next/dynamic"
@@ -298,10 +317,60 @@ const AdjuntosCell = (props: { adjuntos: Adjunto[] }) => {
   )
 }
 
+// Visibility presets for the demandas grid. Keys must match column `field` names.
+// `undefined`/missing keys default to visible; explicit `false` hides the column.
+const VISIBILITY_STORAGE_KEY = "mesadeentrada:columnVisibility:v1"
+const PRESET_STORAGE_KEY = "mesadeentrada:activePreset:v1"
+
+type PresetKey = "pendientes" | "sin_asignar" | "con_alertas" | "completa"
+
+const PRESETS: Record<PresetKey, { label: string; visibility: GridColumnVisibilityModel }> = {
+  pendientes: {
+    label: "Pendientes",
+    visibility: {
+      id: false,
+      origen: false,
+      localidad: false,
+      zonaEquipo: false,
+      objetivoDemanda: false,
+      adjuntos: false,
+    },
+  },
+  sin_asignar: {
+    label: "Sin asignar",
+    visibility: {
+      id: false,
+      origen: false,
+      envioRespuesta: false,
+      objetivoDemanda: false,
+      adjuntos: false,
+    },
+  },
+  con_alertas: {
+    label: "Con alertas",
+    visibility: {
+      origen: false,
+      localidad: false,
+      envioRespuesta: false,
+      objetivoDemanda: false,
+    },
+  },
+  completa: {
+    label: "Vista completa",
+    visibility: {},
+  },
+}
+
+const VIEW_MODE_STORAGE_KEY = "mesadeentrada:viewMode:v1"
+type ViewMode = "list" | "tabla"
+
 const DemandaTableContent: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const isMdDown = useMediaQuery(theme.breakpoints.down("md"))
   const user = useUser((state) => state.user)
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
@@ -335,6 +404,88 @@ const DemandaTableContent: React.FC = () => {
     objetivo_de_demanda: null,
     search: null,
   })
+
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>(() => {
+    if (typeof window === "undefined") return PRESETS.pendientes.visibility
+    try {
+      const stored = window.localStorage.getItem(VISIBILITY_STORAGE_KEY)
+      if (stored) return JSON.parse(stored)
+    } catch {
+      /* ignore corrupt JSON */
+    }
+    return PRESETS.pendientes.visibility
+  })
+
+  const [activePreset, setActivePreset] = useState<PresetKey | null>(() => {
+    if (typeof window === "undefined") return "pendientes"
+    const stored = window.localStorage.getItem(PRESET_STORAGE_KEY) as PresetKey | null
+    return stored && stored in PRESETS ? stored : "pendientes"
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(columnVisibilityModel))
+    } catch {
+      /* storage unavailable - ignore */
+    }
+  }, [columnVisibilityModel])
+
+  const handleVisibilityChange = (next: GridColumnVisibilityModel) => {
+    setColumnVisibilityModel(next)
+    // Manual toggle exits any active preset
+    setActivePreset(null)
+    try {
+      window.localStorage.removeItem(PRESET_STORAGE_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handlePresetClick = (key: PresetKey) => {
+    setColumnVisibilityModel(PRESETS[key].visibility)
+    setActivePreset(key)
+    try {
+      window.localStorage.setItem(PRESET_STORAGE_KEY, key)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "list"
+    const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY) as ViewMode | null
+    return stored === "list" || stored === "tabla" ? stored : "list"
+  })
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode)
+    } catch {
+      /* ignore */
+    }
+  }, [viewMode])
+
+  const handleViewModeChange = (_e: React.MouseEvent<HTMLElement>, next: ViewMode | null) => {
+    if (next) setViewMode(next)
+  }
+
+  // Sync ?demanda=ID URL param -> selectedDemandaId on first mount and when URL changes externally.
+  useEffect(() => {
+    const fromUrl = searchParams.get("demanda")
+    if (fromUrl) {
+      const parsed = Number(fromUrl)
+      if (!Number.isNaN(parsed)) setSelectedDemandaId(parsed)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const updateUrlSelection = (id: number | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (id == null) params.delete("demanda")
+    else params.set("demanda", String(id))
+    const qs = params.toString()
+    router.replace(qs ? `?${qs}` : "?", { scroll: false })
+  }
 
   // Check if user has permission to assign demandas
   const hasAssignPermission = user?.all_permissions?.includes('add_tdemandazona') ||
@@ -612,12 +763,28 @@ const DemandaTableContent: React.FC = () => {
 
   const handleOpenModal = (demandaId: number) => {
     setSelectedDemandaId(demandaId)
-    setIsModalOpen(true)
+    updateUrlSelection(demandaId)
+    // Modal is only used in tabla mode; list mode shows detail in the side pane.
+    if (viewMode === "tabla") setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setSelectedDemandaId(null)
     setIsModalOpen(false)
+    updateUrlSelection(null)
+  }
+
+  // Click handler shared by both views: marks recibido (if needed) and selects the demanda.
+  const handleSelectDemanda = (row: { id: number; recibido?: boolean; demanda_zona_id?: number | null }) => {
+    if (!row.recibido && row.demanda_zona_id) {
+      updateDemandaZona.mutate({
+        id: row.demanda_zona_id,
+        demandaId: row.id,
+        userId: user?.id || 0,
+      })
+    } else {
+      handleOpenModal(row.id)
+    }
   }
 
   const handleOpenAsignarModal = (demandaId: number) => {
@@ -670,38 +837,11 @@ const DemandaTableContent: React.FC = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase())
   }
 
-  // Define responsive columns based on screen size
+  // Define responsive columns based on screen size.
+  // Order matters: nombre is intentionally first (acts as pinned-left identifier)
+  // and actions is appended last (acts as pinned-right action column).
   const getColumns = (): GridColDef[] => {
     const baseColumns: GridColDef[] = [
-      {
-        field: "id",
-        headerName: "ID",
-        width: 100,
-        renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "4px" }}>
-            {params.value}
-            {params.row.hasLegajo && (
-              <Tooltip title={`Legajo: ${params.row.legajoNumero}`}>
-                <Chip
-                  label="📋"
-                  size="small"
-                  color="success"
-                  sx={{
-                    height: "20px",
-                    fontSize: "12px",
-                    "& .MuiChip-label": { px: 0.5 }
-                  }}
-                />
-              </Tooltip>
-            )}
-            {params.row.calificacion === "URGENTE" && (
-              <Tooltip title="Urgente">
-                <Warning color="error" style={{ marginLeft: "4px" }} fontSize="small" />
-              </Tooltip>
-            )}
-          </div>
-        ),
-      },
       // SCORE COLUMN - HIDDEN
       // {
       //   field: "score",
@@ -722,19 +862,34 @@ const DemandaTableContent: React.FC = () => {
       {
         field: "nombre",
         headerName: "Nombre",
-        width: 200,
+        width: 220,
         renderCell: (params) => (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", gap: "4px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", width: "100%", gap: "4px" }}>
             <Tooltip
               title={params.row.isFromLinkedLegajo
                 ? `Legajo vinculado #${params.row.linkedLegajoNumero}`
                 : `DNI: ${params.row.dni}`
               }
             >
-              <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }}>
+              <Typography variant="body2" sx={{ fontWeight: params.row.recibido ? "normal" : "bold" }} noWrap>
                 {params.value}
               </Typography>
             </Tooltip>
+            {params.row.hasLegajo && (
+              <Tooltip title={`Legajo: ${params.row.legajoNumero}`}>
+                <Chip
+                  label="📋"
+                  size="small"
+                  color="success"
+                  sx={{ height: "20px", fontSize: "12px", "& .MuiChip-label": { px: 0.5 } }}
+                />
+              </Tooltip>
+            )}
+            {params.row.calificacion === "URGENTE" && (
+              <Tooltip title="Urgente">
+                <Warning color="error" fontSize="small" />
+              </Tooltip>
+            )}
             {params.row.isFromLinkedLegajo && (
               <Tooltip title={`Datos desde legajo #${params.row.linkedLegajoNumero}`}>
                 <Chip
@@ -750,6 +905,16 @@ const DemandaTableContent: React.FC = () => {
                 />
               </Tooltip>
             )}
+          </div>
+        ),
+      },
+      {
+        field: "id",
+        headerName: "ID",
+        width: 80,
+        renderCell: (params) => (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+            <Typography variant="body2" color="text.secondary">{params.value}</Typography>
           </div>
         ),
       },
@@ -823,99 +988,6 @@ const DemandaTableContent: React.FC = () => {
               {params.value}
             </Typography>
           </div>
-        ),
-      },
-      {
-        field: "actions",
-        headerName: "Acciones",
-        width: 160,
-        sortable: false,
-        filterable: false,
-        renderCell: (params) => (
-          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", width: "100%" }}>
-            <Tooltip title="Ver detalles">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (!params.row.recibido && params.row.demanda_zona_id) {
-                    updateDemandaZona.mutate({
-                      id: params.row.demanda_zona_id,
-                      demandaId: params.row.id,
-                      userId: user?.id || 0,
-                    })
-                  } else {
-                    handleOpenModal(params.row.id)
-                  }
-                }}
-                sx={{ color: "primary.main" }}
-              >
-                <Visibility fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            {hasAssignPermission && (
-              <Tooltip title="Asignar">
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleOpenAsignarModal(params.row.id)
-                  }}
-                  sx={{ color: "secondary.main" }}
-                >
-                  <PersonAdd fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-
-            {hasEvaluatePermission && (
-              <Tooltip
-                title={
-                  params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
-                    ? "Comenzar Evaluación"
-                    : "No disponible para evaluación"
-                }
-              >
-                <span>
-                  {params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION" ? (
-                    <Button
-                      variant="contained"
-                      size="small"
-                      color="success"
-                      startIcon={<Edit fontSize="inherit" />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        window.location.href = `/evaluacion?id=${params.row.id}`
-                      }}
-                      sx={{
-                        textTransform: "none",
-                        fontWeight: "bold",
-                        borderRadius: "16px",
-                        px: 1.5,
-                        fontSize: "0.75rem",
-                        boxShadow: "0 2px 4px rgba(76, 175, 80, 0.3)",
-                        "&:hover": {
-                          backgroundColor: "#388e3c",
-                          boxShadow: "0 4px 8px rgba(76, 175, 80, 0.4)",
-                        }
-                      }}
-                    >
-                      Evaluar
-                    </Button>
-                  ) : (
-                    <IconButton
-                      size="small"
-                      disabled
-                      sx={{ color: "action.disabled" }}
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                  )}
-                </span>
-              </Tooltip>
-            )}
-          </Box>
         ),
       },
       {
@@ -1023,6 +1095,102 @@ const DemandaTableContent: React.FC = () => {
         },
       )
     }
+
+    // Append actions LAST so it sits at the right edge (acts as pinned-right column).
+    baseColumns.push({
+      field: "actions",
+      headerName: "Acciones",
+      width: 160,
+      sortable: false,
+      filterable: false,
+      hideable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: "flex", gap: 1, justifyContent: "center", width: "100%" }}>
+          <Tooltip title="Ver detalles">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!params.row.recibido && params.row.demanda_zona_id) {
+                  updateDemandaZona.mutate({
+                    id: params.row.demanda_zona_id,
+                    demandaId: params.row.id,
+                    userId: user?.id || 0,
+                  })
+                } else {
+                  handleOpenModal(params.row.id)
+                }
+              }}
+              sx={{ color: "primary.main" }}
+            >
+              <Visibility fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {hasAssignPermission && (
+            <Tooltip title="Asignar">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleOpenAsignarModal(params.row.id)
+                }}
+                sx={{ color: "secondary.main" }}
+              >
+                <PersonAdd fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          {hasEvaluatePermission && (
+            <Tooltip
+              title={
+                params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION"
+                  ? "Comenzar Evaluación"
+                  : "No disponible para evaluación"
+              }
+            >
+              <span>
+                {params.row.estado_demanda === "EVALUACION" || params.row.estado_demanda === "PENDIENTE_AUTORIZACION" ? (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="success"
+                    startIcon={<Edit fontSize="inherit" />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.location.href = `/evaluacion?id=${params.row.id}`
+                    }}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: "bold",
+                      borderRadius: "16px",
+                      px: 1.5,
+                      fontSize: "0.75rem",
+                      boxShadow: "0 2px 4px rgba(76, 175, 80, 0.3)",
+                      "&:hover": {
+                        backgroundColor: "#388e3c",
+                        boxShadow: "0 4px 8px rgba(76, 175, 80, 0.4)",
+                      }
+                    }}
+                  >
+                    Evaluar
+                  </Button>
+                ) : (
+                  <IconButton
+                    size="small"
+                    disabled
+                    sx={{ color: "action.disabled" }}
+                  >
+                    <Edit fontSize="small" />
+                  </IconButton>
+                )}
+              </span>
+            </Tooltip>
+          )}
+        </Box>
+      ),
+    })
 
     return baseColumns
   }
@@ -1146,6 +1314,13 @@ const DemandaTableContent: React.FC = () => {
 
   if (isError) return <Typography color="error">Error al cargar la data</Typography>
 
+  // Layout flags. List mode reuses the DataGrid for the "nothing selected" state on
+  // desktop (denser scan view) and switches to a 420px sidebar of cards once a
+  // demanda is opened. On mobile the cards list is always shown and detail is in a
+  // Drawer, since DataGrid is unusable on small screens.
+  const showTable = viewMode === "tabla" || (viewMode === "list" && !selectedDemandaId && !isMdDown)
+  const showCardsList = viewMode === "list" && (isMdDown || selectedDemandaId !== null)
+
   return (
     <>
       <Paper
@@ -1160,11 +1335,13 @@ const DemandaTableContent: React.FC = () => {
         {/* Barra 1: Título */}
         <Box
           sx={{
-            px: 3,
-            py: 2.5,
+            px: { xs: 2, md: 3 },
+            py: { xs: 1.5, md: 2.5 },
             display: "flex",
-            alignItems: "center",
+            alignItems: { xs: "stretch", sm: "center" },
             justifyContent: "space-between",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 1.5,
             borderBottom: `1px solid ${rgba.primaryLight(0.15)}`,
             background: gradients.subtle,
           }}
@@ -1173,6 +1350,7 @@ const DemandaTableContent: React.FC = () => {
             variant="h5"
             sx={{
               fontWeight: 700,
+              fontSize: { xs: "1.125rem", md: "1.5rem" },
               background: gradients.title,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -1181,16 +1359,35 @@ const DemandaTableContent: React.FC = () => {
           >
             Gestión de Demandas
           </Typography>
+
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={viewMode}
+            onChange={handleViewModeChange}
+            aria-label="Modo de vista"
+            sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
+          >
+            <ToggleButton value="list" aria-label="Vista lista" sx={{ textTransform: "none", px: 1.25 }}>
+              <ViewListRounded fontSize="small" sx={{ mr: 0.5 }} />
+              Lista
+            </ToggleButton>
+            <ToggleButton value="tabla" aria-label="Vista tabla" sx={{ textTransform: "none", px: 1.25 }}>
+              <TableRowsRounded fontSize="small" sx={{ mr: 0.5 }} />
+              Tabla
+            </ToggleButton>
+          </ToggleButtonGroup>
         </Box>
 
         {/* Barra 2: Acciones (Nuevo Registro, Búsqueda, Filtros, Exportar, Refrescar) */}
         <Box
           sx={{
-            px: 3,
-            py: 1.5,
+            px: { xs: 2, md: 3 },
+            py: { xs: 1, md: 1.5 },
             display: "flex",
             alignItems: "center",
-            gap: 1.5,
+            flexWrap: "wrap",
+            gap: { xs: 1, md: 1.5 },
             borderBottom: "1px solid #e0e0e0",
             bgcolor: "#fafafa",
           }}
@@ -1243,8 +1440,8 @@ const DemandaTableContent: React.FC = () => {
         {/* Búsqueda inline: filtra la tabla server-side por demanda + NNyA + legajo + localización + códigos */}
         <Box
           sx={{
-            px: 3,
-            py: 1.5,
+            px: { xs: 2, md: 3 },
+            py: { xs: 1, md: 1.5 },
             borderBottom: "1px solid #e0e0e0",
             bgcolor: "#fff",
           }}
@@ -1258,10 +1455,57 @@ const DemandaTableContent: React.FC = () => {
           />
         </Box>
 
+        {showTable && (
+          <>
+            {/* Vistas predefinidas: cada botón aplica un columnVisibilityModel preconfigurado */}
+            <Box
+              sx={{
+                px: { xs: 2, md: 3 },
+                py: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                flexWrap: "wrap",
+                borderBottom: "1px solid #e0e0e0",
+                bgcolor: "#fff",
+              }}
+            >
+              <Typography variant="caption" sx={{ color: "text.secondary", mr: 1 }}>
+                Vistas:
+              </Typography>
+              {(Object.keys(PRESETS) as PresetKey[]).map((key) => {
+                const isActive = activePreset === key
+                return (
+                  <Button
+                    key={key}
+                    size="small"
+                    variant={isActive ? "contained" : "outlined"}
+                    onClick={() => handlePresetClick(key)}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 999,
+                      px: 1.5,
+                      py: 0.25,
+                      fontSize: "0.75rem",
+                      fontWeight: isActive ? 600 : 500,
+                      minHeight: 28,
+                    }}
+                  >
+                    {PRESETS[key].label}
+                  </Button>
+                )
+              })}
+              <Typography variant="caption" sx={{ ml: "auto", color: "text.disabled" }}>
+                Usa el menú de columnas para personalizar
+              </Typography>
+            </Box>
+
         <div style={{ height: 600, width: "100%" }}>
           <DataGrid
             rows={rows}
             columns={columns}
+            columnVisibilityModel={columnVisibilityModel}
+            onColumnVisibilityModelChange={handleVisibilityChange}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
             pageSizeOptions={[5, 10, 25, 50]}
@@ -1428,9 +1672,248 @@ const DemandaTableContent: React.FC = () => {
             }}
           />
         </div>
+          </>
+        )}
+
+        {showCardsList && (
+          <Box
+            sx={{
+              display: "flex",
+              height: { xs: "calc(100dvh - 320px)", md: "calc(100vh - 240px)" },
+              minHeight: { xs: 360, md: 520 },
+              bgcolor: "#fff",
+            }}
+          >
+            {/* Left pane: 420px sidebar of cards (full width on mobile). */}
+            <Box
+              sx={{
+                width: { xs: "100%", md: 420 },
+                flexShrink: 0,
+                borderRight: { xs: "none", md: "1px solid #e0e0e0" },
+                display: "flex",
+                flexDirection: "column",
+                bgcolor: "#fafafa",
+              }}
+            >
+              <Box sx={{ flex: 1, overflowY: "auto" }}>
+                {isLoading && rows.length === 0 ? (
+                  <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} variant="rectangular" height={72} sx={{ borderRadius: 1 }} />
+                    ))}
+                  </Box>
+                ) : rows.length === 0 ? (
+                  <Box sx={{ p: 4, textAlign: "center" }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No se encontraron demandas con los filtros actuales.
+                    </Typography>
+                  </Box>
+                ) : (
+                  rows.map((row) => {
+                    const isSelected = selectedDemandaId === row.id
+                    const accent = getStatusColor(row.estado_demanda)
+                    return (
+                      <Box
+                        key={row.id}
+                        onClick={() => handleSelectDemanda(row)}
+                        sx={{
+                          px: 2,
+                          py: 1.25,
+                          borderBottom: "1px solid #eee",
+                          borderLeft: `4px solid ${accent}`,
+                          cursor: "pointer",
+                          bgcolor: isSelected
+                            ? rgba.primaryLight(0.12)
+                            : row.recibido
+                              ? "#fff"
+                              : "#fff",
+                          transition: "background-color 0.15s",
+                          "&:hover": { bgcolor: rgba.primaryLight(0.06) },
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: row.recibido ? 400 : 700,
+                              flex: 1,
+                              minWidth: 0,
+                            }}
+                            noWrap
+                            title={row.nombre}
+                          >
+                            {row.nombre}
+                          </Typography>
+                          {row.calificacion === "URGENTE" && (
+                            <Tooltip title="Urgente">
+                              <Warning color="error" fontSize="small" />
+                            </Tooltip>
+                          )}
+                          <Typography variant="caption" color="text.secondary">
+                            #{row.id}
+                          </Typography>
+                        </Stack>
+
+                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.5, flexWrap: "wrap" }}>
+                          <StatusChip status={row.estado_demanda} />
+                          {row.hasLegajo && (
+                            <Tooltip title={`Legajo: ${row.legajoNumero}`}>
+                              <Chip
+                                label="📋"
+                                size="small"
+                                color="success"
+                                sx={{ height: 20, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
+                              />
+                            </Tooltip>
+                          )}
+                          {row.isFromLinkedLegajo && (
+                            <Chip
+                              label="Vinculado"
+                              size="small"
+                              color="info"
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.75 } }}
+                            />
+                          )}
+                          {Array.isArray(row.adjuntos) && row.adjuntos.length > 0 && (
+                            <Tooltip title={`${row.adjuntos.length} adjuntos`}>
+                              <Chip
+                                icon={<AttachFile sx={{ fontSize: "0.85rem !important" }} />}
+                                label={row.adjuntos.length}
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 20, fontSize: "0.7rem" }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Stack>
+
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 0.5, display: "block" }}
+                          noWrap
+                          title={`${row.zonaEquipo} · ${row.localidad} · ${row.ultimaActualizacion}`}
+                        >
+                          {row.zonaEquipo} · {row.localidad} · {row.ultimaActualizacion}
+                        </Typography>
+                      </Box>
+                    )
+                  })
+                )}
+              </Box>
+
+              {/* Compact pagination footer */}
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1,
+                  borderTop: "1px solid #e0e0e0",
+                  bgcolor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  {totalCount > 0
+                    ? `${paginationModel.page * paginationModel.pageSize + 1}–${Math.min(
+                        (paginationModel.page + 1) * paginationModel.pageSize,
+                        totalCount,
+                      )} de ${totalCount}`
+                    : "0 resultados"}
+                </Typography>
+                <Pagination
+                  size="small"
+                  count={Math.max(1, Math.ceil(totalCount / paginationModel.pageSize))}
+                  page={paginationModel.page + 1}
+                  onChange={(_, p) => setPaginationModel((prev) => ({ ...prev, page: p - 1 }))}
+                  siblingCount={0}
+                  boundaryCount={1}
+                />
+              </Box>
+            </Box>
+
+            {/* Right pane: detail (desktop only — mobile uses the Drawer below). */}
+            {!isMdDown && selectedDemandaId !== null && (
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <Box
+                  sx={{
+                    px: 3,
+                    py: 1.5,
+                    borderBottom: "1px solid #e0e0e0",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    bgcolor: "#fff",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+                    Demanda #{selectedDemandaId}
+                  </Typography>
+                  <Tooltip title="Cerrar">
+                    <IconButton size="small" onClick={handleCloseModal}>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 3 } }}>
+                  <DemandaDetail
+                    params={{ id: selectedDemandaId.toString() }}
+                    onClose={handleCloseModal}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
+        )}
       </Paper>
+
+      {/* Mobile drawer for detail when in list mode */}
+      {viewMode === "list" && isMdDown && (
+        <Drawer
+          anchor="right"
+          open={selectedDemandaId !== null}
+          onClose={handleCloseModal}
+          PaperProps={{ sx: { width: "100%", maxWidth: "100vw" } }}
+        >
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              borderBottom: "1px solid #e0e0e0",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              position: "sticky",
+              top: 0,
+              bgcolor: "#fff",
+              zIndex: 1,
+            }}
+          >
+            <IconButton size="small" onClick={handleCloseModal} aria-label="Volver">
+              <ArrowBack fontSize="small" />
+            </IconButton>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
+              Demanda #{selectedDemandaId}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2 }}>
+            {selectedDemandaId && (
+              <DemandaDetail
+                params={{ id: selectedDemandaId.toString() }}
+                onClose={handleCloseModal}
+              />
+            )}
+          </Box>
+        </Drawer>
+      )}
       <Modal
-        open={isModalOpen}
+        open={isModalOpen && viewMode === "tabla"}
         aria-labelledby="demanda-detail-modal"
         aria-describedby="demanda-detail-description"
         onClose={(_event, reason) => {

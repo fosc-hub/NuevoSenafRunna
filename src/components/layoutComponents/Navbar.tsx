@@ -217,17 +217,17 @@ export default function Header() {
   if (!isClient || loadingUser) {
     return (
       <header
-        className="text-white p-4 flex justify-between items-center h-[72px] shadow-md"
+        className="text-white px-3 sm:px-6 py-3 flex justify-between items-center h-[72px] shadow-md gap-2 overflow-hidden"
         style={{ backgroundColor: '#00457F' }}
       >
-        <div className="flex items-center space-x-4">
-          <div className="w-32 h-10 bg-white/20 rounded animate-pulse"></div>
+        <div className="flex items-center min-w-0">
+          <div className="w-32 sm:w-48 md:w-64 h-10 bg-white/20 rounded animate-pulse"></div>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
-          <div className="w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+          <div className="hidden sm:block w-24 md:w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
+          <div className="hidden sm:block w-24 md:w-36 h-9 bg-white/20 rounded-md animate-pulse"></div>
           <div className="w-8 h-8 bg-white/20 rounded-full animate-pulse"></div>
-          <div className="w-6 h-6 bg-white/20 rounded-full animate-pulse"></div>
+          <div className="w-8 h-8 bg-white/20 rounded-full animate-pulse"></div>
           <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse"></div>
         </div>
       </header>
@@ -236,12 +236,12 @@ export default function Header() {
 
   return (
     <header
-      className="text-white px-6 py-3 flex justify-between items-center shadow-md"
+      className="text-white px-3 sm:px-6 py-3 flex justify-between items-center shadow-md gap-2 overflow-hidden"
       style={{ backgroundColor: '#00457F' }}
     >
       {/* Logo Gobierno de Córdoba - Lado Izquierdo (Branding) */}
-      <Link href="/mesadeentrada" className="flex-shrink-0 transition-opacity hover:opacity-90">
-        <div className="relative h-12 w-64">
+      <Link href="/mesadeentrada" className="flex-shrink min-w-0 transition-opacity hover:opacity-90">
+        <div className="relative h-9 w-32 sm:h-11 sm:w-48 md:h-12 md:w-64">
           <Image
             src="/img/Screenshot 2026-03-18 002042.png"
             alt="Gobierno de la Provincia de Córdoba"
@@ -253,29 +253,31 @@ export default function Header() {
       </Link>
 
       {/* Navegación y Usuario - Lado Derecho */}
-      <div className="flex items-center gap-3">
-        {/* Botones de Navegación */}
-        <div className="flex gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+        {/* Botones de Navegación — etiquetas cortas en mobile, completas en desktop */}
+        <div className="flex gap-1 sm:gap-2">
           <a
             href="/mesadeentrada"
-            className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white"
+            className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-md text-xs md:text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white whitespace-nowrap"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(8px)',
             }}
           >
-            Mesa de Entradas
+            <span className="sm:hidden">Mesa</span>
+            <span className="hidden sm:inline">Mesa de Entradas</span>
           </a>
           {!isAdministracion && (
             <a
               href="/legajo-mesa"
-              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white"
+              className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-md text-xs md:text-sm font-medium transition-all duration-200 hover:scale-105 hover:bg-[rgba(0,188,212,0.25)] cursor-pointer no-underline text-white whitespace-nowrap"
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(8px)',
               }}
             >
-              Bandeja de legajos
+              <span className="sm:hidden">Legajos</span>
+              <span className="hidden sm:inline">Bandeja de legajos</span>
             </a>
           )}
         </div>
@@ -286,7 +288,7 @@ export default function Header() {
           target="_blank"
           rel="noopener noreferrer"
           title="Manual de Capacitación"
-          className="p-2 rounded-full transition-all duration-200 hover:scale-110 flex items-center justify-center"
+          className="hidden sm:flex p-2 rounded-full transition-all duration-200 hover:scale-110 items-center justify-center"
           style={{
             backgroundColor: 'rgba(255, 255, 255, 0.15)',
           }}

@@ -49,7 +49,7 @@ const registroLegajoSchema = z.object({
         "VALIDO",
         "OTRO",
     ]),
-    genero: z.enum(["MASCULINO", "FEMENINO", "OTRO", "NO_ESPECIFICA"], {
+    genero: z.enum(["MASCULINO", "FEMENINO", "OTRO", "NO_ESPECIFICA", "NO_BINARIO", "AUTOPERCIBIDO"], {
         errorMap: () => ({ message: "Seleccione un género válido" }),
     }),
     observaciones: z.string().optional(),
@@ -249,6 +249,8 @@ const RegistroLegajoForm: React.FC<RegistroLegajoFormProps> = ({
                                         <Select {...field} label="Género *">
                                             <MenuItem value="MASCULINO">Masculino</MenuItem>
                                             <MenuItem value="FEMENINO">Femenino</MenuItem>
+                                            <MenuItem value="NO_BINARIO">No Binario</MenuItem>
+                                            <MenuItem value="AUTOPERCIBIDO">Autopercibido</MenuItem>
                                             <MenuItem value="OTRO">Otro</MenuItem>
                                             <MenuItem value="NO_ESPECIFICA">No Especifica</MenuItem>
                                         </Select>

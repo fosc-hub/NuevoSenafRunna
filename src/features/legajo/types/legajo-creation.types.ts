@@ -43,7 +43,7 @@ export interface NnyaCreateData {
   fecha_nacimiento?: string  // YYYY-MM-DD
   edad_aproximada?: number
   nacionalidad: 'ARGENTINA' | 'EXTRANJERA'
-  genero: 'MASCULINO' | 'FEMENINO' | 'NO_BINARIO'
+  genero: 'MASCULINO' | 'FEMENINO' | 'NO_BINARIO' | 'AUTOPERCIBIDO'
   domicilio_calle?: string
   domicilio_numero?: string
   domicilio_localidad?: string

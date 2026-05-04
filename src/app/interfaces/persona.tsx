@@ -10,7 +10,7 @@ interface TPersonaBase extends TBaseModel {
     edad_aproximada?: number | null;
     dni?: number | null;
     situacion_dni: 'EN_TRAMITE' | 'VENCIDO' | 'EXTRAVIADO' | 'INEXISTENTE' | 'VALIDO' | 'OTRO';
-    genero: 'MASCULINO' | 'FEMENINO' | 'OTRO';
+    genero: 'MASCULINO' | 'FEMENINO' | 'NO_BINARIO' | 'AUTOPERCIBIDO' | 'OTRO';
     boton_antipanico?: boolean;
     observaciones?: string | null;
     adulto: boolean;

@@ -53,6 +53,7 @@ import {
 } from "@mui/icons-material"
 import { useInformeJuridico } from "../../hooks/useInformeJuridico"
 import { InformeJuridicoDialog } from "../dialogs/informe-juridico-dialog"
+import { EnviarInformeJuzgadoDialog } from "../dialogs/enviar-informe-juzgado-dialog"
 import { AdjuntosInformeJuridico } from "../informe-juridico/adjuntos-informe-juridico"
 import {
   extractUserName,
@@ -177,6 +178,8 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [sendConfirmOpen, setSendConfirmOpen] = useState(false)
+  // GAP-13: Dialog para enviar informe al juzgado por email
+  const [enviarJuzgadoOpen, setEnviarJuzgadoOpen] = useState(false)
 
   // ============================================================================
   // HOOKS
@@ -522,28 +525,43 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
         date={`Elaborado por: ${extractUserName(informeJuridico.elaborado_por_detalle)}`}
         showCheckIcon={isEnviado}
         headerActions={
-          canModify && !isEnviado ? (
-            <Button
-              variant="contained"
-              color="primary"
-              size="small"
-              startIcon={<SendIcon />}
-              onClick={() => setSendConfirmOpen(true)}
-              disabled={!canSend}
-              sx={{
-                backgroundColor: "#4f3ff0",
-                "&:hover": { backgroundColor: "#3a2cc2" },
-                textTransform: "none",
-              }}
-              title={
-                !tieneInformeOficial
-                  ? "Debe adjuntar el informe oficial antes de enviar"
-                  : ""
-              }
-            >
-              Enviar Informe
-            </Button>
-          ) : undefined
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {canModify && !isEnviado && (
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                startIcon={<SendIcon />}
+                onClick={() => setSendConfirmOpen(true)}
+                disabled={!canSend}
+                sx={{
+                  backgroundColor: "#4f3ff0",
+                  "&:hover": { backgroundColor: "#3a2cc2" },
+                  textTransform: "none",
+                }}
+                title={
+                  !tieneInformeOficial
+                    ? "Debe adjuntar el informe oficial antes de enviar"
+                    : ""
+                }
+              >
+                Enviar Informe
+              </Button>
+            )}
+            {/* GAP-13: Enviar al juzgado por email (cuando hay informe enviado) */}
+            {canManage && hasInforme && isEnviado && (
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                startIcon={<EmailIcon />}
+                onClick={() => setEnviarJuzgadoOpen(true)}
+                sx={{ textTransform: "none" }}
+              >
+                Enviar al juzgado
+              </Button>
+            )}
+          </Box>
         }
       >
         {/* Warning if missing informe oficial */}
@@ -634,6 +652,15 @@ export const InformeJuridicoSection: React.FC<InformeJuridicoSectionProps> = ({
         onSubmit={handleCreateAndSendInforme}
         isLoading={isLoadingInforme}
         medidaNumero={medidaNumero}
+      />
+
+      {/* GAP-13: Enviar al juzgado por email */}
+      <EnviarInformeJuzgadoDialog
+        open={enviarJuzgadoOpen}
+        onClose={() => setEnviarJuzgadoOpen(false)}
+        medidaId={medidaId}
+        informeJuridicoId={informeJuridico?.id}
+        onSuccess={refetchInforme}
       />
 
       {/* Send Confirmation Dialog */}

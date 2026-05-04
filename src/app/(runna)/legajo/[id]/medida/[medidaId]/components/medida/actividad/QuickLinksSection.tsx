@@ -15,6 +15,8 @@ import FolderIcon from '@mui/icons-material/Folder'
 import DescriptionIcon from '@mui/icons-material/Description'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import GavelIcon from '@mui/icons-material/Gavel'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import type { TActividadPlanTrabajo } from '../../../types/actividades'
 
 interface QuickLinksSectionProps {
@@ -109,6 +111,50 @@ export const QuickLinksSection: React.FC<QuickLinksSectionProps> = ({
               </Box>
             </Box>
             <OpenInNewIcon fontSize="small" color="action" />
+          </Box>
+        )}
+
+        {/* GAP-07: Link to oficio judicial origen */}
+        {actividad.oficio_origen && (
+          <Box
+            sx={{
+              border: '1px solid',
+              borderColor: 'warning.light',
+              borderRadius: 1,
+              p: 1.5,
+              bgcolor: 'warning.lighter',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <GavelIcon color="warning" />
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Oficio Judicial: {actividad.oficio_origen.numero}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {actividad.oficio_origen.objetivo}
+                </Typography>
+              </Box>
+            </Box>
+            {actividad.oficio_origen.adjuntos.length > 0 && (
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {actividad.oficio_origen.adjuntos.map((adj) => (
+                  <Button
+                    key={adj.id}
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                    startIcon={<PictureAsPdfIcon />}
+                    component="a"
+                    href={adj.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Ver PDF
+                  </Button>
+                ))}
+              </Stack>
+            )}
           </Box>
         )}
 

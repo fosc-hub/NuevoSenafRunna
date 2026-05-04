@@ -460,6 +460,34 @@ export interface TActividadPlanTrabajo {
 
   /** V3.0: Display name for actor (readonly) */
   actor_display: string
+
+  /**
+   * GAP-07: Oficio judicial origen
+   * Si la actividad fue creada automáticamente desde un oficio (carga de oficios),
+   * este campo contiene los datos del oficio para deep-link al PDF.
+   * `null` si la actividad fue creada manualmente.
+   */
+  oficio_origen?: OficioOrigen | null
+
+  /**
+   * GAP-17: Permite derivación interna sin nueva intervención.
+   * Si es true, el JZ/Director puede reasignar `responsables_secundarios`
+   * vía PATCH /api/actividades/{id}/responsables/.
+   */
+  permite_derivacion_interna?: boolean
+}
+
+/**
+ * GAP-07: Datos resumidos del oficio que originó la actividad
+ */
+export interface OficioOrigen {
+  id: number
+  numero: string
+  objetivo: string
+  adjuntos: Array<{
+    id: number
+    url: string
+  }>
 }
 
 // API Request/Response types

@@ -9,7 +9,7 @@
  * - Plazo de Respuesta (días)
  * - Autos Caratulados (OBLIGATORIO)
  * - Presuntos Delitos (OBLIGATORIO) - tags separados por coma
- * - Descripción Detallada (OBLIGATORIO)
+ * - Observaciones (OPCIONAL) — antes "Descripción Detallada", renombrado por GAP-16
  */
 
 import type React from "react"

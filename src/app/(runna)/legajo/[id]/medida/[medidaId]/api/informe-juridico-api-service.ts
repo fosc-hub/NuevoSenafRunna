@@ -587,6 +587,59 @@ export const hasInformeJuridico = async (medidaId: number): Promise<boolean> => 
   }
 }
 
+// ============================================================================
+// GAP-13: Enviar informe jurídico al juzgado por email
+// ============================================================================
+
+export interface EnviarInformeAJuzgadoResponse {
+  enviado: boolean
+  destinatario: string
+  cc: string[]
+  archivos_enviados: number
+}
+
+/**
+ * Enviar informe jurídico al juzgado por email con archivos adjuntos seleccionados.
+ *
+ * El usuario que dispara la acción recibe copia automática (CC).
+ *
+ * Endpoint: POST /api/medidas/{medida_id}/informe-juridico/enviar-a-juzgado/
+ *
+ * Errores conocidos:
+ * - 400 JUZGADO_SIN_EMAIL: el juzgado asociado no tiene email cargado.
+ * - 404 INFORME_NO_ENCONTRADO: no existe informe activo para la medida.
+ *
+ * @param medidaId ID de la medida
+ * @param adjuntosAdicionales IDs de TAdjuntoInformeJuridico a incluir en el envío
+ * @returns Resultado del envío (destinatario, CC, conteo)
+ */
+export const enviarInformeJuridicoAJuzgado = async (
+  medidaId: number,
+  adjuntosAdicionales: number[] = []
+): Promise<EnviarInformeAJuzgadoResponse> => {
+  try {
+    const formData = new FormData()
+    adjuntosAdicionales.forEach((id) => {
+      formData.append('adjuntos_adicionales', String(id))
+    })
+
+    const response = await create<EnviarInformeAJuzgadoResponse>(
+      `medidas/${medidaId}/informe-juridico/enviar-a-juzgado/`,
+      formData,
+      true,
+      'Informe jurídico enviado al juzgado'
+    )
+
+    return response
+  } catch (error: any) {
+    console.error(
+      `Error enviando informe al juzgado for medida ${medidaId}:`,
+      error?.response?.data || error
+    )
+    throw error
+  }
+}
+
 /**
  * Check if informe jurídico can be sent (has informe oficial and not already sent)
  *

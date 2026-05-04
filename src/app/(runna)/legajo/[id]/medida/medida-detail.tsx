@@ -9,6 +9,7 @@ import { getDefaultBreadcrumbs, NavigationBreadcrumbs } from "./[medidaId]/compo
 import { MedidaHeader } from "./[medidaId]/components/medida/medida-header"
 import { MPEHeader } from "./[medidaId]/components/medida/mpe-header"
 import { MPJHeader } from "./[medidaId]/components/medida/mpj-header"
+import { LegajosAdicionalesBanner } from "./[medidaId]/components/medida/legajos-adicionales-banner"
 import { MPETabs } from "./[medidaId]/components/medida/mpe-tabs"
 import { MPJTabs } from "./[medidaId]/components/medida/mpj-tabs"
 import { AperturaSection } from "./[medidaId]/components/medida/apertura-section"
@@ -531,6 +532,13 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
             />
           </Box>
         )}
+
+        {/* GAP-11 Fase 1: Banner de legajos adicionales (medida MPJ con SAC compartido) */}
+        <LegajosAdicionalesBanner
+          legajosAdicionales={medidaApiData?.legajos_adicionales}
+          legajoPrimarioNumero={medidaApiData?.legajo?.numero}
+          nroSac={medidaApiData?.nro_sac}
+        />
 
         {medidaData.tipo === "MPE" ? (
           <>

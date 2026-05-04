@@ -127,6 +127,27 @@ export interface MedidaDetailResponse {
 
   // Configuración de Dispositivo MPE (solo para tipo_medida === 'MPE')
   configuracion_dispositivo_mpe?: ConfiguracionDispositivoMPE | null
+
+  /**
+   * GAP-11 Fase 1: Legajos adicionales vinculados a esta medida (SAC compartido).
+   * Vacío cuando hay un único NNyA. El primer legajo (`legajo`) sigue siendo el primario.
+   */
+  legajos_adicionales?: LegajoAdicionalMedida[]
+}
+
+/**
+ * GAP-11 Fase 1: Legajo adicional vinculado a una medida MPJ por SAC compartido.
+ */
+export interface LegajoAdicionalMedida {
+  legajo_id: number
+  legajo_numero: string
+  nnya: {
+    id: number
+    nombre_completo: string
+    dni: string | number | null
+  }
+  fecha_incorporacion: string // ISO datetime
+  es_primario: boolean
 }
 
 // ============================================================================

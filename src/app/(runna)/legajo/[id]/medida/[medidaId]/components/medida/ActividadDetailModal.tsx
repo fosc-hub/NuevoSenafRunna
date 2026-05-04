@@ -31,6 +31,7 @@ import { VisarJzButton } from './actividad/VisarJzButton'
 import { UnifiedActivityTab } from './actividad/UnifiedActivityTab'
 import { HistorialTab } from './actividad/HistorialTab'
 import { TransferenciasTab } from './actividad/TransferenciasTab'
+import { DerivacionInternaDialog } from './actividad/DerivacionInternaDialog'
 
 interface ActividadDetailModalProps {
   open: boolean
@@ -183,6 +184,17 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
         canReopen={permissions.canReopen}
         onReabrir={(motivo, nuevoEstado) =>
           actions.reabrir(actividad.id, { motivo, nuevo_estado: nuevoEstado })
+        }
+        loading={actions.loading}
+        onSuccess={handleSuccess}
+      />
+
+      {/* GAP-17: Derivación interna PLTM */}
+      <DerivacionInternaDialog
+        actividad={actividad}
+        canDerivar={permissions.canDerivar}
+        onReasignar={(responsablesSecundarios) =>
+          actions.reasignarResponsables(actividad.id, responsablesSecundarios)
         }
         loading={actions.loading}
         onSuccess={handleSuccess}

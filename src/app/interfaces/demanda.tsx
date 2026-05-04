@@ -20,7 +20,7 @@ export interface TUsuarioExterno {
     nombre: string;
     apellido: string;
     fecha_nacimiento?: Date | null;
-    genero: 'MASCULINO' | 'FEMENINO' | 'OTRO';
+    genero: 'MASCULINO' | 'FEMENINO' | 'NO_BINARIO' | 'AUTOPERCIBIDO' | 'OTRO';
     telefono: number;
     mail: string;
     vinculo: number;

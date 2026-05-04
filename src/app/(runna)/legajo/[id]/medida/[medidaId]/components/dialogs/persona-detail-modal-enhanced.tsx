@@ -806,6 +806,7 @@ export default function PersonaDetailModalEnhanced({
                     <MenuItem value="MASCULINO">Masculino</MenuItem>
                     <MenuItem value="FEMENINO">Femenino</MenuItem>
                     <MenuItem value="NO_BINARIO">No Binario</MenuItem>
+                    <MenuItem value="AUTOPERCIBIDO">Autopercibido</MenuItem>
                     <MenuItem value="OTRO">Otro</MenuItem>
                   </Select>
                 </FormControl>

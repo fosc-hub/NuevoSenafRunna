@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { Box, CircularProgress, Alert, Button } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import AddIcon from '@mui/icons-material/Add'
+import DownloadIcon from '@mui/icons-material/Download'
 import { SectionCard } from '../../medida/shared/section-card'
 import { useRepositorioDocumentos } from '../../../hooks/useRepositorioDocumentos'
 import type {
@@ -16,6 +17,7 @@ import { StatisticsBanner } from './StatisticsBanner'
 import { FilterBar } from './FilterBar'
 import { CategoryAccordion } from './CategoryAccordion'
 import { EmptyState } from './EmptyState'
+import { DescargaMasivaDialog } from './DescargaMasivaDialog'
 
 interface RepositorioDocumentosSectionProps {
   legajoId: number
@@ -45,6 +47,9 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
   const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaDocumento>>(
     new Set(CATEGORY_ORDER)
   )
+
+  // GAP-14: Descarga masiva ZIP dialog
+  const [descargaMasivaOpen, setDescargaMasivaOpen] = useState(false)
 
   // Check if any filters are active
   const hasActiveFilters =
@@ -148,17 +153,31 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
           : []
       }
       headerActions={
-        puedeAgregarDocumentos && onAddDocumento ? (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={onAddDocumento}
-            size="small"
-            sx={{ textTransform: 'none' }}
-          >
-            Agregar documento
-          </Button>
-        ) : undefined
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* GAP-14: Descarga masiva en ZIP */}
+          {totalDocumentos > 0 && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<DownloadIcon />}
+              onClick={() => setDescargaMasivaOpen(true)}
+              sx={{ textTransform: 'none' }}
+            >
+              Descargar (.zip)
+            </Button>
+          )}
+          {puedeAgregarDocumentos && onAddDocumento && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={onAddDocumento}
+              size="small"
+              sx={{ textTransform: 'none' }}
+            >
+              Agregar documento
+            </Button>
+          )}
+        </Box>
       }
     >
       {/* Loading state */}
@@ -247,6 +266,13 @@ export const RepositorioDocumentosSection: React.FC<RepositorioDocumentosSection
           )}
         </>
       )}
+
+      {/* GAP-14: Descarga masiva dialog */}
+      <DescargaMasivaDialog
+        open={descargaMasivaOpen}
+        onClose={() => setDescargaMasivaOpen(false)}
+        documentos={filteredDocuments}
+      />
     </SectionCard>
   )
 }

@@ -426,5 +426,32 @@ export const actividadService = {
    */
   async getLeidaPorMi(id: number): Promise<LeidaPorMiResponse> {
     return get<LeidaPorMiResponse>(`actividades/${id}/leida-por-mi/`)
+  },
+
+  // ============================================================================
+  // GAP-17: Derivación interna PLTM (sin nueva intervención)
+  // Endpoint: PATCH /api/actividades/{id}/responsables/
+  // ============================================================================
+
+  /**
+   * Reasignar responsables_secundarios de una actividad sin crear una nueva
+   * intervención formal. Solo disponible si la actividad tiene
+   * `permite_derivacion_interna=true`.
+   *
+   * Permisos: JZ o Director.
+   *
+   * @param id - Activity ID
+   * @param responsables_secundarios - Array de user IDs
+   * @returns Updated activity
+   */
+  async reasignarResponsables(
+    id: number,
+    responsables_secundarios: number[]
+  ): Promise<TActividadPlanTrabajo> {
+    const response = await axiosInstance.patch<TActividadPlanTrabajo>(
+      `actividades/${id}/responsables/`,
+      { responsables_secundarios }
+    )
+    return response.data
   }
 }

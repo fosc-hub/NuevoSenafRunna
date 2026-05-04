@@ -106,6 +106,14 @@ export const useActividadActions = () => {
     )
   }
 
+  // GAP-17: Derivación interna - reasignar responsables secundarios
+  const reasignarResponsables = async (id: number, responsables_secundarios: number[]) => {
+    return handleAction(
+      () => actividadService.reasignarResponsables(id, responsables_secundarios),
+      'Responsables reasignados correctamente'
+    )
+  }
+
   return {
     loading,
     error,
@@ -117,5 +125,6 @@ export const useActividadActions = () => {
     transferir,
     visarJz,
     visar,
+    reasignarResponsables,
   }
 }

@@ -516,12 +516,14 @@ const DemandaTableContent: React.FC = () => {
     user?.is_superuser ||
     user?.is_staff
 
-  // Check if user has permission to calificar
-  const hasCalificarPermission = user?.all_permissions?.includes('add_tcalificaciondemanda') ||
-    user?.all_permissions?.includes('change_tcalificaciondemanda') ||
-    user?.all_permissions?.includes('view_tcalificaciondemanda') ||
-    user?.is_superuser ||
-    user?.is_staff
+  // GAP-18: Solo los Directores (y superusers) pueden calificar demandas.
+  // El backend rechaza con 403 cualquier otro rol; por consistencia ocultamos el control.
+  const isDirectorUser = user?.zonas?.some((z) => z.director) ||
+    user?.groups?.some((g: any) => {
+      const name = (g?.name || '').toLowerCase()
+      return name === 'director' || name.startsWith('director ')
+    }) || false
+  const hasCalificarPermission = !!(user?.is_superuser || isDirectorUser)
 
   const fetchDemandas = async (pageNumber: number, pageSize: number): Promise<TDemandaPaginated> => {
     try {

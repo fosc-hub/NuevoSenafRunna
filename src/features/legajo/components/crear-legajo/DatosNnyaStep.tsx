@@ -34,7 +34,7 @@ const nnyaSchema = z.object({
   fecha_nacimiento: z.date().optional().nullable(),
   edad_aproximada: z.number().optional(),
   nacionalidad: z.enum(['ARGENTINA', 'EXTRANJERA']),
-  genero: z.enum(['MASCULINO', 'FEMENINO', 'NO_BINARIO']),
+  genero: z.enum(['MASCULINO', 'FEMENINO', 'NO_BINARIO', 'AUTOPERCIBIDO']),
   domicilio_calle: z.string().optional(),
   domicilio_numero: z.string().optional(),
   domicilio_localidad: z.string().optional(),
@@ -241,6 +241,7 @@ export default function DatosNnyaStep({ nnyaSeleccionado, modoCreacion, onComple
                     <MenuItem value="MASCULINO">Masculino</MenuItem>
                     <MenuItem value="FEMENINO">Femenino</MenuItem>
                     <MenuItem value="NO_BINARIO">No Binario</MenuItem>
+                    <MenuItem value="AUTOPERCIBIDO">Autopercibido</MenuItem>
                   </Select>
                 </FormControl>
               )}

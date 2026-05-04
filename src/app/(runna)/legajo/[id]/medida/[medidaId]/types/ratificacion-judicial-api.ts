@@ -22,6 +22,8 @@ export enum DecisionJudicial {
   RATIFICADA = "RATIFICADA",
   NO_RATIFICADA = "NO_RATIFICADA",
   PENDIENTE = "PENDIENTE",
+  /** GAP-08: Enviado al juzgado pero aún sin respuesta */
+  PENDIENTE_RATIFICACION = "PENDIENTE_RATIFICACION",
 }
 
 /**
@@ -42,6 +44,7 @@ export const DECISION_JUDICIAL_LABELS: Record<DecisionJudicial, string> = {
   [DecisionJudicial.RATIFICADA]: "Ratificada",
   [DecisionJudicial.NO_RATIFICADA]: "No Ratificada",
   [DecisionJudicial.PENDIENTE]: "Pendiente",
+  [DecisionJudicial.PENDIENTE_RATIFICACION]: "Pendiente de Ratificación Judicial",
 }
 
 export const TIPO_ADJUNTO_LABELS: Record<TipoAdjuntoRatificacion, string> = {
@@ -186,7 +189,10 @@ export function canModificarRatificacion(
 ): boolean {
   if (!ratificacion) return false
   if (!ratificacion.activo) return false // Solo la activa se puede modificar
-  return ratificacion.decision === DecisionJudicial.PENDIENTE
+  return (
+    ratificacion.decision === DecisionJudicial.PENDIENTE ||
+    ratificacion.decision === DecisionJudicial.PENDIENTE_RATIFICACION
+  )
 }
 
 /**
@@ -211,6 +217,7 @@ export function getDecisionColor(
     case DecisionJudicial.NO_RATIFICADA:
       return "error"
     case DecisionJudicial.PENDIENTE:
+    case DecisionJudicial.PENDIENTE_RATIFICACION:
       return "warning"
   }
 }

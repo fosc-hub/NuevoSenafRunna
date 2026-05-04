@@ -26,6 +26,8 @@ export interface UserPermissions {
         user: number;
         zona: number;
         localidad: number | null;
+        // GAP-05: Distingue legales de Protección vs Penal Juvenil (o ambos)
+        tipo_legal?: 'PROTECCION' | 'PENAL' | 'AMBOS' | null;
     }>;
     legal?: boolean;
     zonas_ids: number[];

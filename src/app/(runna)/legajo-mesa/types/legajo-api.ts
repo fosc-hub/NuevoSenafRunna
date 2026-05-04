@@ -44,6 +44,16 @@ export interface Alerta {
   mensaje: string
 }
 
+// GAP-15: Top-level alerta surfaced in bandeja
+export interface AlertaBandeja {
+  tipo: string
+  descripcion?: string
+  count?: number
+}
+
+// GAP-01: Estado de validación del Legajo
+export type EstadoValidacionLegajo = "SIN_VALIDAR" | "VALIDADO" | "PROVISORIO"
+
 // Estado del andarivel de medidas
 export type AndarielEstado = "Intervención" | "Aval" | "Informe Jurídico" | "Ratificación"
 
@@ -107,6 +117,14 @@ export interface LegajoApiResponse {
   oficios: OficioConSemaforo[] // Parsed from serialized list
   indicadores: IndicadoresLegajo // Parsed from serialized object
   acciones_disponibles: string[] // Parsed from serialized list
+  // GAP-01: Estado de validación + alerta booleana sin DNI
+  estado_validacion?: EstadoValidacionLegajo
+  sin_dni?: boolean
+  // GAP-15: Alertas top-level + contador (en paralelo a indicadores.alertas)
+  alertas?: AlertaBandeja[]
+  alertas_count?: number
+  // GAP-11 Parte 1: Último SAC asociado al legajo (si tiene medidas con SAC)
+  ultimo_sac?: string | null
 }
 
 // Paginated response structure
@@ -165,6 +183,12 @@ export interface LegajosQueryParams {
   pt_en_progreso?: boolean // Actividades PT en progreso
   pt_vencidas?: boolean // Actividades PT vencidas
   etapa_medida?: AndarielEstado // Estado del andarivel de medidas
+
+  // GAP-01: Filtros por estado de validación y NNyA sin DNI
+  estado_validacion?: EstadoValidacionLegajo
+  sin_dni?: boolean
+  // GAP-11 Parte 1: Filtro por SAC
+  nro_sac?: string
 }
 
 // ============================================

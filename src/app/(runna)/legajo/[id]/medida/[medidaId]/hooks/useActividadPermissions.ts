@@ -82,6 +82,11 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     // canVisar: Legal team OR Admin, and activity must be in PENDIENTE_VISADO state
     const canVisar = (isLegal || isAdmin) && actividad.estado === 'PENDIENTE_VISADO'
 
+    // GAP-17: canDerivar - JZ OR Director, only when actividad permite derivación interna
+    const canDerivar = !isLocked
+      && actividad.permite_derivacion_interna === true
+      && (isJZ || isDirector)
+
     return {
       canEdit,
       canAddActivity,
@@ -89,6 +94,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
       canTransfer,
       canVisarJZ,
       canVisar,
+      canDerivar,
       isLocked,
       isResponsable,
       isJZ,

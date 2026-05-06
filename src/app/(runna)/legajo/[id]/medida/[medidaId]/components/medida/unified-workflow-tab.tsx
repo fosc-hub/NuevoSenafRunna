@@ -537,6 +537,9 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
               isJZ={isJZ}
               isSuperuser={isSuperuser}
               estadoActual={estadoActual}
+              tipoMedida={medidaData.tipo_medida}
+              tipoEtapa={etapaActualForThisTab?.tipo_etapa}
+              estadoVigencia={medidaData.estado_vigencia}
               onRatificacionRegistrada={refreshWorkflowData}
               initialData={etapaDetail?.etapa.documentos.ratificaciones}
             />

@@ -58,6 +58,12 @@ interface RatificacionJudicialSectionProps {
   medidaNumero?: string
   estadoActual?: EstadoEtapa | string
   etapaId?: number
+  /** Tipo de medida (MPI/MPE/MPJ) — usado para detectar el cierre directo de MPE-en-CESE */
+  tipoMedida?: 'MPI' | 'MPE' | 'MPJ' | string
+  /** Tipo de etapa actual (APERTURA/INNOVACION/CESE/POST_CESE) */
+  tipoEtapa?: 'APERTURA' | 'INNOVACION' | 'PRORROGA' | 'CESE' | 'POST_CESE' | string
+  /** Estado de vigencia de la medida (VIGENTE/CERRADA/...) */
+  estadoVigencia?: 'VIGENTE' | 'CERRADA' | 'ARCHIVADA' | 'NO_RATIFICADA' | string
   userRole?: string
   userLevel?: number
   isEquipoLegal?: boolean
@@ -126,6 +132,9 @@ export const RatificacionJudicialSection: React.FC<RatificacionJudicialSectionPr
   medidaNumero,
   estadoActual,
   etapaId,
+  tipoMedida,
+  tipoEtapa,
+  estadoVigencia,
   isEquipoLegal,
   isJZ,
   isSuperuser,
@@ -152,7 +161,21 @@ export const RatificacionJudicialSection: React.FC<RatificacionJudicialSectionPr
 
   const canManage = canManageRatificacionJudicial(isEquipoLegal, isJZ, isSuperuser)
   const isPendingState = isPendingRatificacionJudicial(estadoActual)
-  const canCreate = canManage && isPendingState && !hasRatificacion
+
+  // Sprint 4: si una MPE está en etapa CESE, el envío del informe jurídico
+  // cierra la medida directamente sin pasar por ratificación. Si una medida
+  // ya está CERRADA, o estamos en POST_CESE, tampoco corresponde registrar
+  // ratificación. Mostrar un mensaje claro en lugar del error genérico.
+  const ratificacionSkippedMpeCese =
+    tipoMedida === "MPE" && tipoEtapa === "CESE"
+  const isPostCese = tipoEtapa === "POST_CESE"
+  const isMedidaCerrada = estadoVigencia === "CERRADA"
+  const ratificacionNoRequerida =
+    !hasRatificacion &&
+    (ratificacionSkippedMpeCese || isPostCese || isMedidaCerrada)
+
+  const canCreate =
+    canManage && isPendingState && !hasRatificacion && !ratificacionNoRequerida
 
   const handleCreateRatificacion = async (data: CreateRatificacionJudicialRequest) => {
     try {
@@ -217,14 +240,31 @@ export const RatificacionJudicialSection: React.FC<RatificacionJudicialSectionPr
         subheader="MED-05: Registro de Ratificación Judicial (Cierre del Ciclo)"
       />
       <CardContent>
-        <Alert severity="info" icon={<WarningIcon />}>
-          <Typography variant="body2">Aún no se ha registrado la ratificación judicial para esta medida.</Typography>
-          {!isPendingState && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Estado actual: <strong>{estadoActual}</strong> (se requiere estado PENDIENTE_RATIFICACION_JUDICIAL)
+        {ratificacionNoRequerida ? (
+          <Alert severity="success" icon={<TaskAltIcon />}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              No corresponde registrar ratificación judicial en esta etapa.
             </Typography>
-          )}
-        </Alert>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {ratificacionSkippedMpeCese &&
+                "MPE en etapa CESE: el cierre se realiza al enviar el informe jurídico. " +
+                  "La medida ya quedó CERRADA y se abrió la etapa POST_CESE."}
+              {!ratificacionSkippedMpeCese && isPostCese &&
+                "La etapa POST_CESE es gestionada por el módulo PLTM y no requiere ratificación."}
+              {!ratificacionSkippedMpeCese && !isPostCese && isMedidaCerrada &&
+                "La medida está cerrada; no corresponde registrar ratificaciones adicionales."}
+            </Typography>
+          </Alert>
+        ) : (
+          <Alert severity="info" icon={<WarningIcon />}>
+            <Typography variant="body2">Aún no se ha registrado la ratificación judicial para esta medida.</Typography>
+            {!isPendingState && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Estado actual: <strong>{estadoActual}</strong> (se requiere estado PENDIENTE_RATIFICACION_JUDICIAL)
+              </Typography>
+            )}
+          </Alert>
+        )}
 
         {canCreate && (
           <Box sx={{ mt: 3, textAlign: "center" }}>

@@ -8,6 +8,7 @@ import { InnovacionTab } from "./mpe-tabs/innovacion-tab"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
 import { CeseTab } from "./mpe-tabs/cese-tab"
+import { PostCeseTab } from "./mpe-tabs/post-cese-tab"
 import { InformesMensualesTable } from "./informes-mensuales-table"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
 import { HistorialTab } from "./historial/historial-tab"
@@ -70,13 +71,12 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                 {activeTab === 2 && <ProrrogaTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} onMedidaRefetch={onMedidaRefetch} />}
                 {activeTab === 3 && <CeseTab medidaData={medidaData} medidaApiData={medidaApiData} legajoData={legajoData} onMedidaRefetch={onMedidaRefetch} />}
                 {activeTab === 4 && (
-                    planTrabajoId ? (
-                        <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
-                    ) : (
-                        <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                            No hay Plan de Trabajo asociado a esta medida.
-                        </Box>
-                    )
+                    <PostCeseTab
+                        medidaData={medidaData}
+                        medidaApiData={medidaApiData}
+                        legajoData={legajoData}
+                        onMedidaRefetch={onMedidaRefetch}
+                    />
                 )}
                 {activeTab === 5 && medidaApiData && <MedidaDocumentosSection medidaApiData={medidaApiData} />}
                 {activeTab === 6 && (

@@ -123,28 +123,63 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
 
   // ========== V2 Etapa Filtering ==========
   /**
-   * Find the specific etapa for this workflowPhase from historial_etapas
-   * This is crucial because each tab (Apertura, Innovación, etc.) should show
-   * its own etapa's estado, not etapa_actual which is the most recent one.
+   * Find the specific etapa for this workflowPhase from historial_etapas.
+   *
+   * GAP-08: una MPE puede tener más de una etapa de INNOVACION/PRORROGA/CESE.
+   * Cuando hay varias del mismo tipo, devolvemos la más reciente (mayor id;
+   * `historial_etapas` viene de `medida.etapas.all()` sin orden garantizado).
+   * Las anteriores quedan disponibles vía `etapasOfThisType` para mostrar el
+   * historial.
    */
-  const getEtapaForWorkflow = (): typeof medidaApiData.etapa_actual => {
+  const etapasOfThisType = React.useMemo(() => {
+    if (!medidaApiData || !workflowPhase) return []
+    const tipoEtapa = workflowPhaseToTipoEtapa(workflowPhase)
+    return (medidaApiData.historial_etapas ?? []).filter(
+      (etapa) => etapa.tipo_etapa === tipoEtapa,
+    )
+  }, [medidaApiData, workflowPhase])
+
+  const getEtapaForWorkflow = (): NonNullable<typeof medidaApiData>["etapa_actual"] | null => {
     if (!medidaApiData || !workflowPhase) {
       return medidaApiData?.etapa_actual || null
     }
 
-    // Convert workflowPhase to TipoEtapa enum
-    const tipoEtapa = workflowPhaseToTipoEtapa(workflowPhase)
+    if (etapasOfThisType.length === 0) return null
 
-    // Find the etapa that matches this workflow phase
-    const etapaForThisWorkflow = medidaApiData.historial_etapas?.find(
-      (etapa) => etapa.tipo_etapa === tipoEtapa
-    )
-
-    // Return matched etapa, or null if not found
-    return etapaForThisWorkflow || null
+    // Most recent = highest id (etapas se crean secuencialmente)
+    const latest = [...etapasOfThisType].sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0]
+    return latest || null
   }
 
   const etapaActualForThisTab = getEtapaForWorkflow()
+
+  /**
+   * GAP-08: ¿Se puede iniciar una nueva etapa del tipo de esta pestaña?
+   * Espeja `TRANSICIONES_PERMITIDAS` del backend (med01_validaciones.py).
+   * APERTURA siempre es false: una MPE tiene una sola APERTURA.
+   */
+  const puedeIniciarNuevaEtapa = React.useMemo(() => {
+    if (!medidaApiData?.etapa_actual || !workflowPhase) return false
+    if (workflowPhase === "apertura") return false
+
+    const tipoMedida = medidaData.tipo_medida
+    const tipoOrigen = medidaApiData.etapa_actual.tipo_etapa as string
+    const tipoDestino = workflowPhaseToTipoEtapa(workflowPhase) as string
+
+    const MPE_POST_APERTURA = ["INNOVACION", "PRORROGA", "CESE"]
+    const TRANSICIONES: Record<string, Record<string, string[]>> = {
+      MPI: { APERTURA: ["CESE"], CESE: [] },
+      MPE: {
+        APERTURA: MPE_POST_APERTURA,
+        INNOVACION: MPE_POST_APERTURA,
+        PRORROGA: MPE_POST_APERTURA,
+        CESE: MPE_POST_APERTURA,
+      },
+      MPJ: { APERTURA: ["PROCESO", "CESE"], PROCESO: ["CESE"], CESE: [] },
+    }
+
+    return (TRANSICIONES[tipoMedida]?.[tipoOrigen] ?? []).includes(tipoDestino)
+  }, [medidaApiData?.etapa_actual, medidaData.tipo_medida, workflowPhase])
 
   // ========== V2 Mode Detection ==========
   /**
@@ -637,7 +672,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             </Alert>
           )}
 
-          {workflowPhase !== 'apertura' && (
+          {workflowPhase !== 'apertura' && puedeIniciarNuevaEtapa && (
             <Button
               variant="contained"
               color="primary"
@@ -720,14 +755,67 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     )
   }
 
+  // GAP-08: Banner para iniciar otra etapa del mismo tipo cuando ya existe al menos una
+  // y la transición está permitida por el backend.
+  const tipoEtapaLabelForBanner = workflowPhase
+    ? { apertura: "Apertura", innovacion: "Innovación", prorroga: "Prórroga", cese: "Cese" }[workflowPhase]
+    : undefined
+  const showIniciarOtraEtapaBanner =
+    puedeIniciarNuevaEtapa &&
+    etapasOfThisType.length >= 1 &&
+    workflowPhase !== "apertura"
+
   // V1 MODE: Fallback to hardcoded steps (backward compatible)
   return (
     <>
+      {showIniciarOtraEtapaBanner && tipoEtapaLabelForBanner && (
+        <Alert
+          severity="info"
+          sx={{ mb: 2 }}
+          action={
+            <Button
+              color="primary"
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={handleIniciarEtapa}
+              disabled={isCreatingEtapa}
+            >
+              {isCreatingEtapa ? "Iniciando..." : `Iniciar nueva etapa de ${tipoEtapaLabelForBanner}`}
+            </Button>
+          }
+        >
+          Esta medida ya tiene{" "}
+          <strong>
+            {etapasOfThisType.length}{" "}
+            {etapasOfThisType.length === 1 ? "etapa" : "etapas"} de {tipoEtapaLabelForBanner}
+          </strong>
+          . Podés registrar una nueva: la etapa actual se finalizará y empezará una nueva con sus propios documentos.
+        </Alert>
+      )}
+
+      {createEtapaError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setCreateEtapaError(null)}>
+          {createEtapaError}
+        </Alert>
+      )}
+
       <WorkflowStepper
         steps={steps}
         activeStep={activeStep}
         onStepClick={setActiveStep}
         orientation="horizontal"
+      />
+
+      <IniciarEtapaDialog
+        open={iniciarEtapaDialogOpen}
+        onClose={() => {
+          setIniciarEtapaDialogOpen(false)
+          setCreateEtapaError(null)
+        }}
+        onConfirm={handleConfirmIniciarEtapa}
+        tipoEtapa={workflowPhaseToTipoEtapa(workflowPhase ?? "innovacion")}
+        isLoading={isCreatingEtapa}
       />
     </>
   )

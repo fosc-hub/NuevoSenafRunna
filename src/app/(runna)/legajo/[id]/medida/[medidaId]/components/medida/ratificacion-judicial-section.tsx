@@ -119,6 +119,9 @@ const getDecisionIcon = (decision: DecisionJudicial) => {
     case DecisionJudicial.NO_RATIFICADA:
       return <CancelIcon />
     case DecisionJudicial.PENDIENTE:
+    case DecisionJudicial.PENDIENTE_RATIFICACION:
+      return <WarningIcon />
+    default:
       return <WarningIcon />
   }
 }

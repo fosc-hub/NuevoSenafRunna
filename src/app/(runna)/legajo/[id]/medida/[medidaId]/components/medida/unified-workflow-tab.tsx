@@ -213,6 +213,14 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   const [createEtapaError, setCreateEtapaError] = useState<string | null>(null)
   const [workflowRefreshKey, setWorkflowRefreshKey] = useState(0)
 
+  // GAP-08: when there are multiple etapas of the same type, the user can
+  // pick which one to view. Null = use the most recent one (default).
+  const [selectedEtapaId, setSelectedEtapaId] = useState<number | null>(null)
+  // Reset the selection whenever the user switches tabs.
+  useEffect(() => {
+    setSelectedEtapaId(null)
+  }, [workflowPhase])
+
   // Allow children sections to force a workflow reload without reloading the page
   const refreshWorkflowData = useCallback(() => {
     setWorkflowRefreshKey((prev) => prev + 1)
@@ -269,8 +277,14 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
 
         console.log(`[UnifiedWorkflowTab] Fetching etapa detail for ${tipoEtapa}`)
 
-        // Single API call gets ALL documents for this etapa
-        const detail = await getEtapaDetail(medidaData.id, tipoEtapa)
+        // Single API call gets ALL documents for this etapa.
+        // GAP-08: pass selectedEtapaId when the user picked a specific one
+        // from the historial selector (else backend returns latest).
+        const detail = await getEtapaDetail(
+          medidaData.id,
+          tipoEtapa,
+          selectedEtapaId ?? undefined,
+        )
 
         if (!detail) {
           // Etapa doesn't exist yet (404) - normal for non-Apertura stages
@@ -311,7 +325,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     }
 
     fetchEtapaDetail()
-  }, [medidaData.id, workflowPhase, workflowRefreshKey])
+  }, [medidaData.id, workflowPhase, workflowRefreshKey, selectedEtapaId])
 
   // ========== V2 Estados Catalog (REMOVED - no longer needed) ==========
   /**
@@ -765,9 +779,74 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     etapasOfThisType.length >= 1 &&
     workflowPhase !== "apertura"
 
+  // GAP-08: historial selector — when there are multiple etapas of this type,
+  // let the user pick which one's documents to view. Default = latest.
+  const etapasHistorial = etapaDetail?.etapas_mismo_tipo ?? []
+  const showEtapaSelector = etapasHistorial.length > 1
+
+  const formatEtapaLabel = (e: typeof etapasHistorial[number], index: number) => {
+    // index 0 = most recent, etc. We label as "#N" with N counted oldest-first
+    // for human readability.
+    const total = etapasHistorial.length
+    const ordinal = total - index
+    const fechaInicio = e.fecha_inicio
+      ? new Date(e.fecha_inicio).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+      : "sin fecha"
+    const estadoLabel = e.estado_nombre ?? (e.activa ? "activa" : "cerrada")
+    const suffix = e.activa ? " · activa" : " · cerrada"
+    return `#${ordinal} · inicio ${fechaInicio} · ${estadoLabel}${suffix}`
+  }
+
   // V1 MODE: Fallback to hardcoded steps (backward compatible)
   return (
     <>
+      {showEtapaSelector && tipoEtapaLabelForBanner && (
+        <Box
+          sx={{
+            mb: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: "wrap",
+            p: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            backgroundColor: "background.paper",
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Historial de {tipoEtapaLabelForBanner}:
+          </Typography>
+          <Box
+            component="select"
+            value={(selectedEtapaId ?? etapaDetail?.etapa.id ?? "").toString()}
+            onChange={(ev: React.ChangeEvent<HTMLSelectElement>) => {
+              const v = ev.target.value
+              setSelectedEtapaId(v ? Number(v) : null)
+            }}
+            sx={{
+              minWidth: 280,
+              padding: "6px 10px",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 1,
+              fontSize: "0.875rem",
+              fontFamily: "inherit",
+            }}
+          >
+            {etapasHistorial.map((e, index) => (
+              <option key={e.id} value={e.id}>
+                {formatEtapaLabel(e, index)}
+              </option>
+            ))}
+          </Box>
+          <Typography variant="caption" color="text.secondary">
+            {etapasHistorial.length} etapas registradas. Cada una tiene sus propios documentos.
+          </Typography>
+        </Box>
+      )}
+
       {showIniciarOtraEtapaBanner && tipoEtapaLabelForBanner && (
         <Alert
           severity="info"

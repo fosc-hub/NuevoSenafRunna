@@ -92,9 +92,25 @@ export interface EtapaInfo {
  * - Etapa status and estado
  * - All documents (interventions, notas, informes, ratificaciones) for this etapa only
  */
+/**
+ * Resumen liviano de cada etapa del mismo tipo, devuelto por el endpoint
+ * para que el frontend pueda armar un selector de historial.
+ * GAP-08: una MPE puede tener varias etapas del mismo tipo.
+ */
+export interface EtapaResumen {
+  id: number
+  fecha_inicio: string | null
+  fecha_fin: string | null
+  activa: boolean
+  estado_codigo: string | null
+  estado_nombre: string | null
+}
+
 export interface EtapaDetailResponse {
   medida: EtapaMedidaBasicInfo
   etapa: EtapaInfo
+  /** GAP-08: lista de etapas del mismo tipo, más reciente primero. */
+  etapas_mismo_tipo?: EtapaResumen[]
 }
 
 /**
@@ -136,13 +152,17 @@ export interface EtapaNotFoundError {
  */
 export const getEtapaDetail = async (
   medidaId: number,
-  tipoEtapa: TipoEtapa
+  tipoEtapa: TipoEtapa,
+  etapaId?: number
 ): Promise<EtapaDetailResponse | null> => {
   try {
-    console.log(`[EtapaDetailService] Fetching etapa ${tipoEtapa} for medida ${medidaId}`)
+    const qs = etapaId ? `?etapa_id=${etapaId}` : ""
+    console.log(
+      `[EtapaDetailService] Fetching etapa ${tipoEtapa} for medida ${medidaId}${etapaId ? ` (etapa_id=${etapaId})` : ""}`,
+    )
 
     const response = await get<EtapaDetailResponse>(
-      `medidas/${medidaId}/etapa/${tipoEtapa}/`
+      `medidas/${medidaId}/etapa/${tipoEtapa}/${qs}`,
     )
 
     console.log('[EtapaDetailService] Etapa detail retrieved:', {

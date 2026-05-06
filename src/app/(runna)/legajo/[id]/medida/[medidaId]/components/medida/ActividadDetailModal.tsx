@@ -52,6 +52,14 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
 }) => {
   const [currentTab, setCurrentTab] = useState(0)
 
+  // Fallback: not all callers pass legajoId/medidaId explicitly. The actividad
+  // payload already nests legajo_info and medida_info, so derive the IDs from
+  // there. Without this fallback the QuickLinks section (and the GAP-07 oficio
+  // PDF link) was hidden whenever the modal was opened from the global
+  // actividades table or the Legal kanban.
+  const resolvedLegajoId = legajoId ?? actividad.legajo_info?.id
+  const resolvedMedidaId = medidaId ?? actividad.medida_info?.id
+
   // Hooks for permissions and actions
   const permissions = useActividadPermissions(actividad)
   const actions = useActividadActions()
@@ -229,12 +237,13 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
       {/* Tab: Detalle */}
       {currentTab === 0 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* Quick Links */}
-          {legajoId && medidaId && (
+          {/* Quick Links — render when we have anything to link to (legajo,
+              medida, or the oficio PDF from GAP-07). */}
+          {(resolvedLegajoId || resolvedMedidaId || actividad.oficio_origen) && (
             <QuickLinksSection
               actividad={actividad}
-              legajoId={legajoId}
-              medidaId={medidaId}
+              legajoId={resolvedLegajoId}
+              medidaId={resolvedMedidaId}
             />
           )}
 

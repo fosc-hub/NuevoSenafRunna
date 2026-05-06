@@ -37,18 +37,11 @@ export interface ActividadesPTIndicadores {
   realizadas: number
 }
 
-// Alerta individual
+// Alerta individual (shape returned both inside indicadores.alertas and at top level)
 export interface Alerta {
   tipo: string
   severidad: "baja" | "media" | "alta"
   mensaje: string
-}
-
-// GAP-15: Top-level alerta surfaced in bandeja
-export interface AlertaBandeja {
-  tipo: string
-  descripcion?: string
-  count?: number
 }
 
 // GAP-01: Estado de validación del Legajo
@@ -121,7 +114,7 @@ export interface LegajoApiResponse {
   estado_validacion?: EstadoValidacionLegajo
   sin_dni?: boolean
   // GAP-15: Alertas top-level + contador (en paralelo a indicadores.alertas)
-  alertas?: AlertaBandeja[]
+  alertas?: Alerta[]
   alertas_count?: number
   // GAP-11 Parte 1: Último SAC asociado al legajo (si tiene medidas con SAC)
   ultimo_sac?: string | null

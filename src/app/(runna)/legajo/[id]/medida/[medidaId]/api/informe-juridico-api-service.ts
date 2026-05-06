@@ -618,14 +618,9 @@ export const enviarInformeJuridicoAJuzgado = async (
   adjuntosAdicionales: number[] = []
 ): Promise<EnviarInformeAJuzgadoResponse> => {
   try {
-    const formData = new FormData()
-    adjuntosAdicionales.forEach((id) => {
-      formData.append('adjuntos_adicionales', String(id))
-    })
-
     const response = await create<EnviarInformeAJuzgadoResponse>(
       `medidas/${medidaId}/informe-juridico/enviar-a-juzgado/`,
-      formData,
+      { adjuntos_adicionales: adjuntosAdicionales } as unknown as Partial<EnviarInformeAJuzgadoResponse>,
       true,
       'Informe jurídico enviado al juzgado'
     )

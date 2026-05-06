@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
+  Alert,
   Box,
   Paper,
   Typography,
@@ -17,6 +18,7 @@ import {
 } from "@mui/material"
 import { toast } from "react-toastify"
 import { getIndicadores, submitValoracion, type Indicador, type ValoracionItem } from "./api/indicadores-service"
+import { useUser } from "@/utils/auth/userZustand"
 
 interface NNyA {
   id: number
@@ -57,6 +59,19 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
   const [submitting, setSubmitting] = useState(false)
   const [showDecision, setShowDecision] = useState(false)
   const [scores, setScores] = useState<Score[]>([])
+
+  // GAP-20: Director sólo puede ver la valoración profesional, no editarla.
+  // El backend rechaza POST /api/evaluaciones/ con 403 para Directores.
+  const user = useUser((state) => state.user)
+  const isDirector = useMemo(() => {
+    if (!user) return false
+    if (user.zonas?.some((z) => z.director)) return true
+    return !!user.groups?.some((g: any) => {
+      const name = (g?.name || '').toLowerCase()
+      return name === 'director' || name.startsWith('director ')
+    })
+  }, [user])
+  const valoracionDisabled = isDirector && !user?.is_superuser
 
   // Use vulnerability indicators from props instead of fetching from API
   useEffect(() => {
@@ -139,11 +154,19 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                   variant="contained"
                   color="primary"
                   onClick={handleSubmitEvaluacion}
-                  disabled={submitting || !demandaId}
+                  disabled={submitting || !demandaId || valoracionDisabled}
                 >
                   {submitting ? <CircularProgress size={24} color="inherit" /> : "Valorar"}
                 </Button>
               </Box>
+
+              {valoracionDisabled && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  La valoración profesional la genera el equipo técnico. Los Directores
+                  pueden consultarla, pero su edición y aprobación se realizan en pasos
+                  separados.
+                </Alert>
+              )}
 
               <Paper variant="outlined" sx={{ p: 2, maxHeight: "400px", overflow: "auto" }}>
                 {loading ? (
@@ -174,6 +197,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                             name={`indicator-${indicator.id}`}
                             checked={indicator.selected === true}
                             onChange={() => handleIndicatorSelectionChange(indicator.id, true)}
+                            disabled={valoracionDisabled}
                           />
                           <label htmlFor={`indicator-${indicator.id}-yes`} style={{ marginLeft: "4px" }}>
                             Sí
@@ -186,6 +210,7 @@ export default function DecisionBox({ vulnerabilityIndicators, handleIndicatorCh
                             name={`indicator-${indicator.id}`}
                             checked={indicator.selected === false}
                             onChange={() => handleIndicatorSelectionChange(indicator.id, false)}
+                            disabled={valoracionDisabled}
                           />
                           <label htmlFor={`indicator-${indicator.id}-no`} style={{ marginLeft: "4px" }}>
                             No

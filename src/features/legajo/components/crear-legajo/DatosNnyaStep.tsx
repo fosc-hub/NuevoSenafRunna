@@ -39,9 +39,6 @@ const nnyaSchema = z.object({
   domicilio_numero: z.string().optional(),
   domicilio_localidad: z.string().optional(),
   domicilio_provincia: z.string().optional(),
-}).refine((data) => data.fecha_nacimiento || (data.edad_aproximada !== undefined && data.edad_aproximada !== null), {
-  message: 'Debe especificar fecha de nacimiento o edad aproximada',
-  path: ['fecha_nacimiento'],
 })
 
 type NnyaFormData = z.infer<typeof nnyaSchema>

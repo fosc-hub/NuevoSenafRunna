@@ -76,10 +76,11 @@ export interface IndicadoresLegajo {
 // Medida activa básica
 export interface MedidaActivaBasica {
   id: number
-  tipo: string
-  estado: string
-  etapa: string
-  fecha_apertura: string
+  numero_medida: string
+  tipo_medida: string
+  estado_vigencia: string
+  etapa_actual__nombre: string | null
+  etapa_actual__estado: string | null
 }
 
 // Actividad activa básica

@@ -390,11 +390,15 @@ const LegajoTable: React.FC = () => {
 
     // Add sorting (multi-column support)
     if (sortModel.length > 0) {
-      // Convert GridSortModel to Django ordering format
+      // Map DataGrid field names → Django ordering field names where they differ
+      const fieldMap: Record<string, string> = {
+        indicadores_alertas: "has_alerta",
+      }
       const ordering = sortModel
         .map((sort) => {
           const prefix = sort.sort === "desc" ? "-" : ""
-          return `${prefix}${sort.field}`
+          const field = fieldMap[sort.field] ?? sort.field
+          return `${prefix}${field}`
         })
         .join(",")
       params.ordering = ordering
@@ -564,7 +568,7 @@ const LegajoTable: React.FC = () => {
         width: 90,
         align: "center",
         headerAlign: "center",
-        sortable: false,
+        sortable: true,
         renderCell: (params) => {
           const allStates = params.row.allStates || []
           const virtualAlerts: any[] = []

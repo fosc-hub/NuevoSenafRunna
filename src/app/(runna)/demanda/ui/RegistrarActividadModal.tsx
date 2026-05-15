@@ -30,7 +30,6 @@ import { create } from "@/app/api/apiService"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
 import { useCatalogData, useApiQuery, extractArray } from "@/hooks/useApiQuery"
-import { useEtiquetasDocumento } from "@/hooks/useEtiquetasDocumento"
 import { usePdfViewer } from "@/hooks"
 import { isPdfFile } from "@/utils/pdfUtils"
 // Types defined locally since @/types/actividad doesn't exist
@@ -103,10 +102,7 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   const instituciones = institucionesResponse?.instituciones_actividad || []
 
   const [isLoading, setIsLoading] = useState(false)
-  // Cada archivo lleva su etiqueta: la elegida en el selector cuando se subió.
-  const [selectedFiles, setSelectedFiles] = useState<Array<{ file: File; etiquetaId: number | null }>>([])
-  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
-  const { etiquetas } = useEtiquetasDocumento()
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   const {
     control,
@@ -128,21 +124,17 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
   const selectedTipo = watch("tipo")
   const selectedTipoNombre = actividadTipos.find((tipo) => tipo.id === selectedTipo)?.nombre || ""
 
-  const etiquetaPorId = (id?: number | null) =>
-    id ? etiquetas.find((e) => e.id === id)?.nombre ?? null : null
-
   // Convert selectedFiles to FileItem[] for display in FileUploadSection
-  const displayFiles: FileItem[] = selectedFiles.map(({ file, etiquetaId }, index) => ({
+  const displayFiles: FileItem[] = selectedFiles.map((file, index) => ({
     id: index,
     nombre: file.name,
     tipo: file.type,
     tamano: file.size,
-    etiqueta_nombre: etiquetaPorId(etiquetaId),
   }))
 
   // Handle file upload from FileUploadSection
-  const handleFileUpload = (file: File, etiquetaId?: number | null) => {
-    setSelectedFiles((prev) => [...prev, { file, etiquetaId: etiquetaId ?? null }])
+  const handleFileUpload = (file: File) => {
+    setSelectedFiles((prev) => [...prev, file])
   }
 
   // Handle file deletion from FileUploadSection
@@ -192,11 +184,8 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
       }
 
       // Update file upload format to match new API structure
-      selectedFiles.forEach(({ file, etiquetaId }, index) => {
+      selectedFiles.forEach((file, index) => {
         formDataToSend.append(`adjuntos[${index}]archivo`, file)
-        if (etiquetaId) {
-          formDataToSend.append(`adjuntos[${index}]etiqueta`, String(etiquetaId))
-        }
       })
 
       await create("actividad", formDataToSend)
@@ -304,10 +293,6 @@ export function RegistrarActividadForm({ demandaId }: RegistrarActividadFormProp
           emptyMessage="No hay archivos seleccionados. Arrastra archivos o haz clic para seleccionar."
           dragDropMessage="Arrastra y suelta archivos aquí"
           uploadButtonLabel="Seleccionar archivos"
-          enableEtiqueta
-          etiquetaValue={etiquetaActual}
-          onEtiquetaChange={setEtiquetaActual}
-          etiquetaHelperText="Aplica al próximo archivo cargado."
         />
 
         <Button type="submit" variant="contained" disabled={isLoading} sx={{ mt: 2 }}>

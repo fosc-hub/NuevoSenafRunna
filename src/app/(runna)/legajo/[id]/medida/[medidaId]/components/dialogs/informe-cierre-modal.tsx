@@ -67,7 +67,6 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
   const [tipoCese, setTipoCese] = useState<TipoCeseMPI | "">("")
   const [observaciones, setObservaciones] = useState("")
   const [archivos, setArchivos] = useState<File[]>([])
-  const [etiquetaCierre, setEtiquetaCierre] = useState<number | null>(null)
 
   // ========== Validation ==========
   const isObservacionesValid = observaciones.trim().length >= 20
@@ -82,7 +81,7 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
         observaciones: observaciones.trim(),
       })
 
-      // Step 2: Upload adjuntos if any (con etiqueta opcional global)
+      // Step 2: Upload adjuntos if any
       if (archivos.length > 0) {
         await Promise.all(archivos.map((archivo) =>
           uploadAdjuntoInformeCierre(
@@ -91,7 +90,6 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
             archivo,
             "INFORME_CIERRE",
             `Adjunto: ${archivo.name}`,
-            etiquetaCierre,
           )
         ))
       }
@@ -241,10 +239,6 @@ export const InformeCierreModal: React.FC<InformeCierreModalProps> = ({
         allowedTypes={getAcceptAttribute()}
         maxSizeInMB={10}
         disabled={isLoading}
-        enableEtiqueta
-        etiquetaValue={etiquetaCierre}
-        onEtiquetaChange={setEtiquetaCierre}
-        etiquetaHelperText="Etiqueta común para los adjuntos del cierre"
       />
     </BaseDialog>
   )

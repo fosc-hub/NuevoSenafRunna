@@ -24,10 +24,6 @@ export interface Documento {
   usuario_subida: UsuarioSubida | null
   tipo_documento: string | null
   descripcion: string | null
-  /** Etiqueta unificada (catálogo TEtiquetaDocumento). Backend la rellena. */
-  etiqueta_id?: number | null
-  etiqueta_codigo?: string | null
-  etiqueta_nombre?: string | null
   metadata: Record<string, unknown>
 }
 
@@ -42,8 +38,6 @@ export interface RepositorioDocumentosResponse {
   total_size_bytes: number
   total_size_mb: number
   categorias: Partial<Record<CategoriaDocumento, number>>
-  /** Recuento por etiqueta (backend devuelve {nombre: count}). */
-  etiquetas?: Record<string, number>
   documentos: Documento[]
 }
 
@@ -53,16 +47,12 @@ export interface RepositorioDocumentosParams {
   medida_id?: number
   tipo_modelo?: string
   categoria?: CategoriaDocumento
-  /** ID o codigo de etiqueta para filtrar. */
-  etiqueta?: number | string
 }
 
 export interface DocumentosFilterState {
   categoria: CategoriaDocumento | 'TODOS'
   tipoModelo: string | 'TODOS'
   medidaId: number | 'TODOS'
-  /** ID de etiqueta o 'TODOS'. */
-  etiqueta: number | 'TODOS'
 }
 
 // Helper type for extracting medida_id from document metadata

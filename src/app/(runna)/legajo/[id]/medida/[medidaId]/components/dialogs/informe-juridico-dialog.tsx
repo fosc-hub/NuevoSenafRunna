@@ -154,8 +154,6 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
   // File state
   const [informeOficial, setInformeOficial] = useState<File | null>(null)
   const [acuses, setAcuses] = useState<File[]>([])
-  const [etiquetaInforme, setEtiquetaInforme] = useState<number | null>(null)
-  const [etiquetaAcuse, setEtiquetaAcuse] = useState<number | null>(null)
   const [fileErrors, setFileErrors] = useState<string[]>([])
 
   // Drag-drop state
@@ -590,10 +588,7 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
               ]
             : []
         }
-        onUpload={(file, etiquetaId) => {
-          ;(file as any).__etiquetaId = etiquetaId ?? null
-          setInformeOficial(file)
-        }}
+        onUpload={(file) => setInformeOficial(file)}
         onDelete={handleRemoveInformeOficial}
         multiple={false}
         title="Informe Jurídico Oficial (Requerido)"
@@ -601,10 +596,6 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
         allowedTypes=".pdf,application/pdf"
         maxSizeInMB={10}
         disabled={isLoading}
-        enableEtiqueta
-        etiquetaValue={etiquetaInforme}
-        onEtiquetaChange={setEtiquetaInforme}
-        etiquetaHelperText="Etiqueta clasificatoria del informe (opcional)"
       />
 
       {formErrors.informe_oficial && (
@@ -619,10 +610,7 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
           tipo: file.type,
           tamano: file.size,
         }))}
-        onUpload={(file, etiquetaId) => {
-          ;(file as any).__etiquetaId = etiquetaId ?? null
-          setAcuses((prev) => [...prev, file])
-        }}
+        onUpload={(file) => setAcuses((prev) => [...prev, file])}
         onDelete={(id) => {
           const idx = typeof id === "string" ? Number(id.replace("acuse-", "")) : id
           handleRemoveAcuse(idx)
@@ -633,10 +621,6 @@ export const InformeJuridicoDialog: React.FC<InformeJuridicoDialogProps> = ({
         allowedTypes=".pdf,application/pdf"
         maxSizeInMB={10}
         disabled={isLoading}
-        enableEtiqueta
-        etiquetaValue={etiquetaAcuse}
-        onEtiquetaChange={setEtiquetaAcuse}
-        etiquetaHelperText="Etiqueta clasificatoria (aplica al próximo acuse cargado)"
       />
 
       {/* File Errors */}

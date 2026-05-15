@@ -114,7 +114,6 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({
 }) => {
   // State
   const [archivo, setArchivo] = useState<File | null>(null)
-  const [etiquetaPlantilla, setEtiquetaPlantilla] = useState<number | null>(null)
 
   // API Hooks
   const { data: plantillaInfo } = usePlantillaInfo({ medidaId })
@@ -154,18 +153,16 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({
     })
   }
 
-  const handleUpload = (file: File, etiquetaId?: number | null) => {
+  const handleUpload = (file: File) => {
     if (file.size > ADJUNTO_INFORME_SEGUIMIENTO_CONFIG.MAX_SIZE_BYTES) {
       alert('El archivo excede el tamaño máximo permitido de 10MB')
       return
     }
     setArchivo(file)
-    setEtiquetaPlantilla(etiquetaId ?? null)
   }
 
   const handleRemoveFile = () => {
     setArchivo(null)
-    setEtiquetaPlantilla(null)
   }
 
   const fileItems: FileItem[] = archivo
@@ -299,10 +296,6 @@ export const CompletarInformeModal: React.FC<CompletarInformeModalProps> = ({
             emptyMessage="No hay plantilla seleccionada"
             allowedTypes=".pdf,.doc,.docx"
             maxSizeInMB={10}
-            enableEtiqueta
-            etiquetaValue={etiquetaPlantilla}
-            onEtiquetaChange={setEtiquetaPlantilla}
-            etiquetaHelperText="Etiqueta clasificatoria del informe (opcional)"
           />
 
           {/* Error Message */}

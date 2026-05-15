@@ -407,7 +407,6 @@ export const uploadAdjuntoInformeJuridico = async (
   file: File,
   tipoAdjunto: 'INFORME' | 'ACUSE',
   descripcion?: string,
-  etiquetaId?: number | null,
 ): Promise<AdjuntoInformeJuridico> => {
   try {
     console.log(
@@ -431,9 +430,6 @@ export const uploadAdjuntoInformeJuridico = async (
     formData.append("tipo_adjunto", tipoAdjunto)
     if (descripcion) {
       formData.append("descripcion", descripcion)
-    }
-    if (etiquetaId) {
-      formData.append("etiqueta", String(etiquetaId))
     }
 
     // apiService.create() supports FormData automatically

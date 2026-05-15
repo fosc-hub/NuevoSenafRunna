@@ -10,7 +10,6 @@ import { FileUploadSection, type FileItem } from "@/components/shared/FileUpload
 export interface NewIntervencion {
   descripcion: string
   archivo?: File | null
-  etiquetaId?: number | null
 }
 
 interface AddIntervencionDialogProps {
@@ -23,27 +22,24 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
   const [intervencion, setIntervencion] = useState<NewIntervencion>({
     descripcion: "",
     archivo: null,
-    etiquetaId: null,
   })
-  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target
     setIntervencion((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleUpload = (file: File, etiquetaId?: number | null) => {
-    setIntervencion((prev) => ({ ...prev, archivo: file, etiquetaId: etiquetaId ?? null }))
+  const handleUpload = (file: File) => {
+    setIntervencion((prev) => ({ ...prev, archivo: file }))
   }
 
   const handleDelete = () => {
-    setIntervencion((prev) => ({ ...prev, archivo: null, etiquetaId: null }))
+    setIntervencion((prev) => ({ ...prev, archivo: null }))
   }
 
   const handleSave = () => {
     onSave(intervencion)
-    setIntervencion({ descripcion: "", archivo: null, etiquetaId: null })
-    setEtiquetaActual(null)
+    setIntervencion({ descripcion: "", archivo: null })
   }
 
   const fileItems: FileItem[] = intervencion.archivo
@@ -101,10 +97,6 @@ export const AddIntervencionDialog: React.FC<AddIntervencionDialogProps> = ({ op
           multiple={false}
           title="Archivo adjunto (opcional)"
           emptyMessage="No hay archivo seleccionado"
-          enableEtiqueta
-          etiquetaValue={etiquetaActual}
-          onEtiquetaChange={setEtiquetaActual}
-          etiquetaHelperText="Etiqueta clasificatoria del archivo (opcional)"
         />
       </Box>
     </BaseDialog>

@@ -34,21 +34,18 @@ export const AgregarIntervencionModal: React.FC<AgregarIntervencionModalProps> =
     const [fecha, setFecha] = useState<string>("")
     const [tipo, setTipo] = useState<string>("")
     const [archivo, setArchivo] = useState<File | null>(null)
-    const [etiquetaId, setEtiquetaId] = useState<number | null>(null)
     const [observaciones, setObservaciones] = useState<string>("")
 
     const fileItems: FileItem[] = archivo
         ? [{ id: "current", nombre: archivo.name, tipo: archivo.type, tamano: archivo.size }]
         : []
 
-    const handleUpload = (file: File, etId?: number | null) => {
+    const handleUpload = (file: File) => {
         setArchivo(file)
-        setEtiquetaId(etId ?? null)
     }
 
     const handleDelete = () => {
         setArchivo(null)
-        setEtiquetaId(null)
     }
 
     const handleSave = () => {
@@ -138,10 +135,6 @@ export const AgregarIntervencionModal: React.FC<AgregarIntervencionModalProps> =
                             multiple={false}
                             title="Adjuntar documento"
                             emptyMessage="No hay archivo seleccionado"
-                            enableEtiqueta
-                            etiquetaValue={etiquetaId}
-                            onEtiquetaChange={setEtiquetaId}
-                            etiquetaHelperText="Etiqueta clasificatoria del archivo (opcional)"
                         />
                     </Box>
                     {/* Observaciones */}

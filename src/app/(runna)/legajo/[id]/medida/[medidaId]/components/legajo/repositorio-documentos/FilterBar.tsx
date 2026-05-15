@@ -17,7 +17,6 @@ import ClearIcon from '@mui/icons-material/Clear'
 import type { SelectChangeEvent } from '@mui/material'
 import type { CategoriaDocumento, DocumentosFilterState } from '../../../types/repositorio-documentos'
 import { CATEGORY_CONFIG, CATEGORY_ORDER, getTipoModeloLabel } from './constants'
-import { useEtiquetasDocumento } from '@/hooks/useEtiquetasDocumento'
 
 interface FilterBarProps {
   filters: DocumentosFilterState
@@ -60,24 +59,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     })
   }
 
-  const handleEtiquetaChange = (event: SelectChangeEvent<string>) => {
-    const value = event.target.value
-    onFilterChange({
-      ...filters,
-      etiqueta: value === 'TODOS' ? 'TODOS' : Number(value),
-    })
-  }
-
   const handleClearFilters = () => {
     onFilterChange({
       categoria: 'TODOS',
       tipoModelo: 'TODOS',
       medidaId: 'TODOS',
-      etiqueta: 'TODOS',
     })
   }
-
-  const { etiquetas } = useEtiquetasDocumento()
 
   return (
     <Box
@@ -123,24 +111,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           {tipoModeloOptions.map((tipo) => (
             <MenuItem key={tipo} value={tipo}>
               {getTipoModeloLabel(tipo)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {/* Etiqueta filter (catálogo unificado) */}
-      <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel id="etiqueta-filter-label">Etiqueta</InputLabel>
-        <Select
-          labelId="etiqueta-filter-label"
-          value={String(filters.etiqueta)}
-          label="Etiqueta"
-          onChange={handleEtiquetaChange}
-        >
-          <MenuItem value="TODOS">Todas</MenuItem>
-          {etiquetas.map((et) => (
-            <MenuItem key={et.id} value={String(et.id)}>
-              {et.nombre}
             </MenuItem>
           ))}
         </Select>

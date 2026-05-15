@@ -72,8 +72,7 @@ export const DescargaMasivaDialog: React.FC<DescargaMasivaDialogProps> = ({
       return (
         (d.nombre_archivo || "").toLowerCase().includes(q) ||
         (d.descripcion || "").toLowerCase().includes(q) ||
-        (d.tipo_modelo_display || "").toLowerCase().includes(q) ||
-        (d.etiqueta_nombre || "").toLowerCase().includes(q)
+        (d.tipo_modelo_display || "").toLowerCase().includes(q)
       )
     })
   }, [seleccionables, search])
@@ -238,9 +237,6 @@ export const DescargaMasivaDialog: React.FC<DescargaMasivaDialogProps> = ({
                             variant="outlined"
                           />
                           <Chip size="small" label={doc.categoria} color="info" variant="outlined" />
-                          {doc.etiqueta_nombre && (
-                            <Chip size="small" label={doc.etiqueta_nombre} variant="outlined" />
-                          )}
                           <Typography variant="caption" color="text.secondary">
                             {doc.tamanio_mb.toFixed(2)} MB
                           </Typography>

@@ -44,7 +44,7 @@ import InfoIcon from "@mui/icons-material/Info"
 import SaveIcon from "@mui/icons-material/Save"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import DescriptionIcon from "@mui/icons-material/Description"
-import { FileUploadSection, type FileItem } from "../shared/file-upload-section"
+import { FileUploadSection, type FileItem } from "./shared/file-upload-section"
 import { formatFileSize } from "@/utils/fileUtils"
 
 interface AdjuntarNotaModalProps {

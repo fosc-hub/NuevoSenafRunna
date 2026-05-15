@@ -117,15 +117,10 @@ export const submitFormData = async (formData: FormData, id?: string): Promise<a
  * Adds files to the FormData object
  */
 function addFilesToFormData(formDataObj: FormData, formData: FormData): void {
-  // Add general attachments (con etiqueta opcional por archivo cuando viene marcada
-  // por el selector de etiqueta del Step 1).
+  // Add general attachments
   if (formData.adjuntos && formData.adjuntos.length > 0) {
     formData.adjuntos.forEach((file: File, index: number) => {
       formDataObj.append(`adjuntos[${index}][archivo]`, file)
-      const etiquetaId = (file as any).__etiquetaId
-      if (etiquetaId) {
-        formDataObj.append(`adjuntos[${index}][etiqueta]`, String(etiquetaId))
-      }
     })
   }
   // Add medical certificate files

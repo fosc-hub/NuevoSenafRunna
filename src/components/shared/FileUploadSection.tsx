@@ -42,11 +42,11 @@ import DownloadIcon from "@mui/icons-material/Download"
 import DeleteIcon from "@mui/icons-material/Delete"
 import DescriptionIcon from "@mui/icons-material/Description"
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import VisibilityIcon from "@mui/icons-material/Visibility"
 import { formatDateLocaleAR } from "@/utils/dateUtils"
 import { formatFileSize } from "@/utils/fileUtils"
-import EtiquetaDocumentoSelector, {
-  EtiquetaDocumentoChip,
-} from "@/components/forms/components/EtiquetaDocumentoSelector"
+import { isPdfFile } from "@/utils/pdfUtils"
+import { usePdfViewer } from "@/hooks/usePdfViewer"
 
 export interface FileItem {
   id: number | string
@@ -55,19 +55,9 @@ export interface FileItem {
   url?: string
   fecha_subida?: string
   tamano?: number
-  /** Etiqueta clasificatoria del documento (mostrada como chip). */
-  etiqueta_nombre?: string | null
 }
 
-/**
- * Firma del callback de subida.
- * - Si el componente está configurado con etiqueta, recibe `etiquetaId` como segundo argumento.
- * - Llamadores legacy que ignoran el segundo argumento siguen funcionando sin cambios.
- */
-export type UploadCallback = (
-  file: File,
-  etiquetaId?: number | null,
-) => void | Promise<void>
+export type UploadCallback = (file: File) => void | Promise<void>
 
 export interface FileUploadSectionProps {
   // File data
@@ -100,13 +90,12 @@ export interface FileUploadSectionProps {
   isUploading?: boolean
   uploadError?: string
 
-  // Etiqueta de documento (catalog-driven). Si `enableEtiqueta` es true,
-  // se muestra el selector arriba del dropzone y el id se reenvía al `onUpload`.
-  enableEtiqueta?: boolean
-  etiquetaValue?: number | null
-  onEtiquetaChange?: (etiquetaId: number | null) => void
-  etiquetaRequired?: boolean
-  etiquetaHelperText?: string
+  // Previsualización de PDFs. Cuando `enablePreview` es true (default), se
+  // muestra un botón "Ver" en cada fila de archivo PDF con URL. Por defecto
+  // abre un PdfViewerModal interno; si se provee `onPreview`, ese callback
+  // toma el control y el modal interno no se monta.
+  enablePreview?: boolean
+  onPreview?: (file: FileItem) => void
 }
 
 export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
@@ -128,26 +117,41 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
   emptyMessage = "No hay archivos adjuntos",
   isUploading = false,
   uploadError,
-  enableEtiqueta = false,
-  etiquetaValue = null,
-  onEtiquetaChange,
-  etiquetaRequired = false,
-  etiquetaHelperText,
+  enablePreview = true,
+  onPreview,
 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const dispatchUpload = (file: File) => {
-    if (!onUpload) return
-    if (enableEtiqueta && etiquetaRequired && !etiquetaValue) {
-      alert("Seleccioná una etiqueta antes de subir el archivo.")
+  // PDF viewer (interno). Solo se utiliza si `enablePreview` y el caller no
+  // pasó `onPreview`. Resolver de URL: archivos con URL relativa se prefijan
+  // con `NEXT_PUBLIC_API_URL` quitando el sufijo `/api` (los archivos viven
+  // en `/media/...`, no bajo `/api`).
+  const { openUrl, PdfModal } = usePdfViewer()
+
+  const resolveFileUrl = (rawUrl: string): string => {
+    if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://") || rawUrl.startsWith("blob:")) {
+      return rawUrl
+    }
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api\/?$/, "")
+    return `${apiBase}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`
+  }
+
+  const handlePreview = (file: FileItem) => {
+    if (onPreview) {
+      onPreview(file)
       return
     }
-    if (enableEtiqueta) {
-      void onUpload(file, etiquetaValue ?? null)
-    } else {
-      void onUpload(file)
-    }
+    if (!file.url) return
+    openUrl(resolveFileUrl(file.url), {
+      title: title || "Visor de PDF",
+      fileName: file.nombre,
+    })
+  }
+
+  const dispatchUpload = (file: File) => {
+    if (!onUpload) return
+    void onUpload(file)
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,19 +269,6 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
         )}
       </Box>
 
-      {/* Etiqueta de Documento (opcional, controlada por enableEtiqueta) */}
-      {enableEtiqueta && !readOnly && onUpload && (
-        <Box sx={{ mb: 2 }}>
-          <EtiquetaDocumentoSelector
-            value={etiquetaValue ?? null}
-            onChange={(id) => onEtiquetaChange?.(id)}
-            disabled={disabled || isUploading}
-            required={etiquetaRequired}
-            helperText={etiquetaHelperText}
-          />
-        </Box>
-      )}
-
       {/* Drag-and-Drop Zone (NEW) */}
       {!readOnly && onUpload && enableDragDrop && (
         <Paper
@@ -370,12 +361,7 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                     <AttachFileIcon color="primary" />
                   </ListItemIcon>
                   <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <span>{file.nombre}</span>
-                        <EtiquetaDocumentoChip nombre={file.etiqueta_nombre} />
-                      </Box>
-                    }
+                    primary={file.nombre}
                     secondary={
                       <>
                         {file.tipo && <span>{file.tipo}</span>}
@@ -389,6 +375,17 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: "flex", gap: 1 }}>
+                      {/* Preview Button (PDFs con URL) */}
+                      {enablePreview && file.url && isPdfFile(file.nombre) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handlePreview(file)}
+                          title="Previsualizar"
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      )}
+
                       {/* Download Button */}
                       {onDownload && file.url && (
                         <IconButton
@@ -431,6 +428,9 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
           )}
         </>
       )}
+
+      {/* Visor interno de PDFs. Se monta solo si no hay `onPreview` custom. */}
+      {enablePreview && !onPreview && PdfModal}
     </Card>
   )
 }

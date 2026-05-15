@@ -46,9 +46,6 @@ export const useRepositorioDocumentos = (params: RepositorioDocumentosParams) =>
   if (params.categoria) {
     queryParams.categoria = params.categoria
   }
-  if (params.etiqueta !== undefined && params.etiqueta !== null && params.etiqueta !== '') {
-    queryParams.etiqueta = String(params.etiqueta)
-  }
 
   return useQuery({
     queryKey: ['repositorio-documentos', params],

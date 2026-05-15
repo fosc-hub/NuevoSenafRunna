@@ -32,7 +32,6 @@ import LocalizacionFields from "./LocalizacionFields"
 import type { DropdownData, FormData } from "./types/formTypes"
 import { useBusquedaVinculacion } from "./utils/conexionesApi"
 import VinculacionNotification from "./VinculacionNotificacion"
-import { useEtiquetasDocumento } from "@/hooks/useEtiquetasDocumento"
 import {
   FileUploadSection as SharedFileUploadSection,
   type FileItem,
@@ -42,9 +41,8 @@ import {
 
 
 // Adapter local: usa el componente compartido para todo el upload UI.
-// Mapea el array `adjuntos` del form (mezcla de File + objetos {archivo}) al
-// formato FileItem que entiende el shared component, y stampa __etiquetaId
-// sobre cada File para que el submit lo lea.
+// Mapea el array `adjuntos` del form (mezcla de File + objetos {archivo})
+// al formato FileItem que entiende el shared component.
 const FileUploadSection = ({
   control,
   readOnly,
@@ -57,10 +55,6 @@ const FileUploadSection = ({
   const { field } = useController({ name: "adjuntos", control, defaultValue: [] })
   const value: any[] = Array.isArray(field.value) ? field.value : []
   const onChange = field.onChange
-  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
-  const { etiquetas } = useEtiquetasDocumento()
-  const etiquetaNombre = (id?: number | null) =>
-    id ? etiquetas.find((e) => e.id === id)?.nombre ?? null : null
 
   const getFileName = (filePath?: string | null) =>
     !filePath ? "Archivo sin nombre" : filePath.split("/").pop() || filePath
@@ -77,8 +71,6 @@ const FileUploadSection = ({
         id: `existing-${index}`,
         nombre,
         url: file.archivo ? buildFullUrl(file.archivo) : undefined,
-        etiqueta_nombre:
-          file?.etiqueta_detail?.nombre ?? etiquetaNombre(file?.etiqueta ?? null),
       }
     }
     return {
@@ -86,13 +78,11 @@ const FileUploadSection = ({
       nombre: file.name,
       tipo: file.type,
       tamano: file.size,
-      etiqueta_nombre: etiquetaNombre((file as any).__etiquetaId),
     }
   })
 
-  const handleUpload = (file: File, etiquetaId?: number | null) => {
-    const tagged = Object.assign(file, { __etiquetaId: etiquetaId ?? null })
-    onChange([...value, tagged])
+  const handleUpload = (file: File) => {
+    onChange([...value, file])
   }
 
   const handleDelete = (id: number | string) => {
@@ -125,10 +115,6 @@ const FileUploadSection = ({
       readOnly={readOnly}
       title="Archivos Adjuntos"
       emptyMessage="No hay archivos adjuntos"
-      enableEtiqueta={!readOnly}
-      etiquetaValue={etiquetaActual}
-      onEtiquetaChange={setEtiquetaActual}
-      etiquetaHelperText="Aplica al próximo archivo cargado. Podés cambiarla entre archivos."
     />
   )
 }

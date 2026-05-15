@@ -22,7 +22,6 @@ import { DataGrid } from "@mui/x-data-grid"
 import MessageIcon from "@mui/icons-material/Message"
 import { create } from "@/app/api/apiService"
 import { FileUploadSection, type FileItem } from "@/app/(runna)/legajo/[id]/medida/[medidaId]/components/medida/shared/file-upload-section"
-import { useEtiquetasDocumento } from "@/hooks/useEtiquetasDocumento"
 import { useApiQuery, useCatalogData, extractArray } from "@/hooks/useApiQuery"
 import { usePdfViewer } from "@/hooks"
 import { isPdfFile } from "@/utils/pdfUtils"
@@ -76,10 +75,7 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
   const etiquetas = extractArray(etiquetasData)
 
   const [isLoading, setIsLoading] = useState(false)
-  // Per-file: archivo + su etiqueta de documento (catálogo unificado)
-  const [selectedFiles, setSelectedFiles] = useState<Array<{ file: File; etiquetaId: number | null }>>([])
-  const [etiquetaDocumentoActual, setEtiquetaDocumentoActual] = useState<number | null>(null)
-  const { etiquetas: etiquetasDocumento } = useEtiquetasDocumento()
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [selectedEtiqueta, setSelectedEtiqueta] = useState<RespuestaEtiqueta | null>(null)
   const [filterSubject, setFilterSubject] = useState("")
   const [filterEtiqueta, setFilterEtiqueta] = useState<number | null>(null)
@@ -106,21 +102,17 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
     },
   })
 
-  const etiquetaDocumentoNombre = (id?: number | null) =>
-    id ? etiquetasDocumento.find((e) => e.id === id)?.nombre ?? null : null
-
   // Convert selectedFiles to FileItem[] for display in FileUploadSection
-  const displayFiles: FileItem[] = selectedFiles.map(({ file, etiquetaId }, index) => ({
+  const displayFiles: FileItem[] = selectedFiles.map((file, index) => ({
     id: index,
     nombre: file.name,
     tipo: file.type,
     tamano: file.size,
-    etiqueta_nombre: etiquetaDocumentoNombre(etiquetaId),
   }))
 
   // Handle file upload from FileUploadSection
-  const handleFileUpload = (file: File, etiquetaId?: number | null) => {
-    setSelectedFiles((prev) => [...prev, { file, etiquetaId: etiquetaId ?? null }])
+  const handleFileUpload = (file: File) => {
+    setSelectedFiles((prev) => [...prev, file])
   }
 
   // Handle file deletion from FileUploadSection
@@ -154,12 +146,9 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
         formData.append("etiqueta", selectedEtiqueta.id.toString())
       }
 
-      // Add files (con etiqueta de documento opcional por archivo)
-      selectedFiles.forEach(({ file, etiquetaId }, index) => {
+      // Add files
+      selectedFiles.forEach((file, index) => {
         formData.append(`adjuntos[${index}]archivo`, file)
-        if (etiquetaId) {
-          formData.append(`adjuntos[${index}]etiqueta`, String(etiquetaId))
-        }
       })
 
       // Use the create method from apiService instead of axios directly
@@ -278,10 +267,6 @@ export function EnviarRespuestaForm({ demandaId }: EnviarRespuestaFormProps) {
           emptyMessage="No hay archivos seleccionados. Arrastra archivos o haz clic para seleccionar."
           dragDropMessage="Arrastra y suelta archivos aquí"
           uploadButtonLabel="Seleccionar archivos"
-          enableEtiqueta
-          etiquetaValue={etiquetaDocumentoActual}
-          onEtiquetaChange={setEtiquetaDocumentoActual}
-          etiquetaHelperText="Etiqueta del documento (aplica al próximo archivo cargado)."
         />
 
         <Button type="submit" variant="contained" startIcon={<MessageIcon />} disabled={isLoading} sx={{ mt: 2 }}>

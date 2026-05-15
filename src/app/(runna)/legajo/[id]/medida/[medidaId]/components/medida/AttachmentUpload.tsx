@@ -6,9 +6,6 @@
  *   onChange(files, tipos, descripciones)
  * pero reemplaza el picker / lista por el componente unificado, agregando
  * controles de "Tipo" y "Descripción" por archivo debajo de la lista.
- *
- * El selector de etiqueta del catálogo (TEtiquetaDocumento) está expuesto por
- * el componente compartido y se aplica al próximo archivo cargado.
  */
 
 import { useState } from "react"
@@ -28,7 +25,6 @@ interface FileWithType {
   file: File
   tipo: string
   descripcion: string
-  etiquetaId: number | null
 }
 
 interface AttachmentUploadProps {
@@ -37,7 +33,6 @@ interface AttachmentUploadProps {
     files: File[],
     tipos?: string[],
     descripciones?: string[],
-    etiquetaIds?: Array<number | null>,
   ) => void
   requiereEvidencia?: boolean
 }
@@ -55,7 +50,6 @@ export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
   requiereEvidencia = false,
 }) => {
   const [items, setItems] = useState<FileWithType[]>([])
-  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
 
   const update = (next: FileWithType[]) => {
     setItems(next)
@@ -63,18 +57,16 @@ export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
       next.map((i) => i.file),
       next.map((i) => i.tipo),
       next.map((i) => i.descripcion),
-      next.map((i) => i.etiquetaId),
     )
   }
 
-  const handleUpload = (file: File, etiquetaId?: number | null) => {
+  const handleUpload = (file: File) => {
     update([
       ...items,
       {
         file,
         tipo: requiereEvidencia ? "EVIDENCIA" : "OTRO",
         descripcion: "",
-        etiquetaId: etiquetaId ?? null,
       },
     ])
   }
@@ -116,10 +108,6 @@ export const AttachmentUpload: React.FC<AttachmentUploadProps> = ({
         multiple
         title="Archivos"
         emptyMessage="No hay archivos seleccionados"
-        enableEtiqueta
-        etiquetaValue={etiquetaActual}
-        onEtiquetaChange={setEtiquetaActual}
-        etiquetaHelperText="Etiqueta del catálogo (aplica al próximo archivo)"
       />
 
       {/* Per-file metadata: tipo + descripción (legacy fields) */}

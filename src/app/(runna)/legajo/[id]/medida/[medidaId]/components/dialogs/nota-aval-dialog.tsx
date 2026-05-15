@@ -85,7 +85,6 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
   const [decision, setDecision] = useState<TNotaAvalDecision | "">("")
   const [comentarios, setComentarios] = useState("")
   const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([])
-  const [etiquetaActual, setEtiquetaActual] = useState<number | null>(null)
 
   // ============================================================================
   // HOOKS
@@ -181,8 +180,7 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
       const validFiles = filesToUpload.filter(f => !f.error)
       for (const fileToUpload of validFiles) {
         try {
-          const etiquetaId = (fileToUpload.file as any).__etiquetaId ?? null
-          await uploadFile(fileToUpload.file, etiquetaId)
+          await uploadFile(fileToUpload.file)
         } catch (error) {
           console.error(`Error uploading file ${fileToUpload.file.name}:`, error)
           // Continue with other files even if one fails
@@ -212,7 +210,6 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
     setDecision("")
     setComentarios("")
     setFilesToUpload([])
-    setEtiquetaActual(null)
 
     onClose()
   }
@@ -228,7 +225,6 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
       setDecision("")
       setComentarios("")
       setFilesToUpload([])
-      setEtiquetaActual(null)
     }
   }, [open])
 
@@ -363,11 +359,11 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
     tamano: f.file.size,
   }))
 
-  const handleSharedUpload = (file: File, etiquetaId?: number | null) => {
+  const handleSharedUpload = (file: File) => {
     const validation = validateFileBeforeUpload(file)
     const newFile: FileToUpload = {
       id: `${Date.now()}-${file.name}-${Math.random().toString(36).substr(2, 9)}`,
-      file: Object.assign(file, { __etiquetaId: etiquetaId ?? null }),
+      file,
       error: validation.valid ? undefined : validation.error,
     }
     setFilesToUpload((prev) => [...prev, newFile])
@@ -389,10 +385,6 @@ export const NotaAvalDialog: React.FC<NotaAvalDialogProps> = ({
         allowedTypes={allowedExtensions.join(",")}
         maxSizeInMB={Math.round(maxSizeBytes / (1024 * 1024))}
         disabled={isCreating || isUploading}
-        enableEtiqueta
-        etiquetaValue={etiquetaActual}
-        onEtiquetaChange={setEtiquetaActual}
-        etiquetaHelperText="Etiqueta clasificatoria (aplica al próximo archivo cargado)"
       />
 
       {/* UPLOAD PROGRESS */}

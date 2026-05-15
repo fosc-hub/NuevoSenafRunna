@@ -130,9 +130,6 @@ export const RatificacionJudicialDialog: React.FC<
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [etiquetaResolucion, setEtiquetaResolucion] = useState<number | null>(null)
-  const [etiquetaCedula, setEtiquetaCedula] = useState<number | null>(null)
-  const [etiquetaAcuseRatif, setEtiquetaAcuseRatif] = useState<number | null>(null)
 
   // Update form data when initialData changes (edit mode)
   React.useEffect(() => {
@@ -481,10 +478,6 @@ export const RatificacionJudicialDialog: React.FC<
               allowedTypes=".pdf"
               maxSizeInMB={10}
               disabled={isLoading}
-              enableEtiqueta
-              etiquetaValue={etiquetaResolucion}
-              onEtiquetaChange={setEtiquetaResolucion}
-              etiquetaHelperText="Etiqueta clasificatoria de la resolución (opcional)"
             />
             {errors.archivo_resolucion_judicial && (
               <Typography variant="caption" color="error" sx={{ display: "block", mb: 2 }}>
@@ -517,10 +510,6 @@ export const RatificacionJudicialDialog: React.FC<
                 allowedTypes=".pdf"
                 maxSizeInMB={10}
                 disabled={isLoading}
-                enableEtiqueta
-                etiquetaValue={etiquetaCedula}
-                onEtiquetaChange={setEtiquetaCedula}
-                etiquetaHelperText="Etiqueta clasificatoria de la cédula (opcional)"
               />
             </Box>
 
@@ -549,10 +538,6 @@ export const RatificacionJudicialDialog: React.FC<
                 allowedTypes=".pdf"
                 maxSizeInMB={10}
                 disabled={isLoading}
-                enableEtiqueta
-                etiquetaValue={etiquetaAcuseRatif}
-                onEtiquetaChange={setEtiquetaAcuseRatif}
-                etiquetaHelperText="Etiqueta clasificatoria del acuse (opcional)"
               />
             </Box>
           </Box>

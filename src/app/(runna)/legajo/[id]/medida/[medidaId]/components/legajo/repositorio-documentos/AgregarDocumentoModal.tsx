@@ -24,8 +24,6 @@ import CloseIcon from "@mui/icons-material/Close"
 import SaveIcon from "@mui/icons-material/Save"
 import UploadFileIcon from "@mui/icons-material/UploadFile"
 import { FileUploadSection, type FileItem } from "../../medida/shared/file-upload-section"
-import EtiquetaDocumentoSelector from "@/components/forms/components/EtiquetaDocumentoSelector"
-import { useEtiquetasDocumento } from "@/hooks/useEtiquetasDocumento"
 
 interface AgregarDocumentoModalProps {
   open: boolean
@@ -43,7 +41,6 @@ interface PendingFile {
   tipo: string
   tamanio: number
   fechaSubida: Date
-  etiquetaId: number | null
 }
 
 export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
@@ -54,7 +51,6 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
   demandaId,
   medidasIds = [],
 }) => {
-  const [etiquetaSeleccionada, setEtiquetaSeleccionada] = useState<number | null>(null)
   const [medidaSeleccionada, setMedidaSeleccionada] = useState<string>("")
   const [descripcion, setDescripcion] = useState<string>("")
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
@@ -62,12 +58,8 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  const { etiquetas } = useEtiquetasDocumento()
   const tiposArchivosPermitidos = ".pdf,.doc,.docx,.jpg,.jpeg,.png"
   const tamanoMaximoMB = 10
-
-  const etiquetaNombre = (id?: number | null) =>
-    id ? etiquetas.find((e) => e.id === id)?.nombre ?? null : null
 
   // Convert pending files to FileItem for display
   const displayFiles: FileItem[] = pendingFiles.map((pf) => ({
@@ -76,7 +68,6 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
     tipo: pf.tipo,
     tamano: pf.tamanio,
     fecha_subida: pf.fechaSubida.toISOString(),
-    etiqueta_nombre: etiquetaNombre(pf.etiquetaId),
   }))
 
   const handleMedidaChange = (event: SelectChangeEvent<string>) => {
@@ -85,7 +76,7 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
   }
 
   const handleFileUpload = useCallback(
-    (file: File, etiquetaId?: number | null) => {
+    (file: File) => {
       const newFile: PendingFile = {
         id: Math.random().toString(36).substr(2, 9),
         file,
@@ -93,7 +84,6 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
         tipo: file.type,
         tamanio: file.size,
         fechaSubida: new Date(),
-        etiquetaId: etiquetaId ?? null,
       }
       setPendingFiles((prev) => [...prev, newFile])
       setError(null)
@@ -108,7 +98,6 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
   const handleClose = () => {
     if (!isSubmitting) {
       // Reset state
-      setEtiquetaSeleccionada(null)
       setMedidaSeleccionada("")
       setDescripcion("")
       setPendingFiles([])
@@ -215,16 +204,6 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
           </Alert>
         )}
 
-        {/* Etiqueta del documento (catálogo unificado) */}
-        <Box sx={{ mb: 3 }}>
-          <EtiquetaDocumentoSelector
-            value={etiquetaSeleccionada}
-            onChange={setEtiquetaSeleccionada}
-            disabled={isSubmitting}
-            helperText="Aplica al próximo archivo cargado. Si no elegís etiqueta el sistema usa 'Sin clasificar'."
-          />
-        </Box>
-
         {/* Medida selector cuando hay varias medidas vinculadas al legajo */}
         {medidasIds.length > 1 && (
           <FormControl fullWidth sx={{ mb: 3 }}>
@@ -258,10 +237,9 @@ export const AgregarDocumentoModal: React.FC<AgregarDocumentoModalProps> = ({
           placeholder="Agregue una descripción o notas sobre el documento..."
         />
 
-        {/* File Upload — la etiqueta seleccionada arriba se aplica al archivo subido */}
         <FileUploadSection
           files={displayFiles}
-          onUpload={(file) => handleFileUpload(file, etiquetaSeleccionada)}
+          onUpload={handleFileUpload}
           onDelete={handleFileDelete}
           allowedTypes={tiposArchivosPermitidos}
           maxSizeInMB={tamanoMaximoMB}

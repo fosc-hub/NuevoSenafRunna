@@ -13,7 +13,7 @@
  * - Validación de archivos (PDF, máx 10MB)
  */
 
-import React, { useState } from "react"
+import React from "react"
 import { Box, Typography, Chip, CircularProgress, Alert } from "@mui/material"
 import { useNotaAvalAdjuntos } from "../../hooks/useNotaAvalAdjuntos"
 import type { AdjuntoNotaAval } from "../../types/nota-aval-api"
@@ -48,7 +48,6 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
   // STATE + HOOKS
   // ============================================================================
 
-  const [etiquetaSeleccionada, setEtiquetaSeleccionada] = useState<number | null>(null)
   const {
     adjuntos,
     isLoadingAdjuntos,
@@ -77,14 +76,14 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
     fecha_subida: adj.fecha_carga,
   }))
 
-  const handleUpload = async (file: File, etiquetaId?: number | null) => {
+  const handleUpload = async (file: File) => {
     const validation = validateFileBeforeUpload(file)
     if (!validation.valid) {
       alert(validation.error)
       return
     }
     try {
-      await uploadFile(file, etiquetaId ?? etiquetaSeleccionada)
+      await uploadFile(file)
     } catch (error) {
       console.error("Error uploading file:", error)
     }
@@ -166,10 +165,6 @@ export const AdjuntosNotaAval: React.FC<AdjuntosNotaAvalProps> = ({
         allowedTypes={allowedExtensions.join(",")}
         maxSizeInMB={Math.round(maxSizeBytes / (1024 * 1024))}
         isUploading={isUploading}
-        enableEtiqueta={canUpload}
-        etiquetaValue={etiquetaSeleccionada}
-        onEtiquetaChange={setEtiquetaSeleccionada}
-        etiquetaHelperText="Etiqueta que se asigna al próximo archivo subido"
       />
     </Box>
   )

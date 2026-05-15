@@ -244,15 +244,6 @@ export const DocumentoCard: React.FC<DocumentoCardProps> = ({ documento }) => {
             color={categoryConfig.color}
             sx={{ height: 18, fontSize: '0.65rem', ml: 'auto' }}
           />
-          {documento.etiqueta_nombre && (
-            <Chip
-              label={documento.etiqueta_nombre}
-              size="small"
-              variant="filled"
-              color="default"
-              sx={{ height: 18, fontSize: '0.65rem' }}
-            />
-          )}
         </Box>
 
         {documento.descripcion && (

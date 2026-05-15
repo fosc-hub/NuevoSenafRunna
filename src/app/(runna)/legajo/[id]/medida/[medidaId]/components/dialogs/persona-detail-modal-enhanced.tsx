@@ -31,6 +31,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Stack,
 } from "@mui/material"
 import { Save as SaveIcon, Cancel as CancelIcon } from "@mui/icons-material"
 import {
@@ -58,6 +59,7 @@ import { useNNyAData } from "../../hooks/usePersonasRelacionadas"
 import { buildFullAddress } from "../../api/localizacion-api-service"
 import { updateNNyAData, type NNyAUpdateRequest } from "../../api/personas-relacionadas-api-service"
 import { PersonasRelacionadasSection } from "../personas-relacionadas"
+import VulnerabilityEditor from "./vulnerability-editor"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
 import { toast } from "react-toastify"
 import { useQueryClient, useQuery } from "@tanstack/react-query"
@@ -262,6 +264,7 @@ export default function PersonaDetailModalEnhanced({
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState(0)
   const [isEditing, setIsEditing] = useState(false)
+  const [isEditingVulnerability, setIsEditingVulnerability] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState<PersonaFormState>(initialFormState)
   // Store initial values to track changes for PATCH requests
@@ -307,7 +310,7 @@ export default function PersonaDetailModalEnhanced({
   const { data: dropdownData, isLoading: loadingDropdowns } = useQuery<DropdownData>({
     queryKey: ["registro-demanda-form-dropdowns"],
     queryFn: fetchDropdownData,
-    enabled: open && isEditing,
+    enabled: open && (isEditing || isEditingVulnerability),
     staleTime: 60 * 60 * 1000, // 1 hour
   })
 
@@ -1813,36 +1816,14 @@ export default function PersonaDetailModalEnhanced({
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Condiciones de Vulnerabilidad
             </Typography>
-            {!readOnly && permisos?.puede_editar && !isEditing && (
+            {!readOnly && permisos?.puede_editar && !isEditingVulnerability && (
               <Button
                 startIcon={<EditIcon />}
-                onClick={handleEnterEditMode}
+                onClick={() => setIsEditingVulnerability(true)}
                 size="small"
               >
                 Editar
               </Button>
-            )}
-            {isEditing && (
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  startIcon={<CancelIcon />}
-                  onClick={handleCancelEdit}
-                  size="small"
-                  color="inherit"
-                  disabled={isSaving}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
-                  onClick={handleSave}
-                  size="small"
-                  variant="contained"
-                  disabled={isSaving}
-                >
-                  Guardar
-                </Button>
-              </Box>
             )}
           </Box>
 
@@ -1850,90 +1831,124 @@ export default function PersonaDetailModalEnhanced({
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : isEditing ? (
-            // Edit mode - show current conditions with ability to modify
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Las condiciones de vulnerabilidad se gestionan desde la sección de evaluación del legajo.
-                  Esta vista permite visualizar las condiciones actuales.
-                </Alert>
-              </Grid>
+          ) : isEditingVulnerability && personaId ? (
+            <VulnerabilityEditor
+              personaId={personaId}
+              isAdulto={!!(persona as any)?.adulto}
+              condicionesInitial={(vulnerabilidadData?.condiciones_vulnerabilidad as any) || []}
+              vulneracionesInitial={(vulnerabilidadData?.vulneraciones as any) || []}
+              dropdownData={dropdownData}
+              loadingDropdowns={loadingDropdowns}
+              onCancel={() => setIsEditingVulnerability(false)}
+              onSaved={() => setIsEditingVulnerability(false)}
+            />
+          ) : (vulnerabilidadData?.condiciones_vulnerabilidad?.length || vulnerabilidadData?.vulneraciones?.length) ? (
+            // View mode with data
+            <Grid container spacing={3}>
               {vulnerabilidadData?.condiciones_vulnerabilidad && vulnerabilidadData.condiciones_vulnerabilidad.length > 0 && (
+                <>
+                  <Grid item xs={12}>
+                    <Alert severity="warning" icon={<WarningIcon />}>
+                      Se han identificado {vulnerabilidadData.condiciones_vulnerabilidad.length} condiciones de vulnerabilidad
+                    </Alert>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
+                        Condiciones Identificadas
+                      </Typography>
+                      <List dense>
+                        {vulnerabilidadData.condiciones_vulnerabilidad.map((condicion: any, idx: number) => (
+                          <ListItem key={idx} divider={idx < vulnerabilidadData.condiciones_vulnerabilidad.length - 1}>
+                            <ListItemIcon>
+                              <WarningIcon color="warning" />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={condicion.condicion_vulnerabilidad?.nombre || condicion.nombre || "Condición"}
+                              secondary={
+                                condicion.condicion_vulnerabilidad?.descripcion ||
+                                condicion.descripcion ||
+                                `Peso: ${condicion.condicion_vulnerabilidad?.peso || condicion.peso || "N/A"}`
+                              }
+                            />
+                            {(condicion.condicion_vulnerabilidad?.peso || condicion.peso) && (
+                              <Chip
+                                label={`Peso: ${condicion.condicion_vulnerabilidad?.peso || condicion.peso}`}
+                                size="small"
+                                color="warning"
+                                variant="outlined"
+                              />
+                            )}
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Paper variant="outlined" sx={{ p: 2, bgcolor: "warning.light", color: "warning.contrastText" }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Peso Total de Vulnerabilidad
+                      </Typography>
+                      <Typography variant="h4">
+                        {vulnerabilidadData.condiciones_vulnerabilidad.reduce(
+                          (sum: number, c: any) =>
+                            sum + (c.condicion_vulnerabilidad?.peso || c.peso || 0),
+                          0
+                        )}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </>
+              )}
+
+              {vulnerabilidadData?.vulneraciones && vulnerabilidadData.vulneraciones.length > 0 && (
                 <Grid item xs={12}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                      Condiciones Actuales
+                      Presuntas Vulneraciones de Derechos ({vulnerabilidadData.vulneraciones.length})
                     </Typography>
-                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                      {vulnerabilidadData.condiciones_vulnerabilidad.map((condicion: any, idx: number) => (
-                        <Chip
-                          key={idx}
-                          label={condicion.condicion_vulnerabilidad?.nombre || condicion.nombre || "Condición"}
-                          color="warning"
+                    <Stack spacing={1}>
+                      {vulnerabilidadData.vulneraciones.map((v: any, idx: number) => (
+                        <Paper
+                          key={v.id ?? idx}
                           variant="outlined"
-                        />
+                          sx={{
+                            p: 1.5,
+                            borderLeft: 4,
+                            borderLeftColor: v.transcurre_actualidad ? "error.main" : "grey.400",
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {v.categoria_motivo_info?.nombre || "Vulneración"}
+                              {v.categoria_submotivo_info?.nombre && ` · ${v.categoria_submotivo_info.nombre}`}
+                            </Typography>
+                            {v.principal_demanda && <Chip label="Principal" size="small" color="error" />}
+                            {v.transcurre_actualidad && (
+                              <Chip label="En curso" size="small" color="error" variant="outlined" />
+                            )}
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
+                            {v.gravedad_vulneracion_info?.nombre && (
+                              <Chip
+                                label={`Gravedad: ${v.gravedad_vulneracion_info.nombre}`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                            {v.urgencia_vulneracion_info?.nombre && (
+                              <Chip
+                                label={`Urgencia: ${v.urgencia_vulneracion_info.nombre}`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        </Paper>
                       ))}
-                    </Box>
-                  </Paper>
-                </Grid>
-              )}
-            </Grid>
-          ) : vulnerabilidadData?.condiciones_vulnerabilidad && vulnerabilidadData.condiciones_vulnerabilidad.length > 0 ? (
-            // View mode with data
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Alert severity="warning" icon={<WarningIcon />}>
-                  Se han identificado {vulnerabilidadData.condiciones_vulnerabilidad.length} condiciones de vulnerabilidad
-                </Alert>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                    Condiciones Identificadas
-                  </Typography>
-                  <List dense>
-                    {vulnerabilidadData.condiciones_vulnerabilidad.map((condicion: any, idx: number) => (
-                      <ListItem key={idx} divider={idx < vulnerabilidadData.condiciones_vulnerabilidad.length - 1}>
-                        <ListItemIcon>
-                          <WarningIcon color="warning" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={condicion.condicion_vulnerabilidad?.nombre || condicion.nombre || "Condición"}
-                          secondary={
-                            condicion.condicion_vulnerabilidad?.descripcion ||
-                            condicion.descripcion ||
-                            `Peso: ${condicion.condicion_vulnerabilidad?.peso || condicion.peso || "N/A"}`
-                          }
-                        />
-                        {(condicion.condicion_vulnerabilidad?.peso || condicion.peso) && (
-                          <Chip
-                            label={`Peso: ${condicion.condicion_vulnerabilidad?.peso || condicion.peso}`}
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                          />
-                        )}
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              </Grid>
-
-              {vulnerabilidadData.condiciones_vulnerabilidad.length > 0 && (
-                <Grid item xs={12}>
-                  <Paper variant="outlined" sx={{ p: 2, bgcolor: "warning.light", color: "warning.contrastText" }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Peso Total de Vulnerabilidad
-                    </Typography>
-                    <Typography variant="h4">
-                      {vulnerabilidadData.condiciones_vulnerabilidad.reduce(
-                        (sum: number, c: any) =>
-                          sum + (c.condicion_vulnerabilidad?.peso || c.peso || 0),
-                        0
-                      )}
-                    </Typography>
+                    </Stack>
                   </Paper>
                 </Grid>
               )}

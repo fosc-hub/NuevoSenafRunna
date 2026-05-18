@@ -172,6 +172,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                   borderLeftColor: demanda.estado_demanda === "ADMITIDA" ? "primary.main" :
                                    demanda.estado_demanda === "EN_EVALUACION" ? "info.main" :
                                    demanda.estado_demanda === "RECHAZADA" ? "error.main" :
+                                   demanda.estado_demanda === "PENDIENTE_SUBIR_PJ" ? "warning.main" :
                                    demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success.main" :
                                    "grey.400",
                   transition: "all 0.2s ease",
@@ -180,6 +181,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                     borderColor: demanda.estado_demanda === "ADMITIDA" ? "primary.light" :
                                  demanda.estado_demanda === "EN_EVALUACION" ? "info.light" :
                                  demanda.estado_demanda === "RECHAZADA" ? "error.light" :
+                                 demanda.estado_demanda === "PENDIENTE_SUBIR_PJ" ? "warning.light" :
                                  demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success.light" :
                                  "grey.300",
                   },
@@ -197,6 +199,7 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                         color: demanda.estado_demanda === "ADMITIDA" ? "primary.main" :
                                demanda.estado_demanda === "EN_EVALUACION" ? "info.main" :
                                demanda.estado_demanda === "RECHAZADA" ? "error.main" :
+                               demanda.estado_demanda === "PENDIENTE_SUBIR_PJ" ? "warning.main" :
                                demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success.main" :
                                "grey.600"
                       }} />
@@ -207,12 +210,15 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                         label={
                           demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL"
                             ? "Subido al PJ"
-                            : demanda.estado_demanda?.replace(/_/g, " ")
+                            : demanda.estado_demanda === "PENDIENTE_SUBIR_PJ"
+                              ? "Listo para subir al PJ"
+                              : demanda.estado_demanda?.replace(/_/g, " ")
                         }
                         color={
                           demanda.estado_demanda === "ADMITIDA" ? "primary" :
                           demanda.estado_demanda === "EN_EVALUACION" ? "info" :
                           demanda.estado_demanda === "RECHAZADA" ? "error" :
+                          demanda.estado_demanda === "PENDIENTE_SUBIR_PJ" ? "warning" :
                           demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success" :
                           "default"
                         }

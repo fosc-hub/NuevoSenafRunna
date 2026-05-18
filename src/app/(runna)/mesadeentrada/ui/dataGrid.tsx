@@ -168,6 +168,10 @@ const StatusChip = ({ status, onClick }: { status: string; onClick?: (e: React.M
       color = "info"
       label = "Informe Enviado"
       break
+    case "PENDIENTE_SUBIR_PJ":
+      color = "warning"
+      label = "Listo para subir al PJ"
+      break
     case "SUBIDO_A_PODER_JUDICIAL":
       color = "success"
       label = "Subido al PJ"

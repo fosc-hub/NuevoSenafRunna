@@ -103,7 +103,11 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   const isPeticionDeInforme = formData?.objetivo_de_demanda === "PETICION_DE_INFORME"
 
-  // Flujo "Oficio judicial de MPE/MPI vigente": estado terminal cuando Mesa subió el informe al SAC.
+  // Flujo "Oficio judicial de MPE/MPI vigente":
+  // - PENDIENTE_SUBIR_PJ: el signal del BE detectó que todas las actividades originadas
+  //   por esta demanda están COMPLETADA/VISADO_APROBADO → Dani tiene que entrar al SAC.
+  // - SUBIDO_A_PODER_JUDICIAL: estado terminal — Dani ya confirmó la carga al SAC.
+  const isPendienteSubirPJ = formData?.estado_demanda === "PENDIENTE_SUBIR_PJ"
   const isSubidoAPoderJudicial = formData?.estado_demanda === "SUBIDO_A_PODER_JUDICIAL"
 
   const isEditingBlocked = [
@@ -373,14 +377,30 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
           </Alert>
         )}
 
-        {isPeticionDeInforme && !isSubidoAPoderJudicial && (
+        {isPeticionDeInforme && !isSubidoAPoderJudicial && !isPendienteSubirPJ && (
           <Alert
             severity="info"
             icon={<CloudUploadIcon />}
             sx={{ mb: 3 }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Oficio MPE/MPI vigente
+            </Typography>
+            <Typography variant="body2">
+              Mientras legales/equipos completan las actividades, la demanda queda en seguimiento.
+              Cuando todas las actividades estén aprobadas, vas a poder cargarla al SAC del Poder Judicial.
+            </Typography>
+          </Alert>
+        )}
+
+        {isPeticionDeInforme && isPendienteSubirPJ && (
+          <Alert
+            severity="warning"
+            icon={<CloudUploadIcon />}
+            sx={{ mb: 3 }}
             action={
               <Button
-                color="primary"
+                color="warning"
                 size="small"
                 variant="contained"
                 startIcon={<CloudUploadIcon />}
@@ -392,11 +412,11 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             }
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              Oficio MPE/MPI vigente
+              Listo para subir al Poder Judicial
             </Typography>
             <Typography variant="body2">
-              Una vez que descargues el informe de la actividad y lo subas a la plataforma del Poder Judicial,
-              marcá la demanda como subida para cerrar el ciclo.
+              Todas las actividades originadas por esta demanda están completadas o visadas.
+              Descargá el informe, cargálo en el SAC y marcá la demanda como subida para cerrar el ciclo.
             </Typography>
           </Alert>
         )}

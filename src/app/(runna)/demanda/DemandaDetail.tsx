@@ -6,7 +6,9 @@ import { CircularProgress, Typography, IconButton, Box, Alert, Tabs, Tab, Paper,
 import CloseIcon from "@mui/icons-material/Close"
 import SendIcon from "@mui/icons-material/Send"
 import ArticleIcon from "@mui/icons-material/Article"
-import { update } from "@/app/api/apiService"
+import GavelIcon from "@mui/icons-material/Gavel"
+import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import { create, update } from "@/app/api/apiService"
 import type { FormData } from "@/components/forms/types/formTypes"
 import MultiStepForm from "@/components/forms/MultiStepForm"
 import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
@@ -63,6 +65,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
   const [error, setError] = useState<string | null>(null)
   const [tabValue, setTabValue] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isMarkingSubido, setIsMarkingSubido] = useState(false)
   const router = useRouter()
   const user = useUser((state) => state.user)
 
@@ -92,7 +95,15 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   const isPeticionDeInforme = formData?.objetivo_de_demanda === "PETICION_DE_INFORME"
 
-  const isEditingBlocked = ["ARCHIVADA", "ADMITIDA", "PENDIENTE_AUTORIZACION"].includes(formData?.estado_demanda || "")
+  // Flujo "Oficio judicial de MPE/MPI vigente": estado terminal cuando Mesa subió el informe al SAC.
+  const isSubidoAPoderJudicial = formData?.estado_demanda === "SUBIDO_A_PODER_JUDICIAL"
+
+  const isEditingBlocked = [
+    "ARCHIVADA",
+    "ADMITIDA",
+    "PENDIENTE_AUTORIZACION",
+    "SUBIDO_A_PODER_JUDICIAL",
+  ].includes(formData?.estado_demanda || "")
 
   // If it's a petition for report, force tab value to be 1 (Enviar Respuesta)
   // Remove this useEffect that forces the tab value to be 1
@@ -164,6 +175,29 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
 
   const handleOpenInFullPage = () => {
     router.push(`/demanda/${params.id}`)
+  }
+
+  const handleMarcarSubidoPJ = async () => {
+    if (!params.id || isMarkingSubido) return
+    setIsMarkingSubido(true)
+    try {
+      await create(
+        `demandas/${params.id}/marcar-subido-poder-judicial/`,
+        {},
+        true,
+        "Demanda marcada como subida al Poder Judicial",
+      )
+      if (formData) {
+        setFormData({
+          ...formData,
+          estado_demanda: "SUBIDO_A_PODER_JUDICIAL",
+        })
+      }
+    } catch (err) {
+      console.error("Error al marcar como subido al Poder Judicial:", err)
+    } finally {
+      setIsMarkingSubido(false)
+    }
   }
 
   if (isLoading) {
@@ -264,7 +298,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
           </Alert>
         )}
 
-        {isEditingBlocked && (
+        {isEditingBlocked && !isSubidoAPoderJudicial && (
           <Alert
             severity="info"
             sx={{
@@ -276,6 +310,49 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             }}
           >
             Esta demanda no puede ser editada debido a su estado actual.
+          </Alert>
+        )}
+
+        {isSubidoAPoderJudicial && (
+          <Alert
+            severity="success"
+            icon={<GavelIcon />}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Subido al Poder Judicial
+            </Typography>
+            <Typography variant="body2">
+              El informe de respuesta ya fue cargado en la plataforma del Poder Judicial. La demanda queda en estado terminal.
+            </Typography>
+          </Alert>
+        )}
+
+        {isPeticionDeInforme && !isSubidoAPoderJudicial && (
+          <Alert
+            severity="info"
+            icon={<CloudUploadIcon />}
+            sx={{ mb: 3 }}
+            action={
+              <Button
+                color="primary"
+                size="small"
+                variant="contained"
+                startIcon={<CloudUploadIcon />}
+                onClick={handleMarcarSubidoPJ}
+                disabled={isMarkingSubido}
+              >
+                {isMarkingSubido ? "Marcando..." : "Marcar como subido al PJ"}
+              </Button>
+            }
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Oficio MPE/MPI vigente
+            </Typography>
+            <Typography variant="body2">
+              Una vez que descargues el informe de la actividad y lo subas a la plataforma del Poder Judicial,
+              marcá la demanda como subida para cerrar el ciclo.
+            </Typography>
           </Alert>
         )}
 

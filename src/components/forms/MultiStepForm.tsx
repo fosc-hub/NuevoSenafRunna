@@ -502,16 +502,24 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
           </Alert>
         )}
 
-        {/* REG-01: Global VinculosManager - accessible from all steps (only for standard flow) */}
-        {/* Hide VinculosManager when viewing/editing existing demanda (id exists) - use Conexiones tab instead */}
-        {/* Also hide for CARGA_OFICIOS flow as it doesn't need vinculos */}
-        {dropdownData && !id && formVariant === "STANDARD" && !isOnObjetivoStep && (
-          <Box sx={{ px: 3, pt: 3 }} data-section="vinculos">
-            <FormSection title="Vínculos con Legajos y Medidas" collapsible={true} defaultExpanded={false}>
-              <VinculosManager dropdownData={dropdownData} readOnly={isReadOnly} />
-            </FormSection>
-          </Box>
-        )}
+        {/* REG-01: Global VinculosManager - accessible from all steps. */}
+        {/* Hide cuando se edita una demanda existente (id presente) — se usa la tab Conexiones. */}
+        {/* CARGA_OFICIOS maneja sus propios vínculos dentro del formulario especializado. */}
+        {/* OFICIO_JUDICIAL: el signal del backend (crear_actividades_desde_oficio) requiere TVinculoLegajo
+            para disparar la creación de actividades en la medida MPE/MPI vigente, así que aquí se expone
+            por defecto expandido para que Rosa/legales lo complete. */}
+        {dropdownData && !id && !isOnObjetivoStep &&
+          (formVariant === "STANDARD" || formVariant === "OFICIO_JUDICIAL") && (
+            <Box sx={{ px: 3, pt: 3 }} data-section="vinculos">
+              <FormSection
+                title="Vínculos con Legajos y Medidas"
+                collapsible={true}
+                defaultExpanded={formVariant === "OFICIO_JUDICIAL"}
+              >
+                <VinculosManager dropdownData={dropdownData} readOnly={isReadOnly} />
+              </FormSection>
+            </Box>
+          )}
 
         <Box sx={{ p: 3 }}>
           {dropdownData && (

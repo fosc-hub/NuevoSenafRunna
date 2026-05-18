@@ -7,6 +7,8 @@ import {
   Typography,
   Button,
   FormControl,
+  FormControlLabel,
+  Switch,
   List,
   ListItem,
   ListItemText,
@@ -16,6 +18,7 @@ import {
   CircularProgress,
   FormHelperText,
 } from "@mui/material"
+import GavelIcon from "@mui/icons-material/Gavel"
 import TabPanel from "@/components/shared/TabPanel"
 import BaseModal from "@/components/shared/BaseModal"
 import {
@@ -45,6 +48,8 @@ interface Zona {
   nombre: string
 }
 
+type TipoLegal = "PROTECCION" | "PENAL" | "AMBOS" | null
+
 interface User {
   id: number
   username: string
@@ -53,6 +58,9 @@ interface User {
   email: string
   zonas?: Array<{ id: number; zona: number }>
   zonas_ids?: number[]
+  /** GAP-05: marca de rol legal dentro de la zona seleccionada (solo en este modal). */
+  legal?: boolean
+  tipo_legal?: TipoLegal
 }
 
 interface UserZona {
@@ -60,6 +68,8 @@ interface UserZona {
   director: boolean
   jefe: boolean
   legal: boolean
+  /** GAP-05: especialización legal del usuario en esa zona. */
+  tipo_legal?: TipoLegal
   user: number
   zona: number
   localidad: number | null
@@ -93,6 +103,12 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
   const [isLoading, setIsLoading] = useState(false)
   const [usersForSelectedZona, setUsersForSelectedZona] = useState<User[]>([])
   const [isLoadingUsersForZona, setIsLoadingUsersForZona] = useState(false)
+  /**
+   * Flujo "Oficio judicial de MPE/MPI vigente": cuando Mesa de Entrada deriva la demanda,
+   * suele querer asignarla a un usuario legal de protección de la zona. Este toggle filtra
+   * la lista a usuarios con legal=true y tipo_legal ∈ {PROTECCION, AMBOS}.
+   */
+  const [soloLegalesProteccion, setSoloLegalesProteccion] = useState(false)
 
   // Fetch main data using TanStack Query (only when modal is open)
   const { data: mainData, isLoading: isDataLoading, refetch: refetchMainData } = useConditionalData<{
@@ -155,6 +171,8 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
         )
 
         // Extract user details directly from user_info
+        // Preservamos legal + tipo_legal de la UserZona para mostrar badge "Legales protección"
+        // y permitir filtrado (flujo Oficio MPE/MPI vigente).
         const usersFromZona: User[] = (response.results || [])
           .filter((uz) => uz.user_info)
           .map((uz) => ({
@@ -163,6 +181,8 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
             first_name: uz.user_info.first_name,
             last_name: uz.user_info.last_name,
             email: uz.user_info.email,
+            legal: uz.legal,
+            tipo_legal: uz.tipo_legal ?? null,
           }))
         setUsersForSelectedZona(usersFromZona)
       } catch (error) {
@@ -242,8 +262,11 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
 
   // Get users for selected zona (now fetched via useEffect above)
   const filteredUsersByZona = useMemo(() => {
-    return usersForSelectedZona
-  }, [usersForSelectedZona])
+    if (!soloLegalesProteccion) return usersForSelectedZona
+    return usersForSelectedZona.filter(
+      (u) => u.legal === true && (u.tipo_legal === "PROTECCION" || u.tipo_legal === "AMBOS"),
+    )
+  }, [usersForSelectedZona, soloLegalesProteccion])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -330,9 +353,34 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
 
                   {selectedZona && (
                     <FormControl fullWidth>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Usuarios responsables
-                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          Usuarios responsables
+                        </Typography>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              size="small"
+                              checked={soloLegalesProteccion}
+                              onChange={(_, checked) => setSoloLegalesProteccion(checked)}
+                              disabled={isLoading || isLoadingUsersForZona}
+                            />
+                          }
+                          label={
+                            <Typography variant="caption" color="text.secondary">
+                              Solo legales de protección
+                            </Typography>
+                          }
+                          sx={{ m: 0 }}
+                        />
+                      </Box>
                       <Autocomplete
                         multiple
                         options={filteredUsersByZona}
@@ -340,6 +388,34 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
                         value={filteredUsersByZona.filter((user) => selectedUsers.includes(user.id))}
                         onChange={(_, newValue) => setSelectedUsers(newValue.map((user) => user.id))}
                         loading={isLoadingUsersForZona}
+                        renderOption={(props, option) => {
+                          const esLegalProteccion =
+                            option.legal === true &&
+                            (option.tipo_legal === "PROTECCION" || option.tipo_legal === "AMBOS")
+                          return (
+                            <li {...props} key={option.id}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+                                <Box sx={{ flexGrow: 1 }}>
+                                  <Typography variant="body2">{option.username}</Typography>
+                                  {(option.first_name || option.last_name) && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {[option.first_name, option.last_name].filter(Boolean).join(" ")}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                {esLegalProteccion && (
+                                  <Chip
+                                    icon={<GavelIcon />}
+                                    label="Legales protección"
+                                    size="small"
+                                    color="secondary"
+                                    sx={{ fontWeight: 500 }}
+                                  />
+                                )}
+                              </Box>
+                            </li>
+                          )
+                        }}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -358,22 +434,35 @@ const AsignarModal: React.FC<AsignarModalProps> = ({ open, onClose, demandaId, o
                           />
                         )}
                         renderTags={(value, getTagProps) =>
-                          value.map((option, index) => (
-                            <Chip
-                              key={option.id}
-                              label={option.username}
-                              size="small"
-                              {...getTagProps({ index })}
-                              sx={{
-                                bgcolor: "primary.light",
-                                color: "primary.contrastText",
-                                fontWeight: 500,
-                              }}
-                            />
-                          ))
+                          value.map((option, index) => {
+                            const esLegalProteccion =
+                              option.legal === true &&
+                              (option.tipo_legal === "PROTECCION" || option.tipo_legal === "AMBOS")
+                            const tagProps = getTagProps({ index })
+                            return (
+                              <Chip
+                                {...tagProps}
+                                key={option.id}
+                                label={option.username}
+                                size="small"
+                                icon={esLegalProteccion ? <GavelIcon /> : undefined}
+                                sx={{
+                                  bgcolor: esLegalProteccion ? "secondary.light" : "primary.light",
+                                  color: esLegalProteccion ? "secondary.contrastText" : "primary.contrastText",
+                                  fontWeight: 500,
+                                }}
+                              />
+                            )
+                          })
                         }
                         disabled={isLoading || isLoadingUsersForZona}
-                        noOptionsText={isLoadingUsersForZona ? "Cargando..." : "No hay usuarios en esta zona"}
+                        noOptionsText={
+                          isLoadingUsersForZona
+                            ? "Cargando..."
+                            : soloLegalesProteccion
+                              ? "No hay legales de protección en esta zona"
+                              : "No hay usuarios en esta zona"
+                        }
                       />
                       {selectedUsers.length === 0 && !isLoadingUsersForZona && (
                         <FormHelperText>Seleccione al menos un usuario responsable</FormHelperText>

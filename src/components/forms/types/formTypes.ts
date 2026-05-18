@@ -129,7 +129,7 @@ export interface VinculoFormData {
 }
 
 // Form variant for conditional rendering
-export type FormVariant = 'STANDARD' | 'CARGA_OFICIOS'
+export type FormVariant = 'STANDARD' | 'CARGA_OFICIOS' | 'OFICIO_JUDICIAL'
 
 // Objetivo de demanda options
 export type ObjetivoDemanda = 'PROTECCION' | 'PETICION_DE_INFORME' | 'CARGA_OFICIOS'
@@ -197,6 +197,10 @@ export interface FormData {
   tipo_informacion_judicial?: number | null;
   // CARGA_OFICIOS additional fields
   departamento_judicial?: string | null;       // CAPITAL | INTERIOR
+  // OFICIO_JUDICIAL fields
+  apellido?: string;
+  dni_oficio?: string | null;
+  user_responsable_id?: number | null;
   // REG-01: Vínculos para crear junto con la demanda
   vinculos?: VinculoFormData[];
 }

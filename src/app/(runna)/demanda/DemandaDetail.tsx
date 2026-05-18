@@ -309,7 +309,6 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
                   onSubmit={handleSubmit}
                   readOnly={isPeticionDeInforme || isEditingBlocked}
                   id={params.id}
-                  isPeticionDeInforme={isPeticionDeInforme || isEditingBlocked}
                   demandaId={Number.parseInt(params.id)}
                 />
                 {!isPeticionDeInforme && (

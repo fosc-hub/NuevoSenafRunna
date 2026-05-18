@@ -51,12 +51,12 @@ const OBJETIVO_OPTIONS: ObjetivoOption[] = [
   },
   {
     key: "PETICION_DE_INFORME",
-    label: "Petición de Informe",
+    label: "Oficio judicial de MPE, MPI vigente",
     description:
-      "Solicitud de informes sobre situación de niños, niñas y adolescentes bajo intervención.",
+      "Registro de oficios judiciales relacionados a medidas de protección excepcional o integral vigentes.",
     icon: DescriptionIcon,
     color: "#7c3aed", // Purple
-    variant: "STANDARD",
+    variant: "OFICIO_JUDICIAL",
   },
   {
     key: "CARGA_OFICIOS",
@@ -258,6 +258,8 @@ const ObjetivoSelectionStep: React.FC<ObjetivoSelectionStepProps> = ({
                       >
                         {option.variant === "CARGA_OFICIOS"
                           ? "→ Formulario judicial"
+                          : option.variant === "OFICIO_JUDICIAL"
+                          ? "→ Formulario oficio judicial"
                           : "→ Formulario estándar"}
                       </Typography>
                     </Box>

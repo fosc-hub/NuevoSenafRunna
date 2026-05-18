@@ -19,7 +19,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import { NavigateNext, NavigateBefore, Send, InfoOutlined, WarningAmber } from "@mui/icons-material"
+import { NavigateNext, NavigateBefore, Send, WarningAmber } from "@mui/icons-material"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3"
 import { es } from "date-fns/locale"
@@ -28,6 +28,7 @@ import Step1Form from "./Step1Form"
 import Step2Form from "./Step2Form"
 import Step3Form from "./Step3Form"
 import ObjetivoSelectionStep from "./steps/ObjetivoSelectionStep"
+import OficioJudicialMPEStep from "./steps/OficioJudicialMPEStep"
 import { CargaOficiosForm } from "./carga-oficios"
 import { submitFormData } from "./utils/api"
 import type { DropdownData, FormData } from "./types/formTypes"
@@ -67,12 +68,22 @@ const cargaOficiosSteps = [
   },
 ]
 
+// OFICIO_JUDICIAL flow steps (after Step 0)
+const oficioJudicialSteps = [
+  {
+    label: "Oficio Judicial",
+    description: "Datos del oficio judicial de MPE/MPI vigente",
+  },
+]
+
 /**
  * Get steps array based on form variant
  * When editing an existing demanda (objetivo already set), skip the objetivo step
  */
 const getSteps = (formVariant: FormVariant, includeObjetivo: boolean) => {
-  const baseSteps = formVariant === "CARGA_OFICIOS" ? cargaOficiosSteps : standardSteps
+  let baseSteps = standardSteps
+  if (formVariant === "CARGA_OFICIOS") baseSteps = cargaOficiosSteps
+  else if (formVariant === "OFICIO_JUDICIAL") baseSteps = oficioJudicialSteps
   return includeObjetivo ? [objetivoStep, ...baseSteps] : baseSteps
 }
 
@@ -80,9 +91,8 @@ const getSteps = (formVariant: FormVariant, includeObjetivo: boolean) => {
  * Derive FormVariant from ObjetivoDemanda
  */
 const getFormVariantFromObjetivo = (objetivo: ObjetivoDemanda | null | undefined): FormVariant => {
-  if (objetivo === "CARGA_OFICIOS") {
-    return "CARGA_OFICIOS"
-  }
+  if (objetivo === "CARGA_OFICIOS") return "CARGA_OFICIOS"
+  if (objetivo === "PETICION_DE_INFORME") return "OFICIO_JUDICIAL"
   return "STANDARD"
 }
 
@@ -93,7 +103,6 @@ interface MultiStepFormProps {
   onSubmit: (data: FormData) => void
   id?: string
   form?: string
-  isPeticionDeInforme?: boolean
   demandaId?: number
 }
 
@@ -119,7 +128,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   onSubmit,
   id,
   form,
-  isPeticionDeInforme: propIsPeticionDeInforme,
   demandaId,
 }) => {
   const [activeStep, setActiveStep] = useState(0)
@@ -151,11 +159,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
   // Get saved draft if it exists
   const savedDraft = getDraft(formId)
 
-  // Check if this is a petition for report from initialData or from prop
-  const isPeticionDeInforme = propIsPeticionDeInforme || initialData?.objetivo_de_demanda === "PETICION_DE_INFORME"
-
-  // If it's a petition for report or other blocked state, enforce readOnly
-  const isReadOnly = readOnly || isPeticionDeInforme
+  const isReadOnly = readOnly
 
   const methods = useForm<FormData>({
     mode: "onChange",
@@ -478,27 +482,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
           </Stepper>
         </Box>
 
-        {isPeticionDeInforme && initialData?.objetivo_de_demanda === "PETICION_DE_INFORME" && (
-          <Alert
-            severity="info"
-            icon={<InfoOutlined />}
-            sx={{
-              m: 3,
-              borderRadius: 1,
-              backgroundColor: "info.lighter",
-              "& .MuiAlert-message": {
-                color: "info.dark",
-              },
-            }}
-          >
-            <Typography variant="subtitle2">Modo de solo lectura</Typography>
-            <Typography variant="body2">
-              Esta es una petición de informe. La información solo puede ser visualizada, no modificada.
-            </Typography>
-          </Alert>
-        )}
-
-        {isReadOnly && !isPeticionDeInforme && (
+        {isReadOnly && (
           <Alert
             severity="warning"
             icon={<WarningAmber />}
@@ -560,6 +544,11 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({
               {/* CARGA_OFICIOS Flow content step */}
               {formVariant === "CARGA_OFICIOS" && !isOnObjetivoStep && contentStepIndex === 0 && (
                 <CargaOficiosForm dropdownData={dropdownData} readOnly={isReadOnly} />
+              )}
+
+              {/* OFICIO_JUDICIAL Flow content step */}
+              {formVariant === "OFICIO_JUDICIAL" && !isOnObjetivoStep && contentStepIndex === 0 && (
+                <OficioJudicialMPEStep dropdownData={dropdownData} readOnly={isReadOnly} />
               )}
             </LocalizationProvider>
           )}

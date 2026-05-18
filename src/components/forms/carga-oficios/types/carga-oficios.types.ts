@@ -10,7 +10,7 @@
 // =============================================================================
 
 /** Possible form variants based on objetivo_de_demanda selection */
-export type FormVariant = 'STANDARD' | 'CARGA_OFICIOS'
+export type FormVariant = 'STANDARD' | 'CARGA_OFICIOS' | 'OFICIO_JUDICIAL'
 
 /** Possible objetivo de demanda values */
 export type ObjetivoDemanda = 'PROTECCION' | 'PETICION_DE_INFORME' | 'CARGA_OFICIOS'

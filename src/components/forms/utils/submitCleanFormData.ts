@@ -458,6 +458,19 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
       return { localizacion: loc }
     })(),
 
+    // OFICIO_JUDICIAL (PETICION_DE_INFORME) specific fields
+    ...(formData.objetivo_de_demanda === 'PETICION_DE_INFORME' && {
+      nombre: formData.nombre || null,
+      apellido: formData.apellido || null,
+      dni_oficio: formData.dni_oficio || null,
+      ...(formData.user_responsable_id ? { user_responsable_id: formData.user_responsable_id } : {}),
+      nro_sac: formData.nro_sac || null,
+      numero_expediente: formData.numero_expediente || null,
+      nro_oficio_web: formData.nro_oficio_web || null,
+      categoria_informacion_judicial: formData.categoria_informacion_judicial || null,
+      ...(formData.tipo_oficio ? { tipo_oficio: formData.tipo_oficio } : {}),
+    }),
+
     // CARGA_OFICIOS specific fields (REG-01 GAP-06)
     ...(formData.objetivo_de_demanda === 'CARGA_OFICIOS' && {
       tipo_medida_evaluado: formData.tipo_medida_evaluado,

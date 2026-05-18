@@ -596,7 +596,7 @@ const LegajoTable: React.FC = () => {
 
           return (
             <AlertasChip
-              alertas={params.row.indicadores?.alertas || []}
+              alertas={params.row.alertas || []}
               virtualAlerts={virtualAlerts}
             />
           )
@@ -1046,6 +1046,7 @@ const LegajoTable: React.FC = () => {
         fecha_apertura: legajo.fecha_apertura,
         medidas_activas: legajo.medidas_activas,
         indicadores: legajo.indicadores,
+        alertas: legajo.alertas || legajo.indicadores?.alertas || [],
         oficios: legajo.oficios,
         allStates: (() => {
           const states = new Set<string>()

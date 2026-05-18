@@ -182,7 +182,7 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
     setIsMarkingSubido(true)
     try {
       await create(
-        `demandas/${params.id}/marcar-subido-poder-judicial/`,
+        `demanda/${params.id}/marcar-subido-poder-judicial/`,
         {},
         true,
         "Demanda marcada como subida al Poder Judicial",
@@ -384,7 +384,11 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
                 <MultiStepForm
                   initialData={formData}
                   onSubmit={handleSubmit}
-                  readOnly={isPeticionDeInforme || isEditingBlocked}
+                  // PETICION_DE_INFORME (oficio MPE/MPI vigente) ahora es editable:
+                  // Rosa/legales completa tipo_oficio + vínculos después de que Dani
+                  // carga lo básico. Sólo bloqueamos en estados terminales
+                  // (ARCHIVADA, ADMITIDA, PENDIENTE_AUTORIZACION, SUBIDO_A_PODER_JUDICIAL).
+                  readOnly={isEditingBlocked}
                   id={params.id}
                   demandaId={Number.parseInt(params.id)}
                 />

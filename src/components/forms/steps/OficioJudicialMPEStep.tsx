@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Box,
   Grid,
@@ -10,11 +10,13 @@ import {
   Autocomplete,
   Typography,
 } from "@mui/material"
+import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { Controller, useFormContext, useWatch } from "react-hook-form"
 import { useCatalogData, extractArray } from "@/hooks/useApiQuery"
 import { useUserPermissions } from "@/app/(runna)/legajo-mesa/hooks/useUserPermissions"
 import FormSection from "../components/form-section"
 import AdjuntosSection from "../carga-oficios/components/AdjuntosSection"
+import { parseDateSafely, formatDateSafely } from "../utils/dateUtils"
 import type { FormData, DropdownData } from "../types/formTypes"
 
 interface Usuario {
@@ -50,6 +52,16 @@ const OficioJudicialMPEStep: React.FC<OficioJudicialMPEStepProps> = ({
   const selectedCategoria = useWatch({ control, name: "categoria_informacion_judicial" })
 
   const adjuntos = watch("adjuntos") || []
+
+  // Default ambas fechas a hoy si vienen vacías (Dani suele cargar el oficio
+  // el mismo día que llega). Estos campos son NOT NULL en TDemandaBase y sin
+  // defaults el backend devuelve 400 "Este campo es requerido".
+  useEffect(() => {
+    const today = formatDateSafely(new Date())
+    if (!watch("fecha_ingreso_senaf")) setValue("fecha_ingreso_senaf", today)
+    if (!watch("fecha_oficio_documento")) setValue("fecha_oficio_documento", today)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const filteredSubmotivos = useMemo(() => {
     if (!selectedMotivo || !dropdownData.categoria_submotivo) return []
@@ -88,6 +100,56 @@ const OficioJudicialMPEStep: React.FC<OficioJudicialMPEStepProps> = ({
       {/* Datos del oficio */}
       <FormSection title="Datos del Oficio">
         <Grid container spacing={3}>
+          {/* Fechas requeridas por el backend (NOT NULL en TDemandaBase). */}
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="fecha_oficio_documento"
+              control={control}
+              rules={{ required: "La fecha del oficio es obligatoria" }}
+              render={({ field, fieldState: { error } }) => (
+                <DatePicker
+                  label="Fecha del Oficio *"
+                  disabled={readOnly}
+                  value={parseDateSafely(field.value)}
+                  onChange={(date) => field.onChange(formatDateSafely(date))}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      required: true,
+                      error: !!error,
+                      helperText: error?.message,
+                      size: "medium",
+                    },
+                  }}
+                />
+              )}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="fecha_ingreso_senaf"
+              control={control}
+              rules={{ required: "La fecha de ingreso a SENAF es obligatoria" }}
+              render={({ field, fieldState: { error } }) => (
+                <DatePicker
+                  label="Fecha Ingreso SENAF *"
+                  disabled={readOnly}
+                  value={parseDateSafely(field.value)}
+                  onChange={(date) => field.onChange(formatDateSafely(date))}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      required: true,
+                      error: !!error,
+                      helperText: error?.message || "Fecha en que el oficio llega a SENAF",
+                      size: "medium",
+                    },
+                  }}
+                />
+              )}
+            />
+          </Grid>
+
           <Grid item xs={12} md={6}>
             <Controller
               name="nombre"

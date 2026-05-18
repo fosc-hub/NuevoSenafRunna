@@ -14,6 +14,8 @@ import MultiStepForm from "@/components/forms/MultiStepForm"
 import { EnviarRespuestaForm } from "./ui/EnviarRespuestaModal"
 import { RegistrarActividadForm } from "./ui/RegistrarActividadModal"
 import { ConexionesDemandaTab } from "./ui/ConexionesDemandaTab"
+import { DemandaSuccessModal } from "@/app/(runna)/nuevoingreso/components/DemandaSuccessModal"
+import type { DemandaCreatedResponse } from "@/app/(runna)/nuevoingreso/types/demanda-response"
 import { useRouter } from "next/navigation"
 import { fetchCaseData } from "@/components/forms/utils/apiToFormData"
 import { useUser } from "@/utils/auth/userZustand"
@@ -66,6 +68,10 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
   const [tabValue, setTabValue] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isMarkingSubido, setIsMarkingSubido] = useState(false)
+  // Modal de éxito reutilizado de nuevoingreso para mostrar actividades
+  // creadas automáticamente cuando Rosa setea tipo_oficio (post-creación).
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successResponse, setSuccessResponse] = useState<DemandaCreatedResponse | null>(null)
   const router = useRouter()
   const user = useUser((state) => state.user)
 
@@ -127,9 +133,46 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
     setTabValue(newValue)
   }
 
-  const handleSubmit = (data: FormData) => {
-    console.log("Form submitted:", data)
-    // The actual submission is handled in the MultiStepForm component
+  const handleSubmit = (data: any) => {
+    // El submit real lo dispara MultiStepForm vía mutation. Acá recibimos el
+    // response completo del backend. Para PETICION_DE_INFORME (oficio MPE/MPI):
+    // si Rosa seteó tipo_oficio y había vinculos existentes, el backend dispara
+    // creación de actividades y las devuelve en actividades_creadas. Mostramos
+    // el mismo modal que usa nuevoingreso para visualizar las actividades.
+    const response = data as Partial<DemandaCreatedResponse>
+    const actividadesCreadas = response?.actividades_creadas
+    if (Array.isArray(actividadesCreadas) && actividadesCreadas.length > 0) {
+      setSuccessResponse(response as DemandaCreatedResponse)
+      setShowSuccessModal(true)
+      // Refrescar formData local para que el banner de "Subir al PJ" / estados
+      // refleje cualquier cambio que vino del backend (ej. estado_demanda).
+      if (formData) {
+        setFormData({
+          ...formData,
+          ...(response.demanda
+            ? {
+                estado_demanda: response.demanda.estado_demanda as any,
+                objetivo_de_demanda: response.demanda.objetivo_de_demanda as any,
+              }
+            : {}),
+        })
+      }
+    }
+  }
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false)
+    setSuccessResponse(null)
+  }
+
+  const handleNavigateToMedidaFromModal = (legajoId: number, medidaId: number) => {
+    handleCloseSuccessModal()
+    router.push(`/legajo/${legajoId}/medida/${medidaId}`)
+  }
+
+  const handleNavigateToMesaFromModal = () => {
+    handleCloseSuccessModal()
+    router.push("/mesadeentrada")
   }
 
   const handleEnviarEvaluacion = async () => {
@@ -446,6 +489,18 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
           )}
         </Paper>
       </Box>
+
+      {/* Modal compartido con nuevoingreso. Aparece cuando un edit dispara
+          creación automática de actividades (Rosa completa tipo_oficio en
+          una demanda con vínculos pre-existentes). */}
+      <DemandaSuccessModal
+        open={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        data={successResponse}
+        onNavigateToDemanda={handleCloseSuccessModal}
+        onNavigateToMesaEntrada={handleNavigateToMesaFromModal}
+        onNavigateToMedida={handleNavigateToMedidaFromModal}
+      />
     </Box>
   )
 }

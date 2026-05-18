@@ -3,6 +3,8 @@
 import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import {
+  Alert,
+  AlertTitle,
   Box,
   Grid,
   TextField,
@@ -10,6 +12,7 @@ import {
   Autocomplete,
   Typography,
 } from "@mui/material"
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { Controller, useFormContext, useWatch } from "react-hook-form"
 import { useCatalogData, extractArray } from "@/hooks/useApiQuery"
@@ -50,6 +53,9 @@ const OficioJudicialMPEStep: React.FC<OficioJudicialMPEStepProps> = ({
 
   // Watch categoria to filter tipo_oficio
   const selectedCategoria = useWatch({ control, name: "categoria_informacion_judicial" })
+
+  // Watch tipo_oficio to show/hide the "no se crean actividades" warning.
+  const selectedTipoOficio = useWatch({ control, name: "tipo_oficio" })
 
   const adjuntos = watch("adjuntos") || []
 
@@ -606,6 +612,22 @@ const OficioJudicialMPEStep: React.FC<OficioJudicialMPEStepProps> = ({
 
       {/* Categoría de Oficio y Tipo de Oficio */}
       <FormSection title="Clasificación del Oficio">
+        {!selectedTipoOficio && (
+          <Alert
+            severity="info"
+            icon={<InfoOutlinedIcon />}
+            sx={{ mb: 2 }}
+          >
+            <AlertTitle sx={{ fontWeight: 600, mb: 0.5 }}>
+              Opcional, pero recomendado
+            </AlertTitle>
+            <Typography variant="body2">
+              Sin <strong>Tipo de Oficio</strong>, cuando legales vincule esta demanda
+              al legajo/medida vigente <strong>no se crearán actividades automáticamente</strong>;
+              habrá que cargarlas a mano. Si sabés el tipo, completalo ahora.
+            </Typography>
+          </Alert>
+        )}
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Controller
@@ -668,7 +690,7 @@ const OficioJudicialMPEStep: React.FC<OficioJudicialMPEStepProps> = ({
                           error?.message ||
                           (!selectedCategoria
                             ? "Seleccione primero una categoría"
-                            : "")
+                            : "Necesario para crear actividades automáticamente al vincular")
                         }
                       />
                     )}

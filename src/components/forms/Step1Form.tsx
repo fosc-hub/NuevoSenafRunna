@@ -78,6 +78,7 @@ const FileUploadSection = ({
       nombre: file.name,
       tipo: file.type,
       tamano: file.size,
+      file: file as File,
     }
   })
 

@@ -55,6 +55,10 @@ export interface FileItem {
   url?: string
   fecha_subida?: string
   tamano?: number
+  /** Referencia opcional al File local (pendiente de subir). Si está
+   *  presente, el botón "Ver" preview-ea el blob directamente sin necesidad
+   *  de URL del backend. */
+  file?: File
 }
 
 export type UploadCallback = (file: File) => void | Promise<void>
@@ -127,7 +131,7 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
   // pasó `onPreview`. Resolver de URL: archivos con URL relativa se prefijan
   // con `NEXT_PUBLIC_API_URL` quitando el sufijo `/api` (los archivos viven
   // en `/media/...`, no bajo `/api`).
-  const { openUrl, PdfModal } = usePdfViewer()
+  const { openUrl, openBlob, PdfModal } = usePdfViewer()
 
   const resolveFileUrl = (rawUrl: string): string => {
     if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://") || rawUrl.startsWith("blob:")) {
@@ -140,6 +144,15 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
   const handlePreview = (file: FileItem) => {
     if (onPreview) {
       onPreview(file)
+      return
+    }
+    // Preferir el File local si está presente (archivo recién seleccionado,
+    // aún no subido al backend): preview vía blob URL.
+    if (file.file) {
+      openBlob(file.file, {
+        title: title || "Visor de PDF",
+        fileName: file.nombre,
+      })
       return
     }
     if (!file.url) return
@@ -375,8 +388,8 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: "flex", gap: 1 }}>
-                      {/* Preview Button (PDFs con URL) */}
-                      {enablePreview && file.url && isPdfFile(file.nombre) && (
+                      {/* Preview Button (PDFs con URL o File local) */}
+                      {enablePreview && (file.url || file.file) && isPdfFile(file.nombre) && (
                         <IconButton
                           size="small"
                           onClick={() => handlePreview(file)}

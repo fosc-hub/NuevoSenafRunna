@@ -27,6 +27,7 @@ const AdjuntosSection: React.FC<AdjuntosSectionProps> = ({
         nombre: file.name,
         tipo: file.type,
         tamano: file.size,
+        file,
       }
     } else {
       return {

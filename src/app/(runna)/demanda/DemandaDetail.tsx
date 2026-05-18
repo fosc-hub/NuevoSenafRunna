@@ -8,6 +8,8 @@ import SendIcon from "@mui/icons-material/Send"
 import ArticleIcon from "@mui/icons-material/Article"
 import GavelIcon from "@mui/icons-material/Gavel"
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"
+import LinkIcon from "@mui/icons-material/Link"
+import FolderOpenIcon from "@mui/icons-material/FolderOpen"
 import { create, update } from "@/app/api/apiService"
 import type { FormData } from "@/components/forms/types/formTypes"
 import MultiStepForm from "@/components/forms/MultiStepForm"
@@ -396,6 +398,57 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
               Una vez que descargues el informe de la actividad y lo subas a la plataforma del Poder Judicial,
               marcá la demanda como subida para cerrar el ciclo.
             </Typography>
+          </Alert>
+        )}
+
+        {/* Vínculos a legajos / medidas — visibilidad rápida del lazo creado por Rosa.
+            Click navega al legajo o medida correspondiente. */}
+        {Array.isArray((formData as any)?.vinculos) && (formData as any).vinculos.length > 0 && (
+          <Alert
+            severity="info"
+            icon={<LinkIcon />}
+            variant="outlined"
+            sx={{ mb: 3, "& .MuiAlert-message": { width: "100%" } }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Conectada con {(formData as any).vinculos.length === 1 ? "el legajo" : "los legajos"}:
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {(formData as any).vinculos.map((v: any, i: number) => {
+                const legajoId = v?.legajo ?? v?.legajo_info?.id
+                const legajoNum = v?.legajo_info?.numero || legajoId
+                const nnyaNombre = v?.legajo_info?.nnya_nombre
+                const medida = v?.legajo_info?.medidas_activas?.[0]
+                if (!legajoId) return null
+                return (
+                  <Box
+                    key={i}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      startIcon={<FolderOpenIcon />}
+                      onClick={() =>
+                        medida
+                          ? router.push(`/legajo/${legajoId}/medida/${medida.id}`)
+                          : router.push(`/legajo/${legajoId}`)
+                      }
+                    >
+                      Legajo {legajoNum}
+                      {nnyaNombre && nnyaNombre !== String(legajoNum) ? ` · ${nnyaNombre}` : ""}
+                      {medida ? ` · ${medida.tipo_medida || "Medida"} ${medida.numero_medida || medida.id}` : ""}
+                    </Button>
+                  </Box>
+                )
+              })}
+            </Box>
           </Alert>
         )}
 

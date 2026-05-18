@@ -171,13 +171,17 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                   borderLeft: "4px solid",
                   borderLeftColor: demanda.estado_demanda === "ADMITIDA" ? "primary.main" :
                                    demanda.estado_demanda === "EN_EVALUACION" ? "info.main" :
-                                   demanda.estado_demanda === "RECHAZADA" ? "error.main" : "grey.400",
+                                   demanda.estado_demanda === "RECHAZADA" ? "error.main" :
+                                   demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success.main" :
+                                   "grey.400",
                   transition: "all 0.2s ease",
                   "&:hover": {
                     boxShadow: 1,
                     borderColor: demanda.estado_demanda === "ADMITIDA" ? "primary.light" :
                                  demanda.estado_demanda === "EN_EVALUACION" ? "info.light" :
-                                 demanda.estado_demanda === "RECHAZADA" ? "error.light" : "grey.300",
+                                 demanda.estado_demanda === "RECHAZADA" ? "error.light" :
+                                 demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success.light" :
+                                 "grey.300",
                   },
                 }}
               >
@@ -192,17 +196,25 @@ export const DemandasSection: React.FC<DemandasSectionProps> = ({ legajoData }) 
                       <AssessmentIcon sx={{
                         color: demanda.estado_demanda === "ADMITIDA" ? "primary.main" :
                                demanda.estado_demanda === "EN_EVALUACION" ? "info.main" :
-                               demanda.estado_demanda === "RECHAZADA" ? "error.main" : "grey.600"
+                               demanda.estado_demanda === "RECHAZADA" ? "error.main" :
+                               demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success.main" :
+                               "grey.600"
                       }} />
                       <Typography variant="h6" sx={{ fontWeight: 700 }}>
                         {demanda.codigo_demanda}
                       </Typography>
                       <Chip
-                        label={demanda.estado_demanda?.replace(/_/g, " ")}
+                        label={
+                          demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL"
+                            ? "Subido al PJ"
+                            : demanda.estado_demanda?.replace(/_/g, " ")
+                        }
                         color={
                           demanda.estado_demanda === "ADMITIDA" ? "primary" :
                           demanda.estado_demanda === "EN_EVALUACION" ? "info" :
-                          demanda.estado_demanda === "RECHAZADA" ? "error" : "default"
+                          demanda.estado_demanda === "RECHAZADA" ? "error" :
+                          demanda.estado_demanda === "SUBIDO_A_PODER_JUDICIAL" ? "success" :
+                          "default"
                         }
                         size="small"
                         variant="outlined"

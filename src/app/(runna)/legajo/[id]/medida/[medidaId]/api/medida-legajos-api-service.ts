@@ -10,6 +10,7 @@
  * - DELETE /api/medidas/{medida_id}/legajos/{legajo_id}/      → desvincular (no aplica al primario)
  */
 
+import { toast } from "react-toastify"
 import { create, remove } from "@/app/api/apiService"
 import type { LegajoAdicionalMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
@@ -41,4 +42,5 @@ export const desvincularLegajoAdicional = async (
   legajoId: number
 ): Promise<void> => {
   await remove(`medidas/${medidaId}/legajos`, legajoId)
+  toast.success("Legajo desvinculado de la medida")
 }

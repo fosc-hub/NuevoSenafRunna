@@ -537,7 +537,11 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
         <LegajosAdicionalesBanner
           legajosAdicionales={medidaApiData?.legajos_adicionales}
           legajoPrimarioNumero={medidaApiData?.legajo?.numero}
+          legajoPrimarioId={medidaApiData?.legajo?.id}
           nroSac={medidaApiData?.nro_sac}
+          medidaId={medidaApiData?.id}
+          medidaTipo={medidaApiData?.tipo_medida}
+          onChange={refetchMedida}
         />
 
         {medidaData.tipo === "MPE" ? (

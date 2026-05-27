@@ -376,11 +376,8 @@ const CargaOficiosForm: React.FC<CargaOficiosFormInternalProps> = ({
       <FormSection title="Origen del Oficio" icon={AccountBalanceIcon}>
         <OrganoJudicialSection
           bloquesRemitente={bloquesJudiciales}
+          circunscripcionesJudiciales={dropdownData.circunscripcion_judicial || []}
           tipoInstitucionDemanda={dropdownData.tipo_institucion_demanda || []}
-          departamentoJudicialChoices={dropdownData.departamento_judicial_choices || [
-            { key: "CAPITAL", value: "Capital" },
-            { key: "INTERIOR", value: "Interior" },
-          ]}
           readOnly={readOnly}
         />
       </FormSection>

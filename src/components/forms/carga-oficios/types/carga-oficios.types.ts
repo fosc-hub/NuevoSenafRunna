@@ -102,13 +102,21 @@ export interface BloqueDatosRemitente {
   nombre: string
 }
 
-/** Tipo institucion demanda - Organismo */
+/** Tipo institucion demanda - Órgano Judicial */
 export interface TipoInstitucionDemanda {
   id: number
   nombre: string
   /** FK al tipo de organismo - API may return either field name */
   bloque_datos_remitente?: number
   bloque_datos_remitente_id?: number
+  /** FK a circunscripción judicial (solo órganos judiciales) */
+  circunscripcion_judicial?: number | null
+}
+
+/** Circunscripción Judicial (nivel intermedio en jerarquía judicial) */
+export interface CircunscripcionJudicial {
+  id: number
+  nombre: string
 }
 
 /** Departamento judicial choices */
@@ -154,9 +162,10 @@ export interface CargaOficiosFormData {
   tipo_oficio: number | null // FK to TTipoOficio - Required for activity creation
 
   // === Origen del Oficio Section ===
-  bloque_datos_remitente: number | null // Tipo de Organismo (OBLIGATORIO)
-  institucion: number | null // Organismo - filtered by bloque_datos_remitente (OBLIGATORIO)
-  departamento_judicial: string | null // CAPITAL | INTERIOR
+  bloque_datos_remitente: number | null // Tipo Órgano Judicial (OBLIGATORIO)
+  circunscripcion_judicial: number | null // Circunscripción Judicial (OBLIGATORIO)
+  institucion: number | null // Órgano Judicial — filtered by Tipo + Circunscripción (OBLIGATORIO)
+  departamento_judicial: string | null // DEPRECATED — superseded by circunscripcion_judicial
 
   // === Expediente Section ===
   numero_expediente?: string // SAC number (opcional)
@@ -208,9 +217,10 @@ export interface CargaOficiosDropdownData {
   tipo_oficio?: Array<{ id: number; nombre: string; descripcion?: string; activo?: boolean; orden?: number; categoria?: number }>
 
   // Origen del Oficio dropdowns
-  bloques_datos_remitente: Array<{ id: number; nombre: string }> // Tipo de Organismo
-  tipo_institucion_demanda: Array<{ id: number; nombre: string; bloque_datos_remitente?: number; bloque_datos_remitente_id?: number }> // Organismo
-  departamento_judicial_choices: Array<{ key: string; value: string }> // CAPITAL | INTERIOR
+  bloques_datos_remitente: Array<{ id: number; nombre: string }> // Tipo Órgano Judicial
+  circunscripcion_judicial?: CircunscripcionJudicial[] // Circunscripción Judicial
+  tipo_institucion_demanda: TipoInstitucionDemanda[] // Órgano Judicial (con FK a circunscripción)
+  departamento_judicial_choices?: Array<{ key: string; value: string }> // DEPRECATED
 
   // Vínculos dropdown
   tipos_vinculo?: Array<{
@@ -264,8 +274,8 @@ export interface PlaceholderFieldProps {
 
 export interface OrganoJudicialSectionProps {
   bloquesRemitente: Array<{ id: number; nombre: string }>
-  tipoInstitucionDemanda: Array<{ id: number; nombre: string; bloque_datos_remitente?: number; bloque_datos_remitente_id?: number }>
-  departamentoJudicialChoices: Array<{ key: string; value: string }>
+  circunscripcionesJudiciales: CircunscripcionJudicial[]
+  tipoInstitucionDemanda: TipoInstitucionDemanda[]
   readOnly?: boolean
 }
 

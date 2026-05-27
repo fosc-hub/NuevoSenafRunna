@@ -161,6 +161,7 @@ export function createPatchFromChanges(originalData: any, updatedData: any): any
     "plazo_dias",
     "fecha_vencimiento_oficio",
     "departamento_judicial",
+    "circunscripcion_judicial",
   ]
 
   simpleFields.forEach((field) => {

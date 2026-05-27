@@ -1,76 +1,57 @@
 "use client"
 
 /**
- * OrganoJudicialSection - Origen del Oficio section
+ * OrganoJudicialSection - Origen del Oficio
  *
- * Tres campos en cascada (jerarquía):
- *   1. Tipo Órgano Judicial   (bloque_datos_remitente) — OBLIGATORIO
- *   2. Circunscripción Judicial — OBLIGATORIO (client-side, ver constants/circunscripcionesJudiciales.ts)
- *   3. Órgano Judicial        (institucion / tipo_institucion_demanda) — OBLIGATORIO, filtrado por 1 y 2
+ * Tres campos en cascada (jerarquía judicial):
+ *   1. Tipo Órgano Judicial   (bloque_datos_remitente)        — OBLIGATORIO
+ *   2. Circunscripción Judicial (circunscripcion_judicial FK) — OBLIGATORIO
+ *   3. Órgano Judicial        (institucion / tipo_institucion_demanda) — OBLIGATORIO
  *
- * NOTA: hasta que el backend agregue `TCircunscripcionJudicial` + FK en
- * TTipoInstitucionDemanda, el filtro por circunscripción se resuelve en el
- * cliente vía ORGANO_TO_CIRCUNSCRIPCION. El backend sigue recibiendo el mismo
- * payload (`bloque_datos_remitente` + `institucion`).
+ * Los 3 niveles vienen del endpoint /api/registro-demanda-form-dropdowns/.
+ * Cada órgano (TTipoInstitucionDemanda) trae `circunscripcion_judicial` que
+ * permite el filtro en cascada Tipo+Circunscripción → Órgano.
  */
 
 import type React from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Box, Grid, TextField, Autocomplete } from "@mui/material"
 import { Controller, useFormContext } from "react-hook-form"
 import type { OrganoJudicialSectionProps, CargaOficiosFormData } from "../types/carga-oficios.types"
-import {
-  CIRCUNSCRIPCIONES_JUDICIALES,
-  ORGANO_TO_CIRCUNSCRIPCION,
-} from "../constants/circunscripcionesJudiciales"
 
 const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
   bloquesRemitente,
+  circunscripcionesJudiciales,
   tipoInstitucionDemanda,
   readOnly = false,
 }) => {
   const { control, watch, setValue } = useFormContext<CargaOficiosFormData>()
 
   const watchedBloqueRemitente = watch("bloque_datos_remitente")
-  const watchedInstitucion = watch("institucion")
+  const watchedCircunscripcion = watch("circunscripcion_judicial")
 
-  // Circunscripción seleccionada: estado local (no se persiste al backend hasta
-  // que exista FK; se infiere de la institucion ya guardada al editar).
-  const [circunscripcionId, setCircunscripcionId] = useState<number | null>(() =>
-    watchedInstitucion ? ORGANO_TO_CIRCUNSCRIPCION[watchedInstitucion] ?? null : null,
-  )
-
-  // Si el form se rehidrata con un institucion preexistente, sincronizar la circ.
-  useEffect(() => {
-    if (watchedInstitucion && circunscripcionId == null) {
-      const inferred = ORGANO_TO_CIRCUNSCRIPCION[watchedInstitucion]
-      if (inferred) setCircunscripcionId(inferred)
-    }
-  }, [watchedInstitucion, circunscripcionId])
-
-  // Circunscripciones disponibles según el Tipo Órgano elegido — solo aquellas
-  // que tengan al menos un órgano del tipo seleccionado.
+  // Circunscripciones que efectivamente tienen al menos un órgano del Tipo
+  // seleccionado — evita mostrar opciones vacías.
   const circunscripcionesDisponibles = useMemo(() => {
-    if (!watchedBloqueRemitente) return CIRCUNSCRIPCIONES_JUDICIALES
+    if (!watchedBloqueRemitente) return circunscripcionesJudiciales
     const validIds = new Set<number>()
     for (const inst of tipoInstitucionDemanda) {
       const bloqueId = inst.bloque_datos_remitente_id ?? inst.bloque_datos_remitente
       if (bloqueId !== watchedBloqueRemitente) continue
-      const circId = ORGANO_TO_CIRCUNSCRIPCION[inst.id]
-      if (circId) validIds.add(circId)
+      if (inst.circunscripcion_judicial) validIds.add(inst.circunscripcion_judicial)
     }
-    return CIRCUNSCRIPCIONES_JUDICIALES.filter((c) => validIds.has(c.id))
-  }, [watchedBloqueRemitente, tipoInstitucionDemanda])
+    return circunscripcionesJudiciales.filter((c) => validIds.has(c.id))
+  }, [watchedBloqueRemitente, circunscripcionesJudiciales, tipoInstitucionDemanda])
 
   // Órganos filtrados por Tipo + Circunscripción
   const filteredInstituciones = useMemo(() => {
-    if (!watchedBloqueRemitente || !circunscripcionId) return []
+    if (!watchedBloqueRemitente || !watchedCircunscripcion) return []
     return tipoInstitucionDemanda.filter((inst) => {
       const bloqueId = inst.bloque_datos_remitente_id ?? inst.bloque_datos_remitente
       if (bloqueId !== watchedBloqueRemitente) return false
-      return ORGANO_TO_CIRCUNSCRIPCION[inst.id] === circunscripcionId
+      return inst.circunscripcion_judicial === watchedCircunscripcion
     })
-  }, [watchedBloqueRemitente, circunscripcionId, tipoInstitucionDemanda])
+  }, [watchedBloqueRemitente, watchedCircunscripcion, tipoInstitucionDemanda])
 
   return (
     <Box>
@@ -90,7 +71,7 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
                 onChange={(_, newValue) => {
                   field.onChange(newValue ? newValue.id : null)
                   // Cambiar Tipo invalida Circunscripción y Órgano
-                  setCircunscripcionId(null)
+                  setValue("circunscripcion_judicial", null)
                   setValue("institucion", null)
                 }}
                 renderInput={(params) => (
@@ -110,36 +91,45 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
 
         {/* 2. Circunscripción Judicial (filtrada por Tipo) */}
         <Grid item xs={12}>
-          <Autocomplete
-            disabled={readOnly || !watchedBloqueRemitente}
-            options={circunscripcionesDisponibles}
-            getOptionLabel={(option) => option.nombre || ""}
-            value={
-              CIRCUNSCRIPCIONES_JUDICIALES.find((c) => c.id === circunscripcionId) || null
-            }
-            onChange={(_, newValue) => {
-              setCircunscripcionId(newValue ? newValue.id : null)
-              // Cambiar Circunscripción invalida Órgano
-              setValue("institucion", null)
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Circunscripción Judicial *"
-                required
-                helperText={
-                  !watchedBloqueRemitente
-                    ? "Primero seleccione un Tipo Órgano Judicial"
-                    : `${circunscripcionesDisponibles.length} circunscripciones disponibles`
+          <Controller
+            name="circunscripcion_judicial"
+            control={control}
+            rules={{ required: "La circunscripción judicial es obligatoria" }}
+            render={({ field, fieldState: { error } }) => (
+              <Autocomplete
+                disabled={readOnly || !watchedBloqueRemitente}
+                options={circunscripcionesDisponibles}
+                getOptionLabel={(option) => option.nombre || ""}
+                value={
+                  circunscripcionesJudiciales.find((c) => c.id === field.value) || null
                 }
-                placeholder="Seleccione la circunscripción judicial"
+                onChange={(_, newValue) => {
+                  field.onChange(newValue ? newValue.id : null)
+                  // Cambiar Circunscripción invalida Órgano
+                  setValue("institucion", null)
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Circunscripción Judicial *"
+                    required
+                    error={!!error}
+                    helperText={
+                      error?.message ||
+                      (!watchedBloqueRemitente
+                        ? "Primero seleccione un Tipo Órgano Judicial"
+                        : `${circunscripcionesDisponibles.length} circunscripciones disponibles`)
+                    }
+                    placeholder="Seleccione la circunscripción judicial"
+                  />
+                )}
+                noOptionsText={
+                  !watchedBloqueRemitente
+                    ? "Seleccione primero un Tipo Órgano Judicial"
+                    : "No hay circunscripciones para este tipo"
+                }
               />
             )}
-            noOptionsText={
-              !watchedBloqueRemitente
-                ? "Seleccione primero un Tipo Órgano Judicial"
-                : "No hay circunscripciones para este tipo"
-            }
           />
         </Grid>
 
@@ -151,7 +141,7 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
             rules={{ required: "El órgano judicial es obligatorio" }}
             render={({ field, fieldState: { error } }) => (
               <Autocomplete
-                disabled={readOnly || !watchedBloqueRemitente || !circunscripcionId}
+                disabled={readOnly || !watchedBloqueRemitente || !watchedCircunscripcion}
                 options={filteredInstituciones}
                 getOptionLabel={(option) => option.nombre || ""}
                 value={filteredInstituciones.find((i) => i.id === field.value) || null}
@@ -166,7 +156,7 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
                       error?.message ||
                       (!watchedBloqueRemitente
                         ? "Primero seleccione un Tipo Órgano Judicial"
-                        : !circunscripcionId
+                        : !watchedCircunscripcion
                           ? "Seleccione una Circunscripción Judicial"
                           : `${filteredInstituciones.length} órganos disponibles`)
                     }
@@ -176,7 +166,7 @@ const OrganoJudicialSection: React.FC<OrganoJudicialSectionProps> = ({
                 noOptionsText={
                   !watchedBloqueRemitente
                     ? "Seleccione primero un Tipo Órgano Judicial"
-                    : !circunscripcionId
+                    : !watchedCircunscripcion
                       ? "Seleccione primero una Circunscripción Judicial"
                       : "No hay órganos para esta combinación"
                 }

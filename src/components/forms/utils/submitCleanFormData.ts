@@ -489,6 +489,7 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
       plazo_dias: formData.plazo_dias ? Number(formData.plazo_dias) : null,
       fecha_vencimiento_oficio: formData.fecha_vencimiento_oficio || null,
       departamento_judicial: formData.departamento_judicial || null,
+      circunscripcion_judicial: formData.circunscripcion_judicial ?? null,
     }),
 
     relacion_demanda: {

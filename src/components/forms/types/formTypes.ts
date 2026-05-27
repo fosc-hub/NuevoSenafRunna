@@ -196,7 +196,8 @@ export interface FormData {
   categoria_informacion_judicial?: number | null;
   tipo_informacion_judicial?: number | null;
   // CARGA_OFICIOS additional fields
-  departamento_judicial?: string | null;       // CAPITAL | INTERIOR
+  departamento_judicial?: string | null;       // DEPRECATED — superseded by circunscripcion_judicial
+  circunscripcion_judicial?: number | null;    // FK a TCircunscripcionJudicial
   // OFICIO_JUDICIAL fields
   apellido?: string;
   dni_oficio?: string | null;
@@ -241,7 +242,12 @@ export interface DropdownData {
   urgencias_vulneracion: any
   nacionalidad_choices: any
   bloques_datos_remitente: any
+  // Backend devuelve los órganos judiciales con su circunscripción asignada
+  // ({ id, nombre, bloque_datos_remitente, circunscripcion_judicial })
   tipo_institucion_demanda: any
+  // Circunscripciones judiciales (nivel intermedio entre Tipo Órgano y Órgano).
+  // Solo aplica al flujo judicial (CARGA_OFICIOS).
+  circunscripcion_judicial?: Array<{ id: number; nombre: string }>
   tipo_codigo_demanda: any
   ambito_vulneracion: any
   categoria_motivo: any

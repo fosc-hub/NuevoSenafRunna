@@ -35,6 +35,10 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     // Additional CARGA_OFICIOS fields
     categoria_informacion_judicial: apiData.categoria_informacion_judicial || null,
     departamento_judicial: apiData.departamento_judicial || null,
+    circunscripcion_judicial:
+      typeof apiData.circunscripcion_judicial === 'object' && apiData.circunscripcion_judicial !== null
+        ? apiData.circunscripcion_judicial.id
+        : apiData.circunscripcion_judicial ?? null,
     nro_oficio_web: apiData.nro_oficio_web || null,
     presuntos_delitos: apiData.presuntos_delitos || null,
     id: apiData.id,

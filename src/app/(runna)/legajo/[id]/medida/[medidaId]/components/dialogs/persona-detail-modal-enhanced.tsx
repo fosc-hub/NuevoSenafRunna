@@ -1966,7 +1966,7 @@ export default function PersonaDetailModalEnhanced({
             legajoId={legajo?.id || 0}
             nnyaId={persona?.id || 0}
             readOnly={readOnly}
-            canEdit={permisos?.puede_editar}
+            canEdit={!readOnly}
           />
         </TabPanel>
 

@@ -478,9 +478,11 @@ export function submitCleanFormData(formData: FormData, existingData?: any): any
       // tipo_informacion_judicial is DEPRECATED - no longer sent to backend
       // tipo_oficio is the main field now
       ...(formData.tipo_oficio ? { tipo_oficio: formData.tipo_oficio } : {}),
-      // For CARGA_OFICIOS, tipo_institucion_id is the FK to TTipoInstitucionDemanda (Organismo)
-      // Form field is 'institucion' but API expects 'tipo_institucion_id'
-      ...(formData.institucion ? { tipo_institucion_id: formData.institucion } : {}),
+      // For CARGA_OFICIOS, el form usa el campo `institucion` para el Órgano
+      // Judicial seleccionado (FK a TTipoInstitucionDemanda). El serializer del
+      // backend (RegistroDemandaFormSerializer, fields = '__all__') espera la
+      // FK con el nombre SIN sufijo `_id` (es PrimaryKeyRelatedField).
+      ...(formData.institucion ? { tipo_institucion: formData.institucion } : {}),
       numero_expediente: formData.numero_expediente || null,
       nro_oficio_web: formData.nro_oficio_web || null,
       autocaratulado: formData.caratula || null,

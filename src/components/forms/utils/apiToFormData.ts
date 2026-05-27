@@ -10,10 +10,20 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     fecha_ingreso_senaf: apiData.fecha_ingreso_senaf || null,
     bloque_datos_remitente: apiData.bloque_datos_remitente || null,
     tipo_institucion: apiData.tipo_institucion || null,
-    // For standard demandas, institucion is a string (name)
-    // For CARGA_OFICIOS, institucion is a number (ID from tipo_institucion_demanda)
+    // For standard demandas, `institucion` (form field) es el NOMBRE (string) del
+    // TInstitucionDemanda anidado.
+    // Para CARGA_OFICIOS, `institucion` (form field) es el ID del Órgano Judicial
+    // (TTipoInstitucionDemanda), que el backend persiste en TDemanda.tipo_institucion
+    // (no en TDemanda.institucion, que es el nivel más profundo y no se usa).
     institucion: apiData.objetivo_de_demanda === 'CARGA_OFICIOS'
-      ? (apiData.institucion?.id || apiData.institucion || null)
+      ? (
+          (typeof apiData.tipo_institucion === 'object' && apiData.tipo_institucion !== null
+            ? apiData.tipo_institucion.id
+            : apiData.tipo_institucion)
+          ?? apiData.institucion?.id
+          ?? (typeof apiData.institucion === 'number' ? apiData.institucion : null)
+          ?? null
+        )
       : (apiData.institucion?.nombre || null),
     ambito_vulneracion: apiData.ambito_vulneracion || null,
     envio_de_respuesta: apiData.envio_de_respuesta || null,

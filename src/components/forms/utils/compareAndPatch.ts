@@ -181,8 +181,10 @@ export function createPatchFromChanges(originalData: any, updatedData: any): any
 
   if (changes && changes.institucion !== undefined) {
     if (isCargaOficios) {
-      // For CARGA_OFICIOS, institucion is just an ID
-      transformedChanges.institucion = typeof changes.institucion === 'number'
+      // Para CARGA_OFICIOS el form field `institucion` guarda el ID del Órgano
+      // Judicial (TTipoInstitucionDemanda). El backend persiste en
+      // TDemanda.tipo_institucion, no en TDemanda.institucion (deepest level).
+      transformedChanges.tipo_institucion = typeof changes.institucion === 'number'
         ? changes.institucion
         : changes.institucion
     } else {

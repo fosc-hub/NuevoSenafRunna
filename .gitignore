@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code
+/.claude/scheduled_tasks.lock
+/.claude/settings.local.json
+
+# local test scratch
+/tmp_test/

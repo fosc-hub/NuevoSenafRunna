@@ -126,7 +126,24 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
             )}
 
             {/* Informes Mensuales Table */}
-            {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
+            {medidaApiData?.id && (
+                <InformesMensualesTable
+                    medidaId={medidaApiData.id}
+                    legajoPrimario={
+                        (medidaApiData as any)?.legajo
+                            ? {
+                                  id: (medidaApiData as any).legajo.id,
+                                  numero: (medidaApiData as any).legajo.numero,
+                                  nnya: {
+                                      nombre: (medidaApiData as any).legajo.nnya?.nombre ?? "",
+                                      apellido: (medidaApiData as any).legajo.nnya?.apellido ?? "",
+                                  },
+                              }
+                            : undefined
+                    }
+                    legajosAdicionales={(medidaApiData as any)?.legajos_adicionales ?? []}
+                />
+            )}
         </Box>
     )
 }

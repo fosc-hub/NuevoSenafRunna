@@ -39,9 +39,11 @@ import DownloadIcon from "@mui/icons-material/Download"
 import FilterListIcon from "@mui/icons-material/FilterList"
 import { CompletarInformeModal } from "./completar-informe-modal"
 import { EstadoInformeBadge } from "./shared/estado-informe-badge"
+import { EsGrupalChip } from "./shared/EsGrupalChip"
 import { useInformesSeguimiento, useDescargarPlantilla, usePlantillaInfo } from "../../hooks/useInformesSeguimiento"
 import type { EstadoInformeSeguimiento, InformeSeguimientoListItem } from "../../types/informe-seguimiento-api"
 import { canCompletarInforme, formatDiasVencimiento } from "../../types/informe-seguimiento-api"
+import type { LegajoAdicionalMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
 // ============================================================================
 // TYPES
@@ -50,6 +52,14 @@ import { canCompletarInforme, formatDiasVencimiento } from "../../types/informe-
 interface InformesMensualesTableProps {
   /** ID of the medida */
   medidaId: number
+  /** Legajo primario de la medida (para chip de granularidad). */
+  legajoPrimario?: {
+    id: number
+    numero: string
+    nnya: { nombre: string; apellido: string }
+  }
+  /** Legajos adicionales vinculados (GAP-11). */
+  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 type EstadoFilter = EstadoInformeSeguimiento | 'TODOS'
@@ -93,7 +103,24 @@ const formatDate = (dateString: string | null): string => {
 
 export const InformesMensualesTable: React.FC<InformesMensualesTableProps> = ({
   medidaId,
+  legajoPrimario,
+  legajosAdicionales,
 }) => {
+  // Granularidad: map legajo_id → label para tooltip del chip
+  const legajosLabelMap = useMemo<Record<number, string>>(() => {
+    const map: Record<number, string> = {}
+    if (legajoPrimario?.id != null) {
+      map[legajoPrimario.id] =
+        `Legajo ${legajoPrimario.numero} — ${legajoPrimario.nnya.nombre} ${legajoPrimario.nnya.apellido}`.trim()
+    }
+    ;(legajosAdicionales ?? []).forEach((la) => {
+      if (la.legajo_id != null) {
+        map[la.legajo_id] = `Legajo ${la.legajo_numero} — ${la.nnya?.nombre_completo ?? ""}`.trim()
+      }
+    })
+    return map
+  }, [legajoPrimario, legajosAdicionales])
+  const hasMultipleLegajos = (legajosAdicionales?.length ?? 0) > 0
   // State
   const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>('TODOS')
   const [selectedInforme, setSelectedInforme] = useState<InformeSeguimientoListItem | null>(null)
@@ -251,9 +278,17 @@ export const InformesMensualesTable: React.FC<InformesMensualesTableProps> = ({
               {filteredInformes.map((informe) => (
                 <TableRow key={informe.id} hover>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Informe {informe.numero_informe}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        Informe {informe.numero_informe}
+                      </Typography>
+                      <EsGrupalChip
+                        esGrupal={informe.es_grupal}
+                        legajosAlcance={informe.legajos_alcance}
+                        legajoLabels={legajosLabelMap}
+                        hasMultipleLegajos={hasMultipleLegajos}
+                      />
+                    </Box>
                   </TableCell>
                   <TableCell>{formatDate(informe.fecha_vencimiento)}</TableCell>
                   <TableCell>

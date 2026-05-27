@@ -84,6 +84,17 @@ export interface InformeSeguimiento {
 
   // Auditoría
   activo: boolean
+
+  /**
+   * Granularidad: IDs de legajos a los que aplica este informe (heredado de la etapa).
+   * Vacío = grupal (aplica a todos los legajos de la medida).
+   */
+  legajos_alcance?: number[]
+
+  /**
+   * Computed: true si el informe es grupal.
+   */
+  es_grupal?: boolean
 }
 
 /**
@@ -102,6 +113,13 @@ export interface InformeSeguimientoListItem {
   dias_para_vencimiento: number
   tiene_plantilla: boolean
   adjuntos_count?: number
+  /**
+   * Granularidad (opcional): el list serializer del backend hoy NO los expone.
+   * Declarados como opcionales para que el chip funcione cuando backend los agregue
+   * sin romper compilación entre tanto.
+   */
+  legajos_alcance?: number[]
+  es_grupal?: boolean
 }
 
 /**
@@ -170,6 +188,10 @@ export interface InformesSeguimientoQueryParams {
   ordering?: string // ej: '-fecha_vencimiento', 'numero_informe'
   limit?: number
   offset?: number
+  /**
+   * Granularidad: filtra informes grupales + los que incluyen este legajo en legajos_alcance.
+   */
+  legajo_id?: number
 }
 
 // ============================================================================

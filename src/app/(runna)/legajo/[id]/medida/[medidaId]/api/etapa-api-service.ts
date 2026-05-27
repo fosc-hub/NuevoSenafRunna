@@ -26,6 +26,14 @@ export interface CreateEtapaRequest {
 
   /** Optional initial observations */
   observaciones?: string
+
+  /**
+   * Granularidad: IDs de legajos a los que aplica la etapa.
+   * Vacío u omitido = grupal (aplica a todos los legajos vinculados a la medida).
+   * El backend valida que cada ID pertenezca a la medida (vía TMedidaLegajo); error 400
+   * LEGAJO_NO_PERTENECE_MEDIDA si no.
+   */
+  legajos_alcance?: number[]
 }
 
 /**

@@ -33,11 +33,13 @@ import { mapEducacionFromDemanda, mapSaludFromDemandaEnhanced } from "../../../u
 import { useMemo, useEffect } from "react"
 import { seguimientoDispositivoService } from "../../../api/seguimiento-dispositivo-api-service"
 import { toast } from "react-toastify"
+import { NnyaSelectorMedida, type NnyaSelectorLegajoPrimario } from "../shared/NnyaSelectorMedida"
+import type { LegajoAdicionalMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
 // No more mock data - using real API
 
 // Situación del NNyA en Instituto (MPJ specific) - API v2.0
-const SituacionInstitutoSection = ({ medidaId }: { medidaId: number }) => {
+const SituacionInstitutoSection = ({ medidaId, legajoId }: { medidaId: number; legajoId?: number }) => {
   const [tipoSituacion, setTipoSituacion] = useState<TipoSituacion>('AUTORIZACION')
   const [fecha, setFecha] = useState('')
   const [observaciones, setObservaciones] = useState('')
@@ -48,12 +50,12 @@ const SituacionInstitutoSection = ({ medidaId }: { medidaId: number }) => {
   // Fetch existing situaciones on mount
   useEffect(() => {
     fetchSituaciones()
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchSituaciones = async () => {
     setLoading(true)
     try {
-      const data = await seguimientoDispositivoService.listSituaciones(medidaId)
+      const data = await seguimientoDispositivoService.listSituaciones(medidaId, legajoId)
       // Ensure data is an array
       setSituaciones(Array.isArray(data) ? data : [])
     } catch (error) {
@@ -75,7 +77,7 @@ const SituacionInstitutoSection = ({ medidaId }: { medidaId: number }) => {
         tipo_situacion: tipoSituacion,
         fecha: fecha,
         observaciones: observaciones || undefined
-      })
+      }, legajoId)
 
       // Reset form
       setTipoSituacion('AUTORIZACION')
@@ -261,7 +263,7 @@ const SituacionInstitutoSection = ({ medidaId }: { medidaId: number }) => {
 }
 
 // Cambio de Lugar de Resguardo Section (shared between MPE and MPJ)
-const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
+const CambioLugarResguardoSection = ({ medidaId, legajoId }: { medidaId: number; legajoId?: number }) => {
   const [cambios, setCambios] = useState<CambioLugarResguardo[]>([])
   const [locales, setLocales] = useState<TLocalCentroVida[]>([])
   const [lugarOrigen, setLugarOrigen] = useState<TLocalCentroVida | null>(null)
@@ -281,7 +283,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
   // Fetch existing cambios on mount
   useEffect(() => {
     fetchCambios()
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchLocales = async () => {
     setLoadingLocales(true)
@@ -299,7 +301,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
   const fetchCambios = async () => {
     setLoading(true)
     try {
-      const data = await seguimientoDispositivoService.listCambiosLugar(medidaId)
+      const data = await seguimientoDispositivoService.listCambiosLugar(medidaId, legajoId)
       setCambios(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching cambios de lugar:', error)
@@ -327,7 +329,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
         fecha_cambio: fecha,
         motivo: motivo || undefined,
         autorizado_por: autorizadoPor || undefined
-      })
+      }, legajoId)
 
       // Reset form
       setLugarOrigen(null)
@@ -651,7 +653,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
 }
 
 // Notas de Seguimiento Section (shared between MPE and MPJ)
-const NotasSeguimientoSection = ({ medidaId }: { medidaId: number }) => {
+const NotasSeguimientoSection = ({ medidaId, legajoId }: { medidaId: number; legajoId?: number }) => {
   const [notas, setNotas] = useState<NotaSeguimiento[]>([])
   const [titulo, setTitulo] = useState("")
   const [nota, setNota] = useState("")
@@ -663,12 +665,12 @@ const NotasSeguimientoSection = ({ medidaId }: { medidaId: number }) => {
   // Fetch existing notas on mount
   useEffect(() => {
     fetchNotas()
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchNotas = async () => {
     setLoading(true)
     try {
-      const data = await seguimientoDispositivoService.listNotasSeguimiento(medidaId)
+      const data = await seguimientoDispositivoService.listNotasSeguimiento(medidaId, legajoId)
       setNotas(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching notas de seguimiento:', error)
@@ -690,7 +692,7 @@ const NotasSeguimientoSection = ({ medidaId }: { medidaId: number }) => {
         nota: nota,
         fecha: fecha,
         autor: autor || undefined
-      })
+      } as any, legajoId)
 
       // Reset form
       setTitulo('')
@@ -974,14 +976,63 @@ interface SeguimientoDispositivoMPJProps {
   medidaId: number // Required for API calls
   demandaData?: any // Full demanda data from the full-detail endpoint
   personaId?: number // Optional specific persona ID to use
+  /**
+   * Legajo primario de la medida. Necesario para el selector de NNyA
+   * cuando la medida tiene legajos adicionales (SAC compartido).
+   */
+  legajoPrimario?: NnyaSelectorLegajoPrimario
+  /** Legajos adicionales vinculados a la medida (GAP-11). */
+  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps> = ({
   medidaId,
   demandaData,
-  personaId
+  personaId,
+  legajoPrimario,
+  legajosAdicionales,
 }) => {
   const [selectedSection, setSelectedSection] = useState<string>("situacion-instituto")
+
+  // Granularidad NNyA: cuando la medida tiene legajos adicionales, el usuario elige
+  // sobre qué NNyA está cargando el seguimiento (1-a-1 por NNyA). Persistimos la
+  // selección en sessionStorage para mantenerla entre cambios de tab.
+  const adicionalesList = legajosAdicionales ?? []
+  const storageKey = `seguimiento-nnya-${medidaId}`
+  const [selectedLegajoId, setSelectedLegajoId] = useState<number>(() => {
+    if (typeof window !== "undefined" && legajoPrimario) {
+      const saved = window.sessionStorage.getItem(storageKey)
+      if (saved) {
+        const parsed = Number(saved)
+        const isValid =
+          parsed === legajoPrimario.id || adicionalesList.some((la) => la.legajo_id === parsed)
+        if (isValid) return parsed
+      }
+    }
+    return legajoPrimario?.id ?? 0
+  })
+
+  // Si el NNyA seleccionado se desvincula entre renders, resetear al primario.
+  useEffect(() => {
+    if (!legajoPrimario) return
+    const isValid =
+      selectedLegajoId === legajoPrimario.id ||
+      adicionalesList.some((la) => la.legajo_id === selectedLegajoId)
+    if (!isValid) {
+      setSelectedLegajoId(legajoPrimario.id)
+      toast.info("El NNyA seleccionado fue desvinculado de la medida. Mostrando el primario.")
+    }
+  }, [legajoPrimario?.id, adicionalesList, selectedLegajoId])
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedLegajoId > 0) {
+      window.sessionStorage.setItem(storageKey, String(selectedLegajoId))
+    }
+  }, [selectedLegajoId, storageKey])
+
+  // Pasamos legajoId solo si hay adicionales (en caso contrario, el seguimiento
+  // ya es 1-a-1 implícito con el único NNyA y el backend lo deduce).
+  const effectiveLegajoId = adicionalesList.length > 0 ? selectedLegajoId : undefined
 
   // Transform demanda data to seguimiento format
   const educacionData = useMemo(() => {
@@ -1004,26 +1055,38 @@ export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps>
   ]
 
   const renderContent = () => {
+    // key con legajoId fuerza remount al cambiar de NNyA, evitando fugas de estado
+    const remountKey = `${medidaId}-${effectiveLegajoId ?? "single"}`
     switch (selectedSection) {
       case "situacion-instituto":
-        return <SituacionInstitutoSection medidaId={medidaId} />
+        return <SituacionInstitutoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
       case "informacion-educativa":
-        return <InformacionEducativaSection medidaId={medidaId} personaId={personaId} data={educacionData} />
+        return <InformacionEducativaSection key={remountKey} medidaId={medidaId} personaId={personaId} data={educacionData} />
       case "informacion-salud":
-        return <InformacionSaludSection medidaId={medidaId} personaId={personaId} data={saludData} />
+        return <InformacionSaludSection key={remountKey} medidaId={medidaId} personaId={personaId} data={saludData} />
       case "talleres":
-        return <TalleresSection medidaId={medidaId} maxTalleres={5} />
+        return <TalleresSection key={remountKey} medidaId={medidaId} maxTalleres={5} />
       case "cambio-lugar":
-        return <CambioLugarResguardoSection medidaId={medidaId} />
+        return <CambioLugarResguardoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
       case "notas-seguimiento":
-        return <NotasSeguimientoSection medidaId={medidaId} />
+        return <NotasSeguimientoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
       default:
-        return <SituacionInstitutoSection medidaId={medidaId} />
+        return <SituacionInstitutoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
     }
   }
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* Selector NNyA (solo visible si la medida tiene legajos adicionales) */}
+      {legajoPrimario && adicionalesList.length > 0 && (
+        <NnyaSelectorMedida
+          legajoPrimario={legajoPrimario}
+          legajosAdicionales={adicionalesList}
+          selectedLegajoId={selectedLegajoId}
+          onChange={setSelectedLegajoId}
+        />
+      )}
+
       <Box sx={{ display: "flex", gap: 3 }}>
         {/* Sidebar */}
         <Box sx={{ width: 300, flexShrink: 0 }}>

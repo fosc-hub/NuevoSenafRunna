@@ -533,11 +533,24 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           </Box>
         )}
 
-        {/* GAP-11 Fase 1: Banner de legajos adicionales (medida MPJ con SAC compartido) */}
+        {/* GAP-11: Banner contextual de legajos en medida compartida (MPE/MPJ).
+            Pasamos legajoActualId (URL) y los datos del NNyA primario para que
+            el banner pueda destacar el legajo actual vs los otros NNyAs alcanzados. */}
         <LegajosAdicionalesBanner
           legajosAdicionales={medidaApiData?.legajos_adicionales}
           legajoPrimarioNumero={medidaApiData?.legajo?.numero}
           legajoPrimarioId={medidaApiData?.legajo?.id}
+          legajoPrimarioNnya={
+            medidaApiData?.legajo?.nnya
+              ? {
+                  id: medidaApiData.legajo.nnya.id,
+                  nombre: (medidaApiData.legajo.nnya as any).nombre,
+                  apellido: (medidaApiData.legajo.nnya as any).apellido,
+                  dni: (medidaApiData.legajo.nnya as any).dni,
+                }
+              : undefined
+          }
+          legajoActualId={legajoIdNum ?? undefined}
           nroSac={medidaApiData?.nro_sac}
           medidaId={medidaApiData?.id}
           medidaTipo={medidaApiData?.tipo_medida}
@@ -567,7 +580,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                   : (medidaApiData?.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
                     ? String(medidaApiData.numero_medida.display)
                     : `M-${medidaData.id}`,
-                plan_trabajo_id: medidaApiData?.plan_trabajo_id
+                plan_trabajo_id: medidaApiData?.plan_trabajo_id,
+                // Granularidad: pasar legajo + adicionales para selectores de scope
+                legajo: medidaApiData?.legajo,
+                legajos_adicionales: medidaApiData?.legajos_adicionales,
               }}
               medidaApiData={medidaApiData || undefined}
               legajoData={legajoData ? {
@@ -589,6 +605,20 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               estados={{ apertura: true, proceso: false, cese: false }}
               onMedidaRefetch={refetchMedida}
               configuracionDispositivoMpj={medidaApiData?.configuracion_dispositivo_mpe}
+              legajoPrimario={
+                medidaApiData?.legajo
+                  ? {
+                      id: medidaApiData.legajo.id,
+                      numero: medidaApiData.legajo.numero,
+                      nnya: {
+                        id: medidaApiData.legajo.nnya?.id,
+                        nombre: medidaApiData.legajo.nnya?.nombre ?? "",
+                        apellido: medidaApiData.legajo.nnya?.apellido ?? "",
+                      },
+                    }
+                  : undefined
+              }
+              legajosAdicionales={medidaApiData?.legajos_adicionales ?? []}
             />
 
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -605,7 +635,10 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                   : (medidaApiData?.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
                     ? String(medidaApiData.numero_medida.display)
                     : `M-${medidaData.id}`,
-                plan_trabajo_id: medidaApiData?.plan_trabajo_id
+                plan_trabajo_id: medidaApiData?.plan_trabajo_id,
+                // Granularidad: pasar legajo + adicionales para selectores de scope
+                legajo: medidaApiData?.legajo,
+                legajos_adicionales: medidaApiData?.legajos_adicionales,
               }}
               medidaApiData={medidaApiData}
               legajoData={legajoData ? {
@@ -678,6 +711,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
                         ? medidaApiData.etapa_actual.estado
                         : medidaApiData.etapa_actual?.estado_display || "",
                       fecha_apertura: medidaApiData.fecha_apertura,
+                      // Granularidad
+                      legajo: medidaApiData.legajo,
+                      legajos_adicionales: medidaApiData.legajos_adicionales,
                     }}
                     planTrabajoId={medidaApiData.plan_trabajo_id}
                   />
@@ -696,7 +732,24 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
 
               {/* Informes Mensuales - Detailed Table */}
               <Grid item xs={12}>
-                {medidaApiData?.id && <InformesMensualesTable medidaId={medidaApiData.id} />}
+                {medidaApiData?.id && (
+                  <InformesMensualesTable
+                    medidaId={medidaApiData.id}
+                    legajoPrimario={
+                      medidaApiData.legajo
+                        ? {
+                            id: medidaApiData.legajo.id,
+                            numero: medidaApiData.legajo.numero,
+                            nnya: {
+                              nombre: medidaApiData.legajo.nnya?.nombre ?? "",
+                              apellido: medidaApiData.legajo.nnya?.apellido ?? "",
+                            },
+                          }
+                        : undefined
+                    }
+                    legajosAdicionales={medidaApiData.legajos_adicionales ?? []}
+                  />
+                )}
               </Grid>
             </Grid>
           </>

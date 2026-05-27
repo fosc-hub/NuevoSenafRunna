@@ -91,6 +91,18 @@ export interface EtapaMedida {
   /** Audit timestamps */
   fecha_creacion: string
   fecha_modificacion: string
+
+  /**
+   * Granularidad de legajos en medida compartida.
+   * IDs de legajos a los que aplica esta etapa. Array vacío = grupal (aplica a todos
+   * los legajos vinculados a la medida). Se setea en el endpoint transicionar-etapa.
+   */
+  legajos_alcance: number[]
+
+  /**
+   * Computed: true si la etapa es grupal (legajos_alcance vacío).
+   */
+  es_grupal: boolean
 }
 
 // ============================================================================

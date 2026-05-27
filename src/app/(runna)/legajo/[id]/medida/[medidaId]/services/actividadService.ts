@@ -65,6 +65,8 @@ export const actividadService = {
       }
       if (key === 'responsables_secundarios' && Array.isArray(value)) {
         value.forEach(id => formData.append('responsables_secundarios', id.toString()))
+      } else if (key === 'legajos_alcance' && Array.isArray(value)) {
+        value.forEach(id => formData.append('legajos_alcance', id.toString()))
       } else if (value !== undefined && value !== null) {
         formData.append(key, String(value))
       }

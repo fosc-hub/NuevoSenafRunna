@@ -26,6 +26,20 @@ import type {
   SeguimientoResponse
 } from '../types/seguimiento-dispositivo'
 
+/**
+ * Build query string ?legajo_id=N (or "" if undefined).
+ * Pendiente backend: ver claudedocs/GRANULARIDAD_LEGAJOS_MEDIDA_COMPARTIDA.md
+ * — el backend dev agregará FK legajo + filtros ?legajo_id= a estos endpoints.
+ */
+const legajoQs = (legajoId?: number): string =>
+  typeof legajoId === "number" ? `?legajo_id=${legajoId}` : ""
+
+/**
+ * Merge { legajo_id } into body when provided.
+ */
+const withLegajo = <T extends Record<string, any>>(body: T, legajoId?: number): T =>
+  typeof legajoId === "number" ? ({ ...body, legajo_id: legajoId } as T) : body
+
 class SeguimientoDispositivoApiService {
 
   /**
@@ -72,13 +86,14 @@ class SeguimientoDispositivoApiService {
    */
   async addSituacionDispositivo(
     medidaId: number,
-    data: Omit<SituacionNNyA, 'id' | 'fecha_registro' | 'tipo_situacion_display'>
+    data: Omit<SituacionNNyA, 'id' | 'fecha_registro' | 'tipo_situacion_display'>,
+    legajoId?: number
   ): Promise<SituacionNNyA> {
     // Backend expects medida field in request body
-    const requestData = {
+    const requestData = withLegajo({
       ...data,
       medida: medidaId
-    }
+    }, legajoId)
 
     return create<SituacionNNyA>(
       `medidas/${medidaId}/situacion-dispositivo/`,
@@ -94,9 +109,11 @@ class SeguimientoDispositivoApiService {
    * @param medidaId - ID of the medida
    * @returns Most recent situación or null if none exists
    */
-  async getSituacionActual(medidaId: number): Promise<SituacionNNyA | null> {
+  async getSituacionActual(medidaId: number, legajoId?: number): Promise<SituacionNNyA | null> {
     try {
-      return await get<SituacionNNyA>(`medidas/${medidaId}/situacion-dispositivo/actual/`)
+      return await get<SituacionNNyA>(
+        `medidas/${medidaId}/situacion-dispositivo/actual/${legajoQs(legajoId)}`
+      )
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null // No situación registered yet
@@ -111,9 +128,11 @@ class SeguimientoDispositivoApiService {
    * @param medidaId - ID of the medida
    * @returns Array of situaciones ordered by fecha DESC
    */
-  async listSituaciones(medidaId: number): Promise<SituacionNNyA[]> {
+  async listSituaciones(medidaId: number, legajoId?: number): Promise<SituacionNNyA[]> {
     try {
-      const response = await get<any>(`medidas/${medidaId}/situacion-dispositivo/`)
+      const response = await get<any>(
+        `medidas/${medidaId}/situacion-dispositivo/${legajoQs(legajoId)}`
+      )
 
       // Backend returns paginated data: { count, next, previous, results: [...] }
       // Extract results array
@@ -164,9 +183,9 @@ class SeguimientoDispositivoApiService {
    * Get información educativa for a medida
    * @version 2.0.0
    */
-  async getInformacionEducativa(medidaId: number): Promise<InformacionEducativa | null> {
+  async getInformacionEducativa(medidaId: number, legajoId?: number): Promise<InformacionEducativa | null> {
     try {
-      const apiData = await get<any>(`medidas/${medidaId}/info-educativa/`)
+      const apiData = await get<any>(`medidas/${medidaId}/info-educativa/${legajoQs(legajoId)}`)
 
       // Transform API field names to frontend interface
       return {
@@ -198,7 +217,7 @@ class SeguimientoDispositivoApiService {
    * 2. POST /api/educacion/ with persona_id to create base record
    * 3. PATCH /api/medidas/{id}/info-educativa/ to update with user data
    */
-  async createInformacionEducativa(medidaId: number, personaId: number, data: Partial<InformacionEducativa>): Promise<InformacionEducativa> {
+  async createInformacionEducativa(medidaId: number, personaId: number, data: Partial<InformacionEducativa>, legajoId?: number): Promise<InformacionEducativa> {
     // Step 1: Create base TEducacion record via /api/educacion/
     const baseEducacionData = {
       persona: personaId,
@@ -216,7 +235,7 @@ class SeguimientoDispositivoApiService {
     )
 
     // Step 2: Transform frontend data to API format for PATCH
-    const apiData = {
+    const apiData = withLegajo({
       nivel_alcanzado: data.nivel_educativo,
       institucion_educativa_id: data.institucion_educativa_id, // Send ID, not nombre
       ultimo_cursado: data.grado_curso,
@@ -225,7 +244,7 @@ class SeguimientoDispositivoApiService {
       asistencia: data.asistencia,
       comentarios_educativos: data.observaciones,
       fecha_actualizacion: data.fecha_actualizacion
-    }
+    }, legajoId)
 
     const response = await axiosInstance.patch<any>(
       `medidas/${medidaId}/info-educativa/`,
@@ -253,9 +272,9 @@ class SeguimientoDispositivoApiService {
    * @version 2.0.0 - Now uses PATCH method and updated endpoint
    * Note: Endpoint is /medidas/{id}/info-educativa/ (no separate record ID)
    */
-  async updateInformacionEducativa(medidaId: number, data: Partial<InformacionEducativa>): Promise<InformacionEducativa> {
+  async updateInformacionEducativa(medidaId: number, data: Partial<InformacionEducativa>, legajoId?: number): Promise<InformacionEducativa> {
     // Transform frontend data to API format
-    const apiData = {
+    const apiData = withLegajo({
       nivel_alcanzado: data.nivel_educativo,
       institucion_educativa_id: data.institucion_educativa_id, // Send ID, not nombre
       ultimo_cursado: data.grado_curso,
@@ -264,7 +283,7 @@ class SeguimientoDispositivoApiService {
       asistencia: data.asistencia,
       comentarios_educativos: data.observaciones,
       fecha_actualizacion: data.fecha_actualizacion
-    }
+    }, legajoId)
 
     const response = await axiosInstance.patch<any>(
       `medidas/${medidaId}/info-educativa/`,
@@ -292,9 +311,9 @@ class SeguimientoDispositivoApiService {
    * Get información de salud for a medida
    * @version 2.0.0
    */
-  async getInformacionSalud(medidaId: number): Promise<InformacionSalud | null> {
+  async getInformacionSalud(medidaId: number, legajoId?: number): Promise<InformacionSalud | null> {
     try {
-      const apiData = await get<any>(`medidas/${medidaId}/info-salud/`)
+      const apiData = await get<any>(`medidas/${medidaId}/info-salud/${legajoQs(legajoId)}`)
 
       // Transform API field names to frontend interface
       // API returns cobertura_medica model fields
@@ -324,7 +343,7 @@ class SeguimientoDispositivoApiService {
    * 2. POST /api/cobertura-medica/ with persona_id to create base record
    * 3. PATCH /api/medidas/{id}/info-salud/ to update with user data
    */
-  async createInformacionSalud(medidaId: number, personaId: number, data: Partial<InformacionSalud>): Promise<InformacionSalud> {
+  async createInformacionSalud(medidaId: number, personaId: number, data: Partial<InformacionSalud>, legajoId?: number): Promise<InformacionSalud> {
     // Step 1: Create base cobertura médica record
     const baseSaludData = {
       persona: personaId,
@@ -340,13 +359,13 @@ class SeguimientoDispositivoApiService {
 
     // Step 2: Transform frontend data to API format for PATCH
     // Only send fields that exist in cobertura_medica model
-    const apiData = {
+    const apiData = withLegajo({
       obra_social: data.obra_social,
       intervencion: data.intervencion,
       auh: data.auh,
       institucion_sanitaria_id: data.institucion_sanitaria_id, // Send ID, not nombre
       observaciones: data.observaciones
-    }
+    }, legajoId)
 
     const response = await axiosInstance.patch<any>(
       `medidas/${medidaId}/info-salud/`,
@@ -372,16 +391,16 @@ class SeguimientoDispositivoApiService {
    * @version 2.0.0 - Now uses PATCH method and updated endpoint
    * Note: Endpoint is /medidas/{id}/info-salud/ (no separate record ID)
    */
-  async updateInformacionSalud(medidaId: number, data: Partial<InformacionSalud>): Promise<InformacionSalud> {
+  async updateInformacionSalud(medidaId: number, data: Partial<InformacionSalud>, legajoId?: number): Promise<InformacionSalud> {
     // Transform frontend data to API format
     // Only send fields that exist in cobertura_medica model
-    const apiData = {
+    const apiData = withLegajo({
       obra_social: data.obra_social,
       intervencion: data.intervencion,
       auh: data.auh,
       institucion_sanitaria_id: data.institucion_sanitaria_id, // Send ID, not nombre
       observaciones: data.observaciones
-    }
+    }, legajoId)
 
     const response = await axiosInstance.patch<any>(
       `medidas/${medidaId}/info-salud/`,
@@ -406,9 +425,9 @@ class SeguimientoDispositivoApiService {
    * Get all talleres for a medida
    * @version 2.0.0
    */
-  async listTalleres(medidaId: number): Promise<TallerRecreativo[]> {
+  async listTalleres(medidaId: number, legajoId?: number): Promise<TallerRecreativo[]> {
     try {
-      const response = await get<any>(`medidas/${medidaId}/talleres/`)
+      const response = await get<any>(`medidas/${medidaId}/talleres/${legajoQs(legajoId)}`)
 
       // Backend returns paginated data: { count, next, previous, results: [...] }
       // Extract results array
@@ -438,9 +457,9 @@ class SeguimientoDispositivoApiService {
    * Add taller recreativo
    * @version 2.0.0 - Endpoint: /api/medidas/{id}/talleres/
    */
-  async addTaller(medidaId: number, data: TallerRecreativo): Promise<TallerRecreativo> {
+  async addTaller(medidaId: number, data: TallerRecreativo, legajoId?: number): Promise<TallerRecreativo> {
     // Backend expects medida field and nombre (not nombre_taller)
-    const requestData = {
+    const requestData = withLegajo({
       medida: medidaId,
       nombre: data.nombre_taller,
       orden: data.orden,
@@ -450,7 +469,7 @@ class SeguimientoDispositivoApiService {
       fecha_inicio: data.fecha_inicio,
       fecha_fin: data.fecha_fin,
       observaciones: data.observaciones
-    }
+    }, legajoId)
 
     return create<TallerRecreativo>(
       `medidas/${medidaId}/talleres/`,
@@ -464,9 +483,9 @@ class SeguimientoDispositivoApiService {
    * Update taller recreativo
    * @version 2.0.0 - Endpoint: PATCH /api/medidas/{id}/talleres/{pk}/
    */
-  async updateTaller(medidaId: number, tallerId: number, data: TallerRecreativo): Promise<TallerRecreativo> {
+  async updateTaller(medidaId: number, tallerId: number, data: TallerRecreativo, legajoId?: number): Promise<TallerRecreativo> {
     // Backend expects medida field and nombre (not nombre_taller)
-    const requestData = {
+    const requestData = withLegajo({
       medida: medidaId,
       nombre: data.nombre_taller,
       orden: data.orden,
@@ -476,7 +495,7 @@ class SeguimientoDispositivoApiService {
       fecha_inicio: data.fecha_inicio,
       fecha_fin: data.fecha_fin,
       observaciones: data.observaciones
-    }
+    }, legajoId)
 
     // Use update function (which uses PATCH) with toast support
     const response = await update<any>(
@@ -513,13 +532,13 @@ class SeguimientoDispositivoApiService {
    * Add cambio de lugar de resguardo
    * @version 2.0.0 - Endpoint: /api/medidas/{id}/cambio-lugar/
    */
-  async addCambioResguardo(medidaId: number, data: Omit<CambioLugarResguardo, 'id'>): Promise<CambioLugarResguardo> {
+  async addCambioResguardo(medidaId: number, data: Omit<CambioLugarResguardo, 'id'>, legajoId?: number): Promise<CambioLugarResguardo> {
     return create<CambioLugarResguardo>(
       `medidas/${medidaId}/cambio-lugar/`,
-      {
+      withLegajo({
         medida: medidaId,
         ...data
-      },
+      }, legajoId),
       true,
       'Cambio de resguardo registrado'
     )
@@ -529,9 +548,9 @@ class SeguimientoDispositivoApiService {
    * Get all cambios de lugar for a medida
    * @version 2.0.0 - Endpoint: /api/medidas/{id}/cambio-lugar/
    */
-  async listCambiosLugar(medidaId: number): Promise<CambioLugarResguardo[]> {
+  async listCambiosLugar(medidaId: number, legajoId?: number): Promise<CambioLugarResguardo[]> {
     try {
-      const response = await get<any>(`medidas/${medidaId}/cambio-lugar/`)
+      const response = await get<any>(`medidas/${medidaId}/cambio-lugar/${legajoQs(legajoId)}`)
 
       // Backend returns paginated data: { count, next, previous, results: [...] }
       const backendData = response.results || response
@@ -546,9 +565,9 @@ class SeguimientoDispositivoApiService {
    * Get cambio lugar history
    * @version 2.0.0 - Endpoint: /api/medidas/{id}/cambio-lugar/historial/
    */
-  async getCambioLugarHistorial(medidaId: number): Promise<CambioLugarResguardo[]> {
+  async getCambioLugarHistorial(medidaId: number, legajoId?: number): Promise<CambioLugarResguardo[]> {
     try {
-      const response = await get<any>(`medidas/${medidaId}/cambio-lugar/historial/`)
+      const response = await get<any>(`medidas/${medidaId}/cambio-lugar/historial/${legajoQs(legajoId)}`)
 
       // Backend returns paginated data: { count, next, previous, results: [...] }
       const backendData = response.results || response
@@ -563,13 +582,13 @@ class SeguimientoDispositivoApiService {
    * Add nota de seguimiento
    * @version 2.0.0 - Endpoint: /api/medidas/{id}/notas-seguimiento/
    */
-  async addNotaSeguimiento(medidaId: number, data: Omit<NotaSeguimiento, 'id'>): Promise<NotaSeguimiento> {
+  async addNotaSeguimiento(medidaId: number, data: Omit<NotaSeguimiento, 'id'>, legajoId?: number): Promise<NotaSeguimiento> {
     return create<NotaSeguimiento>(
       `medidas/${medidaId}/notas-seguimiento/`,
-      {
+      withLegajo({
         medida: medidaId,
         ...data
-      },
+      }, legajoId),
       true,
       'Nota de seguimiento agregada'
     )
@@ -579,9 +598,9 @@ class SeguimientoDispositivoApiService {
    * Get all notas de seguimiento for a medida
    * @version 2.0.0 - Endpoint: /api/medidas/{id}/notas-seguimiento/
    */
-  async listNotasSeguimiento(medidaId: number): Promise<NotaSeguimiento[]> {
+  async listNotasSeguimiento(medidaId: number, legajoId?: number): Promise<NotaSeguimiento[]> {
     try {
-      const response = await get<any>(`medidas/${medidaId}/notas-seguimiento/`)
+      const response = await get<any>(`medidas/${medidaId}/notas-seguimiento/${legajoQs(legajoId)}`)
 
       // Backend returns paginated data: { count, next, previous, results: [...] }
       const backendData = response.results || response

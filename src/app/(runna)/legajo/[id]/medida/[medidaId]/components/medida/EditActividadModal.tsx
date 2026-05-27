@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm, Controller, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -17,6 +17,11 @@ import { ResponsableSelect } from './ResponsableSelect'
 import { actividadService } from '../../services/actividadService'
 import { useFormSubmission } from '@/hooks'
 import type { TActividadPlanTrabajo, UpdateActividadRequest } from '../../types/actividades'
+import {
+  LegajosAlcanceSelector,
+  type LegajosAlcanceLegajoPrimario,
+} from './shared/LegajosAlcanceSelector'
+import type { LegajoAdicionalMedida } from '@/app/(runna)/legajo-mesa/types/medida-api'
 
 /**
  * PLTM V4.1: Hybrid System Schema Factory for editing
@@ -59,6 +64,13 @@ interface EditActividadModalProps {
   /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
   tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   onSuccess?: () => void
+  /**
+   * Legajo primario de la medida (para selector de granularidad).
+   * Si no se provee, no se muestra el selector.
+   */
+  legajoPrimario?: LegajosAlcanceLegajoPrimario
+  /** Legajos adicionales vinculados a la medida (GAP-11). */
+  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 /**
@@ -76,10 +88,16 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
   onClose,
   actividad,
   tipoMedida,
-  onSuccess
+  onSuccess,
+  legajoPrimario,
+  legajosAdicionales,
 }) => {
   // PLTM V4.1: Detect team type from actividad
   const isEquipoTecnico = actividad.actor === 'EQUIPO_TECNICO'
+  // Granularidad: cargar scope actual de la actividad
+  const [legajosAlcance, setLegajosAlcance] = useState<number[]>(
+    Array.isArray(actividad.legajos_alcance) ? actividad.legajos_alcance : []
+  )
 
   const {
     control,
@@ -130,6 +148,12 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
         updateData.subtipo_actividad = data.subtipo_actividad
       }
 
+      // Granularidad: mandar legajos_alcance siempre que tengamos selector visible.
+      // Si el selector está deshabilitado (sin legajos adicionales), no enviamos.
+      if (legajoPrimario && (legajosAdicionales?.length ?? 0) > 0) {
+        updateData.legajos_alcance = legajosAlcance
+      }
+
       await actividadService.update(actividad.id, updateData)
     },
     showSuccessToast: true,
@@ -152,6 +176,7 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
         responsables_secundarios: actividad.responsables_secundarios?.map(r => typeof r === 'number' ? r : r.id) || [],
         referentes_externos: actividad.referentes_externos || ''
       })
+      setLegajosAlcance(Array.isArray(actividad.legajos_alcance) ? actividad.legajos_alcance : [])
     }
   }, [open, actividad, reset])
 
@@ -326,6 +351,17 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
             />
           )}
         />
+
+        {legajoPrimario && (
+          <LegajosAlcanceSelector
+            legajoPrimario={legajoPrimario}
+            legajosAdicionales={legajosAdicionales ?? []}
+            value={legajosAlcance}
+            onChange={setLegajosAlcance}
+            disabled={isLoading}
+            helperText="Si la medida está compartida, puede acotar la actividad solo a algunos NNyAs."
+          />
+        )}
       </Box>
     </BaseDialog>
   )

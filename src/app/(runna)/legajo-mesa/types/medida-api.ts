@@ -52,6 +52,16 @@ export interface EtapaMedida {
   observaciones: string | null
   // MED-01 V2: Estados Diferenciados
   estado_especifico?: number | null // ID del TEstadoEtapaMedida catalog entry
+  /**
+   * Granularidad: IDs de legajos a los que aplica esta etapa.
+   * Vacío = grupal (aplica a todos los legajos de la medida).
+   * Se setea al transicionar etapa; backend serializer marca read-only.
+   */
+  legajos_alcance?: number[]
+  /**
+   * Computed: true si la etapa es grupal.
+   */
+  es_grupal?: boolean
 }
 
 // ============================================================================

@@ -29,6 +29,12 @@ export interface SituacionNNyA {
   fecha: string // YYYY-MM-DD, cannot be future date
   observaciones?: string // Optional
   fecha_registro?: string // Read-only, datetime from backend
+  /**
+   * Granularidad: ID del legajo (NNyA) al que pertenece el registro.
+   * El seguimiento en dispositivo es 1-a-1 por NNyA en medidas con SAC compartido.
+   * Pendiente backend: agregar FK `legajo` al modelo + filtro `?legajo_id=`.
+   */
+  legajo_id?: number
 }
 
 // MPE specific - Situación en Residencia (now inherits unified structure)
@@ -53,6 +59,8 @@ export interface InformacionEducativa {
   asistencia?: string
   observaciones?: string
   fecha_actualizacion?: string
+  /** Granularidad: ID del legajo al que pertenece (1-a-1 por NNyA). */
+  legajo_id?: number
 }
 
 // Información de Salud (editable fields for seguimiento en dispositivo)
@@ -65,6 +73,8 @@ export interface InformacionSalud {
   institucion_sanitaria_id?: number // FK to TInstitucionSanitaria
   centro_salud?: string  // Display name (read-only from backend: institucion_sanitaria_nombre)
   observaciones?: string
+  /** Granularidad: ID del legajo al que pertenece (1-a-1 por NNyA). */
+  legajo_id?: number
 }
 
 // Local Centro de Vida (for Cambio de Lugar de Resguardo)
@@ -86,6 +96,8 @@ export interface TallerRecreativo {
   fecha_inicio?: string
   fecha_fin?: string
   observaciones?: string
+  /** Granularidad: ID del legajo al que pertenece (1-a-1 por NNyA). */
+  legajo_id?: number
 }
 
 // Cambio de Lugar de Resguardo (shared structure)
@@ -101,6 +113,8 @@ export interface CambioLugarResguardo {
   autorizado_por?: string
   adjunto_url?: string
   fecha_registro?: string // Read-only from backend
+  /** Granularidad: ID del legajo al que pertenece (1-a-1 por NNyA). */
+  legajo_id?: number
 }
 
 // Notas de Seguimiento (shared structure)
@@ -115,6 +129,8 @@ export interface NotaSeguimiento {
   adjunto_url?: string
   fecha_registro?: string // Read-only from backend
   fecha_creacion?: string // Read-only from backend
+  /** Granularidad: ID del legajo al que pertenece (1-a-1 por NNyA). */
+  legajo_id?: number
 }
 
 // Situaciones Críticas (MPE specific - from existing ResidenciasTab)

@@ -82,6 +82,7 @@ import { useActorVisibility } from "../../[id]/medida/[medidaId]/hooks/useActorV
 import BulkAsignarActividadModal from "./BulkAsignarActividadModal"
 import { AdvancedFiltersPanel } from "./AdvancedFiltersPanel"
 import { SectionCard } from "../../[id]/medida/[medidaId]/components/medida/shared/section-card"
+import { EsGrupalChip } from "../../[id]/medida/[medidaId]/components/medida/shared/EsGrupalChip"
 import { institutionalColors } from "@/theme/colors"
 
 // ============================================================================
@@ -162,6 +163,26 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   useUser() // For auth context
   const { user } = useUser()
   const { actorFilter, allowedActors, isActorAllowed, canSeeAllActors } = useActorVisibility()
+
+  // Granularidad: armar lista de legajos vinculados a la medida para chips/tooltip.
+  const legajosLabelMap = useMemo<Record<number, string>>(() => {
+    const map: Record<number, string> = {}
+    const primario = medidaData?.legajo
+    if (primario?.id != null) {
+      const nombre = primario.nnya?.nombre ?? ""
+      const apellido = primario.nnya?.apellido ?? ""
+      map[primario.id] = `Legajo ${primario.numero} — ${nombre} ${apellido}`.trim()
+    }
+    const adicionales: any[] = medidaData?.legajos_adicionales ?? []
+    adicionales.forEach((la) => {
+      if (la.legajo_id != null) {
+        map[la.legajo_id] = `Legajo ${la.legajo_numero} — ${la.nnya?.nombre_completo ?? ""}`.trim()
+      }
+    })
+    return map
+  }, [medidaData?.legajo, medidaData?.legajos_adicionales])
+
+  const hasMultipleLegajos = (medidaData?.legajos_adicionales?.length ?? 0) > 0
 
   // Determine user roles for highlighting
   const roles = useMemo(() => {
@@ -1123,6 +1144,13 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
                         {actividad.es_borrador && (
                           <Chip label="BORRADOR" size="small" variant="outlined" color="warning" sx={{ fontWeight: 500, fontSize: "0.65rem" }} />
                         )}
+                        {/* Granularidad: alcance grupal vs específico (solo en medidas compartidas) */}
+                        <EsGrupalChip
+                          esGrupal={actividad.es_grupal}
+                          legajosAlcance={actividad.legajos_alcance}
+                          legajoLabels={legajosLabelMap}
+                          hasMultipleLegajos={hasMultipleLegajos}
+                        />
                         {/* Recursive Activity Indicator - Sprint 3 */}
                         {actividad.tipo_actividad_info?.es_recursiva && (
                           <Tooltip
@@ -1657,6 +1685,19 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
           actividad={selectedActividad}
           tipoMedida={medidaData?.tipo_medida}
           onSuccess={handleModalSuccess}
+          legajoPrimario={
+            medidaData?.legajo
+              ? {
+                  id: medidaData.legajo.id,
+                  numero: medidaData.legajo.numero,
+                  nnya: {
+                    nombre: medidaData.legajo.nnya?.nombre ?? "",
+                    apellido: medidaData.legajo.nnya?.apellido ?? "",
+                  },
+                }
+              : undefined
+          }
+          legajosAdicionales={medidaData?.legajos_adicionales ?? []}
         />
       )}
 
@@ -1706,6 +1747,19 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
           onSuccess={handleModalSuccess}
           tipoMedida={medidaData?.tipo_medida}
           filterEtapa={filterEtapa}
+          legajoPrimario={
+            medidaData?.legajo
+              ? {
+                  id: medidaData.legajo.id,
+                  numero: medidaData.legajo.numero,
+                  nnya: {
+                    nombre: medidaData.legajo.nnya?.nombre ?? "",
+                    apellido: medidaData.legajo.nnya?.apellido ?? "",
+                  },
+                }
+              : undefined
+          }
+          legajosAdicionales={medidaData?.legajos_adicionales ?? []}
         />
       )}
 

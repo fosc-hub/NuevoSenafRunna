@@ -23,6 +23,11 @@ import { AttachmentUpload } from './AttachmentUpload'
 import { actividadService } from '../../services/actividadService'
 import type { CreateActividadRequest } from '../../types/actividades'
 import { getCurrentDateISO } from '@/utils/dateUtils'
+import {
+  LegajosAlcanceSelector,
+  type LegajosAlcanceLegajoPrimario,
+} from './shared/LegajosAlcanceSelector'
+import type { LegajoAdicionalMedida } from '@/app/(runna)/legajo-mesa/types/medida-api'
 
 /**
  * PLTM V4.1: Hybrid System Schema Factory
@@ -86,6 +91,13 @@ interface ActorTabContentProps {
   /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
   tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
+  /**
+   * Legajo primario de la medida. Si se provee junto con `legajosAdicionales`,
+   * habilita el selector de granularidad (legajos_alcance).
+   */
+  legajoPrimario?: LegajosAlcanceLegajoPrimario
+  /** Legajos adicionales vinculados a la medida (GAP-11). */
+  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 export const ActorTabContent: React.FC<ActorTabContentProps> = ({
@@ -94,11 +106,14 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
   onClose,
   onSuccess,
   tipoMedida,
-  filterEtapa
+  filterEtapa,
+  legajoPrimario,
+  legajosAdicionales,
 }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDraft, setIsDraft] = useState(false)
+  const [legajosAlcance, setLegajosAlcance] = useState<number[]>([])
 
   // PLTM V4.1: Detect team type for hybrid system
   const isEquipoTecnico = actor === 'EQUIPO_TECNICO'
@@ -183,6 +198,14 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
       // Only include subtipo_actividad for EQUIPO_TECNICO
       if (isEquipoTecnico && data.subtipo_actividad) {
         payload.subtipo_actividad = data.subtipo_actividad
+      }
+
+      // Granularidad: enviar legajos_alcance explícito cuando el selector está
+      // disponible (medida con legajos adicionales). [] = grupal, no-vacío = subgrupo.
+      // Si la medida tiene un solo NNyA omitimos el campo (backend lo trata como grupal).
+      const scopeSelectorDisponible = !!legajoPrimario && (legajosAdicionales?.length ?? 0) > 0
+      if (scopeSelectorDisponible) {
+        payload.legajos_alcance = legajosAlcance
       }
 
       await actividadService.create(payload)
@@ -356,6 +379,17 @@ export const ActorTabContent: React.FC<ActorTabContentProps> = ({
           />
         )}
       />
+
+      {legajoPrimario && (
+        <LegajosAlcanceSelector
+          legajoPrimario={legajoPrimario}
+          legajosAdicionales={legajosAdicionales ?? []}
+          value={legajosAlcance}
+          onChange={setLegajosAlcance}
+          disabled={loading}
+          helperText="Si la medida está compartida, puede acotar la actividad solo a algunos NNyAs."
+        />
+      )}
 
       <Controller
         name="adjuntos_archivos"

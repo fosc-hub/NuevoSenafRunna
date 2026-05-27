@@ -475,6 +475,18 @@ export interface TActividadPlanTrabajo {
    * vía PATCH /api/actividades/{id}/responsables/.
    */
   permite_derivacion_interna?: boolean
+
+  /**
+   * Granularidad de legajos en medida compartida.
+   * IDs de legajos a los que aplica esta actividad. Array vacío = grupal (aplica a todos
+   * los legajos vinculados a la medida).
+   */
+  legajos_alcance: number[]
+
+  /**
+   * Computed: true si la actividad es grupal (legajos_alcance vacío).
+   */
+  es_grupal: boolean
 }
 
 /**
@@ -524,6 +536,11 @@ export interface CreateActividadRequest {
   adjuntos_archivos?: File[]
   adjuntos_tipos?: string[]
   adjuntos_descripciones?: string[]
+  /**
+   * Granularidad: IDs de legajos a los que aplica esta actividad.
+   * Vacío u omitido = grupal (aplica a todos los legajos de la medida).
+   */
+  legajos_alcance?: number[]
 }
 
 /**
@@ -553,6 +570,11 @@ export interface UpdateActividadRequest {
   estado?: 'PENDIENTE' | 'EN_PROGRESO' | 'REALIZADA' | 'CANCELADA' | 'VENCIDA'
   es_borrador?: boolean
   motivo_cancelacion?: string
+  /**
+   * Granularidad: IDs de legajos a los que aplica.
+   * Vacío = grupal. Omitido = sin cambio.
+   */
+  legajos_alcance?: number[]
 }
 
 export interface ActividadFilters {
@@ -570,6 +592,11 @@ export interface ActividadFilters {
   vencidas?: string
   /** Filter activities with days remaining less than or equal to this value */
   dias_restantes_max?: string
+  /**
+   * Granularidad: filtra actividades grupales + las que incluyen este legajo en legajos_alcance.
+   * Útil cuando se navega el plan de trabajo desde un NNyA específico de una medida compartida.
+   */
+  legajo_id?: number
 }
 
 export interface ActividadListResponse {

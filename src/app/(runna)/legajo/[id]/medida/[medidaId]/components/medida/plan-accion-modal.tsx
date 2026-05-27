@@ -15,6 +15,8 @@ import CloseIcon from '@mui/icons-material/Close'
 import { ActorTabContent } from './ActorTabContent'
 import type { CreateActividadRequest, ActorEnum } from '../../types/actividades'
 import { useActorVisibility } from '../../hooks/useActorVisibility'
+import type { LegajosAlcanceLegajoPrimario } from './shared/LegajosAlcanceSelector'
+import type { LegajoAdicionalMedida } from '@/app/(runna)/legajo-mesa/types/medida-api'
 
 interface PlanAccionModalProps {
   open: boolean
@@ -24,6 +26,10 @@ interface PlanAccionModalProps {
   /** MPI = Protección Integral, MPE = Protección Excepcional, MPJ = Penal Juvenil */
   tipoMedida?: 'MPI' | 'MPE' | 'MPJ'
   filterEtapa?: 'APERTURA' | 'PROCESO' | 'CESE'
+  /** Legajo primario de la medida (para selector de granularidad). */
+  legajoPrimario?: LegajosAlcanceLegajoPrimario
+  /** Legajos adicionales vinculados a la medida (GAP-11). */
+  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
@@ -32,7 +38,9 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
   planTrabajoId,
   onSuccess,
   tipoMedida = 'MPE',
-  filterEtapa
+  filterEtapa,
+  legajoPrimario,
+  legajosAdicionales,
 }) => {
   const [activeTab, setActiveTab] = useState(0)
   const [formData, setFormData] = useState<Partial<CreateActividadRequest>>({})
@@ -147,6 +155,8 @@ export const PlanAccionModal: React.FC<PlanAccionModalProps> = ({
               onSuccess={onSuccess}
               tipoMedida={tipoMedida}
               filterEtapa={filterEtapa}
+              legajoPrimario={legajoPrimario}
+              legajosAdicionales={legajosAdicionales}
             />
           </>
         )}

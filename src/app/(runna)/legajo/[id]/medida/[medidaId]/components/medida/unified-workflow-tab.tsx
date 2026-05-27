@@ -45,6 +45,7 @@ import { createEtapa } from "../../api/etapa-api-service"
 import { getEtapaDetail, type EtapaDetailResponse } from "../../api/etapa-detail-api-service"
 import { workflowPhaseToTipoEtapa } from "../../utils/workflow-tipo-mapper"
 import IniciarEtapaDialog from "../dialogs/iniciar-etapa-dialog"
+import { EtapaScopeIndicator } from "./shared/EtapaScopeIndicator"
 import type { StepStatus, WorkflowPhase } from "../../types/workflow"
 import type { NotaAvalBasicResponse } from "../../types/nota-aval-api"
 import type { InformeJuridicoBasicResponse } from "../../types/informe-juridico-api"
@@ -612,7 +613,24 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     setIniciarEtapaDialogOpen(true)
   }
 
-  const handleConfirmIniciarEtapa = async (observaciones?: string) => {
+  // ========== Granularidad (legajos_alcance) ==========
+  // El selector solo aparece cuando la medida tiene legajos adicionales (SAC compartido).
+  // medidaApiData viene tipado como interfaz local pero en runtime trae `legajo` y
+  // `legajos_adicionales` desde el response de useMedidaDetail (legajo-mesa types).
+  const medidaApiAny = medidaApiData as any
+  const legajoPrimarioForDialog = medidaApiAny?.legajo
+    ? {
+        id: medidaApiAny.legajo.id as number,
+        numero: medidaApiAny.legajo.numero as string,
+        nnya: {
+          nombre: medidaApiAny.legajo.nnya?.nombre ?? "",
+          apellido: medidaApiAny.legajo.nnya?.apellido ?? "",
+        },
+      }
+    : undefined
+  const legajosAdicionalesForDialog = (medidaApiAny?.legajos_adicionales ?? []) as any[]
+
+  const handleConfirmIniciarEtapa = async (observaciones?: string, legajosAlcance?: number[]) => {
     if (!workflowPhase) return
 
     try {
@@ -626,6 +644,10 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
       await createEtapa(medidaData.id, {
         tipo_etapa: tipoEtapa,
         observaciones,
+        // Cuando el dialog mandó scope (Array — incluso vacío para grupal explícito)
+        // lo enviamos al backend. Si no hay legajos adicionales el dialog manda
+        // undefined y omitimos el campo.
+        ...(legajosAlcance !== undefined ? { legajos_alcance: legajosAlcance } : {}),
       })
 
       console.log('[UnifiedWorkflowTab] Etapa created successfully, reloading page...')
@@ -708,6 +730,8 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
           onConfirm={handleConfirmIniciarEtapa}
           tipoEtapa={tipoEtapa}
           isLoading={isCreatingEtapa}
+          legajoPrimario={legajoPrimarioForDialog}
+          legajosAdicionales={legajosAdicionalesForDialog}
         />
       </>
     )
@@ -744,6 +768,26 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   if (useV2Mode && workflowPhase && etapaActualForThisTab) {
     return (
       <>
+        {/* Granularidad: indicador visual de si esta etapa es grupal o específica.
+            Se auto-oculta cuando la medida tiene un único legajo. */}
+        <EtapaScopeIndicator
+          legajosAlcance={(etapaActualForThisTab as any)?.legajos_alcance}
+          esGrupal={(etapaActualForThisTab as any)?.es_grupal}
+          legajoPrimarioId={legajoPrimarioForDialog?.id}
+          legajoPrimarioNumero={legajoPrimarioForDialog?.numero}
+          legajoPrimarioNombre={
+            legajoPrimarioForDialog
+              ? `${legajoPrimarioForDialog.nnya.nombre} ${legajoPrimarioForDialog.nnya.apellido}`.trim()
+              : undefined
+          }
+          legajosAdicionales={legajosAdicionalesForDialog}
+          etapaLabel={
+            { apertura: "Apertura", innovacion: "Innovación", prorroga: "Prórroga", cese: "Cese" }[
+              workflowPhase
+            ]
+          }
+        />
+
         <WorkflowStepper
           tipoMedida={medidaData.tipo_medida}
           tipoEtapa={workflowPhaseToTipoEtapa(workflowPhase)}
@@ -794,7 +838,19 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
       : "sin fecha"
     const estadoLabel = e.estado_nombre ?? (e.activa ? "activa" : "cerrada")
     const suffix = e.activa ? " · activa" : " · cerrada"
-    return `#${ordinal} · inicio ${fechaInicio} · ${estadoLabel}${suffix}`
+    // Granularidad: si tenemos el scope para esta etapa, lo incluimos en el label.
+    const eAny = e as any
+    let scopeLabel = ""
+    if (legajosAdicionalesForDialog.length > 0) {
+      const scopeIds: number[] = Array.isArray(eAny.legajos_alcance) ? eAny.legajos_alcance : []
+      const totalLegajos = legajosAdicionalesForDialog.length + 1
+      if (eAny.es_grupal === true || scopeIds.length === 0) {
+        scopeLabel = ` · grupal (${totalLegajos} NNyAs)`
+      } else {
+        scopeLabel = ` · específica (${scopeIds.length}/${totalLegajos} NNyAs)`
+      }
+    }
+    return `#${ordinal} · inicio ${fechaInicio} · ${estadoLabel}${suffix}${scopeLabel}`
   }
 
   // V1 MODE: Fallback to hardcoded steps (backward compatible)
@@ -879,6 +935,27 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         </Alert>
       )}
 
+      {/* Granularidad: indicador grupal vs específica en V1 fallback. */}
+      <EtapaScopeIndicator
+        legajosAlcance={(etapaActualForThisTab as any)?.legajos_alcance}
+        esGrupal={(etapaActualForThisTab as any)?.es_grupal}
+        legajoPrimarioId={legajoPrimarioForDialog?.id}
+        legajoPrimarioNumero={legajoPrimarioForDialog?.numero}
+        legajoPrimarioNombre={
+          legajoPrimarioForDialog
+            ? `${legajoPrimarioForDialog.nnya.nombre} ${legajoPrimarioForDialog.nnya.apellido}`.trim()
+            : undefined
+        }
+        legajosAdicionales={legajosAdicionalesForDialog}
+        etapaLabel={
+          workflowPhase
+            ? { apertura: "Apertura", innovacion: "Innovación", prorroga: "Prórroga", cese: "Cese" }[
+                workflowPhase
+              ]
+            : undefined
+        }
+      />
+
       <WorkflowStepper
         steps={steps}
         activeStep={activeStep}
@@ -895,6 +972,8 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         onConfirm={handleConfirmIniciarEtapa}
         tipoEtapa={workflowPhaseToTipoEtapa(workflowPhase ?? "innovacion")}
         isLoading={isCreatingEtapa}
+        legajoPrimario={legajoPrimarioForDialog}
+        legajosAdicionales={legajosAdicionalesForDialog}
       />
     </>
   )

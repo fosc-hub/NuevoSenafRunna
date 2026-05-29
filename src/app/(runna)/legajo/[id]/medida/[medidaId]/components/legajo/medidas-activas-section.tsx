@@ -19,6 +19,7 @@ import {
 } from "@mui/material"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import AddIcon from "@mui/icons-material/Add"
+import GroupsIcon from "@mui/icons-material/Groups"
 import { useRouter } from "next/navigation"
 import { useApiQuery, extractArray } from "@/hooks/useApiQuery"
 import type { LegajoDetailResponse } from "@/app/(runna)/legajo-mesa/types/legajo-api"
@@ -42,19 +43,32 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
   refreshTrigger = 0,
 }) => {
   const router = useRouter()
+  const legajoActualId = legajoData.legajo.id
 
   // Fetch medidas using TanStack Query (only if not prefetched)
   // Use prefetched data to avoid duplicate requests and queuing
   const { data: medidasData, isLoading, error: queryError } = useApiQuery<MedidaBasicResponse[]>(
-    `legajo/${legajoData.legajo.id}/medidas`,
+    `legajo/${legajoActualId}/medidas`,
     { _refresh: refreshTrigger },
     {
-      queryFn: () => getMedidasByLegajo(legajoData.legajo.id, {}),
-      enabled: !!legajoData.legajo.id && !prefetchedMedidas, // Only fetch if not prefetched
+      queryFn: () => getMedidasByLegajo(legajoActualId, {}),
+      enabled: !!legajoActualId && !prefetchedMedidas, // Only fetch if not prefetched
       initialData: prefetchedMedidas, // Use prefetched data as initial
     }
   )
-  const medidas = extractArray(medidasData)
+
+  // Fuente de datos: el detalle del legajo (GET /api/legajos/{id}/) ya incluye
+  // las medidas COMPARTIDAS donde este legajo participa como VINCULADO (Mejora 1,
+  // ver claudedocs/MEDIDA_COMPARTIDA_VISTA_LEGAJO_FRONTEND.md). El endpoint
+  // /legajos/{id}/medidas/ (getMedidasByLegajo) NO las incluye —solo las
+  // primarias—, por eso se prefiere historial_medidas del detalle y la llamada
+  // separada queda como fallback. `historial_medidas` cubre todos los estados
+  // (VIGENTE/CERRADA/...), igual que el listado /medidas/ sin filtro.
+  const medidasFromDetail = (legajoData.historial_medidas ??
+    legajoData.medidas_activas ??
+    []) as unknown as MedidaBasicResponse[]
+  const medidas =
+    medidasFromDetail.length > 0 ? medidasFromDetail : extractArray(medidasData)
 
   const error = queryError ? String(queryError) : null
 
@@ -104,8 +118,8 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
     router.push(`/legajo/${legajoData.legajo.id}/medida/${medidaId}`)
   }
 
-  // Loading state
-  if (isLoading) {
+  // Loading state — solo si no tenemos datos del detalle y el fetch sigue cargando
+  if (isLoading && medidasFromDetail.length === 0) {
     return (
       <SectionCard
         title="Registro de medidas tomadas"
@@ -202,6 +216,18 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
               const tipoMedida = extractString(medida.tipo_medida, "N/A")
               const numeroMedida = extractString(medida.numero_medida, "N/A")
 
+              // Medida compartida (SAC compartido): tiene legajos vinculados.
+              // Si `legajo_id` apunta a otro legajo, este legajo es VINCULADO;
+              // si coincide con el legajo actual, es el PRIMARIO.
+              const adicionales = medida.legajos_adicionales ?? []
+              const esCompartida = adicionales.length > 0
+              const esEstePrimario =
+                medida.legajo_id === undefined || medida.legajo_id === legajoActualId
+              const totalNnyas = adicionales.length + 1
+              const tooltipCompartida = esEstePrimario
+                ? `Medida compartida · ${totalNnyas} NNyAs · este legajo es el primario`
+                : `Medida compartida · ${totalNnyas} NNyAs · este legajo participa como vinculado (primario: legajo #${medida.legajo_id})`
+
               return (
                 <TableRow key={medida.id} hover>
                   <TableCell>
@@ -213,9 +239,23 @@ export const MedidasActivasSection: React.FC<MedidasActivasSectionProps> = ({
                     />
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {numeroMedida}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {numeroMedida}
+                      </Typography>
+                      {esCompartida && (
+                        <Tooltip title={tooltipCompartida}>
+                          <Chip
+                            icon={<GroupsIcon />}
+                            label={esEstePrimario ? "Compartida" : "Compartida · vinculado"}
+                            size="small"
+                            color="info"
+                            variant="outlined"
+                            sx={{ width: "fit-content", height: 22 }}
+                          />
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">

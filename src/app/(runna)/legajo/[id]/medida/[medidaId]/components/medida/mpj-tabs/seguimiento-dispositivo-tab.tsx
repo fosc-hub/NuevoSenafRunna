@@ -33,8 +33,7 @@ import { mapEducacionFromDemanda, mapSaludFromDemandaEnhanced } from "../../../u
 import { useMemo, useEffect } from "react"
 import { seguimientoDispositivoService } from "../../../api/seguimiento-dispositivo-api-service"
 import { toast } from "react-toastify"
-import { NnyaSelectorMedida, type NnyaSelectorLegajoPrimario } from "../shared/NnyaSelectorMedida"
-import type { LegajoAdicionalMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
+import { useParams } from "next/navigation"
 
 // No more mock data - using real API
 
@@ -976,63 +975,26 @@ interface SeguimientoDispositivoMPJProps {
   medidaId: number // Required for API calls
   demandaData?: any // Full demanda data from the full-detail endpoint
   personaId?: number // Optional specific persona ID to use
-  /**
-   * Legajo primario de la medida. Necesario para el selector de NNyA
-   * cuando la medida tiene legajos adicionales (SAC compartido).
-   */
-  legajoPrimario?: NnyaSelectorLegajoPrimario
-  /** Legajos adicionales vinculados a la medida (GAP-11). */
-  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps> = ({
   medidaId,
   demandaData,
   personaId,
-  legajoPrimario,
-  legajosAdicionales,
 }) => {
   const [selectedSection, setSelectedSection] = useState<string>("situacion-instituto")
 
-  // Granularidad NNyA: cuando la medida tiene legajos adicionales, el usuario elige
-  // sobre qué NNyA está cargando el seguimiento (1-a-1 por NNyA). Persistimos la
-  // selección en sessionStorage para mantenerla entre cambios de tab.
-  const adicionalesList = legajosAdicionales ?? []
-  const storageKey = `seguimiento-nnya-${medidaId}`
-  const [selectedLegajoId, setSelectedLegajoId] = useState<number>(() => {
-    if (typeof window !== "undefined" && legajoPrimario) {
-      const saved = window.sessionStorage.getItem(storageKey)
-      if (saved) {
-        const parsed = Number(saved)
-        const isValid =
-          parsed === legajoPrimario.id || adicionalesList.some((la) => la.legajo_id === parsed)
-        if (isValid) return parsed
-      }
-    }
-    return legajoPrimario?.id ?? 0
-  })
-
-  // Si el NNyA seleccionado se desvincula entre renders, resetear al primario.
-  useEffect(() => {
-    if (!legajoPrimario) return
-    const isValid =
-      selectedLegajoId === legajoPrimario.id ||
-      adicionalesList.some((la) => la.legajo_id === selectedLegajoId)
-    if (!isValid) {
-      setSelectedLegajoId(legajoPrimario.id)
-      toast.info("El NNyA seleccionado fue desvinculado de la medida. Mostrando el primario.")
-    }
-  }, [legajoPrimario?.id, adicionalesList, selectedLegajoId])
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && selectedLegajoId > 0) {
-      window.sessionStorage.setItem(storageKey, String(selectedLegajoId))
-    }
-  }, [selectedLegajoId, storageKey])
-
-  // Pasamos legajoId solo si hay adicionales (en caso contrario, el seguimiento
-  // ya es 1-a-1 implícito con el único NNyA y el backend lo deduce).
-  const effectiveLegajoId = adicionalesList.length > 0 ? selectedLegajoId : undefined
+  // Óptica de legajo: la medida siempre se ve bajo /legajo/[id]/medida/[medidaId],
+  // así que el legajo de la ruta ES el NNyA cuyo seguimiento se está viendo/editando.
+  // Por eso no hace falta un selector: para ver a otro hermano se navega a su legajo.
+  // Dirige lectura (?legajo_id=) y escritura (campo legajo) al NNyA correcto, igual
+  // que etapas y actividades.
+  const routeParams = useParams()
+  const effectiveLegajoId = (() => {
+    const raw = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id
+    const n = raw != null ? Number(raw) : NaN
+    return Number.isNaN(n) ? undefined : n
+  })()
 
   // Transform demanda data to seguimiento format
   const educacionData = useMemo(() => {
@@ -1061,11 +1023,11 @@ export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps>
       case "situacion-instituto":
         return <SituacionInstitutoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
       case "informacion-educativa":
-        return <InformacionEducativaSection key={remountKey} medidaId={medidaId} personaId={personaId} data={educacionData} />
+        return <InformacionEducativaSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} personaId={personaId} data={educacionData} />
       case "informacion-salud":
-        return <InformacionSaludSection key={remountKey} medidaId={medidaId} personaId={personaId} data={saludData} />
+        return <InformacionSaludSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} personaId={personaId} data={saludData} />
       case "talleres":
-        return <TalleresSection key={remountKey} medidaId={medidaId} maxTalleres={5} />
+        return <TalleresSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} maxTalleres={5} />
       case "cambio-lugar":
         return <CambioLugarResguardoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
       case "notas-seguimiento":
@@ -1077,16 +1039,6 @@ export const SeguimientoDispositivoMPJ: React.FC<SeguimientoDispositivoMPJProps>
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Selector NNyA (solo visible si la medida tiene legajos adicionales) */}
-      {legajoPrimario && adicionalesList.length > 0 && (
-        <NnyaSelectorMedida
-          legajoPrimario={legajoPrimario}
-          legajosAdicionales={adicionalesList}
-          selectedLegajoId={selectedLegajoId}
-          onChange={setSelectedLegajoId}
-        />
-      )}
-
       <Box sx={{ display: "flex", gap: 3 }}>
         {/* Sidebar */}
         <Box sx={{ width: 300, flexShrink: 0 }}>

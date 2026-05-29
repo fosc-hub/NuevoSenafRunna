@@ -27,6 +27,14 @@ interface UseMedidaDetailOptions {
     enabled?: boolean
     refetchInterval?: number | false
     staleTime?: number
+    /**
+     * Óptica de legajo dentro de una medida compartida. Cuando se provee, el
+     * backend filtra `historial_etapas` a grupales + las que incluyen ese
+     * legajo (Mejora 3). Se incluye en el queryKey para no mezclar el cache de
+     * distintas ópticas; las invalidaciones por `medidaKeys.detail(id)` siguen
+     * funcionando por prefijo.
+     */
+    legajoId?: number
 }
 
 export const useMedidaDetail = (
@@ -37,11 +45,12 @@ export const useMedidaDetail = (
         enabled = true,
         refetchInterval = false,
         staleTime = 0, // Always refetch on invalidation to ensure UI reflects latest state
+        legajoId,
     } = options
 
     const queryResult = useQuery<MedidaDetailResponse, Error>({
-        queryKey: medidaKeys.detail(medidaId),
-        queryFn: () => getMedidaDetail(medidaId),
+        queryKey: [...medidaKeys.detail(medidaId), legajoId ?? null],
+        queryFn: () => getMedidaDetail(medidaId, legajoId),
         enabled: enabled && !!medidaId,
         staleTime,
         refetchInterval,

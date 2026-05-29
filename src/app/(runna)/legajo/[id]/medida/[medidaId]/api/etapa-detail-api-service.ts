@@ -147,18 +147,26 @@ export interface EtapaNotFoundError {
  *
  * @param medidaId ID of the medida
  * @param tipoEtapa Type of etapa (APERTURA, INNOVACION, PRORROGA, CESE, etc.)
+ * @param etapaId Optional. GAP-08: selecciona una etapa puntual del historial.
+ * @param legajoId Optional. Óptica de legajo en una medida COMPARTIDA: filtra la
+ *   selección por defecto y `etapas_mismo_tipo` a grupales + las de ese legajo
+ *   (backend commit c29af1f; ver claudedocs/MEDIDA_COMPARTIDA_VISTA_LEGAJO_FRONTEND.md).
  * @returns Etapa detail with all documents
  * @throws Error if request fails (except 404 which returns null)
  */
 export const getEtapaDetail = async (
   medidaId: number,
   tipoEtapa: TipoEtapa,
-  etapaId?: number
+  etapaId?: number,
+  legajoId?: number
 ): Promise<EtapaDetailResponse | null> => {
   try {
-    const qs = etapaId ? `?etapa_id=${etapaId}` : ""
+    const qsParams = new URLSearchParams()
+    if (etapaId) qsParams.set("etapa_id", String(etapaId))
+    if (typeof legajoId === "number") qsParams.set("legajo_id", String(legajoId))
+    const qs = qsParams.toString() ? `?${qsParams.toString()}` : ""
     console.log(
-      `[EtapaDetailService] Fetching etapa ${tipoEtapa} for medida ${medidaId}${etapaId ? ` (etapa_id=${etapaId})` : ""}`,
+      `[EtapaDetailService] Fetching etapa ${tipoEtapa} for medida ${medidaId}${qs}`,
     )
 
     const response = await get<EtapaDetailResponse>(

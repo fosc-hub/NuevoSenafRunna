@@ -12,6 +12,8 @@ import { toast } from "react-toastify"
 
 interface TalleresSectionProps {
   medidaId?: number
+  /** Granularidad NNyA en medida compartida: dirige lectura/escritura a ese legajo. */
+  legajoId?: number
   data?: TallerRecreativo[]
   onUpdate?: (data: TallerRecreativo[]) => void
   readOnly?: boolean
@@ -20,6 +22,7 @@ interface TalleresSectionProps {
 
 export const TalleresSection: React.FC<TalleresSectionProps> = ({
   medidaId,
+  legajoId,
   data,
   onUpdate,
   readOnly = false,
@@ -34,14 +37,14 @@ export const TalleresSection: React.FC<TalleresSectionProps> = ({
     if (medidaId) {
       fetchTalleres()
     }
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchTalleres = async () => {
     if (!medidaId) return
 
     setLoading(true)
     try {
-      const apiData = await seguimientoDispositivoService.listTalleres(medidaId)
+      const apiData = await seguimientoDispositivoService.listTalleres(medidaId, legajoId)
       if (apiData && apiData.length > 0) {
         setTalleres(apiData)
       } else {
@@ -81,10 +84,10 @@ export const TalleresSection: React.FC<TalleresSectionProps> = ({
 
       if (taller.id) {
         // Update existing taller
-        savedTaller = await seguimientoDispositivoService.updateTaller(medidaId, taller.id, taller)
+        savedTaller = await seguimientoDispositivoService.updateTaller(medidaId, taller.id, taller, legajoId)
       } else {
         // Create new taller
-        savedTaller = await seguimientoDispositivoService.addTaller(medidaId, taller)
+        savedTaller = await seguimientoDispositivoService.addTaller(medidaId, taller, legajoId)
       }
 
       // Update local state with response instead of refetching

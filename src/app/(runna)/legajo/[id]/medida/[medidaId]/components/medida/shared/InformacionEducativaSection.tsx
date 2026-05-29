@@ -11,6 +11,8 @@ import type { DropdownData } from "@/components/forms/types/formTypes"
 
 interface InformacionEducativaSectionProps {
   medidaId?: number
+  /** Granularidad NNyA en medida compartida: dirige lectura/escritura a ese legajo. */
+  legajoId?: number
   personaId?: number // Required for creating base TEducacion record
   data?: InformacionEducativa
   onUpdate?: (data: InformacionEducativa) => void
@@ -19,6 +21,7 @@ interface InformacionEducativaSectionProps {
 
 export const InformacionEducativaSection: React.FC<InformacionEducativaSectionProps> = ({
   medidaId,
+  legajoId,
   personaId,
   data,
   onUpdate,
@@ -49,14 +52,14 @@ export const InformacionEducativaSection: React.FC<InformacionEducativaSectionPr
     if (medidaId) {
       fetchData()
     }
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchData = async () => {
     if (!medidaId) return
 
     setLoading(true)
     try {
-      const apiData = await seguimientoDispositivoService.getInformacionEducativa(medidaId)
+      const apiData = await seguimientoDispositivoService.getInformacionEducativa(medidaId, legajoId)
       if (apiData) {
         setFormData(apiData)
         initialFormData.current = apiData // Store initial values for change detection
@@ -150,10 +153,10 @@ export const InformacionEducativaSection: React.FC<InformacionEducativaSectionPr
           return
         }
 
-        updated = await seguimientoDispositivoService.updateInformacionEducativa(medidaId, modifiedFields)
+        updated = await seguimientoDispositivoService.updateInformacionEducativa(medidaId, modifiedFields, legajoId)
       } else {
         // No data exists, use POST to create base record + PATCH
-        updated = await seguimientoDispositivoService.createInformacionEducativa(medidaId, personaId!, formData)
+        updated = await seguimientoDispositivoService.createInformacionEducativa(medidaId, personaId!, formData, legajoId)
         setDataExists(true) // Now data exists for future saves
       }
 

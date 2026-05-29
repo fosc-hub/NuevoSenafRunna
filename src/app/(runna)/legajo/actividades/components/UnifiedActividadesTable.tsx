@@ -51,7 +51,7 @@ import RepeatIcon from "@mui/icons-material/Repeat"
 import FiberNewIcon from "@mui/icons-material/FiberNew"
 import MarkEmailUnreadIcon from "@mui/icons-material/MarkEmailUnread"
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useUser } from "@/utils/auth/userZustand"
 
 // Import services
@@ -159,8 +159,23 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
   showWrapper = true,
 }) => {
   const router = useRouter()
+  const params = useParams()
   const queryClient = useQueryClient()
   useUser() // For auth context
+
+  // Óptica del legajo en una medida COMPARTIDA. La variante "medida" siempre se
+  // renderiza bajo la ruta /legajo/[id]/medida/[medidaId], por lo que params.id
+  // es el legajo desde el que se está viendo el plan de trabajo. Se usa para
+  // pedir al backend solo las actividades grupales + las de ESTE legajo
+  // (?legajo_id=), igual que el filtro visual de etapas (Mejora 3,
+  // ver claudedocs/MEDIDA_COMPARTIDA_VISTA_LEGAJO_FRONTEND.md). En las variantes
+  // "global"/"legajo" no aplica (no hay óptica de un único legajo).
+  const legajoIdFromRoute = (() => {
+    if (variant !== "medida") return undefined
+    const raw = Array.isArray(params?.id) ? params.id[0] : params?.id
+    const n = raw != null ? Number(raw) : NaN
+    return Number.isNaN(n) ? undefined : n
+  })()
   const { user } = useUser()
   const { actorFilter, allowedActors, isActorAllowed, canSeeAllActors } = useActorVisibility()
 
@@ -275,16 +290,24 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
     enabled: variant === "global",
   })
 
-  // Medida variant: fetch from plan trabajo API
+  // Medida variant: fetch from plan trabajo API.
+  // `legajo_id` filtra actividades grupales + las de ESTE legajo dentro de una
+  // medida compartida (omitido cuando no hay legajo en la ruta).
+  const medidaFilters = {
+    ...filters,
+    ...(actorFilter && { actor: actorFilter }),
+    ...(legajoIdFromRoute != null && { legajo_id: legajoIdFromRoute }),
+    ordering: "-fecha_creacion",
+  }
   const {
     data: medidaResponse,
     isLoading: medidaLoading,
     refetch: medidaRefetch,
   } = useApiQuery<any>(
     `actividades-plan/${planTrabajoId}`,
-    { ...filters, ...(actorFilter && { actor: actorFilter }), ordering: "-fecha_creacion" },
+    medidaFilters,
     {
-      queryFn: () => actividadService.list(planTrabajoId!, { ...filters, ...(actorFilter && { actor: actorFilter }), ordering: "-fecha_creacion" }),
+      queryFn: () => actividadService.list(planTrabajoId!, medidaFilters),
       enabled: variant === "medida" && !!planTrabajoId,
     }
   )

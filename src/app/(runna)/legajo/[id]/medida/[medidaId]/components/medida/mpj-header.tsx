@@ -20,8 +20,7 @@ import { useState } from "react"
 import { SeguimientoDispositivoMPJ } from "./mpj-tabs/seguimiento-dispositivo-tab"
 import { ConfiguracionMPJSection } from "./configuracion-mpj-section"
 import { Divider, Stack } from "@mui/material"
-import type { ConfiguracionDispositivoMPE, LegajoAdicionalMedida } from "@/app/(runna)/legajo-mesa/types/medida-api"
-import type { NnyaSelectorLegajoPrimario } from "./shared/NnyaSelectorMedida"
+import type { ConfiguracionDispositivoMPE } from "@/app/(runna)/legajo-mesa/types/medida-api"
 
 interface MPJHeaderProps {
   medidaData: {
@@ -59,12 +58,6 @@ interface MPJHeaderProps {
   onMedidaRefetch?: () => void
   /** Configuración de dispositivo MPJ desde el backend */
   configuracionDispositivoMpj?: ConfiguracionDispositivoMPE | null
-  /**
-   * Legajo primario y adicionales de la medida — necesarios para el selector
-   * de NNyA dentro del modal de Seguimiento en Dispositivo (1-a-1 por NNyA).
-   */
-  legajoPrimario?: NnyaSelectorLegajoPrimario
-  legajosAdicionales?: LegajoAdicionalMedida[]
 }
 
 export const MPJHeader: React.FC<MPJHeaderProps> = ({
@@ -75,8 +68,6 @@ export const MPJHeader: React.FC<MPJHeaderProps> = ({
   onFieldChange,
   onMedidaRefetch,
   configuracionDispositivoMpj,
-  legajoPrimario,
-  legajosAdicionales,
 }) => {
   const [seguimientoModalOpen, setSeguimientoModalOpen] = useState(false)
   const [tipoMedidaMPJ, setTipoMedidaMPJ] = useState(medidaData.tipo_medida_mpj || '')
@@ -353,8 +344,6 @@ export const MPJHeader: React.FC<MPJHeaderProps> = ({
               medidaId={medidaId}
               demandaData={demandaData}
               personaId={medidaData.persona?.id}
-              legajoPrimario={legajoPrimario}
-              legajosAdicionales={legajosAdicionales}
             />
           ) : (
             <Box sx={{ p: 3, textAlign: 'center' }}>

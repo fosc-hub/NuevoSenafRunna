@@ -202,6 +202,11 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
     refetch: refetchMedida,
   } = useMedidaDetail(medidaIdNum!, {
     enabled: isValidMedidaId,
+    // Óptica del legajo dentro de la medida compartida: filtra historial_etapas
+    // a grupales + las que incluyen este legajo (Mejora 3, ver
+    // claudedocs/MEDIDA_COMPARTIDA_VISTA_LEGAJO_FRONTEND.md). Si no hay legajo en
+    // la ruta, se omite y el backend devuelve todas las etapas (histórico).
+    legajoId: legajoIdNum ?? undefined,
   })
 
   // State for legajo data (could also be migrated to React Query in the future)
@@ -605,20 +610,6 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               estados={{ apertura: true, proceso: false, cese: false }}
               onMedidaRefetch={refetchMedida}
               configuracionDispositivoMpj={medidaApiData?.configuracion_dispositivo_mpe}
-              legajoPrimario={
-                medidaApiData?.legajo
-                  ? {
-                      id: medidaApiData.legajo.id,
-                      numero: medidaApiData.legajo.numero,
-                      nnya: {
-                        id: medidaApiData.legajo.nnya?.id,
-                        nombre: medidaApiData.legajo.nnya?.nombre ?? "",
-                        apellido: medidaApiData.legajo.nnya?.apellido ?? "",
-                      },
-                    }
-                  : undefined
-              }
-              legajosAdicionales={medidaApiData?.legajos_adicionales ?? []}
             />
 
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>

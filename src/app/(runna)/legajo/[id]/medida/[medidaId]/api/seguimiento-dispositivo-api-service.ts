@@ -28,17 +28,25 @@ import type {
 
 /**
  * Build query string ?legajo_id=N (or "" if undefined).
- * Pendiente backend: ver claudedocs/GRANULARIDAD_LEGAJOS_MEDIDA_COMPARTIDA.md
- * — el backend dev agregará FK legajo + filtros ?legajo_id= a estos endpoints.
+ * Granularidad por NNyA en medida compartida: el backend (TSeguimientoView,
+ * resolve_legajo_id) lee el legajo de la LECTURA desde ?legajo_id=. Si no viene,
+ * defaultea al legajo primario de la medida.
  */
 const legajoQs = (legajoId?: number): string =>
   typeof legajoId === "number" ? `?legajo_id=${legajoId}` : ""
 
 /**
- * Merge { legajo_id } into body when provided.
+ * Merge { legajo } into the create body when provided.
+ *
+ * IMPORTANTE: en los POST de seguimiento el backend lee el campo `legajo`
+ * (resolve_legajo_for_create → serializer.validated_data['legajo']), NO
+ * `legajo_id`. Mandar `legajo_id` en el body es ignorado por DRF y el registro
+ * cae al legajo primario. Para los PATCH de info-educativa/salud el legajo NO
+ * va en el body sino en la query (?legajo_id=), por eso esos métodos usan
+ * legajoQs() y no withLegajo().
  */
 const withLegajo = <T extends Record<string, any>>(body: T, legajoId?: number): T =>
-  typeof legajoId === "number" ? ({ ...body, legajo_id: legajoId } as T) : body
+  typeof legajoId === "number" ? ({ ...body, legajo: legajoId } as T) : body
 
 class SeguimientoDispositivoApiService {
 
@@ -234,8 +242,10 @@ class SeguimientoDispositivoApiService {
       false // No toast for intermediate step
     )
 
-    // Step 2: Transform frontend data to API format for PATCH
-    const apiData = withLegajo({
+    // Step 2: Transform frontend data to API format for PATCH.
+    // El legajo va en la QUERY (?legajo_id=), no en el body: este endpoint lo
+    // resuelve con resolve_legajo_id(request) sobre query_params.
+    const apiData = {
       nivel_alcanzado: data.nivel_educativo,
       institucion_educativa_id: data.institucion_educativa_id, // Send ID, not nombre
       ultimo_cursado: data.grado_curso,
@@ -244,10 +254,10 @@ class SeguimientoDispositivoApiService {
       asistencia: data.asistencia,
       comentarios_educativos: data.observaciones,
       fecha_actualizacion: data.fecha_actualizacion
-    }, legajoId)
+    }
 
     const response = await axiosInstance.patch<any>(
-      `medidas/${medidaId}/info-educativa/`,
+      `medidas/${medidaId}/info-educativa/${legajoQs(legajoId)}`,
       apiData
     )
 
@@ -273,8 +283,9 @@ class SeguimientoDispositivoApiService {
    * Note: Endpoint is /medidas/{id}/info-educativa/ (no separate record ID)
    */
   async updateInformacionEducativa(medidaId: number, data: Partial<InformacionEducativa>, legajoId?: number): Promise<InformacionEducativa> {
-    // Transform frontend data to API format
-    const apiData = withLegajo({
+    // Transform frontend data to API format.
+    // El legajo va en la QUERY (?legajo_id=), no en el body.
+    const apiData = {
       nivel_alcanzado: data.nivel_educativo,
       institucion_educativa_id: data.institucion_educativa_id, // Send ID, not nombre
       ultimo_cursado: data.grado_curso,
@@ -283,10 +294,10 @@ class SeguimientoDispositivoApiService {
       asistencia: data.asistencia,
       comentarios_educativos: data.observaciones,
       fecha_actualizacion: data.fecha_actualizacion
-    }, legajoId)
+    }
 
     const response = await axiosInstance.patch<any>(
-      `medidas/${medidaId}/info-educativa/`,
+      `medidas/${medidaId}/info-educativa/${legajoQs(legajoId)}`,
       apiData
     )
 
@@ -357,18 +368,19 @@ class SeguimientoDispositivoApiService {
       false // No toast for intermediate step
     )
 
-    // Step 2: Transform frontend data to API format for PATCH
-    // Only send fields that exist in cobertura_medica model
-    const apiData = withLegajo({
+    // Step 2: Transform frontend data to API format for PATCH.
+    // Only send fields that exist in cobertura_medica model.
+    // El legajo va en la QUERY (?legajo_id=), no en el body.
+    const apiData = {
       obra_social: data.obra_social,
       intervencion: data.intervencion,
       auh: data.auh,
       institucion_sanitaria_id: data.institucion_sanitaria_id, // Send ID, not nombre
       observaciones: data.observaciones
-    }, legajoId)
+    }
 
     const response = await axiosInstance.patch<any>(
-      `medidas/${medidaId}/info-salud/`,
+      `medidas/${medidaId}/info-salud/${legajoQs(legajoId)}`,
       apiData
     )
 
@@ -392,18 +404,19 @@ class SeguimientoDispositivoApiService {
    * Note: Endpoint is /medidas/{id}/info-salud/ (no separate record ID)
    */
   async updateInformacionSalud(medidaId: number, data: Partial<InformacionSalud>, legajoId?: number): Promise<InformacionSalud> {
-    // Transform frontend data to API format
-    // Only send fields that exist in cobertura_medica model
-    const apiData = withLegajo({
+    // Transform frontend data to API format.
+    // Only send fields that exist in cobertura_medica model.
+    // El legajo va en la QUERY (?legajo_id=), no en el body.
+    const apiData = {
       obra_social: data.obra_social,
       intervencion: data.intervencion,
       auh: data.auh,
       institucion_sanitaria_id: data.institucion_sanitaria_id, // Send ID, not nombre
       observaciones: data.observaciones
-    }, legajoId)
+    }
 
     const response = await axiosInstance.patch<any>(
-      `medidas/${medidaId}/info-salud/`,
+      `medidas/${medidaId}/info-salud/${legajoQs(legajoId)}`,
       apiData
     )
 

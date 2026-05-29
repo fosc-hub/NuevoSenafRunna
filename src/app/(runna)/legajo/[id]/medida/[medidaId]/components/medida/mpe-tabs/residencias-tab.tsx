@@ -25,6 +25,7 @@ import { InformacionSaludSection } from "../shared/InformacionSaludSection"
 import { TalleresSection } from "../shared/TalleresSection"
 import { mapEducacionFromDemanda, mapSaludFromDemandaEnhanced } from "../../../utils/seguimiento-mapper"
 import { seguimientoDispositivoService } from "../../../api/seguimiento-dispositivo-api-service"
+import { useParams } from "next/navigation"
 import { toast } from "react-toastify"
 import type { TipoSituacion, SituacionNNyA, CambioLugarResguardo, NotaSeguimiento, TLocalCentroVida } from "../../../types/seguimiento-dispositivo"
 
@@ -51,7 +52,7 @@ const mockSituaciones: SituacionCritica[] = [
 ]
 
 // Cambio de Lugar de Resguardo Section (shared between MPE and MPJ)
-const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
+const CambioLugarResguardoSection = ({ medidaId, legajoId }: { medidaId: number; legajoId?: number }) => {
   const [cambios, setCambios] = useState<CambioLugarResguardo[]>([])
   const [locales, setLocales] = useState<TLocalCentroVida[]>([])
   const [lugarOrigen, setLugarOrigen] = useState<TLocalCentroVida | null>(null)
@@ -71,7 +72,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
   // Fetch existing cambios on mount
   useEffect(() => {
     fetchCambios()
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchLocales = async () => {
     setLoadingLocales(true)
@@ -89,7 +90,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
   const fetchCambios = async () => {
     setLoading(true)
     try {
-      const data = await seguimientoDispositivoService.listCambiosLugar(medidaId)
+      const data = await seguimientoDispositivoService.listCambiosLugar(medidaId, legajoId)
       setCambios(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching cambios de lugar:', error)
@@ -117,7 +118,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
         fecha_cambio: fecha,
         motivo: motivo || undefined,
         autorizado_por: autorizadoPor || undefined
-      })
+      }, legajoId)
 
       // Reset form
       setLugarOrigen(null)
@@ -443,7 +444,7 @@ const CambioLugarResguardoSection = ({ medidaId }: { medidaId: number }) => {
 // No more mock data - using real API
 
 // Situación del NNyA en Residencia (MPE specific) - Moved outside parent component
-const SituacionResidenciaSection = ({ medidaId }: { medidaId: number }) => {
+const SituacionResidenciaSection = ({ medidaId, legajoId }: { medidaId: number; legajoId?: number }) => {
     const [tipoSituacion, setTipoSituacion] = useState<TipoSituacion>('AUTORIZACION')
     const [fechaSituacion, setFechaSituacion] = useState('')
     const [observaciones, setObservaciones] = useState('')
@@ -454,12 +455,12 @@ const SituacionResidenciaSection = ({ medidaId }: { medidaId: number }) => {
     // Fetch existing situaciones on mount
     useEffect(() => {
         fetchSituaciones()
-    }, [medidaId])
+    }, [medidaId, legajoId])
 
     const fetchSituaciones = async () => {
         setLoading(true)
         try {
-            const data = await seguimientoDispositivoService.listSituaciones(medidaId)
+            const data = await seguimientoDispositivoService.listSituaciones(medidaId, legajoId)
             // Ensure data is an array
             setSituaciones(Array.isArray(data) ? data : [])
         } catch (error) {
@@ -481,7 +482,7 @@ const SituacionResidenciaSection = ({ medidaId }: { medidaId: number }) => {
                 tipo_situacion: tipoSituacion,
                 fecha: fechaSituacion,
                 observaciones: observaciones || undefined
-            })
+            }, legajoId)
 
             // Reset form
             setTipoSituacion('AUTORIZACION')
@@ -648,7 +649,7 @@ const SituacionResidenciaSection = ({ medidaId }: { medidaId: number }) => {
 }
 
 // Notas de Seguimiento Section (shared between MPE and MPJ)
-const NotasSeguimientoSection = ({ medidaId }: { medidaId: number }) => {
+const NotasSeguimientoSection = ({ medidaId, legajoId }: { medidaId: number; legajoId?: number }) => {
   const [notas, setNotas] = useState<NotaSeguimiento[]>([])
   const [titulo, setTitulo] = useState("")
   const [nota, setNota] = useState("")
@@ -660,12 +661,12 @@ const NotasSeguimientoSection = ({ medidaId }: { medidaId: number }) => {
   // Fetch existing notas on mount
   useEffect(() => {
     fetchNotas()
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchNotas = async () => {
     setLoading(true)
     try {
-      const data = await seguimientoDispositivoService.listNotasSeguimiento(medidaId)
+      const data = await seguimientoDispositivoService.listNotasSeguimiento(medidaId, legajoId)
       setNotas(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching notas de seguimiento:', error)
@@ -687,7 +688,7 @@ const NotasSeguimientoSection = ({ medidaId }: { medidaId: number }) => {
         nota: nota,
         fecha: fecha,
         autor: autor || undefined
-      })
+      }, legajoId)
 
       // Reset form
       setTitulo('')
@@ -982,6 +983,17 @@ export const ResidenciasTab: React.FC<ResidenciasTabProps> = ({
     const [fecha, setFecha] = useState<string>("12/12/2025")
     const [situaciones] = useState<SituacionCritica[]>(mockSituaciones)
 
+    // Óptica de legajo: la medida siempre se ve bajo /legajo/[id]/medida/[medidaId],
+    // así que el legajo de la ruta ES el NNyA cuyo seguimiento se ve/edita. No hay
+    // selector: para ver a otro hermano se navega a su legajo (igual que etapas y
+    // actividades). Dirige lectura (?legajo_id=) y escritura (campo legajo).
+    const routeParams = useParams()
+    const effectiveLegajoId = (() => {
+        const raw = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id
+        const n = raw != null ? Number(raw) : NaN
+        return Number.isNaN(n) ? undefined : n
+    })()
+
     // Transform demanda data to seguimiento format
     const educacionData = useMemo(() => {
         if (!demandaData) return undefined
@@ -1110,21 +1122,23 @@ export const ResidenciasTab: React.FC<ResidenciasTabProps> = ({
     )
 
     const renderContent = () => {
+        // key con legajoId fuerza remount al cambiar de NNyA, evitando fugas de estado
+        const remountKey = `${medidaId}-${effectiveLegajoId ?? "single"}`
         switch (selectedSection) {
             case "situacion-residencia":
-                return <SituacionResidenciaSection medidaId={medidaId} />
+                return <SituacionResidenciaSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
             case "informacion-educativa":
-                return <InformacionEducativaSection medidaId={medidaId} personaId={personaId} data={educacionData} />
+                return <InformacionEducativaSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} personaId={personaId} data={educacionData} />
             case "informacion-salud":
-                return <InformacionSaludSection medidaId={medidaId} personaId={personaId} data={saludData} />
+                return <InformacionSaludSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} personaId={personaId} data={saludData} />
             case "talleres":
-                return <TalleresSection medidaId={medidaId} maxTalleres={5} />
+                return <TalleresSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} maxTalleres={5} />
             case "cambio-lugar":
-                return <CambioLugarResguardoSection medidaId={medidaId} />
+                return <CambioLugarResguardoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
             case "notas-seguimiento":
-                return <NotasSeguimientoSection medidaId={medidaId} />
+                return <NotasSeguimientoSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
             default:
-                return <SituacionResidenciaSection medidaId={medidaId} />
+                return <SituacionResidenciaSection key={remountKey} medidaId={medidaId} legajoId={effectiveLegajoId} />
         }
     }
 

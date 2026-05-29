@@ -104,14 +104,23 @@ export const getMedidasByLegajo = async (
  * GET /api/medidas/{id}/
  *
  * @param id ID de la medida
+ * @param legajoId Opcional. Cuando la medida es compartida (varios legajos),
+ *   filtra `historial_etapas` a las etapas grupales + las que incluyen ese
+ *   legajo (óptica del legajo dentro de la medida compartida). Sin este
+ *   parámetro el backend devuelve todas las etapas (comportamiento histórico).
+ *   Ver claudedocs/GRANULARIDAD_LEGAJOS_MEDIDA_COMPARTIDA.md (Mejora 3).
  * @returns Medida con detalle completo (legajo, etapas, historial)
  */
-export const getMedidaDetail = async (id: number): Promise<MedidaDetailResponse> => {
+export const getMedidaDetail = async (
+  id: number,
+  legajoId?: number
+): Promise<MedidaDetailResponse> => {
   try {
-    console.log(`Fetching medida detail for ID ${id}`)
+    console.log(`Fetching medida detail for ID ${id}`, { legajoId })
 
     // Make API call - Django requires trailing slash
-    const response = await get<MedidaDetailResponse>(`medidas/${id}/`)
+    const qs = typeof legajoId === "number" ? `?legajo_id=${legajoId}` : ""
+    const response = await get<MedidaDetailResponse>(`medidas/${id}/${qs}`)
 
     console.log("Medida detail retrieved:", response)
 

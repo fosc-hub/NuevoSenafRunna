@@ -209,6 +209,7 @@ export interface MedidaBasicResponse {
   tipo_medida: TipoMedida
   tipo_medida_display: string
   estado_vigencia: EstadoVigencia
+  estado_vigencia_display?: string
   fecha_apertura: string
   fecha_cierre: string | null
   duracion_dias: number
@@ -219,6 +220,17 @@ export interface MedidaBasicResponse {
     estado: EstadoEtapa
     estado_display: string
   } | null
+  /**
+   * GAP-11 / Mejora 1: legajo PRIMARIO (dueño) de la medida. En el detalle del
+   * legajo (GET /api/legajos/{id}/) una medida puede aparecer aunque este
+   * legajo sea solo VINCULADO; en ese caso `legajo_id` apunta a otro legajo.
+   */
+  legajo_id?: number
+  /**
+   * Legajos VINCULADOS a esta medida (SAC compartido). Vacío = medida no
+   * compartida. Ver claudedocs/MEDIDA_COMPARTIDA_VISTA_LEGAJO_FRONTEND.md.
+   */
+  legajos_adicionales?: LegajoAdicionalMedida[]
 }
 
 // Paginated medidas response

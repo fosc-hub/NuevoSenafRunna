@@ -11,6 +11,8 @@ import type { DropdownData } from "@/components/forms/types/formTypes"
 
 interface InformacionSaludSectionProps {
   medidaId?: number
+  /** Granularidad NNyA en medida compartida: dirige lectura/escritura a ese legajo. */
+  legajoId?: number
   personaId?: number // Required for creating base cobertura médica record
   data?: InformacionSalud
   onUpdate?: (data: InformacionSalud) => void
@@ -19,6 +21,7 @@ interface InformacionSaludSectionProps {
 
 export const InformacionSaludSection: React.FC<InformacionSaludSectionProps> = ({
   medidaId,
+  legajoId,
   personaId,
   data,
   onUpdate,
@@ -49,14 +52,14 @@ export const InformacionSaludSection: React.FC<InformacionSaludSectionProps> = (
     if (medidaId) {
       fetchData()
     }
-  }, [medidaId])
+  }, [medidaId, legajoId])
 
   const fetchData = async () => {
     if (!medidaId) return
 
     setLoading(true)
     try {
-      const apiData = await seguimientoDispositivoService.getInformacionSalud(medidaId)
+      const apiData = await seguimientoDispositivoService.getInformacionSalud(medidaId, legajoId)
       if (apiData) {
         setFormData(apiData)
         initialFormData.current = apiData // Store initial values for change detection
@@ -150,10 +153,10 @@ export const InformacionSaludSection: React.FC<InformacionSaludSectionProps> = (
           return
         }
 
-        updated = await seguimientoDispositivoService.updateInformacionSalud(medidaId, modifiedFields)
+        updated = await seguimientoDispositivoService.updateInformacionSalud(medidaId, modifiedFields, legajoId)
       } else {
         // No data exists, use POST to create base record + PATCH
-        updated = await seguimientoDispositivoService.createInformacionSalud(medidaId, personaId!, formData)
+        updated = await seguimientoDispositivoService.createInformacionSalud(medidaId, personaId!, formData, legajoId)
         setDataExists(true) // Now data exists for future saves
       }
 

@@ -46,6 +46,7 @@ import { getEtapaDetail, type EtapaDetailResponse } from "../../api/etapa-detail
 import { workflowPhaseToTipoEtapa } from "../../utils/workflow-tipo-mapper"
 import IniciarEtapaDialog from "../dialogs/iniciar-etapa-dialog"
 import { EtapaScopeIndicator } from "./shared/EtapaScopeIndicator"
+import { useParams } from "next/navigation"
 import type { StepStatus, WorkflowPhase } from "../../types/workflow"
 import type { NotaAvalBasicResponse } from "../../types/nota-aval-api"
 import type { InformeJuridicoBasicResponse } from "../../types/informe-juridico-api"
@@ -101,6 +102,18 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
   workflowPhase = "apertura",
   onMedidaRefetch,
 }) => {
+  // ========== Óptica de legajo (medida compartida) ==========
+  // La ruta es /legajo/[id]/medida/[medidaId]; params.id es el legajo desde el
+  // que se está viendo la medida. Se usa para pedir al backend la etapa con
+  // filtro ?legajo_id= (grupales + las de ESTE legajo) en medidas compartidas
+  // (commit backend c29af1f). En medidas de un solo NNyA es inocuo.
+  const routeParams = useParams()
+  const legajoOpticaId = (() => {
+    const raw = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id
+    const n = raw != null ? Number(raw) : NaN
+    return Number.isNaN(n) ? undefined : n
+  })()
+
   // ========== User Permissions ==========
   const { user } = useUser()
   // Superuser check: is_superuser OR is_staff OR admin/superuser group
@@ -281,10 +294,13 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         // Single API call gets ALL documents for this etapa.
         // GAP-08: pass selectedEtapaId when the user picked a specific one
         // from the historial selector (else backend returns latest).
+        // Medida compartida: legajoOpticaId filtra la selección por defecto y
+        // etapas_mismo_tipo a grupales + las de este legajo (commit c29af1f).
         const detail = await getEtapaDetail(
           medidaData.id,
           tipoEtapa,
           selectedEtapaId ?? undefined,
+          legajoOpticaId,
         )
 
         if (!detail) {
@@ -326,7 +342,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
     }
 
     fetchEtapaDetail()
-  }, [medidaData.id, workflowPhase, workflowRefreshKey, selectedEtapaId])
+  }, [medidaData.id, workflowPhase, workflowRefreshKey, selectedEtapaId, legajoOpticaId])
 
   // ========== V2 Estados Catalog (REMOVED - no longer needed) ==========
   /**

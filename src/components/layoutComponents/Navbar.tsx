@@ -217,7 +217,7 @@ export default function Header() {
   if (!isClient || loadingUser) {
     return (
       <header
-        className="text-white px-3 sm:px-6 py-3 flex justify-between items-center h-[72px] shadow-md gap-2 overflow-hidden"
+        className="sticky top-0 z-[1200] text-white px-3 sm:px-6 py-3 flex justify-between items-center h-[72px] shadow-md gap-2 overflow-hidden"
         style={{ backgroundColor: '#00457F' }}
       >
         <div className="flex items-center min-w-0">
@@ -236,7 +236,7 @@ export default function Header() {
 
   return (
     <header
-      className="text-white px-3 sm:px-6 py-3 flex justify-between items-center shadow-md gap-2 overflow-hidden"
+      className="sticky top-0 z-[1200] text-white px-3 sm:px-6 py-3 flex justify-between items-center shadow-md gap-2"
       style={{ backgroundColor: '#00457F' }}
     >
       {/* Logo Gobierno de Córdoba - Lado Izquierdo (Branding) */}

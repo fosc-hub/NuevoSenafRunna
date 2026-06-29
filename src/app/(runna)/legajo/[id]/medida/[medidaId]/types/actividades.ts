@@ -271,6 +271,17 @@ export interface ZonaInfo {
 }
 
 /**
+ * Equipo (zona) actual responsable de una actividad.
+ * Refleja el flujo "Transferir a equipo": prioriza la zona destino de la última
+ * transferencia y cae a la zona del responsable principal. `null` si no puede
+ * determinarse. Provisto por el backend en `equipo_info`.
+ */
+export interface EquipoInfo {
+  id: number
+  nombre: string
+}
+
+/**
  * TActividadPlanTrabajo - Activity instance in a work plan
  *
  * Source: RUNNA API (9).yaml lines 10307-10514
@@ -304,6 +315,13 @@ export interface TActividadPlanTrabajo {
    * Contains active zones assigned to the legajo
    */
   zonas_info?: ZonaInfo[]
+
+  /**
+   * Equipo (zona) actual responsable de la actividad (readonly).
+   * Zona destino de la última transferencia, o zona del responsable principal.
+   * `null` si no puede determinarse.
+   */
+  equipo_info?: EquipoInfo | null
 
   // Type & Classification (PLTM V4.0: Hierarchical Structure)
   /**

@@ -334,7 +334,7 @@ export default function Header() {
           {/* Notifications Dropdown */}
           {showNotifications && (
             <div
-              className="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-2xl z-50 overflow-hidden text-gray-800 border border-cyan-100"
+              className="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-2xl z-[1300] overflow-hidden text-gray-800 border border-cyan-100"
             >
               <div className="p-3 border-bottom border-gray-100 bg-gray-50 flex justify-between items-center">
                 <span className="font-bold text-sm text-gray-700">Notificaciones</span>
@@ -444,7 +444,7 @@ export default function Header() {
           {/* Dropdown Menu */}
           {showMenu && (
             <div
-              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-[1300] overflow-hidden"
               style={{
                 border: '1px solid rgba(0, 188, 212, 0.2)',
               }}

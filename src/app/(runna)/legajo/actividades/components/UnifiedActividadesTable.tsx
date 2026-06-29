@@ -1259,11 +1259,29 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
 
                   {/* Equipo */}
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Chip
-                      label={actividad.actor_display || ACTOR_LABELS[actividad.actor] || actividad.actor}
-                      size="small"
-                      sx={{ backgroundColor: getActorColor(actividad.actor), color: "white", fontSize: "0.7rem", fontWeight: 500 }}
-                    />
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
+                      <Chip
+                        label={actividad.actor_display || ACTOR_LABELS[actividad.actor] || actividad.actor}
+                        size="small"
+                        sx={{ backgroundColor: getActorColor(actividad.actor), color: "white", fontSize: "0.7rem", fontWeight: 500 }}
+                      />
+                      {actividad.equipo_info?.nombre && (
+                        <Tooltip title="Equipo asignado">
+                          <Chip
+                            icon={<LocationOnIcon sx={{ fontSize: 13 }} />}
+                            label={actividad.equipo_info.nombre}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              fontSize: "0.65rem",
+                              height: 20,
+                              maxWidth: 160,
+                              "& .MuiChip-icon": { color: "inherit" },
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
 
                   {/* Zonas */}

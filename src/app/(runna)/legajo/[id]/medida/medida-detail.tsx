@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
-import { CircularProgress, Typography, IconButton, Box, Alert, Grid } from "@mui/material"
+import { CircularProgress, Typography, IconButton, Box, Alert } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { useRouter } from "next/navigation"
 import { MedidaData } from "./[medidaId]/types/medidas"
@@ -10,15 +10,17 @@ import { MedidaHeader } from "./[medidaId]/components/medida/medida-header"
 import { MPEHeader } from "./[medidaId]/components/medida/mpe-header"
 import { MPJHeader } from "./[medidaId]/components/medida/mpj-header"
 import { LegajosAdicionalesBanner } from "./[medidaId]/components/medida/legajos-adicionales-banner"
+import { MedidaSummaryCard } from "./[medidaId]/components/medida/restyle/medida-summary-card"
+import { MedidaEtapasSection } from "./[medidaId]/components/medida/restyle/medida-etapas-section"
+import { MedidaModulosRow } from "./[medidaId]/components/medida/restyle/medida-modulos-row"
+import { buildMedidaModulos, defaultModulosOpen } from "./[medidaId]/components/medida/restyle/medida-modulos-config"
+import { MedidaViewToggle, useMedidaViewMode } from "./[medidaId]/components/medida/restyle/medida-view-toggle"
 import { MPETabs } from "./[medidaId]/components/medida/mpe-tabs"
 import { MPJTabs } from "./[medidaId]/components/medida/mpj-tabs"
 import { AperturaSection } from "./[medidaId]/components/medida/apertura-section"
-import { PlanTrabajoTab } from "./[medidaId]/components/medida/mpe-tabs/plan-trabajo-tab"
 import { PlanEvaluacionSection } from "./[medidaId]/components/medida/plan-evaluacion-section"
 import { EvaluacionFamiliarSection } from "./[medidaId]/components/medida/evaluacion-familiar-section"
 import { LegajosAfectadosSection } from "./[medidaId]/components/medida/legajos-afectados-section"
-import { InformesMensualesTable } from "./[medidaId]/components/medida/informes-mensuales-table"
-import { HistorialTab } from "./[medidaId]/components/medida/historial/historial-tab"
 import { CierreSection } from "./[medidaId]/components/medida/cierre-section"
 import { UltimoInformeSection } from "./[medidaId]/components/medida/ultimo-informe-section"
 import { AttachmentDialog } from "./[medidaId]/components/dialogs/attachement-dialog"
@@ -237,6 +239,9 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
   const [activeStep, setActiveStep] = useState(1)
   const [openAttachmentDialog, setOpenAttachmentDialog] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState("")
+
+  // New restyled dashboard vs. classic header+tabs layout (persisted, default "nuevo")
+  const [viewMode, setViewMode] = useMedidaViewMode()
 
   const router = useRouter()
 
@@ -562,7 +567,73 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
           onChange={refetchMedida}
         />
 
-        {medidaData.tipo === "MPE" ? (
+        {/* Toggle: new restyled dashboard vs. classic header + tabs layout. */}
+        <MedidaViewToggle mode={viewMode} onChange={setViewMode} />
+
+        {viewMode === "nuevo" && (
+          <>
+            {/* Restyled summary card (Phase 1): navy header + stat cards + progress,
+                bound to the plan de trabajo activities. Shown for all tipos. */}
+            <MedidaSummaryCard
+              tipo={medidaData.tipo}
+              tipoDisplay={medidaData.tipo_display}
+              numero={medidaData.numero}
+              estadoVigencia={medidaApiData?.estado_vigencia}
+              estadoVigenciaDisplay={medidaApiData?.estado_vigencia_display}
+              fechaApertura={medidaData.fecha_apertura}
+              planTrabajoId={medidaApiData?.plan_trabajo_id}
+              legajoId={legajoIdNum ?? undefined}
+            />
+
+            {/* Restyled etapas section (Phase 2): collapsible rows grouped by
+                workflow phase. Expanding a phase mounts the SAME interactive
+                workflow used by the classic tabs (UnifiedWorkflowTab), so the
+                step forms (registro de intervención, nota de aval, informe
+                jurídico, ratificación) are fully fillable from the new view. */}
+            <MedidaEtapasSection
+              tipo={medidaData.tipo}
+              etapas={(medidaApiData?.historial_etapas as any) ?? []}
+              etapaActualId={medidaApiData?.etapa_actual?.id}
+              estadoVigencia={medidaApiData?.estado_vigencia}
+              medidaApiData={medidaApiData || undefined}
+              workflowMedidaData={{
+                id: medidaApiData?.id,
+                tipo_medida: medidaData.tipo,
+                numero_medida: typeof medidaApiData?.numero_medida === 'string'
+                  ? medidaApiData.numero_medida
+                  : (medidaApiData?.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
+                    ? String((medidaApiData.numero_medida as any).display)
+                    : `M-${medidaData.id}`,
+                estado: medidaApiData?.etapa_actual?.estado,
+                fecha_apertura: medidaApiData?.fecha_apertura,
+                estado_vigencia: medidaApiData?.estado_vigencia,
+                legajo: medidaApiData?.legajo,
+                legajos_adicionales: medidaApiData?.legajos_adicionales,
+              }}
+              legajoData={legajoData ? {
+                numero: legajoData.legajo?.numero || "",
+                persona_nombre: legajoData.persona?.nombre || "",
+                persona_apellido: legajoData.persona?.apellido || "",
+                zona_nombre: legajoData.asignaciones_activas?.[0]?.zona?.nombre || ""
+              } : undefined}
+              onMedidaRefetch={refetchMedida}
+            />
+
+            {/* Restyled módulos row (Phase 3): pill buttons toggling the existing
+                plan de trabajo / historial / control de legalidad / informes
+                modules. Same feature components — only the surrounding chrome changed. */}
+            <MedidaModulosRow
+              modules={buildMedidaModulos({
+                tipo: medidaData.tipo,
+                medidaApiData: medidaApiData || undefined,
+                planTrabajoId: medidaApiData?.plan_trabajo_id,
+              })}
+              defaultOpen={defaultModulosOpen(medidaData.tipo)}
+            />
+          </>
+        )}
+
+        {viewMode === "clasico" && (medidaData.tipo === "MPE" ? (
           <>
             <MPEHeader
               medidaData={medidaData}
@@ -685,66 +756,21 @@ export default function MedidaDetail({ params, onClose, isFullPage = false }: Me
               />
             )}
 
-            {/* Plan de acción/trabajo Section - For both MPI and MPE (outside stepper) */}
-            <Grid container spacing={3} sx={{ mt: 3 }}>
-              <Grid item xs={12}>
-                {medidaData.tipo === "MPI" && medidaApiData?.plan_trabajo_id && (
-                  <PlanTrabajoTab
-                    medidaData={{
-                      id: medidaApiData.id,
-                      tipo_medida: medidaData.tipo,
-                      numero_medida: typeof medidaApiData.numero_medida === 'string'
-                        ? medidaApiData.numero_medida
-                        : (medidaApiData.numero_medida && typeof medidaApiData.numero_medida === 'object' && 'display' in medidaApiData.numero_medida)
-                          ? String(medidaApiData.numero_medida.display)
-                          : `M-${medidaApiData.id}`,
-                      estado: typeof medidaApiData.etapa_actual?.estado === 'string'
-                        ? medidaApiData.etapa_actual.estado
-                        : medidaApiData.etapa_actual?.estado_display || "",
-                      fecha_apertura: medidaApiData.fecha_apertura,
-                      // Granularidad
-                      legajo: medidaApiData.legajo,
-                      legajos_adicionales: medidaApiData.legajos_adicionales,
-                    }}
-                    planTrabajoId={medidaApiData.plan_trabajo_id}
-                  />
-                )}
-              </Grid>
-
-              {/* Historial de seguimiento - Unified Timeline */}
-              <Grid item xs={12}>
-                <HistorialTab
-                  medidaId={medidaApiData?.id}
-                  numeroMedida={typeof medidaApiData?.numero_medida === 'string'
-                    ? medidaApiData.numero_medida
-                    : `MED-${medidaApiData?.id}`}
-                />
-              </Grid>
-
-              {/* Informes Mensuales - Detailed Table */}
-              <Grid item xs={12}>
-                {medidaApiData?.id && (
-                  <InformesMensualesTable
-                    medidaId={medidaApiData.id}
-                    legajoPrimario={
-                      medidaApiData.legajo
-                        ? {
-                            id: medidaApiData.legajo.id,
-                            numero: medidaApiData.legajo.numero,
-                            nnya: {
-                              nombre: medidaApiData.legajo.nnya?.nombre ?? "",
-                              apellido: medidaApiData.legajo.nnya?.apellido ?? "",
-                            },
-                          }
-                        : undefined
-                    }
-                    legajosAdicionales={medidaApiData.legajos_adicionales ?? []}
-                  />
-                )}
-              </Grid>
-            </Grid>
+            {/* Restyled módulos row (Phase 3): pill buttons toggling the existing
+                plan de trabajo / historial / informes modules. Built from the
+                shared config so the classic and new views stay in sync. */}
+            <Box sx={{ mt: 3 }}>
+              <MedidaModulosRow
+                defaultOpen={defaultModulosOpen(medidaData.tipo)}
+                modules={buildMedidaModulos({
+                  tipo: medidaData.tipo,
+                  medidaApiData: medidaApiData || undefined,
+                  planTrabajoId: medidaApiData?.plan_trabajo_id,
+                })}
+              />
+            </Box>
           </>
-        )}
+        ))}
       </Box>
 
       {/* Dialogs */}

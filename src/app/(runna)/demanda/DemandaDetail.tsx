@@ -435,10 +435,25 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {(formData as any).vinculos.map((v: any, i: number) => {
-                const legajoId = v?.legajo ?? v?.legajo_info?.id
-                const legajoNum = v?.legajo_info?.numero || legajoId
+                const legajoId = v?.legajo ?? v?.legajo_info?.id ?? v?.legajo_origen
+                const legajoNum = v?.legajo_info?.numero || v?.legajo_origen_numero || legajoId
                 const nnyaNombre = v?.legajo_info?.nnya_nombre
-                const medida = v?.legajo_info?.medidas_activas?.[0]
+                // Resolver la medida REALMENTE vinculada (no la primera de la lista).
+                // Forma "formulario" (VinculoFormData): v.medida = id elegido por el usuario,
+                // que buscamos dentro de legajo_info.medidas_activas.
+                // Forma "API" (TVinculoLegajoList): la medida vinculada viene en destino_info.
+                const medidaVinculadaId = v?.medida ?? v?.medida_destino
+                const medidasActivas = v?.legajo_info?.medidas_activas
+                let medida = medidaVinculadaId && Array.isArray(medidasActivas)
+                  ? medidasActivas.find((m: any) => m.id === medidaVinculadaId)
+                  : undefined
+                if (!medida && v?.destino_info?.tipo === "medida") {
+                  medida = {
+                    id: v.destino_info.id,
+                    tipo_medida: v.destino_info.tipo_medida,
+                    numero_medida: v.destino_info.numero,
+                  }
+                }
                 if (!legajoId) return null
                 return (
                   <Box

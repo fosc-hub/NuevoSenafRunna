@@ -55,6 +55,9 @@ export default function RootLayout({
             pauseOnHover
             theme="light"
             transition={Slide}
+            // Por encima de cualquier overlay de MUI (modal 1300, snackbar 1400,
+            // tooltip 1500) para que los toasts nunca queden tapados.
+            style={{ zIndex: 99999 }}
           />
 
           <ReactQueryProvider>{children}</ReactQueryProvider>

@@ -147,8 +147,8 @@ export const InformesControlLegalidadKanban: React.FC<InformesControlLegalidadKa
     refetch()
   }, [refetch])
 
-  // If no activities and not loading, don't render the section
-  if (!isLoading && stats.total === 0) {
+  // If no activities (active or finalized) and not loading, don't render the section
+  if (!isLoading && stats.total === 0 && stats.finalizado === 0) {
     return null
   }
 
@@ -310,7 +310,7 @@ export const InformesControlLegalidadKanban: React.FC<InformesControlLegalidadKa
         <Box sx={{ p: 2 }}>
           <Grid container spacing={2}>
             {/* Pendiente de Revisión Column */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <KanbanColumn
                 config={KANBAN_COLUMNS.PENDIENTE_REVISION}
                 actividades={categorized.pendienteRevision}
@@ -324,7 +324,7 @@ export const InformesControlLegalidadKanban: React.FC<InformesControlLegalidadKa
             </Grid>
 
             {/* Próximo a Vencer Column */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <KanbanColumn
                 config={KANBAN_COLUMNS.PROXIMO_VENCER}
                 actividades={categorized.proximoVencer}
@@ -338,10 +338,24 @@ export const InformesControlLegalidadKanban: React.FC<InformesControlLegalidadKa
             </Grid>
 
             {/* Vencido Column */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <KanbanColumn
                 config={KANBAN_COLUMNS.VENCIDO}
                 actividades={categorized.vencido}
+                loading={isLoading}
+                onCardClick={handleCardClick}
+                selectionEnabled={selectionMode}
+                selectedIds={selectedIds}
+                onSelectionChange={handleSelectionChange}
+                onSelectAll={handleSelectAll}
+              />
+            </Grid>
+
+            {/* Finalizados Column */}
+            <Grid item xs={12} sm={6} md={3}>
+              <KanbanColumn
+                config={KANBAN_COLUMNS.FINALIZADO}
+                actividades={categorized.finalizado}
                 loading={isLoading}
                 onCardClick={handleCardClick}
                 selectionEnabled={selectionMode}

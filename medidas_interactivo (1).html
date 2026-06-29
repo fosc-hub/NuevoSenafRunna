@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legajo · González Alejandro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F0F2F5; --surface:#fff; --surface2:#F8F9FB; --border:#E4E7EC; --border2:#D0D5DD;
+  --text:#101828; --text2:#344054; --text3:#667085; --text4:#98A2B3;
+  --navy:#1B2A4A; --navy2:#243352; --accent:#2563EB; --accent-lt:#EFF6FF;
+  --green:#12B76A; --green-bg:#ECFDF3; --green-bd:#A9EFC5; --green-tx:#027A48;
+  --blue:#2563EB;  --blue-bg:#EFF6FF;  --blue-bd:#93C5FD;  --blue-tx:#1E40AF;
+  --amber:#F59E0B; --amber-bg:#FFFBEB; --amber-bd:#FDE68A; --amber-tx:#92400E;
+  --red:#EF4444;   --red-bg:#FEF2F2;   --red-bd:#FECACA;   --red-tx:#991B1B;
+  --gray-bg:#F9FAFB; --gray-bd:#E5E7EB; --gray-tx:#374151;
+  --purple:#7C3AED; --purple-bg:#F5F3FF; --purple-bd:#C4B5FD; --purple-tx:#4C1D95;
+  --teal:#0D9488;   --teal-bg:#F0FDFA;  --teal-bd:#99F6E4;  --teal-tx:#134E4A;
+  --panel-w:400px; --radius:8px; --radius-lg:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--navy);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;flex-shrink:0}
+.topbar-brand{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.topbar-sep{width:1px;height:20px;background:rgba(255,255,255,.15)}
+.topbar-crumb{font-size:12px;color:rgba(255,255,255,.5)}
+.topbar-crumb span{color:rgba(255,255,255,.85)}
+.topbar-name{margin-left:auto;font-size:14px;font-weight:600;color:#fff}
+.topbar-sub{font-size:11px;color:rgba(255,255,255,.45);margin-left:4px}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px)}
+.main{flex:1;overflow-y:auto;padding:20px 24px;transition:margin-right .3s ease}
+.main.panel-open{margin-right:var(--panel-w)}
+
+/* ── LEGAJO INFO ── */
+.legajo-info{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:20px;display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.legajo-avatar{width:44px;height:44px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.legajo-name{font-size:16px;font-weight:700;color:var(--text)}
+.legajo-id{font-size:11px;color:var(--text3);margin-top:2px}
+.legajo-pills{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.info-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);font-size:11px;color:var(--text3)}
+.info-pill strong{color:var(--text2);font-weight:600}
+
+/* ── SECTION HEADER ── */
+.section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.section-hdr h2{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.section-hdr-line{flex:1;height:1px;background:var(--border)}
+
+/* ── TYPE TABS ── */
+.type-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.type-tab{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:var(--text3);user-select:none}
+.type-tab:hover{border-color:var(--border2);color:var(--text2)}
+.type-tab.active-mpe{border-color:#2DB88A;background:var(--green-bg);color:var(--green-tx)}
+.type-tab.active-mpi{border-color:#D4960F;background:var(--amber-bg);color:var(--amber-tx)}
+.type-tab.active-mpj{border-color:#7C3AED;background:var(--purple-bg);color:var(--purple-tx)}
+.tab-badge{min-width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:currentColor;padding:0 5px}
+.tab-badge span{color:#fff;mix-blend-mode:normal}
+.type-tab .tab-badge{background:rgba(0,0,0,.08)}
+.type-tab.active-mpe .tab-badge{background:#2DB88A}
+.type-tab.active-mpi .tab-badge{background:#D4960F}
+.type-tab.active-mpj .tab-badge{background:#7C3AED}
+
+/* ── MEDIDA SELECTOR (when multiple) ── */
+.medida-selector{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.medida-sel-btn{padding:5px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;transition:all .15s}
+.medida-sel-btn:hover{border-color:var(--border2);color:var(--text2)}
+.medida-sel-btn.sel-mpe{border-color:#2DB88A;background:var(--green-bg);color:var(--green-tx)}
+.medida-sel-btn.sel-mpi{border-color:#D4960F;background:var(--amber-bg);color:var(--amber-tx)}
+.medida-sel-btn.sel-mpj{border-color:#7C3AED;background:var(--purple-bg);color:var(--purple-tx)}
+
+/* ── MEDIDA CARD ── */
+.medida-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px}
+.medida-card-header{background:var(--navy);padding:14px 20px;display:flex;align-items:center;gap:12px}
+.medida-type-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;letter-spacing:.04em}
+.badge-mpe{background:#1D9E75;color:#fff}
+.badge-mpi{background:#D4960F;color:#fff}
+.badge-mpj{background:#7C3AED;color:#fff}
+.medida-card-title{font-size:14px;font-weight:600;color:#fff}
+.medida-card-meta{margin-left:auto;font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:6px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#12B76A;display:inline-block}
+.medida-card-meta span{color:rgba(255,255,255,.8)}
+
+/* ── STAT CARDS ROW ── */
+.stat-row{display:flex;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.stat-card{flex:1;min-width:100px;border-radius:var(--radius);border:1px solid;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.stat-card .stat-num{font-size:24px;font-weight:700;line-height:1}
+.stat-card .stat-label{font-size:11px;font-weight:500}
+.stat-card .stat-pct{font-size:10px;margin-top:2px}
+.stat-pend{background:#FFFBEB;border-color:#FDE68A} .stat-pend .stat-num,.stat-pend .stat-label{color:#92400E} .stat-pend .stat-pct{color:#B45309}
+.stat-prog{background:#EFF6FF;border-color:#93C5FD} .stat-prog .stat-num,.stat-prog .stat-label{color:#1E40AF} .stat-prog .stat-pct{color:#3B82F6}
+.stat-done{background:#ECFDF3;border-color:#A9EFC5} .stat-done .stat-num,.stat-done .stat-label{color:#027A48} .stat-done .stat-pct{color:#059669}
+.stat-venc{background:#FEF2F2;border-color:#FECACA} .stat-venc .stat-num,.stat-venc .stat-label{color:#991B1B} .stat-venc .stat-pct{color:#DC2626}
+.stat-canc{background:#F9FAFB;border-color:#E5E7EB} .stat-canc .stat-num,.stat-canc .stat-label{color:#374151} .stat-canc .stat-pct{color:#6B7280}
+
+/* ── PROGRESS BAR ── */
+.progress-row{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.progress-label{font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap}
+.progress-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .5s}
+.progress-pct{font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;min-width:36px;text-align:right}
+.progress-sub{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* ── ETAPAS SECTION ── */
+.etapas-section{padding:16px 20px;border-bottom:1px solid var(--border)}
+.etapas-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.etapas-list{display:flex;flex-direction:column;gap:6px}
+
+/* ── ETAPA ROW ── */
+.etapa-row{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.etapa-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none;transition:background .12s}
+.etapa-header:hover{background:var(--surface2)}
+.etapa-chevron{font-size:10px;color:var(--text4);transition:transform .2s;flex-shrink:0}
+.etapa-row.open .etapa-chevron{transform:rotate(90deg)}
+.etapa-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.etapa-icon.amber{background:var(--amber-bg);color:var(--amber-tx)}
+.etapa-name{font-size:13px;font-weight:600;color:var(--text)}
+.etapa-date{font-size:11px;color:var(--text3);margin-left:4px}
+.etapa-tags{display:flex;gap:5px;margin-left:auto;align-items:center}
+.etapa-tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid;font-weight:500}
+.tag-unica{background:#F0FDF4;border-color:#86EFAC;color:#166534}
+.tag-multi{background:#F0F9FF;border-color:#7DD3FC;color:#075985}
+.tag-reduced{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+
+/* ── FLUJO STEPS ── */
+.flujo-body{background:var(--surface2);border-top:1px solid var(--border);padding:12px 14px 14px;display:none}
+.etapa-row.open .flujo-body{display:block}
+.flujo-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.flujo-steps{display:flex;gap:0;align-items:center;flex-wrap:wrap}
+.flujo-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:80px;position:relative}
+.flujo-step:not(:last-child)::after{content:'';position:absolute;right:0;top:14px;width:calc(50% - 14px);height:2px;background:var(--border);transform:translateX(50%)}
+.flujo-step.done:not(:last-child)::after{background:var(--green)}
+.flujo-step.active:not(:last-child)::after{background:var(--border)}
+.step-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid;flex-shrink:0;z-index:1}
+.step-circle.done{background:var(--green);border-color:var(--green);color:#fff}
+.step-circle.active{background:var(--blue-bg);border-color:var(--blue);color:var(--blue-tx)}
+.step-circle.pend{background:#fff;border-color:var(--border2);color:var(--text4)}
+.step-circle.off{background:#F9FAFB;border-color:var(--border);color:var(--text4);opacity:.4}
+.step-label{font-size:10px;color:var(--text3);text-align:center;line-height:1.3;max-width:80px}
+.step-label.dimmed{opacity:.35;text-decoration:line-through}
+.flujo-step.done .step-label{color:var(--green-tx)}
+.flujo-step.active .step-label{color:var(--blue-tx);font-weight:600}
+
+/* ── MÓDULOS ALWAYS-ON ── */
+.modules-section{padding:14px 20px}
+.modules-label{font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.modules-row{display:flex;gap:8px;flex-wrap:wrap}
+.module-btn{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;user-select:none}
+.module-btn:hover{border-color:var(--border2);background:var(--surface2)}
+.module-btn.m-blue{border-color:var(--blue-bd);background:var(--blue-bg);color:var(--blue-tx)}
+.module-btn.m-teal{border-color:var(--teal-bd);background:var(--teal-bg);color:var(--teal-tx)}
+.module-btn.m-pink{border-color:#F9A8D4;background:#FDF2F8;color:#831843}
+.module-btn.expanded{outline:2px solid currentColor;outline-offset:1px}
+.module-btn-icon{font-size:14px}
+.module-note{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.07);margin-left:2px}
+
+/* ── PLAN INLINE ── */
+.plan-inline{display:none;border-top:1px solid var(--border);background:var(--surface2)}
+.plan-inline.open{display:block}
+.plan-inline-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border)}
+.plan-inline-title{font-size:13px;font-weight:600;color:var(--text)}
+.plan-inline-meta{font-size:11px;color:var(--text3)}
+
+/* ── ACTIVIDADES TABLE ── */
+.act-table{width:100%}
+.act-table-hdr{display:grid;grid-template-columns:1fr 110px 80px 90px 70px;gap:0;background:var(--navy);padding:8px 20px;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.03em}
+.act-table-hdr span:not(:first-child){text-align:center}
+
+.act-row{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.act-row:hover{background:var(--surface2)}
+.act-row:last-child{border-bottom:none}
+.act-row-main{display:grid;grid-template-columns:1fr 110px 80px 90px 70px;gap:0;padding:11px 20px;align-items:center}
+.act-name{font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:flex-start;gap:8px}
+.act-name-chevron{font-size:10px;color:var(--text4);transition:transform .2s;flex-shrink:0;margin-top:3px}
+.act-row.open .act-name-chevron{transform:rotate(90deg)}
+.act-sub{font-size:11px;color:var(--text3);margin-top:2px;font-weight:400}
+.act-col{text-align:center;font-size:12px;color:var(--text2)}
+.act-date{font-size:11px;color:var(--text3);text-align:center}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid}
+.sp-done{background:var(--green-bg);border-color:var(--green-bd);color:var(--green-tx)}
+.sp-prog{background:var(--blue-bg);border-color:var(--blue-bd);color:var(--blue-tx)}
+.sp-pend{background:var(--gray-bg);border-color:var(--gray-bd);color:var(--gray-tx)}
+.sp-venc{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx)}
+.plazo-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid;white-space:nowrap}
+.plazo-ok{background:var(--surface2);border-color:var(--border2);color:var(--text2)}
+.plazo-venc{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx)}
+.plazo-warn{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber-tx)}
+
+/* ── ACT BODY (expanded) ── */
+.act-body{display:none;padding:0 20px 14px 48px;background:var(--surface)}
+.act-row.open .act-body{display:block}
+.act-body-desc{font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;padding-top:4px}
+.acc-label{font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.acc-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);margin-bottom:4px;font-size:12px;color:var(--text2)}
+.acc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.acc-dot.done{background:var(--green)} .acc-dot.prog{background:var(--blue)} .acc-dot.pend{background:var(--text4)} .acc-dot.late{background:var(--red)}
+.acc-txt{flex:1}
+.acc-date{font-size:11px;color:var(--text4)}
+.adj-section{margin-top:10px}
+.adj-item{display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:6px;border:1px solid var(--border);background:#fff;margin-bottom:4px;cursor:pointer;transition:background .1s}
+.adj-item:hover{background:var(--surface2)}
+.adj-type{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.adj-type.pdf{background:#FEF2F2} .adj-type.xls{background:#F0FDF4} .adj-type.img{background:#F0F9FF} .adj-type.doc{background:#EFF6FF}
+.adj-name{flex:1;font-size:12px;font-weight:500;color:var(--text2)}
+.adj-meta{font-size:11px;color:var(--text4)}
+.adj-dl{font-size:11px;color:var(--accent);font-weight:500}
+
+/* ── PANEL ── */
+.panel{position:fixed;top:56px;right:0;width:var(--panel-w);height:calc(100vh - 56px);background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;z-index:20}
+.panel.open{transform:translateX(0)}
+.panel-topbar{background:var(--navy2);padding:14px 18px;display:flex;align-items:flex-start;gap:10px}
+.panel-type-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.04em;margin-bottom:6px;display:inline-block}
+.panel-title-txt{font-size:16px;font-weight:700;color:#fff;line-height:1.3}
+.panel-close{margin-left:auto;background:rgba(255,255,255,.1);border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s}
+.panel-close:hover{background:rgba(255,255,255,.2)}
+.panel-body{flex:1;overflow-y:auto;padding:18px}
+.panel-sec{margin-bottom:20px}
+.panel-sec-label{font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.panel-desc{font-size:13px;color:var(--text2);line-height:1.7}
+.panel-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.panel-list li{display:flex;gap:8px;font-size:12px;color:var(--text2);line-height:1.5}
+.panel-list li::before{content:'→';color:var(--text4);flex-shrink:0}
+.diff-box{display:flex;gap:9px;padding:11px 13px;border-radius:var(--radius);font-size:12px;line-height:1.5;margin-top:8px;border:1px solid}
+.diff-box.std{background:var(--green-bg);border-color:var(--green-bd);color:var(--green-tx)}
+.diff-box.red{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber-tx)}
+.diff-box.spc{background:var(--purple-bg);border-color:var(--purple-bd);color:var(--purple-tx)}
+.flujo-mini{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.flujo-mini-step{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);font-size:12px}
+.fms-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.fms-num.on{background:var(--green);color:#fff}
+.fms-num.cur{background:var(--blue);color:#fff}
+.fms-num.off{background:var(--border);color:var(--text4)}
+.fms-name{flex:1;color:var(--text2)}
+.fms-name.dim{color:var(--text4);text-decoration:line-through}
+.fms-st{font-size:10px;font-weight:600}
+.fms-st.done{color:var(--green-tx)} .fms-st.cur{color:var(--blue-tx)} .fms-st.pend{color:var(--text4)}
+
+/* panel adjuntos */
+.panel-adj{display:flex;flex-direction:column;gap:6px}
+.panel-adj-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:background .1s}
+.panel-adj-item:hover{background:var(--bg)}
+.panel-adj-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.panel-adj-icon.pdf{background:#FEF2F2} .panel-adj-icon.xls{background:#F0FDF4} .panel-adj-icon.img{background:#F0F9FF} .panel-adj-icon.doc{background:#EFF6FF}
+.panel-adj-name{flex:1;font-size:12px;font-weight:600;color:var(--text2)}
+.panel-adj-meta{font-size:11px;color:var(--text4);margin-top:1px}
+.panel-adj-dl{font-size:12px;color:var(--accent);font-weight:600}
+
+/* informes list */
+.inf-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.inf-row:last-child{border-bottom:none}
+.inf-month{font-size:13px;color:var(--text2)}
+.inf-badge{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600;border:1px solid}
+
+/* diff note */
+.mpj-note{display:flex;gap:8px;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--purple-bd);background:var(--purple-bg);color:var(--purple-tx);font-size:12px;line-height:1.5;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">SIM · Justicia Juvenil</div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-crumb">Legajos / <span>LEG-2025-0147</span></div>
+  <div class="topbar-name">González, Alejandro <span class="topbar-sub">Legajo #27</span></div>
+</div>
+
+<div class="layout">
+<div class="main" id="main">
+
+  <!-- INFO LEGAJO -->
+  <div class="legajo-info">
+    <div class="legajo-avatar">GA</div>
+    <div>
+      <div class="legajo-name">González, Alejandro</div>
+      <div class="legajo-id">DNI 45.221.904 · Nacido 12/03/2008 · 17 años</div>
+    </div>
+    <div class="legajo-pills">
+      <div class="info-pill"><strong>Juzgado:</strong> Penal Juvenil N°2</div>
+      <div class="info-pill"><strong>Defensor:</strong> Dr. Ramírez, C.</div>
+      <div class="info-pill"><strong>Equipo:</strong> Área Sur</div>
+      <div class="info-pill"><strong>Demandas vinculadas:</strong> 2 anteriores</div>
+    </div>
+  </div>
+
+  <!-- TYPE TABS -->
+  <div class="section-hdr"><h2>Medidas</h2><div class="section-hdr-line"></div></div>
+  <div class="type-tabs">
+    <div class="type-tab active-mpe" id="tab-mpe" onclick="selectType('mpe',this)">
+      <span>MPE · Medida Penal Especial</span>
+      <div class="tab-badge"><span>2</span></div>
+    </div>
+    <div class="type-tab" id="tab-mpi" onclick="selectType('mpi',this)">
+      <span>MPI · Medida Penal Intermedia</span>
+      <div class="tab-badge"><span>1</span></div>
+    </div>
+    <div class="type-tab" id="tab-mpj" onclick="selectType('mpj',this)">
+      <span>MPJ · Medida Penal Juvenil</span>
+      <div class="tab-badge"><span>1</span></div>
+    </div>
+  </div>
+
+  <!-- MPE BLOCK -->
+  <div id="block-mpe">
+    <div class="medida-selector" id="sel-mpe">
+      <button class="medida-sel-btn sel-mpe" onclick="selectMedida('mpe',0,this)">MED-2025-041 · Activa</button>
+      <button class="medida-sel-btn" onclick="selectMedida('mpe',1,this)">MED-2024-012 · Cerrada</button>
+    </div>
+    <div id="mpe-0"><!-- MPE 1 --></div>
+    <div id="mpe-1" style="display:none"><!-- MPE 2 --></div>
+  </div>
+
+  <!-- MPI BLOCK -->
+  <div id="block-mpi" style="display:none">
+    <div id="mpi-0"></div>
+  </div>
+
+  <!-- MPJ BLOCK -->
+  <div id="block-mpj" style="display:none">
+    <div id="mpj-0"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- SIDE PANEL -->
+<div class="panel" id="panel">
+  <div class="panel-topbar">
+    <div>
+      <div class="panel-type-badge" id="panel-type"></div>
+      <div class="panel-title-txt" id="panel-title"></div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   DATA
+══════════════════════════════════════ */
+const DATA = {
+  mpe: [
+    {
+      id:'MED-2025-041', status:'Activa', desde:'10/01/2025',
+      stats:[{l:'Pendientes',n:1,pct:'25%',cls:'stat-pend'},{l:'En Progreso',n:0,pct:'0%',cls:'stat-prog'},{l:'Realizadas',n:2,pct:'50%',cls:'stat-done'},{l:'Vencidas',n:1,pct:'25%',cls:'stat-venc'},{l:'Canceladas',n:0,pct:'0%',cls:'stat-canc'}],
+      prog:75, progLabel:'3 de 4 actividades completadas',
+      etapas:[
+        {nombre:'Apertura',fecha:'10/01/2025',tag:'única',tagCls:'tag-unica',icon:'◆',flujo5:true,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'done',l:'Nota de aval'},{s:'done',l:'Informe jurídico'},{s:'done',l:'Ratificación'}],
+          panelKey:'apertura_mpe_full'},
+        {nombre:'Prórroga #1',fecha:'15/07/2025',tag:'múltiple',tagCls:'tag-multi',icon:'◆',flujo5:true,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'done',l:'Nota de aval'},{s:'active',l:'Informe jurídico'},{s:'pend',l:'Ratificación'}],
+          panelKey:'prorroga_mpe'}
+      ],
+      actividades:[
+        {nombre:'Entrevista inicial',sub:'Evaluación de situación',equipo:'Eq. Sur',fecha:'20 ene',estado:'done',plazo:'OK',plazoD:'6 días',
+          desc:'Primera entrevista de evaluación para conocer la situación del joven, su entorno familiar y escolar.',
+          acciones:[{s:'done',t:'Coordinación de fecha con familia',d:'15 ene'},{s:'done',t:'Entrevista realizada en sede',d:'20 ene'},{s:'done',t:'Registro en sistema',d:'20 ene'}],
+          adjuntos:[{tipo:'pdf',nombre:'Acta de entrevista 20-01-2025.pdf',tamaño:'284 KB'},{tipo:'pdf',nombre:'Consentimiento informado.pdf',tamaño:'118 KB'}]},
+        {nombre:'Vinculación educativa',sub:'Inscripción en CENS N°8',equipo:'Eq. Sur',fecha:'10 feb',estado:'done',plazo:'OK',plazoD:'6 días',
+          desc:'Gestión de inscripción y seguimiento del joven en institución educativa.',
+          acciones:[{s:'done',t:'Relevamiento de opciones educativas',d:'25 ene'},{s:'done',t:'Contacto con CENS N°8 - vacante confirmada',d:'01 feb'},{s:'done',t:'Inscripción efectuada',d:'10 feb'}],
+          adjuntos:[{tipo:'pdf',nombre:'Constancia inscripción CENS8.pdf',tamaño:'201 KB'},{tipo:'img',nombre:'Foto credencial estudiantil.jpg',tamaño:'540 KB'}]},
+        {nombre:'Seguimiento familiar',sub:'Visitas domiciliarias mensuales',equipo:'Eq. Sur',fecha:'30 may',estado:'prog',plazo:'warn',plazoD:'vence hoy',
+          desc:'Visitas domiciliarias y entrevistas mensuales con el grupo familiar.',
+          acciones:[{s:'done',t:'Visita domiciliaria febrero',d:'14 feb'},{s:'done',t:'Visita domiciliaria marzo',d:'18 mar'},{s:'done',t:'Visita domiciliaria abril',d:'09 abr'},{s:'prog',t:'Visita domiciliaria mayo — pendiente',d:'30 may'}],
+          adjuntos:[{tipo:'pdf',nombre:'Informe visita feb 2025.pdf',tamaño:'197 KB'},{tipo:'pdf',nombre:'Informe visita mar 2025.pdf',tamaño:'210 KB'},{tipo:'pdf',nombre:'Informe visita abr 2025.pdf',tamaño:'188 KB'}]},
+        {nombre:'Derivación a salud mental',sub:'dfsfsdfsdf',equipo:'Eq. Sur',fecha:'29 mar',estado:'venc',plazo:'venc',plazoD:'Vencida hace 51 días',
+          desc:'Coordinación de atención psicológica o psiquiátrica.',
+          acciones:[{s:'done',t:'Solicitud de turno en CAPS zona sur',d:'02 abr'},{s:'late',t:'Turno no concurrido — requiere seguimiento',d:'15 abr'},{s:'pend',t:'Reprogramación de turno — pendiente',d:'—'}],
+          adjuntos:[{tipo:'pdf',nombre:'Derivación CAPS 02-04-2025.pdf',tamaño:'95 KB'}]}
+      ]
+    },
+    {
+      id:'MED-2024-012', status:'Cerrada', desde:'05/03/2024',
+      stats:[{l:'Pendientes',n:0,pct:'0%',cls:'stat-pend'},{l:'En Progreso',n:0,pct:'0%',cls:'stat-prog'},{l:'Realizadas',n:5,pct:'100%',cls:'stat-done'},{l:'Vencidas',n:0,pct:'0%',cls:'stat-venc'},{l:'Canceladas',n:0,pct:'0%',cls:'stat-canc'}],
+      prog:100, progLabel:'5 de 5 actividades completadas',
+      etapas:[
+        {nombre:'Apertura',fecha:'05/03/2024',tag:'única',tagCls:'tag-unica',icon:'◆',flujo5:true,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'done',l:'Nota de aval'},{s:'done',l:'Informe jurídico'},{s:'done',l:'Ratificación'}],
+          panelKey:'apertura_mpe_full'},
+        {nombre:'Prórroga #1',fecha:'10/09/2024',tag:'múltiple',tagCls:'tag-multi',icon:'◆',flujo5:true,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'done',l:'Nota de aval'},{s:'done',l:'Informe jurídico'},{s:'done',l:'Ratificación'}],
+          panelKey:'prorroga_mpe'},
+        {nombre:'Cese',fecha:'15/01/2025',tag:'múltiple',tagCls:'tag-multi',icon:'◆',flujo5:true,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'done',l:'Nota de aval'},{s:'done',l:'Informe jurídico'},{s:'done',l:'Ratificación'}],
+          panelKey:'cese_gen'}
+      ],
+      actividades:[
+        {nombre:'Entrevista inicial',sub:'',equipo:'Eq. Norte',fecha:'10 mar 2024',estado:'done',plazo:'OK',plazoD:'completado',desc:'',acciones:[{s:'done',t:'Entrevista realizada',d:'10 mar'}],adjuntos:[{tipo:'pdf',nombre:'Acta entrevista mar 2024.pdf',tamaño:'190 KB'}]},
+        {nombre:'Articulación con familia',sub:'',equipo:'Eq. Norte',fecha:'20 mar 2024',estado:'done',plazo:'OK',plazoD:'completado',desc:'',acciones:[{s:'done',t:'Visitas realizadas',d:'20 mar'}],adjuntos:[]},
+      ]
+    }
+  ],
+  mpi:[
+    {
+      id:'MED-2025-063', status:'Activa', desde:'03/03/2025',
+      stats:[{l:'Pendientes',n:1,pct:'50%',cls:'stat-pend'},{l:'En Progreso',n:1,pct:'50%',cls:'stat-prog'},{l:'Realizadas',n:0,pct:'0%',cls:'stat-done'},{l:'Vencidas',n:0,pct:'0%',cls:'stat-venc'},{l:'Canceladas',n:0,pct:'0%',cls:'stat-canc'}],
+      prog:50, progLabel:'1 de 2 actividades completadas',
+      etapas:[
+        {nombre:'Apertura',fecha:'03/03/2025',tag:'única · reducida',tagCls:'tag-reduced',icon:'◆',flujo5:false,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'off',l:'Nota de aval'},{s:'off',l:'Informe jurídico'},{s:'off',l:'Ratificación'}],
+          panelKey:'apertura_mpi_panel'},
+        {nombre:'Innovación #1',fecha:'20/05/2025',tag:'múltiple',tagCls:'tag-multi',icon:'◆',flujo5:true,
+          steps:[{s:'done',l:'Informe inicial'},{s:'done',l:'Nota de aprobación'},{s:'done',l:'Nota de aval'},{s:'done',l:'Informe jurídico'},{s:'done',l:'Ratificación'}],
+          panelKey:'apertura_mpe_full'}
+      ],
+      actividades:[
+        {nombre:'Diagnóstico inicial',sub:'Evaluación de riesgo',equipo:'Eq. Norte',fecha:'15 mar',estado:'done',plazo:'OK',plazoD:'6 días',desc:'Evaluación inicial del joven.',acciones:[{s:'done',t:'Entrevista con joven',d:'15 mar'},{s:'done',t:'Entrevista con familia',d:'15 mar'}],adjuntos:[{tipo:'pdf',nombre:'Diagnóstico inicial MPI.pdf',tamaño:'312 KB'}]},
+        {nombre:'Taller de formación laboral',sub:'Carpintería · CENS N°4',equipo:'Eq. Norte',fecha:'30 jun',estado:'prog',plazo:'OK',plazoD:'41 días',desc:'Incorporación a taller de oficio.',acciones:[{s:'done',t:'Búsqueda de talleres disponibles',d:'20 mar'},{s:'done',t:'Inscripción en taller de carpintería',d:'01 abr'},{s:'prog',t:'Seguimiento mensual de asistencia',d:'30 may'}],adjuntos:[{tipo:'pdf',nombre:'Inscripción taller carpintería.pdf',tamaño:'156 KB'},{tipo:'xls',nombre:'Planilla asistencia abril.xlsx',tamaño:'88 KB'}]}
+      ]
+    }
+  ],
+  mpj:[
+    {
+      id:'MED-2025-080', status:'Activa', desde:'22/02/2025',
+      stats:[{l:'Pendientes',n:1,pct:'25%',cls:'stat-pend'},{l:'En Progreso',n:1,pct:'25%',cls:'stat-prog'},{l:'Realizadas',n:2,pct:'50%',cls:'stat-done'},{l:'Vencidas',n:0,pct:'0%',cls:'stat-venc'},{l:'Canceladas',n:0,pct:'0%',cls:'stat-canc'}],
+      prog:67, progLabel:'2 de 3 actividades completadas',
+      esMPJ:true,
+      actividadesLegalidad:[
+        {nombre:'Apertura de medida',sub:'Actividad de legalidad',equipo:'Eq. Legal',fecha:'22 feb',estado:'done',plazo:'OK',plazoD:'completado',desc:'Apertura formal MPJ vía control de legalidad.',acciones:[{s:'done',t:'Registro de resolución judicial',d:'22 feb'},{s:'done',t:'Notificación al joven y familia',d:'22 feb'}],adjuntos:[{tipo:'pdf',nombre:'Resolución judicial apertura.pdf',tamaño:'340 KB'},{tipo:'pdf',nombre:'Notificación firmada.pdf',tamaño:'115 KB'}]},
+        {nombre:'Seguimiento judicial #1',sub:'Control periódico',equipo:'Eq. Legal',fecha:'22 mar',estado:'done',plazo:'OK',plazoD:'completado',desc:'Primer control periódico de legalidad.',acciones:[{s:'done',t:'Informe elevado al juzgado',d:'22 mar'},{s:'done',t:'Resolución de continuidad recibida',d:'28 mar'}],adjuntos:[{tipo:'pdf',nombre:'Informe seguimiento mar 2025.pdf',tamaño:'224 KB'}]},
+        {nombre:'Seguimiento judicial #2',sub:'Control periódico',equipo:'Eq. Legal',fecha:'22 may',estado:'prog',plazo:'warn',plazoD:'vence pronto',desc:'Segundo control periódico de legalidad.',acciones:[{s:'prog',t:'Informe de avance en elaboración',d:'22 may'}],adjuntos:[{tipo:'pdf',nombre:'Borrador informe may 2025.pdf',tamaño:'89 KB'}]},
+        {nombre:'Cese de medida',sub:'Actividad de legalidad',equipo:'Eq. Legal',fecha:'—',estado:'pend',plazo:'OK',plazoD:'—',desc:'Cierre formal MPJ vía control de legalidad.',acciones:[{s:'pend',t:'Informe de cierre — pendiente',d:'—'},{s:'pend',t:'Resolución judicial de cese — pendiente',d:'—'}],adjuntos:[]}
+      ],
+      actividades:[
+        {nombre:'Contacto y evaluación inicial',sub:'',equipo:'Eq. Sur',fecha:'05 mar',estado:'done',plazo:'OK',plazoD:'completado',desc:'Primera evaluación.',acciones:[{s:'done',t:'Entrevista joven y familia',d:'05 mar'},{s:'done',t:'Carga en sistema',d:'05 mar'}],adjuntos:[{tipo:'pdf',nombre:'Evaluación inicial MPJ.pdf',tamaño:'278 KB'}]},
+        {nombre:'Acompañamiento comunitario',sub:'Dispositivo territorial',equipo:'Eq. Sur',fecha:'01 abr',estado:'done',plazo:'OK',plazoD:'completado',desc:'Vinculación con espacio comunitario.',acciones:[{s:'done',t:'Contacto con referente territorial',d:'20 mar'},{s:'done',t:'Primera concurrencia del joven',d:'01 abr'}],adjuntos:[{tipo:'pdf',nombre:'Acuerdo dispositivo comunitario.pdf',tamaño:'142 KB'},{tipo:'xls',nombre:'Planilla asistencia mar-abr.xlsx',tamaño:'67 KB'}]},
+        {nombre:'Seguimiento educativo',sub:'Monitoreo de continuidad escolar',equipo:'Eq. Sur',fecha:'31 may',estado:'prog',plazo:'warn',plazoD:'vence pronto',desc:'Monitoreo de continuidad escolar.',acciones:[{s:'done',t:'Contacto con institución educativa',d:'10 abr'},{s:'prog',t:'Informe de asistencia mensual',d:'31 may'}],adjuntos:[{tipo:'pdf',nombre:'Constancia escolar abril 2025.pdf',tamaño:'122 KB'}]}
+      ]
+    }
+  ]
+};
+
+/* ══════════════════════════════════════
+   RENDER
+══════════════════════════════════════ */
+function estadoSt(e){
+  if(e==='done') return '<span class="status-pill sp-done">✓ Completada</span>';
+  if(e==='prog') return '<span class="status-pill sp-prog">● En progreso</span>';
+  if(e==='pend') return '<span class="status-pill sp-pend">○ Pendiente</span>';
+  if(e==='venc') return '<span class="status-pill sp-venc">⚠ Vencida</span>';
+  return '';
+}
+function plazoSt(p,d){
+  if(p==='venc') return `<span class="plazo-chip plazo-venc">⚠ ${d}</span>`;
+  if(p==='warn') return `<span class="plazo-chip plazo-warn">⏰ ${d}</span>`;
+  return `<span class="plazo-chip plazo-ok">⏱ ${d}</span>`;
+}
+function adjIcon(tipo){
+  if(tipo==='pdf') return {cls:'pdf',ic:'📄'};
+  if(tipo==='xls') return {cls:'xls',ic:'📊'};
+  if(tipo==='img') return {cls:'img',ic:'🖼️'};
+  return {cls:'doc',ic:'📝'};
+}
+function accDot(s){return `<div class="acc-dot ${s==='late'?'late':s==='prog'?'prog':s==='pend'?'pend':'done'}"></div>`}
+function stepCircle(s,n){
+  if(s==='done') return `<div class="step-circle done">✓</div>`;
+  if(s==='active') return `<div class="step-circle active">${n}</div>`;
+  if(s==='off') return `<div class="step-circle off">${n}</div>`;
+  return `<div class="step-circle pend">${n}</div>`;
+}
+
+function renderActividades(acts, prefix){
+  return acts.map((a,i)=>{
+    const id=`${prefix}-act-${i}`;
+    const adjs=a.adjuntos.map(adj=>{
+      const ic=adjIcon(adj.tipo);
+      return `<div class="adj-item"><div class="adj-type ${ic.cls}">${ic.ic}</div><div><div class="adj-name">${adj.nombre}</div><div class="adj-meta">${adj.tamaño}</div></div><div class="adj-dl">↓</div></div>`;
+    }).join('');
+    const accs=a.acciones.map(ac=>`<div class="acc-item">${accDot(ac.s)}<div class="acc-txt">${ac.t}</div><div class="acc-date">${ac.d}</div></div>`).join('');
+    return `
+    <div class="act-row" id="${id}">
+      <div class="act-row-main" onclick="toggleAct('${id}')">
+        <div class="act-name">
+          <span class="act-name-chevron">▶</span>
+          <div><div>${a.nombre}</div><div class="act-sub">${a.sub}</div></div>
+        </div>
+        <div class="act-col"><span style="font-size:11px;background:var(--navy);color:#fff;padding:2px 8px;border-radius:4px">${a.equipo}</span></div>
+        <div class="act-date">${a.fecha}</div>
+        <div class="act-col">${estadoSt(a.estado)}</div>
+        <div class="act-col">${plazoSt(a.plazo,a.plazoD)}</div>
+      </div>
+      <div class="act-body">
+        ${a.desc?`<div class="act-body-desc">${a.desc}</div>`:''}
+        <div class="acc-label">Acciones</div>
+        ${accs}
+        ${adjs?`<div class="acc-label" style="margin-top:10px">Archivos adjuntos</div>${adjs}`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMedida(m, tipo){
+  const badge=`<span class="medida-type-badge badge-${tipo}">${tipo.toUpperCase()}</span>`;
+  const statCards=m.stats.map(s=>`<div class="stat-card ${s.cls}"><div class="stat-num">${s.n}</div><div class="stat-label">${s.l}</div><div class="stat-pct">${s.pct} del total</div></div>`).join('');
+
+  const etapasHtml=m.etapas?m.etapas.map((e,ei)=>{
+    const eid=`etapa-${tipo}-${m.id.replace(/[^a-z0-9]/gi,'')}-${ei}`;
+    const stepsHtml=e.steps.map((st,si)=>{
+      const cls=st.s==='done'?'done':st.s==='active'?'active':st.s==='off'?'off':'';
+      const lbl=st.s==='off'?`<div class="step-label dimmed">${st.l}</div>`:`<div class="step-label">${st.l}</div>`;
+      return `<div class="flujo-step ${cls}">${stepCircle(st.s,si+1)}${lbl}</div>`;
+    }).join('');
+    return `
+    <div class="etapa-row" id="${eid}">
+      <div class="etapa-header" onclick="toggleEtapa('${eid}','${e.panelKey}')">
+        <span class="etapa-chevron">▶</span>
+        <div class="etapa-icon amber">${e.icon}</div>
+        <span class="etapa-name">${e.nombre}</span>
+        <span class="etapa-date">${e.fecha}</span>
+        <div class="etapa-tags">
+          <span class="etapa-tag ${e.tagCls}">${e.tag}</span>
+        </div>
+      </div>
+      <div class="flujo-body">
+        <div class="flujo-title">Flujo documental</div>
+        <div class="flujo-steps">${stepsHtml}</div>
+      </div>
+    </div>`;
+  }).join(''):'';
+
+  const planPrefix=`${tipo}-${m.id.replace(/[^a-z0-9]/gi,'')}`;
+  const actHtml=renderActividades(m.actividades,planPrefix);
+  const planId=`plan-${planPrefix}`;
+  const planChipId=`chip-plan-${planPrefix}`;
+
+  let legHtml='';
+  let legChipId='';
+  if(m.esMPJ){
+    const legPrefix=`leg-${planPrefix}`;
+    legChipId=`chip-leg-${planPrefix}`;
+    const legActHtml=renderActividades(m.actividadesLegalidad,legPrefix);
+    const legId=`legmod-${planPrefix}`;
+    legHtml=`
+    <div class="plan-inline" id="${legId}" style="border-color:var(--teal-bd)">
+      <div class="plan-inline-hdr" style="background:var(--teal-bg)">
+        <div class="plan-inline-title" style="color:var(--teal-tx)">Control de legalidad · incluye etapas MPJ</div>
+      </div>
+      <div class="act-table-hdr"><span>Actividad / Etapa</span><span>Equipo</span><span>Fecha</span><span>Estado</span><span>Plazo</span></div>
+      <div class="act-table">${legActHtml}</div>
+    </div>`;
+    // store legId for toggle
+    window[`legId_${planPrefix}`]=legId;
+  }
+
+  const mpjNote=m.esMPJ?`<div class="mpj-note">★ En MPJ las etapas (apertura, seguimiento y cese) se gestionan como actividades dentro del <strong>control de legalidad</strong>. No tienen flujo documental propio.</div>`:'';
+
+  window[`planId_${planPrefix}`]=planId;
+  window[`planChipId_${planPrefix}`]=planChipId;
+  window[`legChipId_${planPrefix}`]=legChipId;
+
+  return `
+  <div class="medida-card">
+    <div class="medida-card-header">
+      ${badge}
+      <div class="medida-card-title">${m.id}</div>
+      <div class="medida-card-meta"><span class="status-dot" style="${m.status==='Cerrada'?'background:#98A2B3':''}"></span><span>${m.status} desde ${m.desde}</span></div>
+    </div>
+    <div class="stat-row">${statCards}</div>
+    <div class="progress-row">
+      <div class="progress-label">Progreso del plan</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${m.prog}%"></div></div>
+      <div class="progress-pct">${m.prog}%</div>
+      <div class="progress-sub">${m.progLabel}</div>
+    </div>
+    ${m.etapas&&m.etapas.length?`<div class="etapas-section"><div class="etapas-section-title">Etapas</div>${mpjNote}<div class="etapas-list">${etapasHtml}</div></div>`:'<div class="etapas-section">'+mpjNote+'</div>'}
+    <div class="modules-section">
+      <div class="modules-label">Módulos activos</div>
+      <div class="modules-row">
+        <div class="module-btn m-blue" id="${planChipId}" onclick="togglePlanInline('${planPrefix}')"><span class="module-btn-icon">▦</span> Plan de trabajo</div>
+        ${m.esMPJ
+          ?`<div class="module-btn m-teal" id="${legChipId}" onclick="toggleLegInline('${planPrefix}')"><span class="module-btn-icon">⊘</span> Control de legalidad <span class="module-note">incluye etapas</span></div>`
+          :`<div class="module-btn m-teal" onclick="openPanel('legalidad_std','Control de legalidad','Módulo')"><span class="module-btn-icon">⊘</span> Control de legalidad</div>`
+        }
+        <div class="module-btn m-pink" onclick="openPanel('informes_${tipo}','Informes mensuales','Módulo · ${tipo.toUpperCase()}')"><span class="module-btn-icon">≡</span> Informes mensuales</div>
+      </div>
+    </div>
+    <div class="plan-inline" id="${planId}">
+      <div class="plan-inline-hdr">
+        <div class="plan-inline-title">Plan de trabajo</div>
+        <div class="plan-inline-meta">${m.progLabel}</div>
+      </div>
+      <div class="act-table-hdr"><span>Actividad</span><span>Equipo</span><span>Fecha</span><span>Estado</span><span>Plazo</span></div>
+      <div class="act-table">${actHtml}</div>
+    </div>
+    ${legHtml}
+  </div>`;
+}
+
+/* ══════════════════════════════════════
+   PANEL CONTENT
+══════════════════════════════════════ */
+const PANEL_DATA={
+  apertura_mpe_full:{
+    desc:'Etapa de apertura formal. En MPE recorre el flujo completo de 5 documentos.',
+    nota:{cls:'std',txt:'★ Flujo completo · 5 pasos'},
+    steps:[{s:'on',l:'Informe inicial',st:'completado'},{s:'on',l:'Nota de aprobación',st:'completado'},{s:'on',l:'Nota de aval',st:'completado'},{s:'on',l:'Informe jurídico',st:'completado'},{s:'on',l:'Ratificación',st:'completado'}],
+    adjuntos:[{tipo:'pdf',nombre:'Informe inicial apertura.pdf',tamaño:'312 KB'},{tipo:'pdf',nombre:'Nota aprobación firmada.pdf',tamaño:'145 KB'},{tipo:'pdf',nombre:'Nota de aval institucional.pdf',tamaño:'198 KB'},{tipo:'pdf',nombre:'Informe jurídico apertura.pdf',tamaño:'267 KB'},{tipo:'pdf',nombre:'Ratificación judicial.pdf',tamaño:'389 KB'}]
+  },
+  prorroga_mpe:{
+    desc:'Extensión del plazo de la medida. Flujo completo de 5 pasos.',
+    nota:{cls:'std',txt:'★ Flujo completo · 5 pasos'},
+    steps:[{s:'on',l:'Informe inicial',st:'completado'},{s:'on',l:'Nota de aprobación',st:'completado'},{s:'on',l:'Nota de aval',st:'completado'},{s:'cur',l:'Informe jurídico',st:'en curso'},{s:'off',l:'Ratificación',st:'pendiente'}],
+    adjuntos:[{tipo:'pdf',nombre:'Informe inicial prórroga.pdf',tamaño:'287 KB'},{tipo:'pdf',nombre:'Nota aprobación prórroga.pdf',tamaño:'130 KB'},{tipo:'pdf',nombre:'Nota de aval prórroga.pdf',tamaño:'175 KB'}]
+  },
+  apertura_mpi_panel:{
+    desc:'En MPI la apertura tiene flujo reducido de solo 2 documentos. El resto de etapas usa el flujo completo.',
+    nota:{cls:'red',txt:'⚡ Flujo reducido · 2 pasos'},
+    steps:[{s:'on',l:'Informe inicial',st:'completado'},{s:'on',l:'Nota de aprobación',st:'completado'},{s:'off',l:'Nota de aval',st:'no aplica'},{s:'off',l:'Informe jurídico',st:'no aplica'},{s:'off',l:'Ratificación',st:'no aplica'}],
+    adjuntos:[{tipo:'pdf',nombre:'Informe inicial apertura MPI.pdf',tamaño:'201 KB'},{tipo:'pdf',nombre:'Nota aprobación MPI.pdf',tamaño:'118 KB'}]
+  },
+  cese_gen:{
+    desc:'Etapa de cierre formal de la medida. Flujo completo de 5 documentos.',
+    nota:{cls:'std',txt:'★ Flujo completo · 5 pasos'},
+    steps:[{s:'on',l:'Informe inicial',st:'completado'},{s:'on',l:'Nota de aprobación',st:'completado'},{s:'on',l:'Nota de aval',st:'completado'},{s:'on',l:'Informe jurídico',st:'completado'},{s:'on',l:'Ratificación',st:'completado'}],
+    adjuntos:[{tipo:'pdf',nombre:'Informe final de cese.pdf',tamaño:'445 KB'},{tipo:'pdf',nombre:'Resolución judicial de cese.pdf',tamaño:'312 KB'}]
+  },
+  legalidad_std:{
+    desc:'Módulo activo durante toda la medida. Gestiona actividades de seguimiento judicial: vencimientos, plazos, notificaciones y alertas.',
+    notas:null, steps:null,
+    adjuntos:[]
+  },
+  informes_mpe:{adj:[],meses:['Enero 2025 · completado','Febrero 2025 · completado','Marzo 2025 · completado','Abril 2025 · completado','Mayo 2025 · pendiente']},
+  informes_mpi:{adj:[],meses:['Marzo 2025 · completado','Abril 2025 · completado','Mayo 2025 · pendiente']},
+  informes_mpj:{adj:[],meses:['Febrero 2025 · completado','Marzo 2025 · completado','Abril 2025 · completado','Mayo 2025 · pendiente']},
+};
+
+function buildPanelBody(key){
+  const d=PANEL_DATA[key];
+  if(!d) return '<p style="color:var(--text3);font-size:13px">Sin información disponible.</p>';
+  let html='';
+  if(d.desc){
+    html+=`<div class="panel-sec"><div class="panel-sec-label">Descripción</div><p class="panel-desc">${d.desc}</p>`;
+    if(d.nota) html+=`<div class="diff-box ${d.nota.cls}" style="margin-top:10px"><span>●</span><span>${d.nota.txt}</span></div>`;
+    html+='</div>';
+  }
+  if(d.steps){
+    html+='<div class="panel-sec"><div class="panel-sec-label">Flujo documental</div><div class="flujo-mini">';
+    d.steps.forEach((s,i)=>{
+      const numCls=s.s==='on'?'on':s.s==='cur'?'cur':'off';
+      const nameCls=s.s==='off'?'dim':'';
+      html+=`<div class="flujo-mini-step"><div class="fms-num ${numCls}">${i+1}</div><div class="fms-name ${nameCls}">${s.l}</div><div class="fms-st ${s.s==='on'?'done':s.s==='cur'?'cur':'pend'}">${s.st}</div></div>`;
+    });
+    html+='</div></div>';
+  }
+  if(d.adjuntos&&d.adjuntos.length){
+    html+='<div class="panel-sec"><div class="panel-sec-label">Documentos adjuntos</div><div class="panel-adj">';
+    d.adjuntos.forEach(a=>{
+      const ic=adjIcon(a.tipo);
+      html+=`<div class="panel-adj-item"><div class="panel-adj-icon ${ic.cls}">${ic.ic}</div><div><div class="panel-adj-name">${a.nombre}</div><div class="panel-adj-meta">${a.tamaño}</div></div><div class="panel-adj-dl">↓ Descargar</div></div>`;
+    });
+    html+='</div></div>';
+  }
+  if(d.meses){
+    html+='<div class="panel-sec"><div class="panel-sec-label">Estado de informes</div>';
+    d.meses.forEach(m=>{
+      const done=m.includes('completado');
+      html+=`<div class="inf-row"><span class="inf-month">${m.split(' · ')[0]}</span><span class="inf-badge ${done?'sp-done':'sp-pend'}" style="${done?'background:var(--green-bg);border-color:var(--green-bd);color:var(--green-tx)':'background:var(--gray-bg);border-color:var(--gray-bd);color:var(--gray-tx)'}">${done?'✓ Completado':'○ Pendiente'}</span></div>`;
+    });
+    html+='</div>';
+  }
+  return html;
+}
+
+/* ══════════════════════════════════════
+   INTERACTIONS
+══════════════════════════════════════ */
+let activeType='mpe';
+let activeMedidas={mpe:0,mpi:0,mpj:0};
+
+function init(){
+  ['mpe','mpi','mpj'].forEach(t=>{
+    DATA[t].forEach((m,i)=>{
+      const el=document.getElementById(`${t}-${i}`);
+      if(el) el.innerHTML=renderMedida(m,t);
+    });
+  });
+  selectType('mpe',document.getElementById('tab-mpe'));
+}
+
+function selectType(tipo, el){
+  ['mpe','mpi','mpj'].forEach(t=>{
+    document.getElementById('block-'+t).style.display=t===tipo?'block':'none';
+    document.getElementById('tab-'+t).className='type-tab';
+  });
+  el.className=`type-tab active-${tipo}`;
+  activeType=tipo;
+  closePanel();
+}
+
+function selectMedida(tipo, idx, btn){
+  const all=document.getElementById(`sel-${tipo}`).querySelectorAll('.medida-sel-btn');
+  all.forEach(b=>b.className='medida-sel-btn');
+  btn.className=`medida-sel-btn sel-${tipo}`;
+  DATA[tipo].forEach((_,i)=>{
+    document.getElementById(`${tipo}-${i}`).style.display=i===idx?'block':'none';
+  });
+  activeMedidas[tipo]=idx;
+  closePanel();
+}
+
+function toggleEtapa(id, panelKey){
+  const el=document.getElementById(id);
+  const wasOpen=el.classList.contains('open');
+  el.classList.toggle('open',!wasOpen);
+  if(!wasOpen && panelKey) openPanel(panelKey, el.querySelector('.etapa-name').textContent, 'Etapa');
+}
+
+function toggleAct(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function togglePlanInline(prefix){
+  const planId=window[`planId_${prefix}`];
+  const chipId=window[`planChipId_${prefix}`];
+  const plan=document.getElementById(planId);
+  const chip=document.getElementById(chipId);
+  const isOpen=plan.classList.contains('open');
+  plan.classList.toggle('open',!isOpen);
+  chip.classList.toggle('m-blue',true);
+  chip.classList.toggle('expanded',!isOpen);
+  closePanel();
+}
+
+function toggleLegInline(prefix){
+  const legId=window[`legId_${prefix}`];
+  const chipId=window[`legChipId_${prefix}`];
+  const leg=document.getElementById(legId);
+  const chip=document.getElementById(chipId);
+  const isOpen=leg.classList.contains('open');
+  leg.classList.toggle('open',!isOpen);
+  chip.classList.toggle('expanded',!isOpen);
+  closePanel();
+}
+
+function openPanel(key, title, type){
+  document.getElementById('panel-type').textContent=type||'';
+  document.getElementById('panel-title').textContent=title||key;
+  document.getElementById('panel-body').innerHTML=buildPanelBody(key);
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('panel-open');
+}
+
+function closePanel(){
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('main').classList.remove('panel-open');
+}
+
+init();
+
+// preselect first medida
+document.querySelector('.medida-sel-btn').className='medida-sel-btn sel-mpe';
+</script>
+</body>
+</html>

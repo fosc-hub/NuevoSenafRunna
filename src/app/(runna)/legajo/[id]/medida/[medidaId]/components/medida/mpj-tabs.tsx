@@ -5,9 +5,9 @@ import { useState } from "react"
 import { Box, Tabs, Tab } from "@mui/material"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
-import { InformesMensualesTable } from "./informes-mensuales-table"
 import { HistorialTab } from "./historial/historial-tab"
-import { InformesControlLegalidadKanban } from "../legal-control"
+import { MedidaModulosRow } from "./restyle/medida-modulos-row"
+import { buildMedidaModulos } from "./restyle/medida-modulos-config"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPJTabsProps {
@@ -116,34 +116,16 @@ export const MPJTabs: React.FC<MPJTabsProps> = ({ medidaData, medidaApiData, leg
                 )}
             </Box>
 
-            {/* Informes para control de legalidad (Kanban) */}
-            {planTrabajoId && (
-                <InformesControlLegalidadKanban
-                    planTrabajoId={planTrabajoId}
-                    legajoId={medidaApiData?.legajo}
-                    medidaId={medidaApiData?.id}
+            {/* Restyled módulos row (Phase 5): control de legalidad + informes
+                re-skinned as collapsible pills. Built from the shared config so this
+                classic view and the new dashboard expose the same module set. In MPJ
+                the control de legalidad incluye las etapas. */}
+            <Box sx={{ mt: 4 }}>
+                <MedidaModulosRow
+                    defaultOpen={["legalidad", "informes"]}
+                    modules={buildMedidaModulos({ tipo: "MPJ", medidaApiData, planTrabajoId })}
                 />
-            )}
-
-            {/* Informes Mensuales Table */}
-            {medidaApiData?.id && (
-                <InformesMensualesTable
-                    medidaId={medidaApiData.id}
-                    legajoPrimario={
-                        (medidaApiData as any)?.legajo
-                            ? {
-                                  id: (medidaApiData as any).legajo.id,
-                                  numero: (medidaApiData as any).legajo.numero,
-                                  nnya: {
-                                      nombre: (medidaApiData as any).legajo.nnya?.nombre ?? "",
-                                      apellido: (medidaApiData as any).legajo.nnya?.apellido ?? "",
-                                  },
-                              }
-                            : undefined
-                    }
-                    legajosAdicionales={(medidaApiData as any)?.legajos_adicionales ?? []}
-                />
-            )}
+            </Box>
         </Box>
     )
 }

@@ -2,16 +2,16 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Box, Tabs, Tab, Paper } from "@mui/material"
+import { Box, Tabs, Tab } from "@mui/material"
 import { AperturaTabUnified as AperturaTab } from "./mpe-tabs/apertura-tab"
 import { InnovacionTab } from "./mpe-tabs/innovacion-tab"
 import { PlanTrabajoTab } from "./mpe-tabs/plan-trabajo-tab"
 import { ProrrogaTab } from "./mpe-tabs/prorroga-tab"
 import { CeseTab } from "./mpe-tabs/cese-tab"
-import { InformesMensualesTable } from "./informes-mensuales-table"
 import { MedidaDocumentosSection } from "./medida-documentos-section"
 import { HistorialTab } from "./historial/historial-tab"
-import { InformesControlLegalidadKanban } from "../legal-control"
+import { MedidaModulosRow } from "./restyle/medida-modulos-row"
+import { buildMedidaModulos } from "./restyle/medida-modulos-config"
 import type { MedidaDetailResponse } from "../../types/medida-api"
 
 interface MPETabsProps {
@@ -89,45 +89,16 @@ export const MPETabs: React.FC<MPETabsProps> = ({ medidaData, medidaApiData, leg
                 )}
             </Box>
 
-            {/* Plan de Trabajo - Always visible */}
+            {/* Restyled módulos row (Phase 5): the previously always-visible
+                modules (plan de trabajo, control de legalidad, informes) re-skinned
+                as collapsible pills. Built from the shared config so this classic
+                view and the new dashboard expose the exact same module set. */}
             <Box sx={{ mt: 4 }}>
-                {planTrabajoId ? (
-                    <PlanTrabajoTab medidaData={medidaData} planTrabajoId={planTrabajoId} />
-                ) : (
-                    <Paper sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                        No hay Plan de Trabajo asociado a esta medida.
-                    </Paper>
-                )}
+                <MedidaModulosRow
+                    defaultOpen={["plan", "legalidad", "informes"]}
+                    modules={buildMedidaModulos({ tipo: "MPE", medidaApiData, planTrabajoId })}
+                />
             </Box>
-
-            {/* Informes para control de legalidad (Kanban) */}
-            {planTrabajoId && (
-                <InformesControlLegalidadKanban
-                    planTrabajoId={planTrabajoId}
-                    legajoId={medidaApiData?.legajo}
-                    medidaId={medidaApiData?.id}
-                />
-            )}
-
-            {/* Informes Mensuales Table */}
-            {medidaApiData?.id && (
-                <InformesMensualesTable
-                    medidaId={medidaApiData.id}
-                    legajoPrimario={
-                        (medidaApiData as any)?.legajo
-                            ? {
-                                  id: (medidaApiData as any).legajo.id,
-                                  numero: (medidaApiData as any).legajo.numero,
-                                  nnya: {
-                                      nombre: (medidaApiData as any).legajo.nnya?.nombre ?? "",
-                                      apellido: (medidaApiData as any).legajo.nnya?.apellido ?? "",
-                                  },
-                              }
-                            : undefined
-                    }
-                    legajosAdicionales={(medidaApiData as any)?.legajos_adicionales ?? []}
-                />
-            )}
         </Box>
     )
 }

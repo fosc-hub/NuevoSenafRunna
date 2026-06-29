@@ -14,6 +14,7 @@ import {
 import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import type { TActividadPlanTrabajo } from '../../types/actividades'
 import type { KanbanColumnConfig } from './kanban-utils'
 import { KanbanCard } from './KanbanCard'
@@ -37,7 +38,8 @@ interface KanbanColumnProps {
 const iconComponents = {
   PendingActions: PendingActionsIcon,
   WarningAmber: WarningAmberIcon,
-  ErrorOutline: ErrorOutlineIcon
+  ErrorOutline: ErrorOutlineIcon,
+  CheckCircleOutline: CheckCircleOutlineIcon
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -125,6 +127,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               ? 'error'
               : config.id === 'PROXIMO_VENCER'
               ? 'warning'
+              : config.id === 'FINALIZADO'
+              ? 'success'
               : 'primary'
           }
           sx={{

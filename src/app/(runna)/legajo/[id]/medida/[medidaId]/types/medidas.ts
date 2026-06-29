@@ -68,6 +68,8 @@ export interface MPEEtapas extends BaseEtapas {
 export interface BaseMedidaData {
   id: string
   tipo: 'MPI' | 'MPE' | 'MPJ'
+  /** Human-readable tipo name from the API (e.g. "Medida de Protección Excepcional"). */
+  tipo_display?: string
   numero: string
   persona: Persona
   fecha_apertura: string

@@ -4,7 +4,7 @@
 import type { TActividadPlanTrabajo } from '../../types/actividades'
 
 // Column types for the Kanban
-export type KanbanColumnType = 'PENDIENTE_REVISION' | 'PROXIMO_VENCER' | 'VENCIDO'
+export type KanbanColumnType = 'PENDIENTE_REVISION' | 'PROXIMO_VENCER' | 'VENCIDO' | 'FINALIZADO'
 
 // Column configuration
 export interface KanbanColumnConfig {
@@ -13,7 +13,7 @@ export interface KanbanColumnConfig {
   color: string
   bgColor: string
   borderColor: string
-  iconName: 'PendingActions' | 'WarningAmber' | 'ErrorOutline'
+  iconName: 'PendingActions' | 'WarningAmber' | 'ErrorOutline' | 'CheckCircleOutline'
   emptyMessage: string
 }
 
@@ -45,21 +45,35 @@ export const KANBAN_COLUMNS: Record<KanbanColumnType, KanbanColumnConfig> = {
     borderColor: 'rgba(244, 67, 54, 0.3)',
     iconName: 'ErrorOutline',
     emptyMessage: 'No hay informes vencidos'
+  },
+  FINALIZADO: {
+    id: 'FINALIZADO',
+    label: 'Finalizados',
+    color: '#4caf50',
+    bgColor: 'rgba(76, 175, 80, 0.08)',
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+    iconName: 'CheckCircleOutline',
+    emptyMessage: 'No hay informes finalizados'
   }
 }
 
-// States to exclude (completed or cancelled)
-const EXCLUDED_STATES = ['VISADO_APROBADO', 'CANCELADA']
+// Estados terminales que se muestran en la columna "Finalizados"
+const FINALIZED_STATES = ['VISADO_APROBADO', 'COMPLETADA']
+
+// Estados que se ocultan del kanban (canceladas no son "finalizadas")
+const EXCLUDED_STATES = ['CANCELADA']
 
 export interface CategorizedActividades {
   pendienteRevision: TActividadPlanTrabajo[]
   proximoVencer: TActividadPlanTrabajo[]
   vencido: TActividadPlanTrabajo[]
+  finalizado: TActividadPlanTrabajo[]
 }
 
 /**
- * Filter activities to only include EQUIPO_LEGAL activities
- * Excludes completed (VISADO_APROBADO) or cancelled activities
+ * Filter activities to only include EQUIPO_LEGAL activities.
+ * Excludes only cancelled activities; las finalizadas (VISADO_APROBADO /
+ * COMPLETADA) se conservan para mostrarse en la columna "Finalizados".
  */
 export function filterLegalReviewActivities(
   actividades: TActividadPlanTrabajo[]
@@ -72,27 +86,32 @@ export function filterLegalReviewActivities(
 }
 
 /**
- * Categorize EQUIPO_LEGAL activities into Kanban columns based on deadline status
+ * Categorize EQUIPO_LEGAL activities into Kanban columns.
  *
  * Columns (Mutually Exclusive):
- * - Pendiente de Revisión: !esta_vencida && dias_restantes > 7
- * - Próximo a Vencer: !esta_vencida && dias_restantes <= 7
- * - Vencido: esta_vencida === true
+ * - Finalizados: estado VISADO_APROBADO o COMPLETADA
+ * - Pendiente de Revisión: activa, !esta_vencida && dias_restantes > 7
+ * - Próximo a Vencer: activa, !esta_vencida && dias_restantes <= 7
+ * - Vencido: activa, esta_vencida === true
  */
 export function categorizeActividades(
   actividades: TActividadPlanTrabajo[]
 ): CategorizedActividades {
-  // First filter to only EQUIPO_LEGAL activities awaiting review
+  // First filter to only EQUIPO_LEGAL activities (active + finalized)
   const legalActividades = filterLegalReviewActivities(actividades)
 
   const result: CategorizedActividades = {
     pendienteRevision: [],
     proximoVencer: [],
-    vencido: []
+    vencido: [],
+    finalizado: []
   }
 
   for (const actividad of legalActividades) {
-    if (actividad.esta_vencida) {
+    if (FINALIZED_STATES.includes(actividad.estado)) {
+      // Finalizados: terminal aprobado/completado
+      result.finalizado.push(actividad)
+    } else if (actividad.esta_vencida) {
       // Vencido: already overdue
       result.vencido.push(actividad)
     } else if (actividad.dias_restantes <= 7) {
@@ -108,12 +127,20 @@ export function categorizeActividades(
   result.pendienteRevision.sort((a, b) => a.dias_restantes - b.dias_restantes)
   result.proximoVencer.sort((a, b) => a.dias_restantes - b.dias_restantes)
   result.vencido.sort((a, b) => a.dias_restantes - b.dias_restantes)
+  // Finalizados: más recientes primero (fecha de finalización/visado)
+  result.finalizado.sort(
+    (a, b) =>
+      new Date(b.fecha_finalizacion_real || b.fecha_visado || b.fecha_modificacion).getTime() -
+      new Date(a.fecha_finalizacion_real || a.fecha_visado || a.fecha_modificacion).getTime()
+  )
 
   return result
 }
 
 /**
- * Get statistics for the Kanban board
+ * Get statistics for the Kanban board.
+ * `total` cuenta sólo las activas (pendientes de gestión); `finalizado` se
+ * reporta por separado para no inflar el contador de "pendientes" del header.
  */
 export function getKanbanStats(categorized: CategorizedActividades) {
   return {
@@ -123,6 +150,7 @@ export function getKanbanStats(categorized: CategorizedActividades) {
       categorized.vencido.length,
     pendienteRevision: categorized.pendienteRevision.length,
     proximoVencer: categorized.proximoVencer.length,
-    vencido: categorized.vencido.length
+    vencido: categorized.vencido.length,
+    finalizado: categorized.finalizado.length
   }
 }

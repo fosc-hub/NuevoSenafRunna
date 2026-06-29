@@ -134,9 +134,10 @@ export const WorkflowStepContent: React.FC<WorkflowStepContentProps> = ({
               Paso {stepNumber + 1} de {totalSteps}
             </Typography>
 
-            {/* Continue Button */}
+            {/* Continue Button — only on non-final steps. The final step has no
+                "Finalizar" action (it was a no-op: onContinue is undefined there). */}
             <Box>
-              {!isLast ? (
+              {!isLast && (
                 <Button
                   variant="contained"
                   endIcon={<ArrowForwardIcon />}
@@ -145,16 +146,6 @@ export const WorkflowStepContent: React.FC<WorkflowStepContentProps> = ({
                   sx={{ minWidth: 120 }}
                 >
                   {canContinue ? "Continuar" : "Completar paso actual"}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={onContinue}
-                  disabled={!canContinue}
-                  sx={{ minWidth: 120 }}
-                >
-                  {canContinue ? "Finalizar" : "Completar último paso"}
                 </Button>
               )}
             </Box>

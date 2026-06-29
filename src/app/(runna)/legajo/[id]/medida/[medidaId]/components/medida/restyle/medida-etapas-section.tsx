@@ -645,7 +645,12 @@ export const MedidaEtapasSection: React.FC<MedidaEtapasSectionProps> = ({
             fallbackEstado={fallbackEstadoFor(panelPhase)}
             isCurrent={phaseIsCurrent(panelPhase)}
             onClose={() => setPanelPhase(null)}
-            onGestionar={() => setModalPhase(panelPhase)}
+            onGestionar={() => {
+              // Cerrar la sidebar al abrir el modal: evita tener Drawer + Dialog
+              // abiertos a la vez (scroll-lock / backdrops apilados de MUI).
+              setModalPhase(panelPhase)
+              setPanelPhase(null)
+            }}
           />
         )}
       </Drawer>

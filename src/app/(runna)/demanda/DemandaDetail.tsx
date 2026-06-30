@@ -117,21 +117,9 @@ export default function DemandaDetail({ params, onClose, isFullPage = false }: D
     "SUBIDO_A_PODER_JUDICIAL",
   ].includes(formData?.estado_demanda || "")
 
-  // If it's a petition for report, force tab value to be 1 (Enviar Respuesta)
-  // Remove this useEffect that forces the tab value to be 1
-  // useEffect(() => {
-  //   if (isPeticionDeInforme && tabValue !== 1) {
-  //     setTabValue(1)
-  //   }
-  // }, [isPeticionDeInforme, tabValue])
-
-  // Replace with this useEffect that only sets the initial tab value
-  useEffect(() => {
-    // Only set the initial tab value when the component first loads
-    if (isPeticionDeInforme && !isLoading && formData) {
-      setTabValue(1)
-    }
-  }, [isPeticionDeInforme, isLoading, formData])
+  // PETICION_DE_INFORME (oficio MPE/MPI) abre en la pestaña "Detalles" (índice 0)
+  // para que Rosa/legales pueda completar/editar el oficio directamente. El usuario
+  // navega manualmente a "Enviar Respuesta" cuando corresponde.
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     // Allow changing to any tab, but the form in the Details tab will be read-only

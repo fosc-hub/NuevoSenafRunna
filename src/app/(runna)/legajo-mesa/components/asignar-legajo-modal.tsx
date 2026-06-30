@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Modal,
   Box,
@@ -9,11 +9,6 @@ import {
   Tabs,
   Typography,
   Button,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   TextField,
   Autocomplete,
   Paper,
@@ -26,30 +21,23 @@ import {
   ListItemText,
   Chip,
   Alert,
-  FormHelperText,
 } from "@mui/material"
 import {
   Close as CloseIcon,
-  Send as SendIcon,
+  Save as SaveIcon,
   History as HistoryIcon,
   AssignmentInd as AssignmentIcon,
-  CompareArrows as DerivacionIcon,
+  Groups as GroupsIcon,
+  Home as HomeIcon,
 } from "@mui/icons-material"
 import { toast } from "react-toastify"
 import { useCatalogData, useConditionalData, extractArray } from "@/hooks/useApiQuery"
-import {
-  derivarLegajo,
-  asignarLegajo,
-  reasignarLegajo,
-  rederivarLegajo,
-} from "../api/legajo-asignacion-api-service"
+import { sincronizarAsignaciones } from "../api/legajo-asignacion-api-service"
 import type {
-  TipoResponsabilidad,
   Zona,
-  Usuario,
-  LocalCentroVida,
   HistorialAsignacion,
-  AsignacionActual,
+  LegajoAsignacionesResponse,
+  TipoResponsabilidad,
 } from "../types/asignacion-types"
 
 interface AsignarLegajoModalProps {
@@ -59,325 +47,111 @@ interface AsignarLegajoModalProps {
   onAsignacionComplete?: () => void
 }
 
+// Usuario tal como lo devuelve GET /api/users/
+interface RawUsuario {
+  id: number
+  username: string
+  first_name: string
+  last_name: string
+  email?: string
+  is_active?: boolean
+}
+
+interface UsuarioOption {
+  id: number
+  nombre_completo: string
+}
+
+const toNombreCompleto = (u: RawUsuario): string =>
+  `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.username
+
 const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
   open,
   onClose,
   legajoId,
   onAsignacionComplete,
 }) => {
-  // Tab control
+  // Tab control: 0 = Asignaciones (editor), 1 = Historial
   const [tabValue, setTabValue] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Type for users-zonas endpoint response with user_info
-  interface UserZonaWithInfo {
-    id: number
-    user: number
-    zona: number
-    jefe: boolean
-    director: boolean
-    legal: boolean
-    localidad: number | null
-    user_info: {
-      id: number
-      username: string
-      first_name: string
-      last_name: string
-      email: string
-      is_active: boolean
-    }
-  }
+  // ===== Estado del editor (selecciones por categoría) =====
+  const [trabajoZonas, setTrabajoZonas] = useState<number[]>([])
+  const [trabajoUsuarios, setTrabajoUsuarios] = useState<number[]>([])
+  const [centroVidaZonas, setCentroVidaZonas] = useState<number[]>([])
+  const [centroVidaUsuarios, setCentroVidaUsuarios] = useState<number[]>([])
+  const [comentarios, setComentarios] = useState("")
 
-  // Fetch data using TanStack Query - React Query will parallelize these automatically
+  // ===== Catálogos =====
   const { data: zonasData, isLoading: isLoadingZonas } = useCatalogData<Zona[]>("zonas/")
   const zonas = extractArray(zonasData)
 
-  const { data: localesCentroVidaData, isLoading: isLoadingLocales } = useCatalogData<LocalCentroVida[]>(
-    "locales-centro-vida/"
+  // TODOS los usuarios (sin filtrar por zona)
+  const { data: usuariosData, isLoading: isLoadingUsuarios } = useCatalogData<RawUsuario[]>(
+    "users/?page_size=500"
   )
-  const localesCentroVida = extractArray(localesCentroVidaData)
-
-  const { data: userZonasData, isLoading: isLoadingUserZonas } = useCatalogData<UserZonaWithInfo[]>(
-    "users-zonas/?page_size=500"
+  const usuarios = useMemo<UsuarioOption[]>(
+    () =>
+      extractArray(usuariosData).map((u) => ({
+        id: u.id,
+        nombre_completo: toNombreCompleto(u),
+      })),
+    [usuariosData]
   )
-  const userZonas = extractArray(userZonasData)
 
-  const { data: historialData, isLoading: isLoadingHistorial, refetch: refetchHistorial } = useConditionalData<HistorialAsignacion[]>(
+  // ===== Estado actual del legajo =====
+  const {
+    data: legajoData,
+    isLoading: isLoadingLegajo,
+    refetch: refetchLegajo,
+  } = useConditionalData<LegajoAsignacionesResponse>(`legajo/${legajoId}/`, open && !!legajoId)
+
+  // ===== Historial =====
+  const {
+    data: historialData,
+    isLoading: isLoadingHistorial,
+    refetch: refetchHistorial,
+  } = useConditionalData<HistorialAsignacion[]>(
     `legajo/${legajoId}/historial-asignaciones/`,
     open && !!legajoId
   )
   const historial = extractArray(historialData)
 
-  const { data: legajoData, isLoading: isLoadingLegajo, refetch: refetchLegajo } = useConditionalData<any>(
-    `legajo/${legajoId}/`,
-    open && !!legajoId
-  )
+  const isLoading = isLoadingZonas || isLoadingUsuarios || isLoadingLegajo
 
-  // Combine loading states
-  const isLoading =
-    isLoadingZonas || isLoadingLocales ||
-    isLoadingUserZonas || isLoadingHistorial || isLoadingLegajo
+  // Prefill desde el estado actual del legajo cuando carga / se refresca
+  useEffect(() => {
+    const asignaciones = legajoData?.asignaciones
+    if (!asignaciones) return
+    setTrabajoZonas((asignaciones.trabajo?.zonas ?? []).map((z) => z.id))
+    setTrabajoUsuarios((asignaciones.trabajo?.usuarios ?? []).map((u) => u.id))
+    setCentroVidaZonas((asignaciones.centro_vida?.zonas ?? []).map((z) => z.id))
+    setCentroVidaUsuarios((asignaciones.centro_vida?.usuarios ?? []).map((u) => u.id))
+  }, [legajoData])
 
-  // Submission state
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  // Reset de tab al abrir
+  useEffect(() => {
+    if (open) setTabValue(0)
+  }, [open])
 
-  // ===== TAB 1: DERIVAR A ZONA =====
-  const [selectedZonaDerivacion, setSelectedZonaDerivacion] = useState<number | null>(null)
-  const [tipoResponsabilidadDerivacion, setTipoResponsabilidadDerivacion] =
-    useState<TipoResponsabilidad>("TRABAJO")
-  const [comentariosDerivacion, setComentariosDerivacion] = useState("")
-  const [notificarEquipo, setNotificarEquipo] = useState(true)
-
-  // ===== TAB 2: ASIGNAR RESPONSABLE =====
-  const [tipoResponsabilidadAsignacion, setTipoResponsabilidadAsignacion] =
-    useState<TipoResponsabilidad>("TRABAJO")
-  const [selectedZonaAsignacion, setSelectedZonaAsignacion] = useState<number | null>(null)
-  const [selectedUsuario, setSelectedUsuario] = useState<number | null>(null)
-  const [selectedLocalCentroVida, setSelectedLocalCentroVida] = useState<number | null>(null)
-  const [comentariosAsignacion, setComentariosAsignacion] = useState("")
-
-  // Extract current derivaciones from historial (for Tab 1 - Derivar)
-  const derivacionesActuales = useMemo(() => {
-    const derivacionesPorTipo: Record<TipoResponsabilidad, HistorialAsignacion | null> = {
-      TRABAJO: null,
-      CENTRO_VIDA: null,
-      JUDICIAL: null,
-    }
-
-    const sortedHistorial = [...historial].sort(
-      (a, b) => new Date(b.fecha_accion).getTime() - new Date(a.fecha_accion).getTime()
-    )
-
-    for (const record of sortedHistorial) {
-      const tipo = record.tipo_responsabilidad
-
-      if (derivacionesPorTipo[tipo] !== null) {
-        continue
-      }
-
-      if (record.accion === "DESACTIVACION") {
-        derivacionesPorTipo[tipo] = null
-        continue
-      }
-
-      // Contar CUALQUIER asignación activa (DERIVACION, ASIGNACION, MODIFICACION)
-      // porque necesitamos saber si existe una asignación del tipo para usar /rederivar/
-      if (record.accion === "DERIVACION" || record.accion === "ASIGNACION" || record.accion === "MODIFICACION") {
-        derivacionesPorTipo[tipo] = record
-      }
-    }
-
-    const result: AsignacionActual[] = []
-
-    for (const [tipo, record] of Object.entries(derivacionesPorTipo) as [TipoResponsabilidad, HistorialAsignacion | null][]) {
-      if (record) {
-        result.push({
-          tipo_responsabilidad: tipo,
-          zona: {
-            id: record.zona,
-            nombre: record.zona_nombre,
-          },
-          user_responsable: record.user_responsable ? {
-            id: record.user_responsable,
-            nombre_completo: record.user_responsable_nombre || undefined,
-            username: record.user_responsable_nombre || "",
-            first_name: "",
-            last_name: "",
-            email: "",
-          } : undefined,
-          local_centro_vida: undefined,
-          esta_activo: true,
-          fecha_asignacion: record.fecha_accion,
-        })
-      }
-    }
-
-    return result
-  }, [historial])
-
-  // Extract current asignaciones from historial (for Tab 2 - Asignar)
-  const asignacionesActuales = useMemo(() => {
-    const asignacionesPorTipo: Record<TipoResponsabilidad, HistorialAsignacion | null> = {
-      TRABAJO: null,
-      CENTRO_VIDA: null,
-      JUDICIAL: null,
-    }
-
-    const sortedHistorial = [...historial].sort(
-      (a, b) => new Date(b.fecha_accion).getTime() - new Date(a.fecha_accion).getTime()
-    )
-
-    for (const record of sortedHistorial) {
-      const tipo = record.tipo_responsabilidad
-
-      if (asignacionesPorTipo[tipo] !== null) {
-        continue
-      }
-
-      if (record.accion === "DESACTIVACION") {
-        asignacionesPorTipo[tipo] = null
-        continue
-      }
-
-      // Solo contar ASIGNACION o MODIFICACION (con usuario responsable)
-      if ((record.accion === "ASIGNACION" || record.accion === "MODIFICACION") && record.user_responsable) {
-        asignacionesPorTipo[tipo] = record
-      }
-    }
-
-    const result: AsignacionActual[] = []
-
-    for (const [tipo, record] of Object.entries(asignacionesPorTipo) as [TipoResponsabilidad, HistorialAsignacion | null][]) {
-      if (record) {
-        result.push({
-          tipo_responsabilidad: tipo,
-          zona: {
-            id: record.zona,
-            nombre: record.zona_nombre,
-          },
-          user_responsable: record.user_responsable ? {
-            id: record.user_responsable,
-            nombre_completo: record.user_responsable_nombre || undefined,
-            username: record.user_responsable_nombre || "",
-            first_name: "",
-            last_name: "",
-            email: "",
-          } : undefined,
-          local_centro_vida: undefined,
-          esta_activo: true,
-          fecha_asignacion: record.fecha_accion,
-        })
-      }
-    }
-
-    return result
-  }, [historial])
-
-  // Filtrar usuarios por zona seleccionada - extract from user_info directly
-  const usuariosFiltrados = useMemo((): Usuario[] => {
-    if (!selectedZonaAsignacion) return []
-
-    return userZonas
-      .filter((uz) => uz.zona === selectedZonaAsignacion && uz.user_info)
-      .map((uz) => ({
-        id: uz.user_info.id,
-        username: uz.user_info.username,
-        first_name: uz.user_info.first_name,
-        last_name: uz.user_info.last_name,
-        email: uz.user_info.email,
-        nombre_completo: uz.user_info.first_name && uz.user_info.last_name
-          ? `${uz.user_info.first_name} ${uz.user_info.last_name}`.trim()
-          : uz.user_info.username,
-      }))
-  }, [selectedZonaAsignacion, userZonas])
-
-  // Handler para derivar
-  const handleDerivar = async () => {
-    if (!legajoId || !selectedZonaDerivacion) {
-      toast.error("Seleccione una zona de destino")
-      return
-    }
-
-    // Validar comentarios para re-derivación
-    const asignacionActivaEnLegajo = legajoData?.asignaciones_activas?.find(
-      (a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion
-    )
-    const derivacionExistentePrevia = derivacionesActuales.find(
-      (d) => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo
-    )
-
-    if ((derivacionExistentePrevia || asignacionActivaEnLegajo) && !comentariosDerivacion.trim()) {
-      toast.error("Los comentarios son obligatorios para re-derivar")
-      return
-    }
+  const handleGuardar = async () => {
+    if (!legajoId) return
 
     setIsSubmitting(true)
     try {
-      // Determinar si es derivación nueva o re-derivación
-      // 1. Buscar en el historial de asignaciones
-      const derivacionExistente = derivacionesActuales.find(
-        (d) => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo
-      )
+      await sincronizarAsignaciones(legajoId, {
+        trabajo: { zonas: trabajoZonas, usuarios: trabajoUsuarios },
+        centro_vida: { zonas: centroVidaZonas, usuarios: centroVidaUsuarios },
+        ...(comentarios.trim() ? { comentarios: comentarios.trim() } : {}),
+      })
 
-      // 2. Buscar en asignaciones_activas del legajo
-      const asignacionActivaEnLegajo = legajoData?.asignaciones_activas?.find(
-        (a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion
-      )
-
-      if (derivacionExistente || asignacionActivaEnLegajo) {
-        // Re-derivar a otra zona (desactiva asignación actual + crea nueva)
-        await rederivarLegajo(legajoId, {
-          tipo_responsabilidad: tipoResponsabilidadDerivacion,
-          zona_destino_id: selectedZonaDerivacion,
-          comentarios: comentariosDerivacion,
-        })
-        toast.success("Legajo re-derivado exitosamente a nueva zona")
-      } else {
-        // Derivar por primera vez
-        await derivarLegajo(legajoId, {
-          zona_destino_id: selectedZonaDerivacion,
-          tipo_responsabilidad: tipoResponsabilidadDerivacion,
-          comentarios: comentariosDerivacion,
-          notificar_equipo: notificarEquipo,
-        })
-        toast.success("Legajo derivado exitosamente")
-      }
-
-      setComentariosDerivacion("")
-      await Promise.all([refetchHistorial(), refetchLegajo()])
+      toast.success("Asignaciones guardadas correctamente")
+      setComentarios("")
+      await Promise.all([refetchLegajo(), refetchHistorial()])
       onAsignacionComplete?.()
     } catch (error) {
-      console.error("Error derivando legajo:", error)
-      toast.error("Error al derivar el legajo")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Handler para asignar/reasignar
-  const handleAsignar = async () => {
-    if (!legajoId || !selectedZonaAsignacion || !selectedUsuario) {
-      toast.error("Complete todos los campos obligatorios")
-      return
-    }
-
-    // Validar local_centro_vida obligatorio para CENTRO_VIDA
-    if (tipoResponsabilidadAsignacion === "CENTRO_VIDA" && !selectedLocalCentroVida) {
-      toast.error("Debe seleccionar un local de centro de vida")
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      // Determinar si es asignación nueva o reasignación
-      const asignacionExistente = asignacionesActuales.find(
-        (a) => a.tipo_responsabilidad === tipoResponsabilidadAsignacion && a.esta_activo
-      )
-
-      if (asignacionExistente) {
-        // Reasignar
-        await reasignarLegajo(legajoId, {
-          tipo_responsabilidad: tipoResponsabilidadAsignacion,
-          user_responsable_id: selectedUsuario,
-          comentarios: comentariosAsignacion,
-        })
-        toast.success("Responsable reasignado exitosamente")
-      } else {
-        // Asignar nuevo
-        await asignarLegajo(legajoId, {
-          tipo_responsabilidad: tipoResponsabilidadAsignacion,
-          user_responsable_id: selectedUsuario,
-          local_centro_vida_id: selectedLocalCentroVida || undefined,
-          comentarios: comentariosAsignacion,
-        })
-        toast.success("Responsable asignado exitosamente")
-      }
-
-      setComentariosAsignacion("")
-      await Promise.all([refetchHistorial(), refetchLegajo()])
-      onAsignacionComplete?.()
-    } catch (error) {
-      console.error("Error asignando legajo:", error)
-      toast.error("Error al asignar el responsable")
+      console.error("Error guardando asignaciones:", error)
+      toast.error("Error al guardar las asignaciones")
     } finally {
       setIsSubmitting(false)
     }
@@ -398,10 +172,10 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
     }).format(date)
   }
 
-  const getTipoLabel = (tipo: TipoResponsabilidad) => {
+  const getTipoLabel = (tipo: TipoResponsabilidad | string) => {
     switch (tipo) {
       case "TRABAJO":
-        return "Trabajo"
+        return "Equipo de Trabajo"
       case "CENTRO_VIDA":
         return "Centro de Vida"
       case "JUDICIAL":
@@ -425,6 +199,70 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
         return accion
     }
   }
+
+  // Sección reutilizable para una categoría
+  const CategoriaSection = ({
+    title,
+    icon,
+    zonasSeleccionadas,
+    usuariosSeleccionados,
+    onZonasChange,
+    onUsuariosChange,
+  }: {
+    title: string
+    icon: React.ReactNode
+    zonasSeleccionadas: number[]
+    usuariosSeleccionados: number[]
+    onZonasChange: (ids: number[]) => void
+    onUsuariosChange: (ids: number[]) => void
+  }) => (
+    <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 2, color: "primary.main" }}
+      >
+        {icon} {title}
+      </Typography>
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            Zonas / Equipos
+          </Typography>
+          <Autocomplete
+            multiple
+            options={zonas}
+            getOptionLabel={(option) => option.nombre}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            value={zonas.filter((z) => zonasSeleccionadas.includes(z.id))}
+            onChange={(_, newValue) => onZonasChange(newValue.map((z) => z.id))}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Seleccione zonas" size="small" />
+            )}
+            disabled={isSubmitting}
+          />
+        </Box>
+
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            Usuarios responsables
+          </Typography>
+          <Autocomplete
+            multiple
+            options={usuarios}
+            getOptionLabel={(option) => option.nombre_completo}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            value={usuarios.filter((u) => usuariosSeleccionados.includes(u.id))}
+            onChange={(_, newValue) => onUsuariosChange(newValue.map((u) => u.id))}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Seleccione usuarios" size="small" />
+            )}
+            disabled={isSubmitting}
+          />
+        </Box>
+      </Box>
+    </Paper>
+  )
 
   return (
     <Modal open={open} onClose={onClose} aria-labelledby="asignar-legajo-modal">
@@ -452,13 +290,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
           <Typography
             variant="h5"
             component="h2"
-            sx={{
-              color: "primary.main",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
+            sx={{ color: "primary.main", fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}
           >
             <AssignmentIcon /> Asignar Legajo #{legajoId}
           </Typography>
@@ -474,8 +306,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
         {/* Tabs */}
         <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="asignar legajo tabs">
-            <Tab icon={<DerivacionIcon fontSize="small" />} iconPosition="start" label="Derivar" />
-            <Tab icon={<AssignmentIcon fontSize="small" />} iconPosition="start" label="Asignar" />
+            <Tab icon={<AssignmentIcon fontSize="small" />} iconPosition="start" label="Asignaciones" />
             <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label="Historial" />
           </Tabs>
         </Box>
@@ -488,310 +319,62 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
             </Box>
           ) : (
             <>
-              {/* TAB 1: DERIVAR */}
+              {/* TAB 0: ASIGNACIONES (editor de un paso) */}
               {tabValue === 0 && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                   <Alert severity="info">
-                    Derivar el legajo a una zona específica para su gestión.
+                    Defina las zonas/equipos y los usuarios responsables para cada categoría. Al guardar, el
+                    sistema dará de alta lo agregado y de baja lo quitado.
                   </Alert>
 
-                  {/* Advertencia de re-derivación */}
-                  {(derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                    legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) && (
-                    <Alert severity="warning">
-                      <strong>Re-derivación:</strong> El legajo ya tiene una asignación activa de tipo{" "}
-                      <strong>{getTipoLabel(tipoResponsabilidadDerivacion)}</strong>. Al continuar, la asignación actual será
-                      desactivada y se creará una nueva en la zona seleccionada.
-                    </Alert>
-                  )}
+                  <CategoriaSection
+                    title="Equipo de Trabajo"
+                    icon={<GroupsIcon fontSize="small" />}
+                    zonasSeleccionadas={trabajoZonas}
+                    usuariosSeleccionados={trabajoUsuarios}
+                    onZonasChange={setTrabajoZonas}
+                    onUsuariosChange={setTrabajoUsuarios}
+                  />
 
-                  {/* Mostrar asignaciones activas del legajo (si existen) */}
-                  {legajoData?.asignaciones_activas?.length > 0 && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        bgcolor: "success.50",
-                        border: "1px solid",
-                        borderColor: "success.200",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography variant="subtitle2" color="success.dark" sx={{ mb: 1, fontWeight: 600 }}>
-                        Asignaciones Activas del Legajo:
-                      </Typography>
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        {legajoData.asignaciones_activas.map((asig: any) => (
-                            <Box
-                              key={asig.tipo_responsabilidad}
-                              sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
-                            >
-                              <Chip label={getTipoLabel(asig.tipo_responsabilidad)} size="small" color="primary" />
-                              <Typography variant="body2">
-                                {asig.zona?.nombre || `Zona ID: ${asig.zona}`}
-                                {asig.user_responsable && (
-                                  <> → {asig.user_responsable.nombre_completo || asig.user_responsable.username || `Usuario ID: ${asig.user_responsable}`}</>
-                                )}
-                              </Typography>
-                            </Box>
-                          ))}
-                      </Box>
-                    </Box>
-                  )}
+                  <CategoriaSection
+                    title="Centro de Vida"
+                    icon={<HomeIcon fontSize="small" />}
+                    zonasSeleccionadas={centroVidaZonas}
+                    usuariosSeleccionados={centroVidaUsuarios}
+                    onZonasChange={setCentroVidaZonas}
+                    onUsuariosChange={setCentroVidaUsuarios}
+                  />
 
-                  {/* Mostrar derivaciones actuales del historial si existen */}
-                  {derivacionesActuales.length > 0 && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        bgcolor: "info.50",
-                        border: "1px solid",
-                        borderColor: "info.200",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography variant="subtitle2" color="info.dark" sx={{ mb: 1, fontWeight: 600 }}>
-                        Derivaciones Actuales:
-                      </Typography>
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        {derivacionesActuales.map((deriv) => (
-                          <Box
-                            key={deriv.tipo_responsabilidad}
-                            sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
-                          >
-                            <Chip label={getTipoLabel(deriv.tipo_responsabilidad)} size="small" color="primary" />
-                            <Typography variant="body2">
-                              {deriv.zona?.nombre}
-                              {deriv.user_responsable && (
-                                <> → {deriv.user_responsable.nombre_completo || deriv.user_responsable.username}</>
-                              )}
-                            </Typography>
-                            {!deriv.user_responsable && (
-                              <Typography variant="caption" color="text.secondary">
-                                (Sin usuario responsable asignado)
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-
-                  <FormControl component="fieldset">
-                    <FormLabel component="legend">Tipo de Responsabilidad</FormLabel>
-                    <RadioGroup
-                      row
-                      value={tipoResponsabilidadDerivacion}
-                      onChange={(e) => setTipoResponsabilidadDerivacion(e.target.value as TipoResponsabilidad)}
-                    >
-                      <FormControlLabel value="TRABAJO" control={<Radio />} label="Trabajo" />
-                      <FormControlLabel value="CENTRO_VIDA" control={<Radio />} label="Centro de Vida" />
-                      <FormControlLabel value="JUDICIAL" control={<Radio />} label="Judicial" />
-                    </RadioGroup>
-                  </FormControl>
-
-                  <FormControl fullWidth>
+                  <Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      Zona de Destino *
-                    </Typography>
-                    <Autocomplete
-                      options={zonas}
-                      getOptionLabel={(option) => option.nombre}
-                      value={zonas.find((z) => z.id === selectedZonaDerivacion) || null}
-                      onChange={(_, newValue) => setSelectedZonaDerivacion(newValue?.id || null)}
-                      renderInput={(params) => (
-                        <TextField {...params} placeholder="Seleccione una zona" size="small" />
-                      )}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-
-                  <FormControl fullWidth>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      Comentarios
-                      {(derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                        legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) && (
-                        <Typography component="span" color="error" sx={{ ml: 0.5 }}>
-                          *
-                        </Typography>
-                      )}
+                      Comentarios (opcional)
                     </Typography>
                     <TextField
+                      fullWidth
                       multiline
                       rows={3}
-                      value={comentariosDerivacion}
-                      onChange={(e) => setComentariosDerivacion(e.target.value)}
-                      placeholder={
-                        (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                         legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion))
-                          ? "Comentarios obligatorios para re-derivación..."
-                          : "Añada comentarios sobre esta derivación..."
-                      }
+                      value={comentarios}
+                      onChange={(e) => setComentarios(e.target.value)}
+                      placeholder="Añada comentarios sobre estos cambios..."
                       size="small"
                       disabled={isSubmitting}
-                      error={
-                        (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                         legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) &&
-                        !comentariosDerivacion.trim()
-                      }
-                      helperText={
-                        (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                         legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) &&
-                        !comentariosDerivacion.trim()
-                          ? "Este campo es obligatorio para re-derivación"
-                          : ""
-                      }
                     />
-                  </FormControl>
+                  </Box>
                 </Box>
               )}
 
-              {/* TAB 2: ASIGNAR */}
+              {/* TAB 1: HISTORIAL */}
               {tabValue === 1 && (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <Alert severity="info">
-                    Asignar un responsable específico para este tipo de intervención.
-                  </Alert>
-
-                  {/* Mostrar asignaciones actuales si existen */}
-                  {asignacionesActuales.length > 0 && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        bgcolor: "success.50",
-                        border: "1px solid",
-                        borderColor: "success.200",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography variant="subtitle2" color="success.dark" sx={{ mb: 1, fontWeight: 600 }}>
-                        Responsables Actuales:
-                      </Typography>
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        {asignacionesActuales.map((asig) => (
-                          <Box
-                            key={asig.tipo_responsabilidad}
-                            sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
-                          >
-                            <Chip label={getTipoLabel(asig.tipo_responsabilidad)} size="small" color="secondary" />
-                            <Typography variant="body2">
-                              {asig.zona?.nombre} →{" "}
-                              {asig.user_responsable?.nombre_completo || asig.user_responsable?.username || "Sin asignar"}
-                            </Typography>
-                            {asig.local_centro_vida && (
-                              <Typography variant="caption" color="text.secondary">
-                                ({asig.local_centro_vida.nombre})
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-
-                  <FormControl component="fieldset">
-                    <FormLabel component="legend">Tipo de Responsabilidad</FormLabel>
-                    <RadioGroup
-                      row
-                      value={tipoResponsabilidadAsignacion}
-                      onChange={(e) => {
-                        setTipoResponsabilidadAsignacion(e.target.value as TipoResponsabilidad)
-                        // Reset usuario seleccionado al cambiar tipo
-                        setSelectedUsuario(null)
-                        setSelectedLocalCentroVida(null)
-                      }}
-                    >
-                      <FormControlLabel value="TRABAJO" control={<Radio />} label="Trabajo" />
-                      <FormControlLabel value="CENTRO_VIDA" control={<Radio />} label="Centro de Vida" />
-                      <FormControlLabel value="JUDICIAL" control={<Radio />} label="Judicial" />
-                    </RadioGroup>
-                  </FormControl>
-
-                  <FormControl fullWidth>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      Zona *
-                    </Typography>
-                    <Autocomplete
-                      options={zonas}
-                      getOptionLabel={(option) => option.nombre}
-                      value={zonas.find((z) => z.id === selectedZonaAsignacion) || null}
-                      onChange={(_, newValue) => {
-                        setSelectedZonaAsignacion(newValue?.id || null)
-                        setSelectedUsuario(null) // Reset usuario al cambiar zona
-                      }}
-                      renderInput={(params) => (
-                        <TextField {...params} placeholder="Seleccione una zona" size="small" />
-                      )}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-
-                  {selectedZonaAsignacion && (
-                    <FormControl fullWidth>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Usuario Responsable *
-                      </Typography>
-                      <Autocomplete
-                        options={usuariosFiltrados}
-                        getOptionLabel={(option) =>
-                          option.nombre_completo || `${option.first_name} ${option.last_name}`.trim() || option.username
-                        }
-                        value={usuariosFiltrados.find((u) => u.id === selectedUsuario) || null}
-                        onChange={(_, newValue) => setSelectedUsuario(newValue?.id || null)}
-                        renderInput={(params) => (
-                          <TextField {...params} placeholder="Seleccione un usuario" size="small" />
-                        )}
-                        disabled={isSubmitting}
-                        noOptionsText="No hay usuarios en esta zona"
-                      />
-                    </FormControl>
-                  )}
-
-                  {tipoResponsabilidadAsignacion === "CENTRO_VIDA" && (
-                    <FormControl fullWidth>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Local de Centro de Vida * (obligatorio para Centro de Vida)
-                      </Typography>
-                      <Autocomplete
-                        options={localesCentroVida.filter((l) => l.activo)}
-                        getOptionLabel={(option) => option.nombre}
-                        value={localesCentroVida.find((l) => l.id === selectedLocalCentroVida) || null}
-                        onChange={(_, newValue) => setSelectedLocalCentroVida(newValue?.id || null)}
-                        renderInput={(params) => (
-                          <TextField {...params} placeholder="Seleccione un local de centro de vida" size="small" />
-                        )}
-                        disabled={isSubmitting}
-                      />
-                      <FormHelperText>
-                        Este campo es obligatorio para asignaciones de tipo Centro de Vida
-                      </FormHelperText>
-                    </FormControl>
-                  )}
-
-                  <FormControl fullWidth>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      Comentarios
-                    </Typography>
-                    <TextField
-                      multiline
-                      rows={3}
-                      value={comentariosAsignacion}
-                      onChange={(e) => setComentariosAsignacion(e.target.value)}
-                      placeholder="Añada comentarios sobre esta asignación..."
-                      size="small"
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                </Box>
-              )}
-
-              {/* TAB 3: HISTORIAL */}
-              {tabValue === 2 && (
                 <Box>
                   <Typography variant="subtitle1" color="primary" fontWeight={500} sx={{ mb: 2 }}>
                     Historial de asignaciones para este legajo
                   </Typography>
 
-                  {historial.length > 0 ? (
+                  {isLoadingHistorial ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                      <CircularProgress size={32} />
+                    </Box>
+                  ) : historial.length > 0 ? (
                     <List
                       sx={{
                         maxHeight: "400px",
@@ -804,6 +387,7 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                       }}
                     >
                       {historial
+                        .slice()
                         .sort((a, b) => new Date(b.fecha_accion).getTime() - new Date(a.fecha_accion).getTime())
                         .map((record, index) => (
                           <ListItem
@@ -819,7 +403,12 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                           >
                             <Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap", alignItems: "center" }}>
                               <Chip label={getAccionLabel(record.accion)} size="small" color="primary" variant="filled" />
-                              <Chip label={getTipoLabel(record.tipo_responsabilidad)} size="small" color="secondary" variant="outlined" />
+                              <Chip
+                                label={getTipoLabel(record.tipo_responsabilidad)}
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                              />
                               <Chip label={`ID: ${record.id}`} size="small" variant="outlined" sx={{ fontSize: "0.7rem" }} />
                             </Box>
                             <ListItemText
@@ -829,16 +418,16 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                                     Zona: {record.zona_nombre}
                                     {record.user_responsable_nombre && ` → Responsable: ${record.user_responsable_nombre}`}
                                   </Typography>
-                                  {!record.user_responsable_nombre && record.accion === "DERIVACION" && (
-                                    <Typography variant="caption" color="warning.main" sx={{ fontStyle: "italic" }}>
-                                      (Sin responsable asignado - solo derivación a zona)
-                                    </Typography>
-                                  )}
                                 </Box>
                               }
                               secondary={
                                 <Box sx={{ mt: 0.5 }}>
-                                  <Typography variant="caption" component="div" color="text.secondary" sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                  <Typography
+                                    variant="caption"
+                                    component="div"
+                                    color="text.secondary"
+                                    sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}
+                                  >
                                     <strong>Fecha:</strong> {formatDate(record.fecha_accion)}
                                     {record.realizado_por_nombre && (
                                       <>
@@ -847,13 +436,12 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
                                       </>
                                     )}
                                   </Typography>
-                                  {record.legajo_zona_anterior && (
-                                    <Typography variant="caption" component="div" color="info.main" sx={{ mt: 0.3 }}>
-                                      <strong>Cambio desde:</strong> Legajo-Zona ID {record.legajo_zona_anterior} → {record.legajo_zona_nuevo}
-                                    </Typography>
-                                  )}
                                   {record.comentarios && record.comentarios.trim() !== "" && (
-                                    <Typography variant="caption" component="div" sx={{ mt: 0.5, p: 1, bgcolor: "grey.50", borderRadius: 1, fontStyle: "italic" }}>
+                                    <Typography
+                                      variant="caption"
+                                      component="div"
+                                      sx={{ mt: 0.5, p: 1, bgcolor: "grey.50", borderRadius: 1, fontStyle: "italic" }}
+                                    >
                                       <strong>Comentarios:</strong> {record.comentarios}
                                     </Typography>
                                   )}
@@ -900,46 +488,11 @@ const AsignarLegajoModal: React.FC<AsignarLegajoModalProps> = ({
             <Button
               variant="contained"
               color="primary"
-              onClick={handleDerivar}
-              disabled={
-                isSubmitting ||
-                !selectedZonaDerivacion ||
-                // Comentarios obligatorios para re-derivación
-                ((derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                  legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion)) &&
-                 !comentariosDerivacion.trim())
-              }
-              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+              onClick={handleGuardar}
+              disabled={isSubmitting || !legajoId}
+              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
             >
-              {isSubmitting
-                ? "Procesando..."
-                : (derivacionesActuales.find(d => d.tipo_responsabilidad === tipoResponsabilidadDerivacion && d.esta_activo) ||
-                   legajoData?.asignaciones_activas?.find((a: any) => a.tipo_responsabilidad === tipoResponsabilidadDerivacion))
-                  ? "Re-derivar a Nueva Zona"
-                  : "Derivar"
-              }
-            </Button>
-          )}
-
-          {tabValue === 1 && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleAsignar}
-              disabled={
-                isSubmitting ||
-                !selectedZonaAsignacion ||
-                !selectedUsuario ||
-                (tipoResponsabilidadAsignacion === "CENTRO_VIDA" && !selectedLocalCentroVida)
-              }
-              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-            >
-              {isSubmitting
-                ? "Procesando..."
-                : asignacionesActuales.find(a => a.tipo_responsabilidad === tipoResponsabilidadAsignacion)
-                  ? "Reasignar"
-                  : "Asignar"
-              }
+              {isSubmitting ? "Guardando..." : "Guardar"}
             </Button>
           )}
 

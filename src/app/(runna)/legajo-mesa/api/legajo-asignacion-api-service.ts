@@ -16,9 +16,44 @@ import type {
   Usuario,
   LocalCentroVida,
   AsignacionResponse,
+  LegajoAsignacionesResponse,
+  SincronizarAsignacionesRequest,
+  SincronizarAsignacionesResponse,
 } from "../types/asignacion-types"
 
+// ============================================
+// FLUJO ÚNICO DE ASIGNACIONES (nuevo contrato)
+// ============================================
+
 /**
+ * Obtener el estado actual de asignaciones agrupadas del legajo.
+ * GET /api/legajo/{id}/
+ */
+export const fetchAsignaciones = async (
+  legajoId: number
+): Promise<LegajoAsignacionesResponse> => {
+  return await get<LegajoAsignacionesResponse>(`legajo/${legajoId}/`)
+}
+
+/**
+ * Guardar el estado deseado completo de asignaciones (operación única).
+ * Reemplaza derivar/asignar/reasignar/rederivar.
+ * El backend da de alta lo que falta y de baja lo que se quitó.
+ * PUT /api/legajo/{id}/asignaciones/
+ */
+export const sincronizarAsignaciones = async (
+  legajoId: number,
+  payload: SincronizarAsignacionesRequest
+): Promise<SincronizarAsignacionesResponse> => {
+  const response = await axiosInstance.put<SincronizarAsignacionesResponse>(
+    `legajo/${legajoId}/asignaciones/`,
+    payload
+  )
+  return response.data
+}
+
+/**
+ * @deprecated Usar `sincronizarAsignaciones` (flujo único).
  * Derivar legajo a zona
  * POST /api/legajo/{id}/derivar/
  */
@@ -30,6 +65,7 @@ export const derivarLegajo = async (
 }
 
 /**
+ * @deprecated Usar `sincronizarAsignaciones` (flujo único).
  * Asignar responsable específico en zona
  * POST /api/legajo/{id}/asignar/
  */
@@ -41,6 +77,7 @@ export const asignarLegajo = async (
 }
 
 /**
+ * @deprecated Usar `sincronizarAsignaciones` (flujo único).
  * Modificar responsable existente
  * PATCH /api/legajo/{id}/reasignar/
  */
@@ -54,6 +91,7 @@ export const reasignarLegajo = async (
 }
 
 /**
+ * @deprecated Usar `sincronizarAsignaciones` (flujo único).
  * Re-derivar a otra zona (desactiva asignación actual)
  * POST /api/legajo/{id}/rederivar/
  */

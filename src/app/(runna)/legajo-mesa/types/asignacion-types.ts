@@ -142,3 +142,85 @@ export interface AsignacionResponse {
   fecha_creacion: string
   fecha_actualizacion: string
 }
+
+// ============================================
+// NUEVO CONTRATO (flujo único de asignaciones)
+// ============================================
+
+/**
+ * Claves de las dos categorías de asignación.
+ * Se elimina "judicial"/legales.
+ */
+export type CategoriaAsignacionKey = "trabajo" | "centro_vida"
+
+/**
+ * Referencia mínima de zona en la respuesta agrupada
+ */
+export interface ZonaRef {
+  id: number
+  nombre: string
+}
+
+/**
+ * Referencia mínima de usuario en la respuesta agrupada
+ */
+export interface UsuarioRef {
+  id: number
+  nombre_completo: string
+}
+
+/**
+ * Estado de una categoría tal como lo devuelve el backend
+ * GET /api/legajo/{id}/
+ */
+export interface CategoriaAsignacionResponse {
+  zonas: ZonaRef[]
+  usuarios: UsuarioRef[]
+}
+
+/**
+ * Bloque agrupado de asignaciones por categoría
+ */
+export interface AsignacionesAgrupadas {
+  trabajo: CategoriaAsignacionResponse
+  centro_vida: CategoriaAsignacionResponse
+}
+
+/**
+ * Respuesta de GET /api/legajo/{id}/ (campos relevantes para asignación)
+ */
+export interface LegajoAsignacionesResponse {
+  id: number
+  numero?: string | number
+  nnya?: any
+  asignaciones: AsignacionesAgrupadas
+  [key: string]: any
+}
+
+/**
+ * Estado deseado de una categoría a enviar al backend (sólo IDs)
+ */
+export interface CategoriaAsignacion {
+  zonas: number[]
+  usuarios: number[]
+}
+
+/**
+ * Request del flujo único.
+ * PUT /api/legajo/{id}/asignaciones/
+ * Cada categoría es opcional; enviar lista vacía desactiva todo lo de esa categoría.
+ */
+export interface SincronizarAsignacionesRequest {
+  trabajo?: CategoriaAsignacion
+  centro_vida?: CategoriaAsignacion
+  comentarios?: string
+}
+
+/**
+ * Respuesta del flujo único
+ * PUT /api/legajo/{id}/asignaciones/
+ */
+export interface SincronizarAsignacionesResponse {
+  cambios: Record<string, any>
+  asignaciones: AsignacionesAgrupadas
+}

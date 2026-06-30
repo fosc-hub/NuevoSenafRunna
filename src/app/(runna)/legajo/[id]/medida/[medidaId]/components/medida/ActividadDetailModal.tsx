@@ -135,7 +135,7 @@ export const ActividadDetailModal: React.FC<ActividadDetailModalProps> = ({
       {/* State Change */}
       <CambiarEstadoSection
         actividad={actividad}
-        canEdit={permissions.canEdit}
+        canChangeEstado={permissions.canChangeEstado}
         onSuccess={handleSuccess}
         onCambiarEstado={(nuevoEstado, motivo) =>
           actions.cambiarEstado(actividad.id, { nuevo_estado: nuevoEstado, motivo })

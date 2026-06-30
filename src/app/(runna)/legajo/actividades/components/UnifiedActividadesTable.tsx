@@ -1416,12 +1416,12 @@ export const UnifiedActividadesTable: React.FC<UnifiedActividadesTableProps> = (
 
                       {/* Edit */}
                       {features.showEdit && (
-                        <Tooltip title={actividad.estado === "REALIZADA" || actividad.estado === "CANCELADA" ? "No se puede editar" : "Editar"}>
+                        <Tooltip title={actividad.estado !== "EN_PROGRESO" ? "Solo se puede editar una actividad en estado 'En Progreso'" : "Editar"}>
                           <span>
                             <IconButton
                               size="small"
                               onClick={() => handleEdit(actividad)}
-                              disabled={actividad.estado === "REALIZADA" || actividad.estado === "CANCELADA"}
+                              disabled={actividad.estado !== "EN_PROGRESO"}
                               sx={{
                                 backgroundColor: "rgba(156, 39, 176, 0.1)",
                                 color: "primary.main",

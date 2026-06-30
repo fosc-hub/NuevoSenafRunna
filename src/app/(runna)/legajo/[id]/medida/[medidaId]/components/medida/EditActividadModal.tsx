@@ -94,6 +94,9 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
 }) => {
   // PLTM V4.1: Detect team type from actividad
   const isEquipoTecnico = actividad.actor === 'EQUIPO_TECNICO'
+  // Solo se permite editar mientras la actividad está EN_PROGRESO.
+  // En cualquier otro estado (PENDIENTE_VISADO_JZ, PENDIENTE_VISADO, etc.) la edición queda bloqueada.
+  const isEditable = actividad.estado === 'EN_PROGRESO'
   // Granularidad: cargar scope actual de la actividad
   const [legajosAlcance, setLegajosAlcance] = useState<number[]>(
     Array.isArray(actividad.legajos_alcance) ? actividad.legajos_alcance : []
@@ -180,7 +183,11 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
     }
   }, [open, actividad, reset])
 
-  const onSubmitForm = handleSubmit((data) => submit(data))
+  const onSubmitForm = handleSubmit((data) => {
+    // Guarda defensiva: no permitir guardar si la actividad no está EN_PROGRESO.
+    if (!isEditable) return
+    submit(data)
+  })
 
   return (
     <BaseDialog
@@ -206,12 +213,19 @@ export const EditActividadModal: React.FC<EditActividadModalProps> = ({
           label: isLoading ? "Guardando..." : "Guardar Cambios",
           onClick: onSubmitForm,
           variant: "contained",
-          disabled: isLoading,
+          disabled: isLoading || !isEditable,
           loading: isLoading,
         },
       ]}
     >
       <Box component="form" onSubmit={onSubmitForm} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Bloqueo de edición: solo EN_PROGRESO es editable */}
+        {!isEditable && (
+          <Alert severity="warning" sx={{ fontSize: '0.875rem' }}>
+            Esta actividad no puede editarse porque no está <strong>En Progreso</strong>. Solo las actividades en estado "En Progreso" pueden modificarse.
+          </Alert>
+        )}
+
         {/* PLTM V4.1: Info alert - Different message based on team type */}
         {isEquipoTecnico ? (
           <Alert severity="info" sx={{ fontSize: '0.875rem' }}>

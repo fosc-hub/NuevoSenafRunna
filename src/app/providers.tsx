@@ -25,14 +25,14 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
 
     persistence: "localStorage+cookie",
 
-    // ── Session Replay con MASKING TOTAL ──────────────────────────────
-    // Sistema con PII de menores: enmascaramos TODO el texto e inputs.
-    // - maskAllInputs: oculta el contenido de TODOS los campos de formulario.
-    // - maskTextSelector "*": oculta TODO el texto renderizado (tablas, cards,
-    //   detalle de legajo). El replay muestra la estructura/flujo, no los datos.
+    // ── Session Replay SIN masking ────────────────────────────────────
+    // Decisión del equipo: grabar la información visible para máxima utilidad
+    // del replay. ATENCIÓN: los recordings capturarán PII de NNyA (nombres,
+    // DNI, legajos) tal como se ve en pantalla y se almacenará en PostHog.
+    // Nota: las contraseñas SIEMPRE se enmascaran (PostHog lo fuerza).
+    // Para re-enmascarar un componente puntual, agregarle la clase `ph-no-capture`.
     session_recording: {
-      maskAllInputs: true,
-      maskTextSelector: "*",
+      maskAllInputs: false,
     },
   });
 }

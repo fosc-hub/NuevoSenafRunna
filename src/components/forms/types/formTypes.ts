@@ -240,6 +240,10 @@ export interface DropdownData {
   categoria_submotivos: any
   gravedades_vulneracion: any
   urgencias_vulneracion: any
+  // Backend (registro-demanda-form-dropdowns) returns these under singular keys;
+  // keep optional for compatibility with the plural variants above.
+  gravedad_vulneracion?: any
+  urgencia_vulneracion?: any
   nacionalidad_choices: any
   bloques_datos_remitente: any
   // Backend devuelve los órganos judiciales con su circunscripción asignada

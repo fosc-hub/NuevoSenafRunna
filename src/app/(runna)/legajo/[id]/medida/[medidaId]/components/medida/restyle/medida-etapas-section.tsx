@@ -166,6 +166,8 @@ interface EtapaDetailPanelProps {
   medidaId?: number
   fallbackEstado: string
   isCurrent: boolean
+  /** Whether at least one etapa of this phase already exists. */
+  exists: boolean
   onClose: () => void
   onGestionar: () => void
 }
@@ -222,17 +224,25 @@ const EtapaDetailPanel: React.FC<EtapaDetailPanelProps> = ({
   medidaId,
   fallbackEstado,
   isCurrent,
+  exists,
   onClose,
   onGestionar,
 }) => {
   const tipoEtapa = workflowPhaseToTipoEtapa(phase)
   const { etapaDetail, documentos, isLoading } = useEtapaDetail(medidaId ?? 0, tipoEtapa, {
-    enabled: !!medidaId,
+    enabled: !!medidaId && exists,
   })
 
   const estado = etapaDetail?.etapa.estado_actual?.codigo || fallbackEstado || ""
   const estadoDisplay = etapaDetail?.etapa.estado_actual?.nombre_display
-  const steps = computeFlujo(tipo, estado, isCurrent)
+  // A phase that hasn't been created yet shows all applicable steps as pending,
+  // not as completed (computeFlujo would mark a non-current phase as all "done").
+  const steps = exists
+    ? computeFlujo(tipo, estado, isCurrent)
+    : FLUJO_STEPS.map((label, i) => ({
+        label,
+        status: (i < PASOS_APLICABLES[tipo] ? "pend" : "off") as StepStatus,
+      }))
   const adjuntos = useMemo(() => collectAdjuntos(documentos), [documentos])
   const fecha = etapaDetail?.etapa.fecha_inicio
     ? formatDateLocaleAR(etapaDetail.etapa.fecha_inicio)
@@ -296,15 +306,17 @@ const EtapaDetailPanel: React.FC<EtapaDetailPanelProps> = ({
             <Skeleton variant="rounded" width={140} height={22} />
           ) : (
             <Chip
-              label={estadoDisplay || estado || (isCurrent ? "En curso" : "Sin iniciar")}
+              label={
+                !exists ? "No iniciada" : estadoDisplay || estado || (isCurrent ? "En curso" : "Registrada")
+              }
               size="small"
               sx={{
                 height: 22,
                 fontSize: 11,
                 fontWeight: 600,
-                bgcolor: isCurrent ? "#EFF6FF" : "#ECFDF3",
-                color: isCurrent ? "#1E40AF" : "#027A48",
-                border: `1px solid ${isCurrent ? "#93C5FD" : "#A9EFC5"}`,
+                bgcolor: !exists ? MEDIDA_COLORS.surface2 : isCurrent ? "#EFF6FF" : "#ECFDF3",
+                color: !exists ? MEDIDA_COLORS.text3 : isCurrent ? "#1E40AF" : "#027A48",
+                border: `1px solid ${!exists ? MEDIDA_COLORS.border : isCurrent ? "#93C5FD" : "#A9EFC5"}`,
               }}
             />
           )}
@@ -383,7 +395,7 @@ const EtapaDetailPanel: React.FC<EtapaDetailPanelProps> = ({
           onClick={onGestionar}
           sx={{ mb: "20px", textTransform: "none", fontWeight: 600, bgcolor: MEDIDA_COLORS.accent }}
         >
-          {isCurrent ? "Cargar / gestionar paso" : "Gestionar etapa"}
+          {!exists ? "Iniciar etapa" : isCurrent ? "Cargar / gestionar paso" : "Gestionar etapa"}
         </Button>
 
         {/* Documentos adjuntos */}
@@ -470,7 +482,7 @@ const PhaseRow: React.FC<PhaseRowProps> = ({ phase, etapasOfPhase, isCurrent, on
   const rawFecha = latest?.fecha_inicio ?? latest?.fecha_inicio_estado
   const fecha = rawFecha ? formatDateLocaleAR(rawFecha) : ""
   const count = etapasOfPhase.length
-  const estadoLabel = isCurrent ? latest?.estado_display || "En curso" : count > 0 ? "Registrada" : "Pendiente"
+  const estadoLabel = isCurrent ? latest?.estado_display || "En curso" : count > 0 ? "Registrada" : "No iniciada"
 
   return (
     <Box
@@ -598,13 +610,9 @@ export const MedidaEtapasSection: React.FC<MedidaEtapasSectionProps> = ({
   }
 
   // MPI drives its whole lifecycle from the apertura phase → single row.
-  let phases: WorkflowPhase[]
-  if (tipo === "MPI") {
-    phases = ["apertura"]
-  } else {
-    phases = PHASE_ORDER.filter((p) => byPhase.has(p))
-    if (phases.length === 0) phases = ["apertura"]
-  }
+  // MPE always lists the full lifecycle (apertura → innovación → prórroga → cese)
+  // so phases that don't exist yet still have an entry point to be created.
+  const phases: WorkflowPhase[] = tipo === "MPI" ? ["apertura"] : PHASE_ORDER
 
   const phaseIsCurrent = (p: WorkflowPhase) =>
     (byPhase.get(p) ?? []).some((e) => !isClosed && e.id === etapaActualId)
@@ -644,6 +652,7 @@ export const MedidaEtapasSection: React.FC<MedidaEtapasSectionProps> = ({
             medidaId={workflowMedidaData?.id}
             fallbackEstado={fallbackEstadoFor(panelPhase)}
             isCurrent={phaseIsCurrent(panelPhase)}
+            exists={(byPhase.get(panelPhase) ?? []).length > 0}
             onClose={() => setPanelPhase(null)}
             onGestionar={() => {
               // Cerrar la sidebar al abrir el modal: evita tener Drawer + Dialog

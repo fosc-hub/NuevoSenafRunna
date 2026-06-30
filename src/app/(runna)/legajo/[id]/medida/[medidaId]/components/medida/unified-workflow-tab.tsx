@@ -171,13 +171,25 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
    * GAP-08: ¿Se puede iniciar una nueva etapa del tipo de esta pestaña?
    * Espeja `TRANSICIONES_PERMITIDAS` del backend (med01_validaciones.py).
    * APERTURA siempre es false: una MPE tiene una sola APERTURA.
+   *
+   * El "origen" de la transición es el tipo de la etapa pendiente (`etapa_actual`).
+   * Pero cuando la medida está VIGENTE no hay etapa pendiente (`etapa_actual` es
+   * null) — y ese es justamente el momento en que se puede abrir una nueva
+   * innovación/prórroga/cese. En ese caso tomamos el origen de la última etapa
+   * del historial, que siempre trae `tipo_etapa`.
    */
   const puedeIniciarNuevaEtapa = React.useMemo(() => {
-    if (!medidaApiData?.etapa_actual || !workflowPhase) return false
+    if (!medidaApiData || !workflowPhase) return false
     if (workflowPhase === "apertura") return false
 
     const tipoMedida = medidaData.tipo_medida
-    const tipoOrigen = medidaApiData.etapa_actual.tipo_etapa as string
+    const historial = medidaApiData.historial_etapas ?? []
+    const latestHist = [...historial].sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0]
+    const tipoOrigen = (medidaApiData.etapa_actual?.tipo_etapa ?? latestHist?.tipo_etapa) as
+      | string
+      | undefined
+    if (!tipoOrigen) return false
+
     const tipoDestino = workflowPhaseToTipoEtapa(workflowPhase) as string
 
     const MPE_POST_APERTURA = ["INNOVACION", "PRORROGA", "CESE"]
@@ -188,12 +200,13 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         INNOVACION: MPE_POST_APERTURA,
         PRORROGA: MPE_POST_APERTURA,
         CESE: MPE_POST_APERTURA,
+        POST_CESE: [],
       },
       MPJ: { APERTURA: ["PROCESO", "CESE"], PROCESO: ["CESE"], CESE: [] },
     }
 
     return (TRANSICIONES[tipoMedida]?.[tipoOrigen] ?? []).includes(tipoDestino)
-  }, [medidaApiData?.etapa_actual, medidaData.tipo_medida, workflowPhase])
+  }, [medidaApiData, medidaData.tipo_medida, workflowPhase])
 
   // ========== V2 Mode Detection ==========
   /**
@@ -710,7 +723,7 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <Alert severity="info" sx={{ width: '100%', maxWidth: 600 }}>
             No existe una etapa de <strong>{tipoEtapaLabel}</strong> para esta medida.
-            {workflowPhase !== 'apertura' && (
+            {workflowPhase !== 'apertura' && puedeIniciarNuevaEtapa && (
               <>
                 {' '}
                 Para comenzar a trabajar en esta etapa, debe iniciarla primero.
@@ -734,6 +747,13 @@ export const UnifiedWorkflowTab: React.FC<UnifiedWorkflowTabProps> = ({
             >
               Iniciar Etapa de {tipoEtapaLabel}
             </Button>
+          )}
+
+          {workflowPhase !== 'apertura' && !puedeIniciarNuevaEtapa && (
+            <Alert severity="warning" sx={{ width: '100%', maxWidth: 600 }}>
+              Esta etapa todavía no puede iniciarse desde el estado actual de la medida.
+              Completá o finalizá la etapa en curso antes de iniciar una de {tipoEtapaLabel}.
+            </Alert>
           )}
         </Box>
 

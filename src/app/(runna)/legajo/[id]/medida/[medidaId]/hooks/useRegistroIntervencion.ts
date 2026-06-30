@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import { getCurrentDateISO } from "@/utils/dateUtils"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 import {
   createIntervencion,
   updateIntervencion,
@@ -325,6 +326,12 @@ export const useRegistroIntervencion = ({
       const data = await createIntervencion(medidaId, payload)
       setIntervencion(data)
 
+      track(AnalyticsEvent.INTERVENCION_CREADA, {
+        medida_id: medidaId,
+        intervencion_id: data.id,
+        workflow_phase: workflowPhase ?? null,
+      })
+
       toast.success('Registro de Intervención creado exitosamente', {
         position: 'top-center',
         autoClose: 3000,
@@ -514,6 +521,13 @@ export const useRegistroIntervencion = ({
       // Update local state with the created intervention
       setIntervencion(response)
 
+      track(AnalyticsEvent.INTERVENCION_ENVIADA, {
+        medida_id: medidaId,
+        intervencion_id: (response as any)?.id ?? null,
+        workflow_phase: workflowPhase ?? null,
+        flujo: "crear_y_enviar",
+      })
+
       // Update cache directly with response data, then refetch for full sync
       try {
         // If response contains medida with etapa_actual, update the cache directly
@@ -595,6 +609,12 @@ export const useRegistroIntervencion = ({
       const response = await enviarIntervencion(medidaId, effectiveId)
       setIntervencion(response.intervencion)
 
+      track(AnalyticsEvent.INTERVENCION_ENVIADA, {
+        medida_id: medidaId,
+        intervencion_id: effectiveId,
+        flujo: "enviar",
+      })
+
       toast.success('Intervención enviada exitosamente', {
         position: 'top-center',
         autoClose: 3000,
@@ -650,6 +670,11 @@ export const useRegistroIntervencion = ({
         ...response,
         medida: response.medida.id,
       } as IntervencionResponse)
+
+      track(AnalyticsEvent.INTERVENCION_APROBADA, {
+        medida_id: medidaId,
+        intervencion_id: effectiveId,
+      })
 
       toast.success('Intervención aprobada exitosamente', {
         position: 'top-center',
@@ -730,6 +755,11 @@ export const useRegistroIntervencion = ({
         ...response,
         medida: response.medida.id,
       } as IntervencionResponse)
+
+      track(AnalyticsEvent.INTERVENCION_RECHAZADA, {
+        medida_id: medidaId,
+        intervencion_id: effectiveId,
+      })
 
       toast.info('Intervención rechazada. Se notificó al equipo técnico', {
         position: 'top-center',

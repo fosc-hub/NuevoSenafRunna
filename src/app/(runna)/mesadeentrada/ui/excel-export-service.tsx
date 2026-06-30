@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx"
 import { getCurrentDateISO } from "@/utils/dateUtils"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 
 interface ExportOptions {
   fileName?: string
@@ -67,6 +68,12 @@ export const ExcelExportService = {
 
       // Generate Excel file and trigger download
       XLSX.writeFile(workbook, `${fileName}.xlsx`)
+
+      track(AnalyticsEvent.INFORME_EXPORTADO, {
+        formato: "xlsx",
+        tipo: "mesa_entrada",
+        filas: data.length,
+      })
 
       return true
     } catch (error) {

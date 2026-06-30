@@ -5,6 +5,7 @@ import { Button } from "@mui/material"
 import { Description as DocIcon } from "@mui/icons-material"
 import { saveAs } from "file-saver"
 import { generateInformeDocx, generateDocxFileName } from "./informe-docx"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 
 interface DownloadDocxButtonProps {
   data: any
@@ -229,6 +230,8 @@ export default function DownloadDocxButton({
 
       // Download the file
       saveAs(blob, fileName)
+
+      track(AnalyticsEvent.INFORME_EXPORTADO, { formato: "docx", tipo: "valoracion" })
 
       // Call callback if provided
       if (onGenerate) {

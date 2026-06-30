@@ -6,6 +6,7 @@ import { Button } from "@mui/material"
 import { PictureAsPdf as PdfIcon } from "@mui/icons-material"
 import InformePDF from "./informe-pdf"
 import { pdf } from "@react-pdf/renderer"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 
 // Dynamic import para evitar errores SSR con Next.js
 const PDFDownloadLink = dynamic(() => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink), { ssr: false })
@@ -234,6 +235,7 @@ export default function DownloadPDFButton({ data, label = "Generar PDF", onGener
             startIcon={<PdfIcon />}
             disabled={loading || isGenerating}
             onClick={() => {
+              track(AnalyticsEvent.INFORME_EXPORTADO, { formato: "pdf", tipo: "valoracion" })
               // We need to call this after a slight delay to ensure the download starts first
               setTimeout(() => {
                 handleGeneratePDF()

@@ -20,6 +20,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 import { cesarMedidaMPI, solicitarCeseMPE } from "../api/cese-medida-api-service"
 import { medidaKeys } from "./useMedidaDetail"
 import {
@@ -93,6 +94,12 @@ export function useCeseMedida({
   >({
     mutationFn: (data) => cesarMedidaMPI(medidaId, data),
     onSuccess: (response) => {
+      track(AnalyticsEvent.MEDIDA_CESADA, {
+        medida_id: medidaId,
+        tipo: "MPI",
+        actividades_canceladas: response.actividades_canceladas,
+      })
+
       // Show success toast
       toast.success(
         `✅ Medida MPI cerrada exitosamente. ${response.actividades_canceladas} actividades canceladas.`,
@@ -130,6 +137,16 @@ export function useCeseMedida({
   >({
     mutationFn: (data) => solicitarCeseMPE(medidaId, data),
     onSuccess: (response) => {
+      track(AnalyticsEvent.MEDIDA_CESADA, {
+        medida_id: medidaId,
+        tipo: "MPE",
+        fase: isCeseIniciado(response)
+          ? "iniciado"
+          : isCeseConfirmado(response)
+            ? "confirmado"
+            : "desconocido",
+      })
+
       // Show appropriate toast based on flow
       if (isCeseIniciado(response)) {
         toast.info(

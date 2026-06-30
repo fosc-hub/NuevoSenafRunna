@@ -8,6 +8,7 @@ import UserAvatar from "./UserAvatar"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { getSession, logout } from "@/utils/auth"
+import posthog from "posthog-js"
 import { useUser } from "@/utils/auth/userZustand"
 import { UserPermissions } from "@/utils/auth/userZustand"
 import { useQuery } from "@tanstack/react-query"
@@ -183,6 +184,9 @@ export default function Header() {
   const pendingCount = pendingActivities.length
 
   const handleLogout = async () => {
+    // Desasociar la sesión de analytics del usuario antes de cerrar sesión.
+    try { posthog.reset(); } catch { /* noop */ }
+
     try {
       // Intentar el logout oficial
       await logout();

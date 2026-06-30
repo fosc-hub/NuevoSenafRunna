@@ -22,6 +22,7 @@ import {
 } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 import { useDraftStore } from "@/components/forms/utils/userDraftStore"
 import { ArrowBack, Save, Delete, Refresh } from "@mui/icons-material"
 import { DemandaSuccessModal } from "./components/DemandaSuccessModal"
@@ -118,6 +119,9 @@ const Home: React.FC = () => {
     mutationFn: async (data: DemandaCreatedResponse) => data,
     onSuccess: (data: DemandaCreatedResponse) => {
       console.log("Demanda created successfully:", data)
+      track(AnalyticsEvent.NUEVO_INGRESO_REGISTRADO, {
+        demanda_id: (data as any)?.id ?? (data as any)?.demanda_id ?? null,
+      })
       setError(null)
 
       // Clear the draft after successful submission

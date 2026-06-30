@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { decodeToken, login } from "@/utils/auth"
 import { useUser } from "@/utils/auth/userZustand"
 import { errorMessages } from "@/utils/errorMessages"
+import { track, AnalyticsEvent } from "@/utils/analytics"
 import axiosInstance from "@/app/api/utils/axiosInstance"
 import type { UserPermissions } from "@/utils/auth/userZustand"
 import Image from "next/image"
@@ -58,6 +59,7 @@ export default function Login() {
 
       // Check if login was successful
       if (!result.success) {
+        track(AnalyticsEvent.LOGIN_FALLIDO, { status: result.error?.status ?? 0 });
         const details = `Credenciales Inválidas\nCódigo: ${result.error?.status || 'Desconocido'}\nRespuesta del servidor: ${JSON.stringify(result.error?.details || result.error?.message)}`;
         setErrorDetails(details);
         setError("username", {
@@ -79,6 +81,8 @@ export default function Login() {
       }
 
       setUser(userResponse.data);
+      // El identify del usuario lo hace PostHogProvider vía Zustand.
+      track(AnalyticsEvent.LOGIN_EXITOSO);
       router.push("/mesadeentrada");
     } catch (error: any) {
       console.error("Error during login:", error);

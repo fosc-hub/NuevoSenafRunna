@@ -4,6 +4,7 @@ import "./globals.css";
 import { Slide, ToastContainer } from "react-toastify";
 import ReactQueryProvider from "@/utils/providers/reactQueryProvider";
 import ThemeProvider from "@/utils/providers/ThemeProvider";
+import { PostHogProvider } from "./providers";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${poppins.className} antialiased`}>
+        <PostHogProvider>
         <ThemeProvider>
           <ToastContainer
             position="top-right"
@@ -87,6 +89,7 @@ export default function RootLayout({
             </div>
           )}
         </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

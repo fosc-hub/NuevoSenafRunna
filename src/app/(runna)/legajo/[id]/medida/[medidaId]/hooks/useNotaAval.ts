@@ -12,6 +12,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
+import { track, AnalyticsEvent } from '@/utils/analytics'
 import type {
   CreateNotaAvalRequest,
   NotaAvalResponse,
@@ -162,6 +163,11 @@ export const useNotaAval = (medidaId: number, options: UseNotaAvalOptions = {}) 
   >({
     mutationFn: (data: CreateNotaAvalRequest) => createNotaAval(medidaId, data),
     onSuccess: async (data) => {
+      track(AnalyticsEvent.NOTA_AVAL_EMITIDA, {
+        medida_id: medidaId,
+        decision: data.decision,
+      })
+
       // NOTE: We intentionally do NOT invalidate notaAvalKeys.list or notaAvalKeys.recent here
       // because:
       // 1. These queries fetch ALL notas for the medida without etapa filtering
@@ -368,6 +374,11 @@ export const useCreateNotaAval = (
   const mutation = useMutation<CreateNotaAvalResponse, Error, CreateNotaAvalRequest>({
     mutationFn: (data: CreateNotaAvalRequest) => createNotaAval(medidaId, data),
     onSuccess: (data) => {
+      track(AnalyticsEvent.NOTA_AVAL_EMITIDA, {
+        medida_id: medidaId,
+        decision: data.decision,
+      })
+
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: notaAvalKeys.list(medidaId) })
       queryClient.invalidateQueries({ queryKey: notaAvalKeys.recent(medidaId) })

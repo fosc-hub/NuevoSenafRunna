@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { createLegajo } from '../api/legajo-creation.service'
 import type { CreateLegajoManualRequest } from '../types/legajo-creation.types'
+import { track, AnalyticsEvent } from '@/utils/analytics'
 
 /**
  * Hook for creating legajo manually
@@ -28,6 +29,8 @@ export const useCreateLegajo = () => {
 
     onSuccess: (response) => {
       console.log('Legajo created successfully, invalidating queries and navigating')
+
+      track(AnalyticsEvent.LEGAJO_CREADO, { legajo_id: response.id })
 
       // Invalidate legajos queries to refresh lists
       queryClient.invalidateQueries({ queryKey: ['legajos'] })
@@ -61,8 +64,10 @@ export const useAutorizarAdmision = () => {
         m.autorizarAdmisionYCrearLegajos(demandaId)
       ),
 
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
       console.log('Admision authorized successfully:', response)
+
+      track(AnalyticsEvent.ADMISION_AUTORIZADA, { demanda_id: variables.demandaId })
 
       // Invalidate multiple queries
       queryClient.invalidateQueries({ queryKey: ['legajos'] })

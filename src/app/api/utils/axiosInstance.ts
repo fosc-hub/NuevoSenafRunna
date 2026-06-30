@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getSession } from '@/utils/auth';
 import { handleApiError } from './errorHandler';
 import Cookies from 'js-cookie';
+import posthog from 'posthog-js';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-runna-v2legajos.up.railway.app/api',
@@ -73,11 +74,25 @@ axiosInstance.interceptors.response.use(
     if (typeof window !== 'undefined') {
       const method = error.config?.method?.toUpperCase();
       const endpoint = error.config?.url || 'Unknown endpoint';
+      const status = error.response?.status;
       console.error(`API Error - ${endpoint}:`, {
         method,
-        status: error.response?.status,
+        status,
         data: error.response?.data,
       });
+
+      // Error tracking en PostHog (sin payloads: solo metadata accionable).
+      try {
+        posthog.capture('api_error', {
+          endpoint,
+          method,
+          status: status ?? 0,
+          // status 0 => error de red / sin respuesta del servidor.
+          is_network_error: !error.response,
+        });
+      } catch {
+        // No bloquear el flujo de error si PostHog no está disponible.
+      }
     }
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {

@@ -146,7 +146,7 @@ function buildInformesModule(medidaApiData?: MedidaDetailResponse): ModuloDef | 
 
 /**
  * Returns the always-on module set for a medida, by tipo:
- *   - MPI: plan · historial · informes
+ *   - MPI: plan · control de legalidad · historial · informes
  *   - MPE: plan · control de legalidad · informes
  *   - MPJ: control de legalidad (incluye etapas) · informes
  */
@@ -159,6 +159,7 @@ export function buildMedidaModulos({
 
   if (tipo === "MPI") {
     modules.push(buildPlanModule(tipo, medidaApiData, planTrabajoId))
+    modules.push(buildLegalidadModule(medidaApiData, planTrabajoId))
     modules.push(buildHistorialModule(medidaApiData))
     modules.push(buildInformesModule(medidaApiData))
   } else if (tipo === "MPE") {

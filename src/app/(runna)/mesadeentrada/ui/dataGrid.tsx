@@ -1260,6 +1260,14 @@ const DemandaTableContent: React.FC = () => {
         legajoNumero: demanda.nnya_nombre_legajo.legajo_numero,
       }
     }
+    // Fallback: campos planos del oficio (PETICION_DE_INFORME, sin persona ni legajo vinculado)
+    if ((demanda as any).nombre || (demanda as any).apellido) {
+      return {
+        nombre: (demanda as any).nombre || "N/A",
+        apellido: (demanda as any).apellido || "N/A",
+        isFromLinkedLegajo: false,
+      }
+    }
     return { nombre: "N/A", apellido: "N/A", isFromLinkedLegajo: false }
   }
 
@@ -1274,7 +1282,7 @@ const DemandaTableContent: React.FC = () => {
         apellido: nnyaInfo.apellido,
         isFromLinkedLegajo: nnyaInfo.isFromLinkedLegajo,
         linkedLegajoNumero: nnyaInfo.legajoNumero,
-        dni: demanda.nnya_principal?.dni || demanda.nnya_nombre_legajo ? "Ver legajo" : "N/A",
+        dni: demanda.nnya_principal?.dni || demanda.nnya_nombre_legajo ? "Ver legajo" : ((demanda as any).dni_oficio || "N/A"),
         hasLegajo: !!(demanda.nnya_principal?.legajo) || !!(demanda.nnya_nombre_legajo),
         legajoNumero: demanda.nnya_principal?.legajo?.numero || demanda.nnya_nombre_legajo?.legajo_numero || "N/A",
         calificacion: demanda.calificacion?.estado_calificacion || null,

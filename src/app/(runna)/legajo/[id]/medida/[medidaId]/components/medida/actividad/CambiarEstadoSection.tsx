@@ -49,7 +49,12 @@ const ESTADO_LABELS: Record<string, string> = {
 
 interface CambiarEstadoSectionProps {
   actividad: TActividadPlanTrabajo
-  canEdit: boolean
+  /**
+   * Habilita el cambio de estado (no la edición de campos).
+   * Debe ser true mientras la actividad no esté bloqueada, para permitir
+   * transiciones válidas como PENDIENTE → EN_PROGRESO.
+   */
+  canChangeEstado: boolean
   onSuccess: () => void
   onCambiarEstado: (nuevoEstado: string, motivo?: string) => Promise<any>
   loading: boolean
@@ -57,7 +62,7 @@ interface CambiarEstadoSectionProps {
 
 export const CambiarEstadoSection: React.FC<CambiarEstadoSectionProps> = ({
   actividad,
-  canEdit,
+  canChangeEstado,
   onSuccess,
   onCambiarEstado,
   loading
@@ -114,7 +119,7 @@ export const CambiarEstadoSection: React.FC<CambiarEstadoSectionProps> = ({
     }
   }
 
-  if (!canEdit || transicionesPermitidas.length === 0) {
+  if (!canChangeEstado || transicionesPermitidas.length === 0) {
     return null
   }
 

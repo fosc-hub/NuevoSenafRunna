@@ -23,6 +23,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     if (!user || !actividad) {
       return {
         canEdit: false,
+        canChangeEstado: false,
         canAddActivity: false,
         canReopen: false,
         canTransfer: false,
@@ -64,8 +65,15 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
     const isLocked = lockedStates.includes(actividad.estado)
 
     // Permission calculations
-    // canEdit: unrestricted while the activity is editable
-    const canEdit = !isLocked
+    // canEdit: solo se puede editar (campos: descripción, fechas, responsables, etc.)
+    // mientras la actividad está EN_PROGRESO. En cualquier otro estado
+    // (PENDIENTE_VISADO_JZ, PENDIENTE_VISADO, etc.) la edición queda bloqueada.
+    const canEdit = actividad.estado === 'EN_PROGRESO'
+
+    // canChangeEstado: cambiar el estado de la actividad (transiciones de TRANSICIONES_PERMITIDAS,
+    // ej: PENDIENTE → EN_PROGRESO) está permitido mientras la actividad no esté bloqueada.
+    // OJO: es distinto de canEdit — un técnico debe poder pasar una actividad PENDIENTE a EN_PROGRESO.
+    const canChangeEstado = !isLocked
 
     // canAddActivity: Any user can add comments/files (unless activity is locked)
     const canAddActivity = !isLocked
@@ -89,6 +97,7 @@ export const useActividadPermissions = (actividad: TActividadPlanTrabajo | null)
 
     return {
       canEdit,
+      canChangeEstado,
       canAddActivity,
       canReopen,
       canTransfer,

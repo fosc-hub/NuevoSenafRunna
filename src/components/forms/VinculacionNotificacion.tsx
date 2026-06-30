@@ -1,7 +1,10 @@
 "use client"
 
 import type React from "react"
-import { Snackbar, Alert, Typography, Box, Button } from "@mui/material"
+import { Snackbar, Paper, Typography, Box, Button, Chip, Stack, IconButton, Divider } from "@mui/material"
+import { alpha } from "@mui/material/styles"
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded"
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { create } from "@/app/api/apiService"
@@ -131,30 +134,94 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
     }
   }
 
+  const totalCount = vinculacionResults.demanda_ids.length + (vinculacionResults.legajos?.length || 0)
+
   return (
     <Snackbar
       open={open && shouldShow}
-      autoHideDuration={6000}
+      autoHideDuration={null}
       onClose={onClose}
       anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      sx={{ width: { xs: "calc(100% - 16px)", sm: "auto" } }}
     >
-      <Alert onClose={onClose} severity="info" sx={{ width: "100%" }}>
-        <Typography variant="body2" gutterBottom fontWeight={600}>
-          Se encontraron coincidencias:
-        </Typography>
-
-        {/* Mostrar demandas existentes */}
-        {hasDemandas && (
-          <>
-            <Typography variant="caption" display="block" sx={{ mt: 1, mb: 0.5 }}>
-              Demandas:
+      <Paper
+        elevation={8}
+        sx={{
+          width: { xs: "100%", sm: 420 },
+          maxWidth: "calc(100vw - 16px)",
+          borderRadius: 3,
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              color: "primary.main",
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+            }}
+          >
+            <LinkRoundedIcon fontSize="small" />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="subtitle2" fontWeight={700} lineHeight={1.25}>
+              Coincidencias encontradas
             </Typography>
-            {vinculacionResults.demanda_ids.map((demandaId, index) => (
-              <Box key={`demanda-${index}`} sx={{ mb: 1, ml: 1 }}>
-                <Typography variant="body2">
-                  {vinculacionResults.match_descriptions[index]}
-                  <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                    <Button onClick={() => handleOpenDemanda(demandaId)} size="small" variant="outlined">
+            <Typography variant="caption" color="text.secondary">
+              {totalCount} {totalCount === 1 ? "resultado" : "resultados"}
+            </Typography>
+          </Box>
+          <IconButton size="small" onClick={onClose} sx={{ flexShrink: 0, color: "text.secondary" }}>
+            <CloseRoundedIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <Divider />
+
+        {/* Contenido scrolleable con scrollbar fino */}
+        <Box
+          sx={{
+            maxHeight: { xs: "55vh", sm: "50vh" },
+            overflowY: "auto",
+            px: 2,
+            "&::-webkit-scrollbar": { width: 6 },
+            "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(0,0,0,0.18)", borderRadius: 3 },
+            "&::-webkit-scrollbar-thumb:hover": { bgcolor: "rgba(0,0,0,0.3)" },
+            "&::-webkit-scrollbar-track": { bgcolor: "transparent" },
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(0,0,0,0.18) transparent",
+          }}
+        >
+          {/* Demandas */}
+          {hasDemandas && (
+            <Box sx={{ py: 1.5 }}>
+              <Typography
+                variant="overline"
+                color="text.secondary"
+                sx={{ fontWeight: 700, letterSpacing: 0.6, display: "block", mb: 0.5 }}
+              >
+                Demandas
+              </Typography>
+              {vinculacionResults.demanda_ids.map((demandaId, index) => (
+                <Box
+                  key={`demanda-${index}`}
+                  sx={{
+                    py: 1.25,
+                    "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" },
+                  }}
+                >
+                  <Typography variant="body2" sx={{ overflowWrap: "anywhere", lineHeight: 1.5 }}>
+                    {vinculacionResults.match_descriptions[index]}
+                  </Typography>
+                  <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 1 }}>
+                    <Button onClick={() => handleOpenDemanda(demandaId)} size="small" variant="text">
                       Ver demanda
                     </Button>
                     {/* Mostrar botón de vincular solo si hay un ID de demanda actual */}
@@ -164,34 +231,55 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
                         size="small"
                         variant="contained"
                         color="primary"
+                        disableElevation
                         disabled={isVinculando}
                       >
                         {isVinculando ? "Vinculando..." : "Vincular"}
                       </Button>
                     )}
-                  </Box>
-                </Typography>
-              </Box>
-            ))}
-          </>
-        )}
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
+          )}
 
-        {/* Mostrar legajos existentes */}
-        {hasLegajos && (
-          <>
-            <Typography variant="caption" display="block" sx={{ mt: 2, mb: 0.5 }}>
-              Legajos:
-            </Typography>
-            {vinculacionResults.legajos!.map((legajo, index) => (
-              <Box key={`legajo-${index}`} sx={{ mb: 1, ml: 1 }}>
-                <Typography variant="body2">
-                  <strong>Legajo {legajo.numero}</strong>
-                  {legajo.urgencia && ` - Urgencia: ${legajo.urgencia}`}
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    Apertura: {new Date(legajo.fecha_apertura).toLocaleDateString('es-AR')}
+          {/* Legajos */}
+          {hasLegajos && (
+            <Box sx={{ py: 1.5, ...(hasDemandas && { borderTop: "1px solid", borderColor: "divider" }) }}>
+              <Typography
+                variant="overline"
+                color="text.secondary"
+                sx={{ fontWeight: 700, letterSpacing: 0.6, display: "block", mb: 0.5 }}
+              >
+                Legajos
+              </Typography>
+              {vinculacionResults.legajos!.map((legajo, index) => (
+                <Box
+                  key={`legajo-${index}`}
+                  sx={{
+                    py: 1.25,
+                    "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                    <Typography variant="body2" fontWeight={700} sx={{ overflowWrap: "anywhere" }}>
+                      Legajo {legajo.numero}
+                    </Typography>
+                    {legajo.urgencia && (
+                      <Chip
+                        label={`Urgencia ${legajo.urgencia}`}
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                        sx={{ flexShrink: 0, height: 22 }}
+                      />
+                    )}
+                  </Box>
+                  <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.25 }}>
+                    Apertura: {new Date(legajo.fecha_apertura).toLocaleDateString("es-AR")}
                   </Typography>
-                  <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                    <Button onClick={() => handleOpenLegajo(legajo.id)} size="small" variant="outlined">
+                  <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 1 }}>
+                    <Button onClick={() => handleOpenLegajo(legajo.id)} size="small" variant="text">
                       Ver legajo
                     </Button>
                     {/* REG-01: Mostrar botón de vincular si hay callback (durante creación de demanda) */}
@@ -201,17 +289,18 @@ const VinculacionNotification: React.FC<VinculacionNotificationProps> = ({
                         size="small"
                         variant="contained"
                         color="primary"
+                        disableElevation
                       >
                         Vincular
                       </Button>
                     )}
-                  </Box>
-                </Typography>
-              </Box>
-            ))}
-          </>
-        )}
-      </Alert>
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Paper>
     </Snackbar>
   )
 }

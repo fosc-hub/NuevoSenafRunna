@@ -53,6 +53,9 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
     presuntos_delitos: apiData.presuntos_delitos || null,
     id: apiData.id,
     nombre: apiData.nombre || "",
+    // OFICIO_JUDICIAL (PETICION_DE_INFORME): datos del sujeto del oficio.
+    apellido: apiData.apellido || "",
+    dni_oficio: apiData.dni_oficio || null,
     tipo_demanda: apiData.tipo_demanda || null,
     nro_notificacion_102: apiData.nro_notificacion_102 || null,
     nro_sac: apiData.nro_sac || null,
@@ -75,6 +78,9 @@ export const transformApiDataToFormData = (apiData: any): FormData => {
 
     // zona & observaciones
     zona: apiData.relacion_demanda?.demanda_zona?.zona || null,
+    // Usuario responsable asignado (viene en la demanda_zona activa). Sin esto, el
+    // selector "Asignar usuario responsable" aparece vacío al re-abrir la demanda.
+    user_responsable_id: apiData.relacion_demanda?.demanda_zona?.user_responsable || null,
     observaciones: apiData.observaciones || null,
 
     // Niños/niñas/adolescentes
